@@ -1,0 +1,359 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// SOURCES & MERCHANTS
+// ============================================
+
+model Source {
+  id              String    @id @default(cuid())
+  name            String    // "Amazon Brasil", "Mercado Livre", etc.
+  slug            String    @unique
+  logoUrl         String?
+  status          SourceStatus @default(ACTIVE)
+  affiliateConfig Json?     // Config específica por parceiro
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  merchants       Merchant[]
+  listings        Listing[]
+  coupons         Coupon[]
+
+  @@map("sources")
+}
+
+enum SourceStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+  DISABLED
+}
+
+model Merchant {
+  id          String   @id @default(cuid())
+  sourceId    String
+  externalId  String?
+  name        String
+  slug        String
+  rating      Float?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  source      Source     @relation(fields: [sourceId], references: [id])
+  listings    Listing[]
+
+  @@unique([sourceId, externalId])
+  @@map("merchants")
+}
+
+// ============================================
+// CATALOG (canonical products)
+// ============================================
+
+model Category {
+  id              String     @id @default(cuid())
+  parentId        String?
+  name            String
+  slug            String     @unique
+  icon            String?
+  description     String?
+  seoTitle        String?
+  seoDescription  String?
+  position        Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  parent          Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children        Category[] @relation("CategoryTree")
+  products        Product[]
+
+  @@map("categories")
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  logoUrl   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products  Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  brandId         String?
+  categoryId      String?
+  name            String
+  slug            String          @unique
+  description     String?
+  imageUrl        String?
+  images          String[]        // array de URLs
+  specsJson       Json?
+  status          ProductStatus   @default(ACTIVE)
+  popularityScore Float           @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  brand           Brand?          @relation(fields: [brandId], references: [id])
+  category        Category?       @relation(fields: [categoryId], references: [id])
+  variants        ProductVariant[]
+  listings        Listing[]
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([popularityScore(sort: Desc)])
+  @@map("products")
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_REVIEW
+  MERGED
+}
+
+model ProductVariant {
+  id          String   @id @default(cuid())
+  productId   String
+  variantName String
+  color       String?
+  size        String?
+  storage     String?
+  modelCode   String?
+  gtin        String?
+  specsJson   Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  listings    Listing[]
+
+  @@map("product_variants")
+}
+
+// ============================================
+// LISTINGS & OFFERS (from sources)
+// ============================================
+
+model Listing {
+  id                  String            @id @default(cuid())
+  sourceId            String
+  merchantId          String?
+  productId           String?
+  variantId           String?
+  externalId          String
+  rawTitle            String
+  rawDescription      String?
+  rawBrand            String?
+  rawCategory         String?
+  imageUrl            String?
+  productUrl          String
+  availability        AvailabilityStatus @default(IN_STOCK)
+  rating              Float?
+  reviewsCount        Int?
+  salesCountEstimate  Int?
+  rawPayloadJson      Json?
+  matchConfidence     Float?            // 0-1 confidence of product match
+  status              ListingStatus     @default(ACTIVE)
+  lastSeenAt          DateTime          @default(now())
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  source              Source         @relation(fields: [sourceId], references: [id])
+  merchant            Merchant?      @relation(fields: [merchantId], references: [id])
+  product             Product?       @relation(fields: [productId], references: [id])
+  variant             ProductVariant? @relation(fields: [variantId], references: [id])
+  offers              Offer[]
+
+  @@unique([sourceId, externalId])
+  @@index([productId])
+  @@index([sourceId])
+  @@map("listings")
+}
+
+enum ListingStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+  UNMATCHED
+}
+
+enum AvailabilityStatus {
+  IN_STOCK
+  OUT_OF_STOCK
+  PRE_ORDER
+  UNKNOWN
+}
+
+model Offer {
+  id              String    @id @default(cuid())
+  listingId       String
+  currentPrice    Float
+  originalPrice   Float?
+  couponText      String?
+  shippingPrice   Float?
+  installmentText String?
+  isFreeShipping  Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  offerScore      Float     @default(0)
+  affiliateUrl    String?
+  lastSeenAt      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  listing         Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  priceSnapshots  PriceSnapshot[]
+  clickouts       Clickout[]
+
+  @@index([listingId])
+  @@index([offerScore(sort: Desc)])
+  @@index([isActive])
+  @@map("offers")
+}
+
+model PriceSnapshot {
+  id            String   @id @default(cuid())
+  offerId       String
+  price         Float
+  originalPrice Float?
+  capturedAt    DateTime @default(now())
+
+  offer         Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([offerId, capturedAt])
+  @@map("price_snapshots")
+}
+
+// ============================================
+// COUPONS
+// ============================================
+
+model Coupon {
+  id          String       @id @default(cuid())
+  sourceId    String?
+  code        String
+  description String?
+  startAt     DateTime?
+  endAt       DateTime?
+  rulesJson   Json?
+  status      CouponStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  source      Source?      @relation(fields: [sourceId], references: [id])
+
+  @@map("coupons")
+}
+
+enum CouponStatus {
+  ACTIVE
+  EXPIRED
+  DISABLED
+}
+
+// ============================================
+// TRACKING & ANALYTICS
+// ============================================
+
+model Clickout {
+  id            String   @id @default(cuid())
+  offerId       String
+  sourceSlug    String?
+  clickedAt     DateTime @default(now())
+  referrer      String?
+  sessionId     String?
+  query         String?
+  categorySlug  String?
+  userAgent     String?
+
+  offer         Offer    @relation(fields: [offerId], references: [id])
+
+  @@index([offerId])
+  @@index([clickedAt])
+  @@map("clickouts")
+}
+
+model SearchLog {
+  id               String   @id @default(cuid())
+  query            String
+  normalizedQuery  String?
+  resultsCount     Int?
+  clickedProductId String?
+  createdAt        DateTime @default(now())
+
+  @@index([normalizedQuery])
+  @@index([createdAt])
+  @@map("search_logs")
+}
+
+// ============================================
+// EDITORIAL & CURATION
+// ============================================
+
+model EditorialBlock {
+  id          String           @id @default(cuid())
+  blockType   EditorialType
+  title       String
+  slug        String           @unique
+  subtitle    String?
+  payloadJson Json?
+  position    Int              @default(0)
+  status      EditorialStatus  @default(DRAFT)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@map("editorial_blocks")
+}
+
+enum EditorialType {
+  HERO_BANNER
+  RAIL
+  GRID
+  ARTICLE
+  TOP_PICKS
+  COUPON_WALL
+}
+
+enum EditorialStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ============================================
+// JOBS & SYSTEM
+// ============================================
+
+model JobRun {
+  id          String    @id @default(cuid())
+  jobName     String
+  status      JobStatus @default(RUNNING)
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+  itemsTotal  Int?
+  itemsDone   Int?
+  errorLog    String?
+  metadata    Json?
+
+  @@index([jobName, startedAt])
+  @@map("job_runs")
+}
+
+enum JobStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+}

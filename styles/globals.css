@@ -1,0 +1,128 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Inter:opsz,wght@14..32,100..900&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-surface-50 text-surface-800 font-body antialiased;
+  }
+  ::selection {
+    @apply bg-accent-blue/20 text-primary-900;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-surface-300 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-surface-400; }
+}
+
+/* ============================================
+   DESIGN SYSTEM COMPONENTS
+   ============================================
+   All pages use these classes for consistency.
+*/
+
+@layer components {
+  /* ---- Text hierarchy ---- */
+  .text-text-primary { @apply text-surface-900; }
+  .text-text-secondary { @apply text-surface-700; }
+  .text-text-muted { @apply text-surface-500; }
+
+  /* ---- Cards ---- */
+  .card {
+    @apply bg-white rounded-xl border border-surface-200 shadow-card transition-shadow duration-200;
+  }
+  .card:hover {
+    @apply shadow-card-hover;
+  }
+
+  /* ---- Buttons ---- */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+           bg-gradient-to-r from-accent-blue to-brand-500 text-white
+           font-semibold text-sm shadow-sm
+           hover:from-accent-blue/90 hover:to-brand-600
+           transition-all duration-200 hover:shadow-glow;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
+           bg-surface-100 text-surface-700 font-medium text-sm border border-surface-200
+           hover:bg-surface-200 hover:text-surface-900 transition-colors;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
+           text-surface-500 font-medium text-sm
+           hover:bg-surface-100 hover:text-surface-700 transition-colors;
+  }
+
+  /* ---- Inputs ---- */
+  .input {
+    @apply w-full rounded-lg border border-surface-300 bg-white px-3 py-2
+           text-sm text-surface-800 placeholder:text-surface-400
+           focus:outline-none focus:ring-2 focus:ring-accent-blue/30 focus:border-accent-blue
+           transition-all;
+  }
+
+  /* ---- Badges ---- */
+  .badge-hot {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold
+           bg-accent-red/10 text-accent-red border border-accent-red/20;
+  }
+  .badge-deal {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold
+           bg-accent-green/10 text-accent-green border border-accent-green/20;
+  }
+  .badge-lowest {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold
+           bg-accent-blue/10 text-accent-blue border border-accent-blue/20;
+  }
+  .badge-coupon {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold
+           bg-accent-orange/10 text-accent-orange border border-accent-orange/20;
+  }
+  .badge-shipping {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold
+           bg-accent-purple/10 text-accent-purple border border-accent-purple/20;
+  }
+
+  /* ---- Prices ---- */
+  .price-big {
+    @apply font-display font-extrabold text-2xl text-primary-900 tracking-tight;
+  }
+  .price-old {
+    @apply text-surface-400 line-through text-sm;
+  }
+  .discount-tag {
+    @apply font-display font-bold text-accent-green;
+  }
+
+  /* ---- Horizontal rail ---- */
+  .rail {
+    @apply flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail > * { @apply snap-start flex-shrink-0; }
+
+  /* ---- Shimmer loading ---- */
+  .shimmer {
+    @apply animate-shimmer bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 bg-[length:200%_100%];
+  }
+
+  /* ---- Score indicator ---- */
+  .score-pill {
+    @apply px-2 py-0.5 rounded-md text-xs font-bold font-display border;
+  }
+  .score-high { @apply bg-accent-green/10 text-accent-green border-accent-green/20; }
+  .score-mid { @apply bg-accent-orange/10 text-accent-orange border-accent-orange/20; }
+  .score-low { @apply bg-surface-100 text-surface-500 border-surface-200; }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-blue to-brand-500;
+  }
+}
