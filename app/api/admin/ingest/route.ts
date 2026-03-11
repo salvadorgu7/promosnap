@@ -36,7 +36,7 @@ async function upsertListings(listings: RawListing[]) {
           salesCountEstimate: raw.salesCount ?? null,
           rating: raw.rating ?? null,
           reviewsCount: raw.reviewsCount ?? null,
-          rawPayloadJson: raw.rawPayload ?? {},
+          rawPayloadJson: raw.rawPayload ?? null,
           lastSeenAt: new Date(),
         },
         update: {
@@ -45,7 +45,7 @@ async function upsertListings(listings: RawListing[]) {
           imageUrl: raw.imageUrl ?? null,
           productUrl: raw.productUrl,
           salesCountEstimate: raw.salesCount ?? null,
-          rawPayloadJson: raw.rawPayload ?? {},
+          rawPayloadJson: raw.rawPayload ?? null,
           lastSeenAt: new Date(),
         },
       })
