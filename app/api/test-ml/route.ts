@@ -1,24 +1,24 @@
 import { NextResponse } from 'next/server'
 import { getMLToken } from '@/lib/ml-auth'
 
+async function mlFetch(url: string, token: string) {
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  const body = await res.json()
+  return { status: res.status, body }
+}
+
 export async function GET() {
   try {
     const token = await getMLToken()
 
-    const res = await fetch(
-      'https://api.mercadolibre.com/sites/MLB/search?q=iphone&limit=3',
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    )
+    const [user, site, search] = await Promise.all([
+      mlFetch('https://api.mercadolibre.com/users/me', token),
+      mlFetch('https://api.mercadolibre.com/sites/MLB', token),
+      mlFetch('https://api.mercadolibre.com/sites/MLB/search?q=iphone&limit=3', token),
+    ])
 
-    const body = await res.json()
-
-    return NextResponse.json({ status: res.status, body })
+    return NextResponse.json({ user, site, search })
   } catch (err) {
-    return NextResponse.json(
-      { error: String(err) },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
