@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
+import { Prisma } from '@prisma/client'
 import { MercadoLivreAdapter } from '@/adapters/mercadolivre'
 import type { RawListing } from '@/types'
 
@@ -36,7 +37,7 @@ async function upsertListings(listings: RawListing[]) {
           salesCountEstimate: raw.salesCount ?? null,
           rating: raw.rating ?? null,
           reviewsCount: raw.reviewsCount ?? null,
-          rawPayloadJson: raw.rawPayload ?? null,
+          rawPayloadJson: raw.rawPayload ? (raw.rawPayload as Prisma.InputJsonValue) : Prisma.DbNull,
           lastSeenAt: new Date(),
         },
         update: {
@@ -45,7 +46,7 @@ async function upsertListings(listings: RawListing[]) {
           imageUrl: raw.imageUrl ?? null,
           productUrl: raw.productUrl,
           salesCountEstimate: raw.salesCount ?? null,
-          rawPayloadJson: raw.rawPayload ?? null,
+          rawPayloadJson: raw.rawPayload ? (raw.rawPayload as Prisma.InputJsonValue) : Prisma.DbNull,
           lastSeenAt: new Date(),
         },
       })
