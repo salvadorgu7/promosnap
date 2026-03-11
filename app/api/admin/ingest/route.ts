@@ -1,25 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { MercadoLivreAdapter } from '@/adapters/mercadolivre'
+import type { RawListing } from '@/types'
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const q = searchParams.get('q') || 'smartphone'
-  const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50)
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
+async function upsertListings(listings: RawListing[]) {
   const adapter = new MercadoLivreAdapter()
-  let listings
-
-  try {
-    listings = await adapter.searchProducts(q, { limit })
-  } catch (err) {
-    return NextResponse.json({ error: 'ML API fetch failed', detail: String(err) }, { status: 502 })
-  }
 
   const source = await prisma.source.findUnique({ where: { slug: 'mercadolivre' } })
-  if (!source) {
-    return NextResponse.json({ error: 'Source "mercadolivre" not found — run db:seed first' }, { status: 500 })
-  }
+  if (!source) throw new Error('Source "mercadolivre" not found — run db:seed first')
 
   const results = { upserted: 0, failed: 0, errors: [] as string[] }
 
@@ -63,7 +53,9 @@ export async function GET(request: NextRequest) {
       const affiliateUrl = adapter.buildAffiliateUrl(raw.productUrl)
 
       const offer = await prisma.offer.upsert({
-        where: { id: (await prisma.offer.findFirst({ where: { listingId: listing.id, isActive: true } }))?.id ?? '' },
+        where: {
+          id: (await prisma.offer.findFirst({ where: { listingId: listing.id, isActive: true } }))?.id ?? '',
+        },
         create: {
           listingId: listing.id,
           currentPrice: raw.currentPrice,
@@ -104,9 +96,72 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({
-    query: q,
-    fetched: listings.length,
-    ...results,
-  })
+  return results
+}
+
+// ─── GET /api/admin/ingest?q=... ─────────────────────────────────────────────
+// Mantido para quando o search for aprovado pelo ML
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const q = searchParams.get('q') || 'smartphone'
+  const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50)
+
+  const adapter = new MercadoLivreAdapter()
+  let listings: RawListing[]
+
+  try {
+    listings = await adapter.searchProducts(q, { limit })
+  } catch (err) {
+    return NextResponse.json({ error: 'ML API fetch failed', detail: String(err) }, { status: 502 })
+  }
+
+  try {
+    const results = await upsertListings(listings)
+    return NextResponse.json({ mode: 'search', query: q, fetched: listings.length, ...results })
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
+}
+
+// ─── POST /api/admin/ingest ───────────────────────────────────────────────────
+// Ingere por lista de IDs ou URLs do ML
+// Body: { ids: ["MLB123", "https://www.mercadolivre.com.br/.../MLB456/..."] }
+
+export async function POST(request: NextRequest) {
+  let body: { ids?: string[] }
+
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Body JSON inválido' }, { status: 400 })
+  }
+
+  const ids = body?.ids
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return NextResponse.json({ error: 'Envie { ids: ["MLB123", ...] }' }, { status: 400 })
+  }
+  if (ids.length > 100) {
+    return NextResponse.json({ error: 'Máximo 100 IDs por chamada' }, { status: 400 })
+  }
+
+  const adapter = new MercadoLivreAdapter()
+  let listings: RawListing[]
+
+  try {
+    listings = await adapter.fetchByItemIds(ids)
+  } catch (err) {
+    return NextResponse.json({ error: 'ML API fetch failed', detail: String(err) }, { status: 502 })
+  }
+
+  if (listings.length === 0) {
+    return NextResponse.json({ error: 'Nenhum item encontrado para os IDs fornecidos' }, { status: 404 })
+  }
+
+  try {
+    const results = await upsertListings(listings)
+    return NextResponse.json({ mode: 'items', submitted: ids.length, fetched: listings.length, ...results })
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }

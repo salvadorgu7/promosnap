@@ -132,3 +132,66 @@ export async function getLowestPrices(limit = 12): Promise<ProductCard[]> {
 
   return sorted.map(offerToProductCard)
 }
+
+export async function searchListings(
+  query: string,
+  sort: 'relevance' | 'price_asc' | 'score' = 'relevance',
+  limit = 40
+): Promise<ProductCard[]> {
+  const where = {
+    isActive: true,
+    listing: {
+      status: 'ACTIVE' as const,
+      ...(query ? {
+        OR: [
+          { rawTitle: { contains: query, mode: 'insensitive' as const } },
+          { rawBrand: { contains: query, mode: 'insensitive' as const } },
+          { rawCategory: { contains: query, mode: 'insensitive' as const } },
+        ],
+      } : {}),
+    },
+  }
+
+  const orderBy =
+    sort === 'price_asc' ? { currentPrice: 'asc' as const }
+    : sort === 'score'   ? { offerScore: 'desc' as const }
+    : { offerScore: 'desc' as const }
+
+  const offers = await prisma.offer.findMany({
+    where,
+    include: includeListingWithSource,
+    orderBy,
+    distinct: ['listingId'],
+    take: limit,
+  })
+
+  return offers.map(offerToProductCard)
+}
+
+export async function getListingByExternalId(externalId: string) {
+  const listing = await prisma.listing.findFirst({
+    where: { externalId, status: 'ACTIVE' },
+    include: {
+      source: true,
+      offers: {
+        where: { isActive: true },
+        orderBy: { offerScore: 'desc' },
+        include: {
+          priceSnapshots: {
+            orderBy: { capturedAt: 'asc' },
+            take: 90,
+          },
+        },
+      },
+    },
+  })
+  return listing
+}
+
+export async function getSiteStats() {
+  const [offersCount, sourcesCount] = await Promise.all([
+    prisma.offer.count({ where: { isActive: true } }),
+    prisma.source.count({ where: { status: 'ACTIVE' } }),
+  ])
+  return { offersCount, sourcesCount }
+}

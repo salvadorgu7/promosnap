@@ -9,6 +9,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing code' }, { status: 400 })
   }
 
+  const codeVerifier = req.cookies.get('ml_code_verifier')?.value
+  if (!codeVerifier) {
+    return NextResponse.json({ error: 'Missing code_verifier cookie — reinicie o fluxo em /api/auth/ml' }, { status: 400 })
+  }
+
   const clientId = process.env.MERCADOLIVRE_APP_ID!
   const clientSecret = process.env.MERCADOLIVRE_SECRET!
   const redirectUri = process.env.NEXT_PUBLIC_APP_URL + '/api/auth/ml/callback'
@@ -22,6 +27,7 @@ export async function GET(req: NextRequest) {
       client_secret: clientSecret,
       code,
       redirect_uri: redirectUri,
+      code_verifier: codeVerifier,
     }),
   })
 
@@ -36,5 +42,8 @@ export async function GET(req: NextRequest) {
   console.log('[ml-auth] saving ML token to:', ML_TOKEN_PATH)
   await writeFile(ML_TOKEN_PATH, JSON.stringify(token, null, 2), 'utf-8')
 
-  return NextResponse.json({ ok: true, expires_in: token.expires_in })
+  // Limpa o cookie do verifier
+  const response = NextResponse.json({ ok: true, expires_in: token.expires_in })
+  response.cookies.delete('ml_code_verifier')
+  return response
 }

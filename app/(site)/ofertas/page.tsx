@@ -1,11 +1,16 @@
 import { Flame } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { getHotOffers } from "@/lib/db/queries";
 import { MOCK_HOT_OFFERS } from "@/lib/mock-data";
 
 export const metadata = buildMetadata({ title: "Ofertas Quentes", path: "/ofertas" });
+export const revalidate = 300;
 
-export default function OfertasPage() {
+export default async function OfertasPage() {
+  let offers = await getHotOffers(40).catch(() => []);
+  if (offers.length === 0) offers = MOCK_HOT_OFFERS;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex items-center gap-2 mb-6">
@@ -16,7 +21,7 @@ export default function OfertasPage() {
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {MOCK_HOT_OFFERS.map((p) => <OfferCard key={p.id} product={p} />)}
+        {offers.map((p) => <OfferCard key={p.id} product={p} />)}
       </div>
     </div>
   );

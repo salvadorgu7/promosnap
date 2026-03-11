@@ -4,7 +4,7 @@ import RailSection from "@/components/home/RailSection";
 import OfferCard from "@/components/cards/OfferCard";
 import CategoryCard from "@/components/cards/CategoryCard";
 import { MOCK_HOT_OFFERS, MOCK_LOWEST, MOCK_BEST_SELLERS, MOCK_CATEGORIES, MOCK_COUPONS } from "@/lib/mock-data";
-import { getHotOffers, getBestSellers, getLowestPrices } from "@/lib/db/queries";
+import { getHotOffers, getBestSellers, getLowestPrices, getSiteStats } from "@/lib/db/queries";
 import type { ProductCard } from "@/types";
 
 export const revalidate = 300;
@@ -14,12 +14,14 @@ export default async function HomePage() {
   let lowestPrices: ProductCard[] = [];
   let bestSellers: ProductCard[] = [];
   let usingMockData = false;
+  let siteStats = { offersCount: 0, sourcesCount: 0 };
 
   try {
-    [hotOffers, lowestPrices, bestSellers] = await Promise.all([
+    [hotOffers, lowestPrices, bestSellers, siteStats] = await Promise.all([
       getHotOffers(8),
       getLowestPrices(8),
       getBestSellers(8),
+      getSiteStats(),
     ]);
 
     if (hotOffers.length === 0 && lowestPrices.length === 0 && bestSellers.length === 0) {
@@ -87,10 +89,10 @@ export default async function HomePage() {
           {/* Stats */}
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {[
-              { label: "Ofertas ativas", value: "12.4K", color: "text-accent-blue" },
-              { label: "Menor preço agora", value: "2.1K", color: "text-accent-green" },
-              { label: "Cupons válidos", value: "340", color: "text-accent-orange" },
-              { label: "Lojas monitoradas", value: "4", color: "text-brand-500" },
+              { label: "Ofertas ativas", value: siteStats.offersCount > 0 ? siteStats.offersCount.toLocaleString("pt-BR") : "—", color: "text-accent-blue" },
+              { label: "Menor preço agora", value: lowestPrices.length > 0 ? lowestPrices.length.toString() : "—", color: "text-accent-green" },
+              { label: "Cupons válidos", value: "Em breve", color: "text-accent-orange" },
+              { label: "Lojas monitoradas", value: siteStats.sourcesCount > 0 ? siteStats.sourcesCount.toString() : "—", color: "text-brand-500" },
             ].map((s) => (
               <div key={s.label} className="card text-center p-3">
                 <div className={`font-display font-extrabold text-2xl ${s.color}`}>{s.value}</div>

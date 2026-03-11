@@ -1,7 +1,7 @@
 import { Search, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { MOCK_HOT_OFFERS, MOCK_BEST_SELLERS } from "@/lib/mock-data";
+import { searchListings } from "@/lib/db/queries";
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
@@ -15,12 +15,9 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 export default async function BuscaPage({ searchParams }: { searchParams: Promise<{ q?: string; sort?: string }> }) {
   const params = await searchParams;
   const query = params.q || "";
-  const sort = params.sort || "relevance";
+  const sort = (params.sort || "relevance") as "relevance" | "price_asc" | "score";
 
-  const allProducts = [...MOCK_HOT_OFFERS, ...MOCK_BEST_SELLERS];
-  const results = query
-    ? allProducts.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
-    : allProducts;
+  const results = await searchListings(query, sort, 40).catch(() => []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -47,9 +44,9 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             </div>
             <div className="space-y-2">
               <p className="text-xs font-medium text-text-secondary">Lojas</p>
-              {["Amazon", "Mercado Livre", "Shopee", "Shein"].map((s) => (
+              {["Mercado Livre"].map((s) => (
                 <label key={s} className="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-text-secondary">
-                  <input type="checkbox" className="rounded" /> {s}
+                  <input type="checkbox" className="rounded" defaultChecked /> {s}
                 </label>
               ))}
             </div>
@@ -89,7 +86,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                 {query ? "Nenhum resultado" : "Busque um produto"}
               </h2>
               <p className="text-sm text-text-muted">
-                {query ? "Tente buscar com outras palavras." : "Digite o nome do produto."}
+                {query ? "Tente buscar com outras palavras." : "Digite o nome do produto acima."}
               </p>
             </div>
           )}
