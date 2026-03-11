@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'fs/promises'
-import path from 'path'
+import { existsSync } from 'fs'
+import { ML_TOKEN_PATH } from '@/lib/constants/ml-token-path'
 
 interface MLToken {
   access_token: string
@@ -8,13 +9,17 @@ interface MLToken {
   obtained_at: number
 }
 
-const TOKEN_PATH = path.join(process.cwd(), '.ml-token.json')
-
 async function readToken(): Promise<MLToken | null> {
+  console.log('[ml-auth] reading ML token from:', ML_TOKEN_PATH)
+  if (!existsSync(ML_TOKEN_PATH)) {
+    console.log('[ml-auth] ML token file not found at:', ML_TOKEN_PATH)
+    return null
+  }
   try {
-    const raw = await readFile(TOKEN_PATH, 'utf-8')
+    const raw = await readFile(ML_TOKEN_PATH, 'utf-8')
     return JSON.parse(raw) as MLToken
   } catch {
+    console.log('[ml-auth] ML token file not found at:', ML_TOKEN_PATH)
     return null
   }
 }
@@ -38,7 +43,7 @@ async function refreshToken(token: MLToken): Promise<MLToken> {
   const fresh = await res.json()
   fresh.obtained_at = Date.now()
 
-  await writeFile(TOKEN_PATH, JSON.stringify(fresh, null, 2), 'utf-8')
+  await writeFile(ML_TOKEN_PATH, JSON.stringify(fresh, null, 2), 'utf-8')
   return fresh as MLToken
 }
 

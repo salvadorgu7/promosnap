@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { writeFile } from 'fs/promises'
-import path from 'path'
+import { ML_TOKEN_PATH } from '@/lib/constants/ml-token-path'
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
@@ -33,8 +33,8 @@ export async function GET(req: NextRequest) {
   const token = await res.json()
   token.obtained_at = Date.now()
 
-  const tokenPath = path.join(process.cwd(), '.ml-token.json')
-  await writeFile(tokenPath, JSON.stringify(token, null, 2), 'utf-8')
+  console.log('[ml-auth] saving ML token to:', ML_TOKEN_PATH)
+  await writeFile(ML_TOKEN_PATH, JSON.stringify(token, null, 2), 'utf-8')
 
   return NextResponse.json({ ok: true, expires_in: token.expires_in })
 }
