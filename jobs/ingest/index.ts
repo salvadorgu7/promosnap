@@ -1,4 +1,5 @@
 import prisma from '@/lib/db/prisma'
+import { Prisma } from '@prisma/client'
 import { getEnabledAdapters } from '@/adapters/shared/registry'
 import { slugify, normalizeText } from '@/lib/utils'
 import type { RawListing } from '@/types'
@@ -114,7 +115,7 @@ async function processRawListing(raw: RawListing, adapterSlug: string) {
       rating: raw.rating,
       reviewsCount: raw.reviewsCount,
       salesCountEstimate: raw.salesCount,
-      rawPayloadJson: raw.rawPayload as Record<string, unknown> | undefined,
+      rawPayloadJson: raw.rawPayload ? (raw.rawPayload as Prisma.InputJsonValue) : Prisma.DbNull,
       lastSeenAt: new Date(),
     },
     create: {
@@ -130,7 +131,7 @@ async function processRawListing(raw: RawListing, adapterSlug: string) {
       rating: raw.rating,
       reviewsCount: raw.reviewsCount,
       salesCountEstimate: raw.salesCount,
-      rawPayloadJson: raw.rawPayload as Record<string, unknown> | undefined,
+      rawPayloadJson: raw.rawPayload ? (raw.rawPayload as Prisma.InputJsonValue) : Prisma.DbNull,
     },
   })
 
