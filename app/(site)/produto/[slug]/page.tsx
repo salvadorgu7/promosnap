@@ -75,7 +75,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     : 0;
 
   const TrendIcon = stats?.trend === 'down' ? TrendingDown : stats?.trend === 'up' ? TrendingUp : Minus;
-  const trendColor = stats?.trend === 'down' ? 'text-accent-green' : stats?.trend === 'up' ? 'text-accent-red' : 'text-text-muted';
+  const trendColor = stats?.trend === 'down' ? 'text-accent-green' : stats?.trend === 'up' ? 'text-accent-red' : 'text-surface-500';
   const trendLabel = stats?.trend === 'down' ? 'Preço em queda' : stats?.trend === 'up' ? 'Preço subindo' : 'Preço estável';
 
   const fallbackStats: PriceStats = {
@@ -93,12 +93,12 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1 text-xs text-text-muted mb-6">
-        <Link href="/" className="hover:text-text-secondary">Home</Link>
+      <nav className="flex items-center gap-1 text-xs text-surface-500 mb-6">
+        <Link href="/" className="hover:text-accent-blue transition-colors">Home</Link>
         <ChevronRight className="h-3 w-3" />
-        <Link href="/ofertas" className="hover:text-text-secondary">Ofertas</Link>
+        <Link href="/ofertas" className="hover:text-accent-blue transition-colors">Ofertas</Link>
         <ChevronRight className="h-3 w-3" />
-        <span className="text-text-secondary truncate max-w-[200px]">{listing.rawTitle}</span>
+        <span className="text-surface-300 truncate max-w-[200px]">{listing.rawTitle}</span>
       </nav>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema({
@@ -121,17 +121,17 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Left: Image + Stats */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="card aspect-square flex items-center justify-center p-8">
+          <div className="card aspect-square flex items-center justify-center p-8 bg-surface-800">
             {listing.imageUrl ? (
               <img src={listing.imageUrl} alt={listing.rawTitle} className="w-full h-full object-contain" />
             ) : (
-              <ShoppingCart className="h-24 w-24 text-surface-300" />
+              <ShoppingCart className="h-24 w-24 text-surface-600" />
             )}
           </div>
 
           {stats && (
             <div className="card p-4">
-              <h3 className="text-sm font-semibold text-text-primary mb-3">Resumo de Preços</h3>
+              <h3 className="text-sm font-semibold text-white mb-3">Resumo de Preços</h3>
               <div className="space-y-2">
                 {[
                   { label: "Mínimo 30 dias", value: formatPrice(stats.min30d) },
@@ -140,8 +140,8 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                   { label: "Mínimo histórico", value: formatPrice(stats.allTimeMin), highlight: true },
                 ].map(({ label, value, highlight }) => (
                   <div key={label} className="flex justify-between text-sm">
-                    <span className="text-text-muted">{label}</span>
-                    <span className={`font-medium ${highlight ? "text-accent-green" : "text-text-secondary"}`}>{value}</span>
+                    <span className="text-surface-500">{label}</span>
+                    <span className={`font-medium ${highlight ? "text-accent-green" : "text-surface-200"}`}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -154,28 +154,28 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           <div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               {listing.rawBrand && (
-                <span className="text-xs font-medium uppercase tracking-wider text-text-muted">{listing.rawBrand}</span>
+                <span className="text-xs font-medium uppercase tracking-wider text-surface-500">{listing.rawBrand}</span>
               )}
               {stats && (
-                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-surface-100 ${trendColor}`}>
+                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-surface-800 ${trendColor}`}>
                   <TrendIcon className="h-3 w-3" /> {trendLabel}
                 </span>
               )}
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-display text-text-primary mb-2">{listing.rawTitle}</h1>
-            <p className="text-xs text-text-muted">Fonte: {listing.source.name}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold font-display text-white mb-2">{listing.rawTitle}</h1>
+            <p className="text-xs text-surface-500">Fonte: {listing.source.name}</p>
           </div>
 
           {/* Best price CTA */}
-          <div className="card p-5 border-accent-blue/30 bg-accent-blue/5">
+          <div className="card p-5 border-accent-green/20 bg-accent-green/5">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <p className="text-xs text-text-muted mb-1">Melhor preço encontrado</p>
+                <p className="text-xs text-surface-500 mb-1">Melhor preço encontrado</p>
                 {bestOffer.originalPrice && bestOffer.originalPrice > bestOffer.currentPrice && (
-                  <p className="text-sm text-text-muted line-through">{formatPrice(bestOffer.originalPrice)}</p>
+                  <p className="text-sm text-surface-500 line-through">{formatPrice(bestOffer.originalPrice)}</p>
                 )}
                 <div className="flex items-baseline gap-2">
-                  <p className="text-3xl font-bold text-accent-blue font-display">{formatPrice(bestOffer.currentPrice)}</p>
+                  <p className="text-3xl font-bold text-accent-green font-display">{formatPrice(bestOffer.currentPrice)}</p>
                   {discount > 0 && (
                     <span className="text-sm font-semibold text-accent-green">-{discount}%</span>
                   )}
@@ -188,7 +188,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                 href={bestOffer.affiliateUrl || listing.productUrl}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
-                className="btn-primary"
+                className="btn-primary text-base px-6 py-3"
               >
                 <ExternalLink className="h-4 w-4" /> Ver Oferta no {listing.source.name}
               </a>
@@ -198,25 +198,25 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           {/* Multiple offers */}
           {listing.offers.length > 1 && (
             <div>
-              <h2 className="text-lg font-bold font-display text-text-primary mb-3 flex items-center gap-2">
-                <Store className="h-4 w-4 text-text-muted" /> Comparar Ofertas ({listing.offers.length})
+              <h2 className="text-lg font-bold font-display text-white mb-3 flex items-center gap-2">
+                <Store className="h-4 w-4 text-surface-500" /> Comparar Ofertas ({listing.offers.length})
               </h2>
               <div className="space-y-2">
                 {[...listing.offers].sort((a, b) => a.currentPrice - b.currentPrice).map((offer, i) => {
                   const offerDisc = offer.originalPrice && offer.originalPrice > offer.currentPrice
                     ? Math.round((1 - offer.currentPrice / offer.originalPrice) * 100) : 0;
                   return (
-                    <div key={offer.id} className={`card flex items-center gap-4 p-4 ${i === 0 ? "border-accent-blue/30 bg-accent-blue/5" : ""}`}>
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold flex-shrink-0 ${i === 0 ? "bg-accent-blue text-white" : "bg-surface-100 text-text-muted"}`}>
+                    <div key={offer.id} className={`card flex items-center gap-4 p-4 ${i === 0 ? "border-accent-blue/20 bg-accent-blue/5" : ""}`}>
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold flex-shrink-0 ${i === 0 ? "bg-accent-blue text-white" : "bg-surface-800 text-surface-500"}`}>
                         {i + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-text-primary">{listing.source.name}</p>
+                        <p className="text-sm font-semibold text-white">{listing.source.name}</p>
                         {offer.isFreeShipping && <span className="badge-shipping text-[10px] px-1.5 py-0 mt-0.5 inline-block">Frete grátis</span>}
                       </div>
                       <div className="text-right shrink-0">
-                        {offer.originalPrice && <p className="text-xs text-text-muted line-through">{formatPrice(offer.originalPrice)}</p>}
-                        <p className={`text-lg font-bold font-display ${i === 0 ? "text-accent-blue" : "text-text-primary"}`}>{formatPrice(offer.currentPrice)}</p>
+                        {offer.originalPrice && <p className="text-xs text-surface-500 line-through">{formatPrice(offer.originalPrice)}</p>}
+                        <p className={`text-lg font-bold font-display ${i === 0 ? "text-accent-blue" : "text-white"}`}>{formatPrice(offer.currentPrice)}</p>
                         {offerDisc > 0 && <p className="text-xs text-accent-green">-{offerDisc}%</p>}
                       </div>
                       <a
@@ -237,8 +237,8 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           {/* Price history chart */}
           {priceHistory.length >= 2 && (
             <div>
-              <h2 className="text-lg font-bold font-display text-text-primary mb-3 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-text-muted" /> Histórico de Preço
+              <h2 className="text-lg font-bold font-display text-white mb-3 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-surface-500" /> Histórico de Preço
               </h2>
               <PriceChart data={priceHistory} stats={stats ?? fallbackStats} />
             </div>
@@ -247,7 +247,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           {/* Trust */}
           <div className="card p-4 flex items-center gap-3">
             <Shield className="h-5 w-5 text-accent-blue flex-shrink-0" />
-            <p className="text-xs text-text-muted leading-relaxed">
+            <p className="text-xs text-surface-500 leading-relaxed">
               Os preços são atualizados periodicamente. O PromoSnap não vende produtos — ao clicar em &ldquo;Ver Oferta&rdquo;, você é redirecionado para a loja parceira. Podemos receber comissões por compras via links afiliados.
             </p>
           </div>

@@ -39,13 +39,13 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* ===== IMPORT BANNER ===== */}
+      {/* ===== DEV BANNER ===== */}
       {usingMockData && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-center text-sm text-amber-700 flex items-center justify-center gap-2">
+        <div className="bg-accent-orange/5 border-b border-accent-orange/20 px-4 py-2.5 text-center text-sm text-accent-orange flex items-center justify-center gap-2">
           <Database className="w-4 h-4 shrink-0" />
           <span>
             Exibindo dados de demonstração.{" "}
-            <a href="/api/admin/ingest?q=smartphone&limit=20" className="font-semibold underline hover:text-amber-900">
+            <a href="/api/admin/ingest?q=smartphone&limit=20" className="font-semibold underline hover:text-white">
               Importar dados reais do Mercado Livre
             </a>
           </span>
@@ -53,8 +53,10 @@ export default async function HomePage() {
       )}
 
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary-50 via-white to-white">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-accent-blue/5 rounded-full blur-[100px] pointer-events-none" />
+      <section className="relative overflow-hidden">
+        {/* Glow effects */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-accent-blue/[0.07] rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-[-100px] right-[10%] w-[400px] h-[400px] bg-accent-purple/[0.05] rounded-full blur-[100px] pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 pt-12 pb-10 md:pt-16 md:pb-14">
           <div className="max-w-2xl mx-auto text-center">
@@ -63,12 +65,12 @@ export default async function HomePage() {
               Ofertas verificadas com histórico real
             </div>
 
-            <h1 className="font-display font-extrabold text-4xl md:text-5xl text-surface-900 tracking-tight leading-[1.1]">
+            <h1 className="font-display font-extrabold text-4xl md:text-5xl text-white tracking-tight leading-[1.1]">
               Encontre ofertas{" "}
               <span className="text-gradient">de verdade</span>
             </h1>
 
-            <p className="mt-4 text-surface-500 text-lg max-w-lg mx-auto">
+            <p className="mt-4 text-surface-400 text-lg max-w-lg mx-auto">
               Compare preços, veja o histórico real e descubra se o desconto é real ou marketing.
             </p>
 
@@ -79,7 +81,7 @@ export default async function HomePage() {
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               {["iPhone 15", "Air Fryer", "PS5", "Notebook", "Fone Bluetooth"].map((tag) => (
                 <a key={tag} href={`/busca?q=${encodeURIComponent(tag)}`}
-                  className="px-3 py-1 rounded-full bg-white border border-surface-200 text-xs text-surface-500 hover:text-accent-blue hover:border-accent-blue/30 transition-all shadow-sm">
+                  className="px-3 py-1 rounded-full bg-surface-800/60 border border-white/[0.06] text-xs text-surface-400 hover:text-accent-blue hover:border-accent-blue/30 transition-all">
                   {tag}
                 </a>
               ))}
@@ -89,14 +91,14 @@ export default async function HomePage() {
           {/* Stats */}
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {[
-              { label: "Ofertas ativas", value: siteStats.offersCount > 0 ? siteStats.offersCount.toLocaleString("pt-BR") : "—", color: "text-accent-blue" },
-              { label: "Menor preço agora", value: lowestPrices.length > 0 ? lowestPrices.length.toString() : "—", color: "text-accent-green" },
+              { label: "Ofertas ativas", value: siteStats.offersCount > 0 ? siteStats.offersCount.toLocaleString("pt-BR") : "\u2014", color: "text-accent-blue" },
+              { label: "Menor preço agora", value: lowestPrices.length > 0 ? lowestPrices.length.toString() : "\u2014", color: "text-accent-green" },
               { label: "Cupons válidos", value: "Em breve", color: "text-accent-orange" },
-              { label: "Lojas monitoradas", value: siteStats.sourcesCount > 0 ? siteStats.sourcesCount.toString() : "—", color: "text-brand-500" },
+              { label: "Lojas monitoradas", value: siteStats.sourcesCount > 0 ? siteStats.sourcesCount.toString() : "\u2014", color: "text-accent-purple" },
             ].map((s) => (
               <div key={s.label} className="card text-center p-3">
                 <div className={`font-display font-extrabold text-2xl ${s.color}`}>{s.value}</div>
-                <div className="text-xs text-text-muted mt-1">{s.label}</div>
+                <div className="text-xs text-surface-500 mt-1">{s.label}</div>
               </div>
             ))}
           </div>
@@ -116,8 +118,8 @@ export default async function HomePage() {
       <section className="py-6">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center gap-2 mb-4">
-            <Tag className="w-5 h-5 text-brand-500" />
-            <h2 className="font-display font-bold text-lg text-text-primary">Categorias</h2>
+            <Tag className="w-5 h-5 text-accent-purple" />
+            <h2 className="font-display font-bold text-lg text-white">Categorias</h2>
           </div>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
             {MOCK_CATEGORIES.map((c) => (
@@ -150,16 +152,16 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center gap-2 mb-4">
             <Tag className="w-5 h-5 text-accent-orange" />
-            <h2 className="font-display font-bold text-lg text-text-primary">Cupons Ativos</h2>
+            <h2 className="font-display font-bold text-lg text-white">Cupons Ativos</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {MOCK_COUPONS.map((c) => (
               <div key={c.id} className="card p-4 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="font-mono font-semibold text-accent-blue text-sm">{c.code}</span>
-                  <span className="text-xs text-text-muted">{c.sourceName}</span>
+                  <span className="text-xs text-surface-500">{c.sourceName}</span>
                 </div>
-                <p className="text-sm text-text-secondary">{c.description}</p>
+                <p className="text-sm text-surface-300">{c.description}</p>
                 <span className="text-xs text-accent-orange">Expira em {c.endAt}</span>
               </div>
             ))}
@@ -169,11 +171,11 @@ export default async function HomePage() {
 
       {/* SEO */}
       <section className="py-10">
-        <div className="max-w-7xl mx-auto px-4 max-w-3xl">
-          <h2 className="font-display font-bold text-xl text-text-primary mb-3">
+        <div className="max-w-3xl mx-auto px-4">
+          <h2 className="font-display font-bold text-xl text-white mb-3">
             PromoSnap — Ofertas reais com histórico de preço
           </h2>
-          <p className="text-sm text-text-muted leading-relaxed">
+          <p className="text-sm text-surface-500 leading-relaxed">
             O PromoSnap monitora os maiores marketplaces do Brasil para encontrar ofertas reais.
             Comparamos preços da Amazon, Mercado Livre, Shopee e Shein, calculamos um score de oferta
             baseado em dados reais e mostramos os produtos mais vendidos, menor preço histórico e cupons ativos.

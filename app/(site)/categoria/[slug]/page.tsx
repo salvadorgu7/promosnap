@@ -19,17 +19,17 @@ export default async function CategoriaPage({ params }: { params: Promise<{ slug
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      <nav className="flex items-center gap-1 text-xs text-text-muted mb-4">
-        <Link href="/" className="hover:text-text-secondary">Home</Link>
+      <nav className="flex items-center gap-1 text-xs text-surface-500 mb-4">
+        <Link href="/" className="hover:text-accent-blue transition-colors">Home</Link>
         <ChevronRight className="h-3 w-3" />
-        <span className="text-text-secondary">{name}</span>
+        <span className="text-surface-300">{name}</span>
       </nav>
 
       <script type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema([{ name: "Home", url: "/" }, { name, url: `/categoria/${slug}` }])) }} />
 
-      <h1 className="text-3xl font-bold font-display text-text-primary mb-2">{name}</h1>
-      <p className="text-sm text-text-muted mb-6">As melhores ofertas de {name} com preço comparado.</p>
+      <h1 className="text-3xl font-bold font-display text-white mb-2">{name}</h1>
+      <p className="text-sm text-surface-500 mb-6">As melhores ofertas de {name} com preço comparado.</p>
 
       {products.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -37,9 +37,9 @@ export default async function CategoriaPage({ params }: { params: Promise<{ slug
         </div>
       ) : (
         <div className="text-center py-16 card">
-          <SlidersHorizontal className="h-12 w-12 text-surface-300 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-text-primary mb-2">Em breve</h2>
-          <p className="text-sm text-text-muted">Indexando ofertas para {name}. Volte em breve!</p>
+          <SlidersHorizontal className="h-12 w-12 text-surface-600 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-white mb-2">Em breve</h2>
+          <p className="text-sm text-surface-400">Indexando ofertas para {name}. Volte em breve!</p>
         </div>
       )}
     </div>
