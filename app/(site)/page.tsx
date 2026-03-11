@@ -1,13 +1,55 @@
-import { Flame, TrendingDown, Trophy, Sparkles, Tag } from "lucide-react";
+import { Flame, TrendingDown, Trophy, Sparkles, Tag, Database } from "lucide-react";
 import SearchBar from "@/components/search/SearchBar";
 import RailSection from "@/components/home/RailSection";
 import OfferCard from "@/components/cards/OfferCard";
 import CategoryCard from "@/components/cards/CategoryCard";
 import { MOCK_HOT_OFFERS, MOCK_LOWEST, MOCK_BEST_SELLERS, MOCK_CATEGORIES, MOCK_COUPONS } from "@/lib/mock-data";
+import { getHotOffers, getBestSellers, getLowestPrices } from "@/lib/db/queries";
+import type { ProductCard } from "@/types";
 
-export default function HomePage() {
+export const revalidate = 300;
+
+export default async function HomePage() {
+  let hotOffers: ProductCard[] = [];
+  let lowestPrices: ProductCard[] = [];
+  let bestSellers: ProductCard[] = [];
+  let usingMockData = false;
+
+  try {
+    [hotOffers, lowestPrices, bestSellers] = await Promise.all([
+      getHotOffers(8),
+      getLowestPrices(8),
+      getBestSellers(8),
+    ]);
+
+    if (hotOffers.length === 0 && lowestPrices.length === 0 && bestSellers.length === 0) {
+      usingMockData = true;
+      hotOffers = MOCK_HOT_OFFERS;
+      lowestPrices = MOCK_LOWEST;
+      bestSellers = MOCK_BEST_SELLERS;
+    }
+  } catch {
+    usingMockData = true;
+    hotOffers = MOCK_HOT_OFFERS;
+    lowestPrices = MOCK_LOWEST;
+    bestSellers = MOCK_BEST_SELLERS;
+  }
+
   return (
     <div>
+      {/* ===== IMPORT BANNER ===== */}
+      {usingMockData && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-center text-sm text-amber-700 flex items-center justify-center gap-2">
+          <Database className="w-4 h-4 shrink-0" />
+          <span>
+            Exibindo dados de demonstração.{" "}
+            <a href="/api/admin/ingest?q=smartphone&limit=20" className="font-semibold underline hover:text-amber-900">
+              Importar dados reais do Mercado Livre
+            </a>
+          </span>
+        </div>
+      )}
+
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary-50 via-white to-white">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-accent-blue/5 rounded-full blur-[100px] pointer-events-none" />
@@ -61,7 +103,7 @@ export default function HomePage() {
 
       {/* OFERTAS QUENTES */}
       <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red">
-        {MOCK_HOT_OFFERS.map((p) => (
+        {hotOffers.map((p) => (
           <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
             <OfferCard product={p} />
           </div>
@@ -85,7 +127,7 @@ export default function HomePage() {
 
       {/* MENOR PREÇO */}
       <RailSection title="Menor Preço Histórico" subtitle="Nunca estiveram tão baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
-        {MOCK_LOWEST.map((p) => (
+        {lowestPrices.map((p) => (
           <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
             <OfferCard product={p} />
           </div>
@@ -94,7 +136,7 @@ export default function HomePage() {
 
       {/* MAIS VENDIDOS */}
       <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
-        {MOCK_BEST_SELLERS.map((p) => (
+        {bestSellers.map((p) => (
           <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
             <OfferCard product={p} />
           </div>
