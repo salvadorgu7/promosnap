@@ -5,7 +5,7 @@ import type { ProductCard, Badge } from '@/types'
 // PRODUCT CARD BUILDER
 // ============================================
 
-function buildProductCard(p: any): ProductCard | null {
+export function buildProductCard(p: any): ProductCard | null {
   const allOffers = p.listings?.flatMap((l: any) =>
     l.offers?.map((o: any) => ({
       ...o,
@@ -52,7 +52,7 @@ function buildProductCard(p: any): ProductCard | null {
   }
 }
 
-const PRODUCT_INCLUDE = {
+export const PRODUCT_INCLUDE = {
   brand: true,
   category: true,
   listings: {

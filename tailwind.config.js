@@ -51,8 +51,7 @@ module.exports = {
       animation: {
         "fade-in": "fadeIn 0.4s ease-out",
         "slide-up": "slideUp 0.4s ease-out",
-        "slide-right": "slideRight 0.4s ease-out",
-        "pulse-glow": "pulseGlow 2s ease-in-out infinite",
+        "slide-down": "slideDown 0.35s ease-out",
         shimmer: "shimmer 2s linear infinite",
         float: "float 3s ease-in-out infinite",
         "stagger-1": "slideUp 0.4s ease-out 0.05s both",
@@ -73,13 +72,9 @@ module.exports = {
           "0%": { opacity: "0", transform: "translateY(12px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        slideRight: {
-          "0%": { opacity: "0", transform: "translateX(-12px)" },
-          "100%": { opacity: "1", transform: "translateX(0)" },
-        },
-        pulseGlow: {
-          "0%, 100%": { boxShadow: "0 0 10px rgba(41,98,255,0.15)" },
-          "50%": { boxShadow: "0 0 25px rgba(41,98,255,0.3)" },
+        slideDown: {
+          "0%": { opacity: "0", transform: "translateY(-100%)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },

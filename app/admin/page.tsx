@@ -1,15 +1,23 @@
 import {
   Package, Tag, Store, MousePointerClick, BarChart3, Ticket,
-  Layers, Clock, CheckCircle, XCircle, AlertTriangle, Loader2
+  Layers, Clock, CheckCircle, XCircle, AlertTriangle, Loader2,
+  Bell, TrendingUp, Heart, ArrowRight
 } from "lucide-react";
+import Link from "next/link";
 import { getAdminDashboardData } from "@/lib/db/queries";
 import { formatNumber, formatPrice, timeAgo } from "@/lib/utils";
+import prisma from "@/lib/db/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const data = await getAdminDashboardData();
   const { stats, recentClickouts, topProducts, jobRuns, couponsActive, clickoutsByDay } = data;
+
+  const [alertsActive, trendsCount] = await Promise.all([
+    prisma.priceAlert.count({ where: { isActive: true, triggeredAt: null } }).catch(() => 0),
+    prisma.trendingKeyword.count().catch(() => 0),
+  ]);
 
   const statCards = [
     { label: "Listings", value: formatNumber(stats.listings), icon: Package, color: "text-accent-blue" },
@@ -50,6 +58,50 @@ export default async function AdminDashboard() {
             <p className="text-2xl font-bold font-display text-text-primary">{s.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Quick ops links */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Link href="/admin/alertas" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
+          <div className="flex items-center gap-2">
+            <Bell className="w-4 h-4 text-accent-orange" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">{alertsActive} alertas ativos</p>
+              <p className="text-xs text-text-muted">Alertas de preço</p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-text-muted" />
+        </Link>
+        <Link href="/admin/tendencias" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-accent-blue" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">{trendsCount} trends</p>
+              <p className="text-xs text-text-muted">Tendências & Growth</p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-text-muted" />
+        </Link>
+        <Link href="/admin/jobs" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-accent-green" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">Jobs</p>
+              <p className="text-xs text-text-muted">Automação</p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-text-muted" />
+        </Link>
+        <Link href="/admin/ingestao" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
+          <div className="flex items-center gap-2">
+            <Package className="w-4 h-4 text-brand-500" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">Ingestão</p>
+              <p className="text-xs text-text-muted">Importar produtos</p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-text-muted" />
+        </Link>
       </div>
 
       {/* Clickouts chart */}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ExternalLink, Star, Truck } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
+import FavoriteButton from "@/components/ui/FavoriteButton";
 import type { ProductCard, Badge } from "@/types";
 
 function BadgeChip({ badge }: { badge: Badge }) {
@@ -63,7 +64,8 @@ export default function OfferCard({ product }: { product: ProductCard }) {
             width={300}
             height={300}
           />
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-2 right-2 flex items-center gap-1">
+            <FavoriteButton productId={product.id} size="sm" />
             <ScorePill score={bestOffer.offerScore} />
           </div>
           {discount && discount >= 40 && (
