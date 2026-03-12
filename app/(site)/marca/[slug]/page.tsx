@@ -4,6 +4,7 @@ import { SlidersHorizontal, Building2 } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
+import InternalLinks from "@/components/seo/InternalLinks";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { getProductsByBrand, getBrandBySlug } from "@/lib/db/queries";
 
@@ -24,12 +25,46 @@ export async function generateMetadata({
   const { slug } = await params;
   const brand = await getBrandBySlug(slug);
   const name = brand?.name || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const count = brand?._count?.products ?? 0;
 
   return buildMetadata({
-    title: `${name} - Melhores Ofertas`,
-    description: `Encontre as melhores ofertas de ${name}. Compare preços, veja descontos reais e economize.`,
+    title: `${name} - Melhores Ofertas e Preços`,
+    description: `Encontre ${count > 0 ? `${count}+ produtos` : "ofertas"} de ${name} com preços comparados. Veja descontos reais, histórico de preços e economize em ${name}.`,
     path: `/marca/${slug}`,
   });
+}
+
+function brandFaqSchema(name: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `Onde encontrar os melhores preços de ${name}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `O PromoSnap compara preços de ${name} em dezenas de lojas como Amazon, Mercado Livre, Magalu e outras. Mostramos o preço mais baixo verificado e o histórico para que você compre no melhor momento.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Os descontos de ${name} no PromoSnap são reais?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Sim. Monitoramos o histórico de preços e comparamos com a média dos últimos 30 e 90 dias. Se o preço atual está abaixo da média, o desconto é real e indicamos com badges de oferta quente.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Como receber alertas de ofertas de ${name}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Adicione produtos de ${name} aos seus favoritos e ative notificações. Avisaremos quando o preço cair ou surgir uma promoção imperdível.`,
+        },
+      },
+    ],
+  };
 }
 
 export default async function MarcaPage({
@@ -70,6 +105,14 @@ export default async function MarcaPage({
               { name, url: `/marca/${slug}` },
             ])
           ),
+        }}
+      />
+
+      {/* FAQ schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(brandFaqSchema(name)),
         }}
       />
 
@@ -195,6 +238,9 @@ export default async function MarcaPage({
           ctaHref="/ofertas"
         />
       )}
+
+      {/* Internal links */}
+      <InternalLinks type="brand" currentSlug={slug} brand={name} />
     </div>
   );
 }

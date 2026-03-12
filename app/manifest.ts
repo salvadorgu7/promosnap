@@ -1,25 +1,37 @@
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
+
+// TODO: Add real PWA icons to public/icons/
+// Required files:
+//   - public/icons/icon-192.png (192x192)
+//   - public/icons/icon-512.png (512x512)
+//   - public/icons/icon-maskable.png (512x512, maskable safe zone)
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "PromoSnap",
+    name: "PromoSnap — Ofertas reais, preço de verdade",
     short_name: "PromoSnap",
     description:
-      "Encontre as melhores ofertas, compare precos e economize de verdade. Historico real de precos, cupons e os produtos mais vendidos.",
-    theme_color: "#3B82F6",
-    background_color: "#FFFFFF",
-    display: "standalone",
+      "Compare preços, veja histórico real e encontre os melhores descontos do Brasil",
     start_url: "/",
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: "#4f46e5",
     icons: [
       {
-        src: "/icons/icon-192x192.png",
+        src: "/icons/icon-192.png",
         sizes: "192x192",
         type: "image/png",
       },
       {
-        src: "/icons/icon-512x512.png",
+        src: "/icons/icon-512.png",
         sizes: "512x512",
         type: "image/png",
+      },
+      {
+        src: "/icons/icon-maskable.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
     ],
   };

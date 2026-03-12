@@ -1,14 +1,24 @@
 // PromoSnap Global Types
 
+export type HealthStatus = "READY" | "PARTIAL" | "MOCK" | "BLOCKED"
+
+export interface HealthCheckResult {
+  status: HealthStatus
+  latencyMs: number
+  message?: string
+}
+
 export interface MarketplaceAdapter {
   name: string
   slug: string
   isEnabled: boolean
   searchProducts(query: string, options?: SearchOptions): Promise<RawListing[]>
   fetchProductById(externalId: string): Promise<RawListing | null>
+  fetchByItemIds(ids: string[]): Promise<RawListing[]>
   fetchOffers(params?: FetchOffersParams): Promise<RawListing[]>
   buildAffiliateUrl(productUrl: string, metadata?: Record<string, string>): string
   validateListing(listing: RawListing): boolean
+  healthCheck(): Promise<HealthCheckResult>
 }
 
 export interface SearchOptions {

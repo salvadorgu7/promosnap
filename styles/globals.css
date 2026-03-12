@@ -30,12 +30,14 @@
   .text-text-secondary { @apply text-surface-700; }
   .text-text-muted { @apply text-surface-500; }
 
+  /* ---- Section backgrounds ---- */
+  .section-alt { @apply bg-gradient-to-b from-slate-50/80 to-white; }
+  .section-highlight { @apply bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/30; }
+  .section-warm { @apply bg-gradient-to-b from-amber-50/30 to-white; }
+
   /* ---- Cards ---- */
   .card {
-    @apply bg-white rounded-xl border border-surface-200 shadow-card transition-shadow duration-200;
-  }
-  .card:hover {
-    @apply shadow-card-hover;
+    @apply bg-white rounded-xl border border-surface-200/80 shadow-sm hover:shadow-md transition-shadow duration-200;
   }
 
   /* ---- Buttons ---- */
@@ -119,6 +121,19 @@
   .score-high { @apply bg-accent-green/10 text-accent-green border-accent-green/20; }
   .score-mid { @apply bg-accent-orange/10 text-accent-orange border-accent-orange/20; }
   .score-low { @apply bg-surface-100 text-surface-500 border-surface-200; }
+
+  /* ---- Image container ---- */
+  .image-container {
+    @apply bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg overflow-hidden flex items-center justify-center;
+  }
+
+  /* ---- Dividers ---- */
+  .divider { @apply border-t border-surface-200/60; }
+
+  /* ---- Safe area for mobile bottom nav ---- */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 @layer utilities {

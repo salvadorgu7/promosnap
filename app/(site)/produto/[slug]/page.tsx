@@ -18,6 +18,9 @@ import OfferCard from "@/components/cards/OfferCard";
 import MobileCTA from "@/components/product/MobileCTA";
 import ShareButtons from "@/components/product/ShareButtons";
 import PriceAlertForm from "@/components/product/PriceAlertForm";
+import PriceComparison from "@/components/product/PriceComparison";
+import SavingsBlock from "@/components/product/SavingsBlock";
+import PriceTrend from "@/components/product/PriceTrend";
 import { buildMetadata, productSchema, breadcrumbSchema } from "@/lib/seo/metadata";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -263,6 +266,11 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             )}
           </div>
 
+          {/* Price trend indicator */}
+          {priceStats && (
+            <PriceTrend trend={priceStats.trend} currentPrice={priceStats.current} avgPrice={priceStats.avg30d} />
+          )}
+
           {/* Best price highlight card */}
           {bestOffer && (
             <div className="card p-5 border-accent-blue/30 bg-accent-blue/5">
@@ -417,6 +425,16 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               </div>
             )}
           </div>
+
+          {/* Savings block */}
+          {bestOffer && (
+            <SavingsBlock
+              currentPrice={bestPrice}
+              originalPrice={bestOffer.originalPrice ?? undefined}
+              highestPrice={allOffers.length > 1 ? Math.max(...allOffers.map((o) => o.price)) : undefined}
+              avgHistorical={priceStats?.avg30d}
+            />
+          )}
 
           {/* Share section */}
           <div className="card p-4">

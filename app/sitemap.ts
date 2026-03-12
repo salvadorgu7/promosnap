@@ -1,5 +1,7 @@
 import { MetadataRoute } from "next";
 import prisma from "@/lib/db/prisma";
+import { BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
+import { OFFER_PAGE_SLUGS } from "@/lib/seo/offer-pages";
 
 export const dynamic = "force-dynamic";
 
@@ -57,17 +59,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB unavailable at build time — return static pages only
   }
 
-  const curatedSlugs = [
-    "melhores-smartphones",
-    "melhores-notebooks",
-    "melhores-fones-bluetooth",
-    "melhores-smart-tvs",
-    "melhores-air-fryers",
-  ];
-  const curatedPages: MetadataRoute.Sitemap = curatedSlugs.map((slug) => ({
+  // "Melhores" curated pages
+  const melhoresPages: MetadataRoute.Sitemap = BEST_PAGE_SLUGS.map((slug) => ({
     url: `${APP_URL}/melhores/${slug}`,
     lastModified: now,
     changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  // "Ofertas" keyword pages
+  const ofertasPages: MetadataRoute.Sitemap = OFFER_PAGE_SLUGS.map((slug) => ({
+    url: `${APP_URL}/ofertas/${slug}`,
+    lastModified: now,
+    changeFrequency: "daily" as const,
     priority: 0.7,
   }));
 
@@ -76,6 +80,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...categoryPages,
     ...brandPages,
     ...productPages,
-    ...curatedPages,
+    ...melhoresPages,
+    ...ofertasPages,
   ];
 }
