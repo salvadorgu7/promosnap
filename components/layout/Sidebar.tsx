@@ -15,29 +15,98 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  Radio,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/ofertas", label: "Ofertas", icon: Flame },
-  { href: "/categorias", label: "Categorias", icon: Tag },
-  { href: "/marcas", label: "Marcas", icon: Award },
-  { href: "/guias", label: "Guias", icon: BookOpen },
-  { href: "/cupons", label: "Cupons", icon: Ticket },
-  { href: "/favoritos", label: "Favoritos", icon: Heart },
-  { href: "/mais-vendidos", label: "Trending", icon: TrendingUp },
-  { href: "/comparar", label: "Comparar", icon: GitCompareArrows },
-  { href: "/canais", label: "Canais", icon: Users },
-] as const;
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof Home;
+  badge?: string | number | null;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Principal",
+    items: [
+      { href: "/", label: "Home", icon: Home },
+      { href: "/ofertas", label: "Ofertas", icon: Flame },
+      { href: "/mais-vendidos", label: "Trending", icon: TrendingUp },
+    ],
+  },
+  {
+    label: "Explorar",
+    items: [
+      { href: "/categorias", label: "Categorias", icon: Tag },
+      { href: "/marcas", label: "Marcas", icon: Award },
+      { href: "/cupons", label: "Cupons", icon: Ticket },
+      { href: "/comparar", label: "Comparar", icon: GitCompareArrows },
+    ],
+  },
+  {
+    label: "Comunidade",
+    items: [
+      { href: "/canais", label: "Canais", icon: Radio },
+      { href: "/guias", label: "Guias", icon: BookOpen },
+    ],
+  },
+  {
+    label: "Pessoal",
+    items: [
+      { href: "/favoritos", label: "Favoritos", icon: Heart },
+    ],
+  },
+];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
+  const [favCount, setFavCount] = useState<number>(0);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("promosnap_favorites");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setFavCount(Array.isArray(parsed) ? parsed.length : 0);
+      }
+    } catch {
+      // ignore
+    }
+
+    const handleStorage = () => {
+      try {
+        const stored = localStorage.getItem("promosnap_favorites");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setFavCount(Array.isArray(parsed) ? parsed.length : 0);
+        } else {
+          setFavCount(0);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
+  };
+
+  // Attach badge counts dynamically
+  const getBadge = (href: string): string | number | null => {
+    if (href === "/favoritos" && favCount > 0) return favCount;
+    return null;
   };
 
   return (
@@ -64,41 +133,74 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto sidebar-scrollbar">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`sidebar-item group flex items-center gap-3 rounded-lg transition-all duration-200 relative ${
-                  expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"
-                } ${
-                  active
-                    ? "bg-accent-blue/15 text-accent-blue"
-                    : "text-surface-400 hover:text-white hover:bg-surface-800"
-                }`}
-                title={!expanded ? item.label : undefined}
-              >
-                {/* Active indicator bar */}
-                {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-accent-blue" />
-                )}
-                <Icon
-                  className={`w-[18px] h-[18px] flex-shrink-0 ${
-                    active ? "stroke-[2.5]" : "group-hover:scale-110"
-                  } transition-transform`}
-                />
-                {expanded && (
-                  <span className="text-sm font-medium whitespace-nowrap sidebar-label">
-                    {item.label}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+        {/* Nav items grouped */}
+        <nav className="flex-1 py-3 px-2 overflow-y-auto sidebar-scrollbar">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={group.label}>
+              {/* Group divider (not for first group) */}
+              {gi > 0 && (
+                <div className={`my-2 ${expanded ? "mx-3" : "mx-2"}`}>
+                  <div className="h-px bg-surface-700/50" />
+                </div>
+              )}
+
+              {/* Group label (only when expanded) */}
+              {expanded && (
+                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-surface-500 sidebar-label">
+                  {group.label}
+                </p>
+              )}
+
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
+                  const badge = getBadge(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`sidebar-item group flex items-center gap-3 rounded-lg transition-all duration-200 relative ${
+                        expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"
+                      } ${
+                        active
+                          ? "bg-accent-blue/15 text-accent-blue"
+                          : "text-surface-400 hover:text-white hover:bg-surface-800"
+                      }`}
+                      title={!expanded ? item.label : undefined}
+                    >
+                      {/* Active indicator bar */}
+                      {active && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-accent-blue shadow-[0_0_8px_rgba(99,102,241,0.4)]" />
+                      )}
+                      <div className="relative flex-shrink-0">
+                        <Icon
+                          className={`w-[18px] h-[18px] ${
+                            active ? "stroke-[2.5]" : "group-hover:scale-110"
+                          } transition-transform`}
+                        />
+                        {/* Badge dot when collapsed */}
+                        {!expanded && badge !== null && (
+                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-accent-blue" />
+                        )}
+                      </div>
+                      {expanded && (
+                        <span className="text-sm font-medium whitespace-nowrap sidebar-label flex-1">
+                          {item.label}
+                        </span>
+                      )}
+                      {/* Badge count when expanded */}
+                      {expanded && badge !== null && (
+                        <span className="ml-auto text-[10px] font-bold bg-accent-blue/20 text-accent-blue px-1.5 py-0.5 rounded-full min-w-[18px] text-center sidebar-label">
+                          {badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Bottom branding */}

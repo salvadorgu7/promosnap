@@ -12,6 +12,12 @@ import {
   Trash2,
   X,
   TrendingDown,
+  Rss,
+  ArrowRight,
+  Sparkles,
+  Package,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 interface Favorite {
@@ -42,10 +48,26 @@ interface Alert {
   };
 }
 
-type Tab = "favoritos" | "recentes" | "alertas" | "buscas";
+interface FeedItem {
+  id: string;
+  type: "price_drop" | "alert_status" | "recent_view" | "recent_search" | "new_product";
+  title: string;
+  subtitle?: string;
+  href?: string;
+  imageUrl?: string;
+  timestamp: string;
+  meta?: {
+    oldPrice?: number;
+    newPrice?: number;
+    alertTarget?: number;
+    isActive?: boolean;
+  };
+}
+
+type Tab = "feed" | "favoritos" | "recentes" | "alertas" | "buscas";
 
 export default function MinhaContaPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("favoritos");
+  const [activeTab, setActiveTab] = useState<Tab>("feed");
   const [email, setEmail] = useState("");
   const [savedEmail, setSavedEmail] = useState("");
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -53,6 +75,8 @@ export default function MinhaContaPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [searches, setSearches] = useState<string[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [feedLoading, setFeedLoading] = useState(true);
 
   useEffect(() => {
     // Load favorites from localStorage
@@ -71,6 +95,14 @@ export default function MinhaContaPage() {
     try {
       const raw = localStorage.getItem("ps_searches");
       if (raw) setSearches(JSON.parse(raw));
+    } catch {}
+
+    // Also try the other search key
+    try {
+      if (!localStorage.getItem("ps_searches")) {
+        const raw = localStorage.getItem("promosnap_recent_searches");
+        if (raw) setSearches(JSON.parse(raw));
+      }
     } catch {}
 
     // Load saved email
@@ -97,6 +129,84 @@ export default function MinhaContaPage() {
       .finally(() => setAlertsLoading(false));
   }, [savedEmail]);
 
+  // Build feed items from all local data + alerts
+  useEffect(() => {
+    const items: FeedItem[] = [];
+
+    // Add recently viewed items to feed
+    recentlyViewed.slice(0, 5).forEach((item, i) => {
+      items.push({
+        id: `rv-${item.slug}-${i}`,
+        type: "recent_view",
+        title: item.name,
+        subtitle: "Voce visitou este produto",
+        href: `/produto/${item.slug}`,
+        imageUrl: item.imageUrl,
+        timestamp: item.viewedAt,
+      });
+    });
+
+    // Add alert statuses
+    alerts.slice(0, 5).forEach((alert) => {
+      const currentPrice = alert.listing?.offers?.[0]?.currentPrice;
+      items.push({
+        id: `alert-${alert.id}`,
+        type: "alert_status",
+        title: alert.listing?.rawTitle || `Alerta #${alert.id.slice(0, 8)}`,
+        subtitle: alert.isActive
+          ? `Monitorando — alvo R$ ${alert.targetPrice.toFixed(2).replace(".", ",")}`
+          : "Alerta disparado!",
+        href: undefined,
+        timestamp: alert.createdAt,
+        meta: {
+          alertTarget: alert.targetPrice,
+          isActive: alert.isActive,
+          newPrice: currentPrice,
+        },
+      });
+    });
+
+    // Add recent searches
+    searches.slice(0, 5).forEach((query, i) => {
+      items.push({
+        id: `search-${i}`,
+        type: "recent_search",
+        title: query,
+        subtitle: "Busca recente",
+        href: `/busca?q=${encodeURIComponent(query)}`,
+        timestamp: new Date(Date.now() - i * 3600000).toISOString(), // approximate
+      });
+    });
+
+    // Add favorites with price info as potential price drops
+    favorites.slice(0, 5).forEach((fav) => {
+      items.push({
+        id: `fav-${fav.slug}`,
+        type: "price_drop",
+        title: fav.name,
+        subtitle: fav.price
+          ? `Favoritado — R$ ${fav.price.toFixed(2).replace(".", ",")}`
+          : "Adicionado aos favoritos",
+        href: `/produto/${fav.slug}`,
+        imageUrl: fav.imageUrl,
+        timestamp: fav.addedAt,
+        meta: fav.price ? { newPrice: fav.price } : undefined,
+      });
+    });
+
+    // Sort by timestamp descending
+    items.sort((a, b) => {
+      try {
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      } catch {
+        return 0;
+      }
+    });
+
+    setFeedItems(items.slice(0, 20));
+    setFeedLoading(false);
+  }, [favorites, recentlyViewed, alerts, searches]);
+
   function handleSaveEmail(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
@@ -118,9 +228,74 @@ export default function MinhaContaPage() {
   function clearSearchHistory() {
     setSearches([]);
     localStorage.removeItem("ps_searches");
+    localStorage.removeItem("promosnap_recent_searches");
   }
 
+  function getFeedIcon(type: FeedItem["type"]) {
+    switch (type) {
+      case "price_drop":
+        return <TrendingDown className="h-4 w-4 text-accent-green" />;
+      case "alert_status":
+        return <Bell className="h-4 w-4 text-accent-orange" />;
+      case "recent_view":
+        return <Clock className="h-4 w-4 text-accent-blue" />;
+      case "recent_search":
+        return <Search className="h-4 w-4 text-accent-purple" />;
+      case "new_product":
+        return <Package className="h-4 w-4 text-brand-500" />;
+    }
+  }
+
+  function getFeedBadgeColor(type: FeedItem["type"]) {
+    switch (type) {
+      case "price_drop":
+        return "bg-accent-green/10 text-accent-green";
+      case "alert_status":
+        return "bg-accent-orange/10 text-accent-orange";
+      case "recent_view":
+        return "bg-accent-blue/10 text-accent-blue";
+      case "recent_search":
+        return "bg-accent-purple/10 text-accent-purple";
+      case "new_product":
+        return "bg-brand-500/10 text-brand-500";
+    }
+  }
+
+  function getFeedLabel(type: FeedItem["type"]) {
+    switch (type) {
+      case "price_drop":
+        return "Favorito";
+      case "alert_status":
+        return "Alerta";
+      case "recent_view":
+        return "Visitado";
+      case "recent_search":
+        return "Busca";
+      case "new_product":
+        return "Novo";
+    }
+  }
+
+  function formatRelativeTime(ts: string): string {
+    try {
+      const diff = Date.now() - new Date(ts).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return "agora";
+      if (mins < 60) return `${mins}min atras`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}h atras`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days}d atras`;
+      return new Date(ts).toLocaleDateString("pt-BR");
+    } catch {
+      return "";
+    }
+  }
+
+  const totalFeedCount = feedItems.length;
+
   const tabs: { id: Tab; label: string; icon: typeof Heart; count?: number }[] = [
+    { id: "feed", label: "Meu Feed", icon: Rss, count: totalFeedCount },
     { id: "favoritos", label: "Favoritos", icon: Heart, count: favorites.length },
     { id: "recentes", label: "Recentes", icon: Clock, count: recentlyViewed.length },
     { id: "alertas", label: "Alertas", icon: Bell, count: alerts.filter((a) => a.isActive).length },
@@ -169,14 +344,14 @@ export default function MinhaContaPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 bg-surface-100 rounded-lg">
+      <div className="flex gap-1 mb-6 p-1 bg-surface-100 rounded-lg overflow-x-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                 activeTab === tab.id
                   ? "bg-white text-text-primary shadow-sm"
                   : "text-text-muted hover:text-text-secondary"
@@ -202,6 +377,131 @@ export default function MinhaContaPage() {
 
       {/* Tab content */}
       <div className="min-h-[300px]">
+        {/* ===== MEU FEED ===== */}
+        {activeTab === "feed" && (
+          <div>
+            {feedLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="card p-4">
+                    <div className="animate-pulse flex items-center gap-4">
+                      <div className="w-10 h-10 bg-surface-100 rounded-lg" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 bg-surface-100 rounded w-3/4" />
+                        <div className="h-2 bg-surface-100 rounded w-1/2" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : feedItems.length > 0 ? (
+              <div className="space-y-1">
+                {/* Feed summary bar */}
+                <div className="flex items-center gap-3 mb-4 px-1">
+                  <Sparkles className="h-4 w-4 text-accent-purple" />
+                  <p className="text-sm text-text-muted">
+                    {feedItems.length} atividade{feedItems.length > 1 ? "s" : ""} recente{feedItems.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+
+                {/* Timeline feed */}
+                <div className="relative">
+                  {/* Vertical timeline line */}
+                  <div className="absolute left-5 top-3 bottom-3 w-px bg-surface-200/80" />
+
+                  <div className="space-y-1">
+                    {feedItems.map((item) => {
+                      const Wrapper = item.href ? "a" : "div";
+                      const wrapperProps = item.href
+                        ? { href: item.href, className: "block" }
+                        : { className: "block" };
+
+                      return (
+                        <Wrapper key={item.id} {...(wrapperProps as any)}>
+                          <div className="relative flex items-start gap-4 p-3 rounded-xl hover:bg-surface-50 transition-colors group">
+                            {/* Timeline dot */}
+                            <div className={`relative z-10 w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getFeedBadgeColor(item.type)}`}>
+                              {getFeedIcon(item.type)}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0 pt-0.5">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${getFeedBadgeColor(item.type)}`}>
+                                  {getFeedLabel(item.type)}
+                                </span>
+                                <span className="text-[10px] text-text-muted">
+                                  {formatRelativeTime(item.timestamp)}
+                                </span>
+                              </div>
+                              <p className="text-sm font-medium text-text-primary truncate group-hover:text-accent-blue transition-colors">
+                                {item.title}
+                              </p>
+                              {item.subtitle && (
+                                <p className="text-xs text-text-muted mt-0.5 truncate">
+                                  {item.subtitle}
+                                </p>
+                              )}
+                              {/* Alert-specific progress */}
+                              {item.type === "alert_status" && item.meta && (
+                                <div className="flex items-center gap-2 mt-1.5">
+                                  {item.meta.isActive ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-accent-orange">
+                                      <AlertCircle className="h-3 w-3" /> Monitorando
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-accent-green">
+                                      <CheckCircle2 className="h-3 w-3" /> Disparado
+                                    </span>
+                                  )}
+                                  {item.meta.newPrice && (
+                                    <span className="text-[10px] text-text-muted">
+                                      Atual: R$ {item.meta.newPrice.toFixed(2).replace(".", ",")}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Image thumbnail (if available) */}
+                            {item.imageUrl && (
+                              <div className="w-12 h-12 rounded-lg bg-surface-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                <img
+                                  src={item.imageUrl}
+                                  alt=""
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                            )}
+
+                            {/* Arrow for clickable items */}
+                            {item.href && (
+                              <ArrowRight className="h-4 w-4 text-surface-300 group-hover:text-accent-blue flex-shrink-0 mt-1 transition-colors" />
+                            )}
+                          </div>
+                        </Wrapper>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Rss className="h-12 w-12 text-surface-300 mx-auto mb-3" />
+                <p className="text-sm text-text-muted">
+                  Seu feed esta vazio. Explore produtos, adicione favoritos e crie alertas para ver atividades aqui.
+                </p>
+                <a
+                  href="/ofertas"
+                  className="btn-primary inline-flex items-center gap-2 mt-4 px-4 py-2 text-sm"
+                >
+                  Explorar Ofertas
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Favorites */}
         {activeTab === "favoritos" && (
           <div>

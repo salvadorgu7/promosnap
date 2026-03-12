@@ -1,4 +1,4 @@
-import { ExternalLink, Star, Tag, Truck, TrendingDown, Award } from "lucide-react";
+import { ExternalLink, Star, Tag, Truck, TrendingDown, Award, ShieldCheck, Crown } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
 interface ComparisonOffer {
@@ -27,27 +27,32 @@ export default function PriceComparison({ offers, productName }: PriceComparison
   const worstPrice = Math.max(...offers.map((o) => o.price));
   const savings = worstPrice - bestPrice;
 
+  // Determine "best choice" (highest offerScore)
+  const bestChoiceId = offers.reduce((best, o) => (o.offerScore > best.offerScore ? o : best), offers[0]).id;
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-bold font-display text-text-primary flex items-center gap-2">
           <Award className="h-4 w-4 text-accent-blue" /> Comparar Fontes
         </h2>
         {savings > 0 && (
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-accent-green bg-green-50 px-2.5 py-1 rounded-full">
             <TrendingDown className="h-3 w-3" />
-            Economize até {formatPrice(savings)}
+            Economize ate {formatPrice(savings)}
           </span>
         )}
       </div>
 
-      <div className="space-y-2">
+      {/* Desktop table-like layout */}
+      <div className="hidden sm:block space-y-2">
         {offers.map((offer, i) => {
           const discount =
             offer.originalPrice && offer.originalPrice > offer.price
               ? Math.round(((offer.originalPrice - offer.price) / offer.originalPrice) * 100)
               : null;
           const isBest = offer.price === bestPrice;
+          const isBestChoice = offer.id === bestChoiceId;
           const priceDiff = offer.price - bestPrice;
 
           return (
@@ -62,7 +67,14 @@ export default function PriceComparison({ offers, productName }: PriceComparison
               {/* Best badge */}
               {isBest && (
                 <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-accent-blue text-white text-[10px] font-bold uppercase tracking-wide rounded-full">
-                  Melhor Preço
+                  Melhor Preco
+                </div>
+              )}
+
+              {/* Best choice badge (when different from best price) */}
+              {isBestChoice && !isBest && (
+                <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-accent-green text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1">
+                  <Crown className="h-2.5 w-2.5" /> Melhor Escolha
                 </div>
               )}
 
@@ -77,7 +89,12 @@ export default function PriceComparison({ offers, productName }: PriceComparison
 
               {/* Source info */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-text-primary">{offer.sourceName}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-semibold text-text-primary">{offer.sourceName}</p>
+                  {offer.offerScore >= 70 && (
+                    <ShieldCheck className="h-3.5 w-3.5 text-accent-green" />
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {offer.rating != null && (
                     <span className="flex items-center gap-0.5 text-xs text-accent-orange">
@@ -90,7 +107,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                   )}
                   {offer.isFreeShipping && (
                     <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-purple bg-purple-50 px-1.5 py-0.5 rounded-full">
-                      <Truck className="h-2.5 w-2.5" /> Frete grátis
+                      <Truck className="h-2.5 w-2.5" /> Frete gratis
                     </span>
                   )}
                   {offer.couponText && (
@@ -130,6 +147,116 @@ export default function PriceComparison({ offers, productName }: PriceComparison
               >
                 <ExternalLink className="h-3.5 w-3.5" /> Ver
               </a>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mobile stacked cards */}
+      <div className="sm:hidden space-y-3">
+        {offers.map((offer, i) => {
+          const discount =
+            offer.originalPrice && offer.originalPrice > offer.price
+              ? Math.round(((offer.originalPrice - offer.price) / offer.originalPrice) * 100)
+              : null;
+          const isBest = offer.price === bestPrice;
+          const isBestChoice = offer.id === bestChoiceId;
+          const priceDiff = offer.price - bestPrice;
+
+          return (
+            <div
+              key={offer.id}
+              className={`relative rounded-xl border p-4 ${
+                isBest
+                  ? "border-accent-blue/40 bg-gradient-to-br from-accent-blue/5 to-transparent shadow-sm"
+                  : "border-surface-200 bg-white"
+              }`}
+            >
+              {/* Badge */}
+              {isBest && (
+                <div className="absolute -top-2.5 left-3 px-2 py-0.5 bg-accent-blue text-white text-[10px] font-bold uppercase tracking-wide rounded-full">
+                  Melhor Preco
+                </div>
+              )}
+              {isBestChoice && !isBest && (
+                <div className="absolute -top-2.5 left-3 px-2 py-0.5 bg-accent-green text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1">
+                  <Crown className="h-2.5 w-2.5" /> Melhor Escolha
+                </div>
+              )}
+
+              {/* Header: source + rank */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                      isBest ? "bg-accent-blue text-white" : "bg-surface-100 text-text-muted"
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1">
+                      <p className="text-sm font-semibold text-text-primary">{offer.sourceName}</p>
+                      {offer.offerScore >= 70 && (
+                        <ShieldCheck className="h-3 w-3 text-accent-green" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Meta row */}
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                {offer.rating != null && (
+                  <span className="flex items-center gap-0.5 text-xs text-accent-orange">
+                    <Star className="h-3 w-3 fill-current" />
+                    {offer.rating.toFixed(1)}
+                    {offer.reviewsCount != null && (
+                      <span className="text-text-muted">({offer.reviewsCount.toLocaleString("pt-BR")})</span>
+                    )}
+                  </span>
+                )}
+                {offer.isFreeShipping && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-purple bg-purple-50 px-1.5 py-0.5 rounded-full">
+                    <Truck className="h-2.5 w-2.5" /> Frete gratis
+                  </span>
+                )}
+                {offer.couponText && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] text-accent-orange font-medium">
+                    <Tag className="h-2.5 w-2.5" /> {offer.couponText}
+                  </span>
+                )}
+              </div>
+
+              {/* Price + CTA row */}
+              <div className="flex items-center justify-between">
+                <div>
+                  {offer.originalPrice && offer.originalPrice > offer.price && (
+                    <p className="text-xs text-text-muted line-through">{formatPrice(offer.originalPrice)}</p>
+                  )}
+                  <p className={`text-xl font-bold font-display ${isBest ? "text-accent-blue" : "text-text-primary"}`}>
+                    {formatPrice(offer.price)}
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    {discount && (
+                      <span className="text-xs font-medium text-accent-green">-{discount}%</span>
+                    )}
+                    {!isBest && priceDiff > 0 && (
+                      <span className="text-[10px] text-text-muted">+{formatPrice(priceDiff)}</span>
+                    )}
+                  </div>
+                </div>
+                <a
+                  href={offer.affiliateUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                    isBest ? "btn-primary" : "btn-secondary"
+                  }`}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Ver
+                </a>
+              </div>
             </div>
           );
         })}

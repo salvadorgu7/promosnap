@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ExternalLink, Truck, Zap } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Truck, Zap, ShieldCheck } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import type { ProductCard } from "@/types";
@@ -11,24 +11,41 @@ interface OfferCarouselProps {
   offers: ProductCard[];
 }
 
+const AUTOPLAY_INTERVAL = 5000;
+
 export default function OfferCarousel({ offers }: OfferCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [direction, setDirection] = useState<"right" | "left">("right");
+  const [progressKey, setProgressKey] = useState(0);
   const total = Math.min(offers.length, 5);
   const slides = offers.slice(0, total);
 
+  const goTo = useCallback(
+    (index: number) => {
+      setDirection(index > current ? "right" : "left");
+      setCurrent(index);
+      setProgressKey((k) => k + 1);
+    },
+    [current]
+  );
+
   const next = useCallback(() => {
+    setDirection("right");
     setCurrent((c) => (c + 1) % total);
+    setProgressKey((k) => k + 1);
   }, [total]);
 
   const prev = useCallback(() => {
+    setDirection("left");
     setCurrent((c) => (c - 1 + total) % total);
+    setProgressKey((k) => k + 1);
   }, [total]);
 
-  // Auto-rotate every 5s
+  // Auto-rotate
   useEffect(() => {
     if (paused || total <= 1) return;
-    const timer = setInterval(next, 5000);
+    const timer = setInterval(next, AUTOPLAY_INTERVAL);
     return () => clearInterval(timer);
   }, [paused, next, total]);
 
@@ -41,6 +58,9 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
       ? offer.bestOffer.affiliateUrl
       : "#";
 
+  const slideClass =
+    direction === "right" ? "carousel-slide-right" : "carousel-slide-left";
+
   return (
     <section className="py-6">
       <div className="max-w-7xl mx-auto px-4">
@@ -52,25 +72,36 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-surface-900 via-surface-800 to-surface-900" />
           <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/10 via-transparent to-brand-500/10" />
+          {/* Subtle pattern overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)",
+              backgroundSize: "24px 24px",
+            }}
+          />
 
           {/* Content */}
-          <div className="relative flex flex-col md:flex-row items-center gap-6 md:gap-10 p-6 md:p-10">
-            {/* Image */}
-            <div className="relative w-40 h-40 md:w-56 md:h-56 flex-shrink-0">
+          <div
+            key={`slide-${current}`}
+            className={`relative flex flex-col md:flex-row items-center gap-6 md:gap-12 p-6 md:p-10 lg:p-12 ${slideClass}`}
+          >
+            {/* Image — larger on desktop */}
+            <div className="relative w-44 h-44 md:w-64 md:h-64 flex-shrink-0">
               <div className="absolute inset-0 rounded-2xl bg-white/10 backdrop-blur-sm" />
-              <div className="relative w-full h-full rounded-2xl overflow-hidden bg-white flex items-center justify-center p-4">
+              <div className="relative w-full h-full rounded-2xl overflow-hidden bg-white flex items-center justify-center p-4 shadow-lg">
                 <ImageWithFallback
                   src={offer.imageUrl}
                   alt={offer.name}
-                  className="w-full h-full object-contain carousel-image-enter"
-                  width={224}
-                  height={224}
-                  key={offer.id}
+                  className="w-full h-full object-contain"
+                  width={256}
+                  height={256}
                 />
               </div>
-              {/* Discount badge */}
+              {/* Discount badge — larger */}
               {discount && discount > 0 && (
-                <div className="absolute -top-2 -right-2 bg-accent-red text-white font-display font-bold text-sm px-2.5 py-1 rounded-lg shadow-lg">
+                <div className="absolute -top-3 -right-3 bg-gradient-to-br from-accent-red to-red-600 text-white font-display font-bold text-base px-3 py-1.5 rounded-xl shadow-lg shadow-red-500/25">
                   -{discount}%
                 </div>
               )}
@@ -78,74 +109,84 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
 
             {/* Details */}
             <div className="flex-1 text-center md:text-left min-w-0">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent-blue/20 text-accent-blue text-xs font-semibold">
-                  <Zap className="w-3 h-3" /> Oferta em destaque
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-accent-blue/20 text-accent-blue text-xs font-bold tracking-wide uppercase">
+                  <Zap className="w-3.5 h-3.5" /> Destaque
                 </span>
-                <span className="text-xs text-surface-400">{offer.bestOffer.sourceName}</span>
+                <span className="inline-flex items-center gap-1 text-xs text-surface-400">
+                  <ShieldCheck className="w-3 h-3" />
+                  {offer.bestOffer.sourceName}
+                </span>
               </div>
 
               <Link href={`/produto/${offer.slug}`}>
-                <h3 className="font-display font-bold text-lg md:text-xl text-white leading-snug line-clamp-2 hover:text-accent-blue transition-colors">
+                <h3 className="font-display font-bold text-xl md:text-2xl text-white leading-snug line-clamp-2 hover:text-accent-blue transition-colors">
                   {offer.name}
                 </h3>
               </Link>
 
               {offer.brand && (
-                <p className="text-sm text-surface-400 mt-1">{offer.brand}</p>
+                <p className="text-sm text-surface-400 mt-1.5">{offer.brand}</p>
               )}
 
-              {/* Price */}
-              <div className="mt-4">
+              {/* Price — more prominent */}
+              <div className="mt-5">
                 {offer.bestOffer.originalPrice &&
                   offer.bestOffer.originalPrice > offer.bestOffer.price && (
-                    <div className="text-surface-500 line-through text-sm">
+                    <div className="text-surface-500 line-through text-base">
                       {formatPrice(offer.bestOffer.originalPrice)}
                     </div>
                   )}
-                <div className="font-display font-extrabold text-3xl md:text-4xl text-white tracking-tight">
+                <div className="font-display font-extrabold text-4xl md:text-5xl text-white tracking-tight">
                   {formatPrice(offer.bestOffer.price)}
                 </div>
-                {offer.bestOffer.isFreeShipping && (
-                  <div className="flex items-center justify-center md:justify-start gap-1 mt-1 text-accent-green text-xs font-medium">
-                    <Truck className="w-3.5 h-3.5" /> Frete gratis
-                  </div>
-                )}
+                <div className="flex items-center justify-center md:justify-start gap-3 mt-2">
+                  {offer.bestOffer.isFreeShipping && (
+                    <span className="inline-flex items-center gap-1 text-accent-green text-xs font-semibold">
+                      <Truck className="w-3.5 h-3.5" /> Frete gratis
+                    </span>
+                  )}
+                  {offer.bestOffer.price > 100 && (
+                    <span className="text-xs text-surface-500">
+                      ou 12x de {formatPrice(offer.bestOffer.price / 12)}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* CTA */}
-              <div className="mt-5 flex items-center justify-center md:justify-start gap-3">
+              {/* CTA — improved styling */}
+              <div className="mt-6 flex items-center justify-center md:justify-start gap-4">
                 <a
                   href={ctaUrl}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="btn-primary px-6 py-2.5 text-sm"
+                  className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-accent-blue to-brand-500 text-white font-bold text-sm shadow-lg shadow-accent-blue/25 hover:shadow-xl hover:shadow-accent-blue/30 hover:from-accent-blue/90 hover:to-brand-600 active:scale-[0.97] transition-all duration-200"
                 >
-                  Ver oferta <ExternalLink className="w-3.5 h-3.5" />
+                  Ver oferta <ExternalLink className="w-4 h-4" />
                 </a>
                 <Link
                   href={`/produto/${offer.slug}`}
-                  className="text-sm text-surface-400 hover:text-white transition-colors"
+                  className="text-sm text-surface-400 hover:text-white transition-colors font-medium"
                 >
-                  Ver detalhes
+                  Comparar precos
                 </Link>
               </div>
             </div>
           </div>
 
-          {/* Navigation arrows */}
+          {/* Navigation arrows — larger, better placement */}
           {total > 1 && (
             <>
               <button
                 onClick={prev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/25 flex items-center justify-center transition-all duration-200 hover:scale-110"
                 aria-label="Anterior"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={next}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/25 flex items-center justify-center transition-all duration-200 hover:scale-110"
                 aria-label="Proximo"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -153,21 +194,39 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
             </>
           )}
 
-          {/* Dots */}
+          {/* Dots + slide counter */}
           {total > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2">
               {slides.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => setCurrent(i)}
+                  onClick={() => goTo(i)}
                   className={`carousel-dot rounded-full transition-all duration-300 ${
                     i === current
-                      ? "w-6 h-2 bg-accent-blue"
-                      : "w-2 h-2 bg-white/30 hover:bg-white/50"
+                      ? "w-7 h-2.5 bg-gradient-to-r from-accent-blue to-brand-500 shadow-sm shadow-accent-blue/30"
+                      : "w-2.5 h-2.5 bg-white/25 hover:bg-white/50"
                   }`}
                   aria-label={`Slide ${i + 1}`}
                 />
               ))}
+            </div>
+          )}
+
+          {/* Progress bar */}
+          {total > 1 && !paused && (
+            <div className="carousel-progress">
+              <div
+                key={progressKey}
+                className="carousel-progress-fill"
+              />
+            </div>
+          )}
+          {total > 1 && paused && (
+            <div className="carousel-progress">
+              <div
+                className="carousel-progress-bar"
+                style={{ width: `${((current + 1) / total) * 100}%` }}
+              />
             </div>
           )}
         </div>

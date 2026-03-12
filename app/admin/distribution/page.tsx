@@ -10,6 +10,8 @@ import {
   Zap,
   TrendingUp,
   Filter,
+  Star,
+  ArrowRight,
 } from "lucide-react";
 import {
   getChannelStatus,
@@ -107,10 +109,15 @@ export default async function DistributionPage() {
                   <Send className="w-3 h-3" />
                   {ch.totalSent} enviados
                 </span>
-                {ch.lastSent && (
+                {ch.lastSent ? (
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {ch.lastSent.toLocaleDateString("pt-BR")}
+                    Ultimo: {ch.lastSent.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-amber-500">
+                    <Clock className="w-3 h-3" />
+                    Nenhum envio
                   </span>
                 )}
               </div>
@@ -118,6 +125,52 @@ export default async function DistributionPage() {
           );
         })}
       </div>
+
+      {/* Next best offer preview */}
+      {offers.length > 0 && (
+        <div className="rounded-xl border border-brand-200 bg-brand-50/30 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Star className="w-4 h-4 text-brand-500" />
+            <h2 className="text-sm font-semibold text-text-primary">
+              Proxima Melhor Oferta para Distribuir
+            </h2>
+          </div>
+          <div className="flex items-start justify-between">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-semibold text-text-primary truncate">
+                {offers[0].productName}
+              </h3>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-lg font-bold text-brand-600">
+                  {formatBRL(offers[0].currentPrice)}
+                </span>
+                {offers[0].originalPrice && offers[0].originalPrice > offers[0].currentPrice && (
+                  <span className="text-xs text-text-muted line-through">
+                    {formatBRL(offers[0].originalPrice)}
+                  </span>
+                )}
+                {offers[0].discount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700">
+                    -{offers[0].discount}%
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-1 text-xs text-text-muted">
+                <span>Score: {offers[0].offerScore}</span>
+                <span>{offers[0].sourceName}</span>
+                {offers[0].isFreeShipping && <span className="text-green-600">Frete gratis</span>}
+                {offers[0].couponText && <span className="text-purple-600">Cupom: {offers[0].couponText}</span>}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+              <span className="px-3 py-1.5 rounded-lg bg-brand-500 text-white text-xs font-medium flex items-center gap-1.5">
+                <ArrowRight className="w-3 h-3" />
+                Melhor oferta
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Segment selector */}
       <div className="rounded-xl border border-surface-200 bg-white p-5">

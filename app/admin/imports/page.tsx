@@ -19,6 +19,8 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
+  Layers,
+  Package,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -360,6 +362,16 @@ export default function AdminImportsPage() {
 
   const filtered = filteredCandidates();
 
+  // ── Computed quick stats ──
+  const totalBatches = batches.length;
+  const pendingBatches = batches.filter((b) => b.status === "PENDING").length;
+  const totalImported = batches.reduce((sum, b) => sum + b.imported, 0);
+  const totalRejected = batches.reduce((sum, b) => sum + b.rejected, 0);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const publishedToday = batches
+    .filter((b) => b.processedAt && b.processedAt.slice(0, 10) === todayStr)
+    .reduce((sum, b) => sum + b.imported, 0);
+
   return (
     <div className="space-y-6">
       <div>
@@ -368,6 +380,47 @@ export default function AdminImportsPage() {
           Importe produtos via JSON ou CSV para o catalogo de candidatos
         </p>
       </div>
+
+      {/* Quick stats */}
+      {!isLoadingBatches && batches.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="card p-3 flex items-center gap-3">
+            <Layers className="h-4 w-4 text-accent-blue flex-shrink-0" />
+            <div>
+              <p className="text-lg font-bold font-display text-text-primary">{totalBatches}</p>
+              <p className="text-[10px] text-text-muted">Total batches</p>
+            </div>
+          </div>
+          <div className="card p-3 flex items-center gap-3">
+            <Clock className="h-4 w-4 text-accent-orange flex-shrink-0" />
+            <div>
+              <p className="text-lg font-bold font-display text-text-primary">{pendingBatches}</p>
+              <p className="text-[10px] text-text-muted">Batches pendentes</p>
+            </div>
+          </div>
+          <div className="card p-3 flex items-center gap-3">
+            <Package className="h-4 w-4 text-accent-green flex-shrink-0" />
+            <div>
+              <p className="text-lg font-bold font-display text-accent-green">{totalImported}</p>
+              <p className="text-[10px] text-text-muted">Total importados</p>
+            </div>
+          </div>
+          <div className="card p-3 flex items-center gap-3">
+            <XCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
+            <div>
+              <p className="text-lg font-bold font-display text-text-primary">{totalRejected}</p>
+              <p className="text-[10px] text-text-muted">Total rejeitados</p>
+            </div>
+          </div>
+          <div className="card p-3 flex items-center gap-3">
+            <CheckCircle className="h-4 w-4 text-brand-500 flex-shrink-0" />
+            <div>
+              <p className="text-lg font-bold font-display text-brand-500">{publishedToday}</p>
+              <p className="text-[10px] text-text-muted">Publicados hoje</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Upload area */}
       <div className="card p-5 space-y-4">

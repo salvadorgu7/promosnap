@@ -15,6 +15,7 @@ import SinceLastVisit from "@/components/home/SinceLastVisit";
 import PersonalizedNews from "@/components/home/PersonalizedNews";
 import PersonalizedRails from "@/components/home/PersonalizedRails";
 import SocialProof from "@/components/home/SocialProof";
+import WhatChanged from "@/components/home/WhatChanged";
 import { getHotOffers, getBestSellers, getLowestPrices, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory, buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
@@ -72,8 +73,8 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* ===== HERO ===== */}
-      <section className="hero-premium relative">
+      {/* ===== 1. HERO ===== */}
+      <section id="hero" className="hero-premium relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-accent-blue/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-[600px] h-[300px] bg-brand-500/3 rounded-full blur-[80px] pointer-events-none" />
 
@@ -112,7 +113,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Stats — rendered individually to avoid serialization issues */}
+          {/* Stats */}
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             <div className="card-depth text-center p-4">
               <div className="font-display font-extrabold text-2xl text-accent-blue">
@@ -142,21 +143,26 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* TRENDING TAGS */}
+      {/* ===== 2. TRENDING TAGS ===== */}
       {trendingKeywords.length > 0 && (
-        <TrendingTags keywords={trendingKeywords.map((t: any) => ({ keyword: t.keyword, url: t.url }))} />
+        <div id="trending">
+          <TrendingTags keywords={trendingKeywords.map((t: any) => ({ keyword: t.keyword, url: t.url }))} />
+        </div>
       )}
 
-      {/* OFFER CAROUSEL */}
+      {/* ===== 3. WHAT CHANGED — compact stats ticker ===== */}
+      <WhatChanged />
+
+      {/* ===== 4. OFFER CAROUSEL ===== */}
       {hotOffers.length > 0 && (
-        <div className="section-energy">
+        <div id="carousel" className="section-energy">
           <OfferCarousel offers={hotOffers.slice(0, 5)} />
         </div>
       )}
 
-      {/* DEAL OF THE DAY */}
+      {/* ===== 5. DEAL OF THE DAY ===== */}
       {dealOfTheDay && (
-        <section className="py-6 section-border-top">
+        <section id="deal-of-the-day" className="py-6 section-border-top">
           <div className="max-w-7xl mx-auto px-4">
             <DealOfTheDay
               product={{
@@ -176,22 +182,15 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* OFERTAS QUENTES */}
-      {hotOffers.length > 0 && (
-        <div className="section-alt">
-          <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red">
-            {hotOffers.map((p) => (
-              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
-                <OfferCard product={p} />
-              </div>
-            ))}
-          </RailSection>
-        </div>
-      )}
+      {/* ===== 6. SINCE LAST VISIT — only for returning users ===== */}
+      <SinceLastVisit />
 
-      {/* CATEGORIAS */}
+      {/* ===== 7. PERSONALIZED NEWS — based on user interests ===== */}
+      <PersonalizedNews />
+
+      {/* ===== 8. CATEGORIAS ===== */}
       {categories.length > 0 && (
-        <section className="py-6 section-cool section-border-top">
+        <section id="categories" className="py-6 section-cool section-border-top">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center gap-2 mb-4">
               <Tag className="w-5 h-5 text-brand-500" />
@@ -206,9 +205,38 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* MENOR PREÇO */}
+      {/* ===== 9. SOCIAL PROOF / RANKING ===== */}
+      {(socialRanking.mostClicked.length > 0 ||
+        socialRanking.mostMonitored.length > 0 ||
+        socialRanking.mostPopular.length > 0) && (
+        <div id="social-proof" className="section-contrast">
+          <SocialProof
+            mostClicked={socialRanking.mostClicked}
+            mostMonitored={socialRanking.mostMonitored}
+            mostPopular={socialRanking.mostPopular}
+          />
+        </div>
+      )}
+
+      {/* ===== 10. OFERTAS QUENTES ===== */}
+      {hotOffers.length > 0 && (
+        <div id="hot-offers" className="section-alt">
+          <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red">
+            {hotOffers.map((p) => (
+              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+                <OfferCard product={p} />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 11. PERSONALIZED RAILS — for voce / quedas / baseado nos favoritos ===== */}
+      <PersonalizedRails />
+
+      {/* ===== 12. MENOR PRECO HISTORICO ===== */}
       {lowestPrices.length > 0 && (
-        <div className="section-highlight">
+        <div id="lowest-prices" className="section-highlight">
           <RailSection title="Menor Preço Histórico" subtitle="Nunca estiveram tão baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
             {lowestPrices.map((p) => (
               <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
@@ -219,9 +247,16 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* MAIS VENDIDOS */}
+      {/* ===== 13. COMPARAR FONTES ===== */}
+      {sourceStats.length > 0 && (
+        <div id="sources-compare" className="section-highlight">
+          <SourcesCompare sources={sourceStats} />
+        </div>
+      )}
+
+      {/* ===== 14. MAIS VENDIDOS ===== */}
       {bestSellers.length > 0 && (
-        <div className="section-alt">
+        <div id="best-sellers" className="section-alt">
           <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
             {bestSellers.map((p) => (
               <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
@@ -232,22 +267,9 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* SOCIAL PROOF / RANKING */}
-      {(socialRanking.mostClicked.length > 0 ||
-        socialRanking.mostMonitored.length > 0 ||
-        socialRanking.mostPopular.length > 0) && (
-        <div className="section-contrast">
-          <SocialProof
-            mostClicked={socialRanking.mostClicked}
-            mostMonitored={socialRanking.mostMonitored}
-            mostPopular={socialRanking.mostPopular}
-          />
-        </div>
-      )}
-
-      {/* CUPONS */}
+      {/* ===== 15. CUPONS ===== */}
       {coupons.length > 0 && (
-        <section className="py-6 section-warm section-border-top">
+        <section id="coupons" className="py-6 section-warm section-border-top">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -278,32 +300,18 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* COMPARAR FONTES */}
-      {sourceStats.length > 0 && (
-        <div className="section-highlight">
-          <SourcesCompare sources={sourceStats} />
-        </div>
-      )}
+      {/* ===== 16. TOP POR CATEGORIA ===== */}
+      <div id="category-rails">
+        {categoryProducts.filter((c) => c.products.length > 0).map((c) => (
+          <CategoryRail key={c.slug} title={c.name} slug={c.slug} icon={c.icon} products={c.products} />
+        ))}
+      </div>
 
-      {/* TOP POR CATEGORIA */}
-      {categoryProducts.filter((c) => c.products.length > 0).map((c) => (
-        <CategoryRail key={c.slug} title={c.name} slug={c.slug} icon={c.icon} products={c.products} />
-      ))}
-
-      {/* RECENTLY VIEWED */}
+      {/* ===== 17. RECENTLY VIEWED ===== */}
       <RecentlyViewedRail />
 
-      {/* SINCE LAST VISIT — only for returning users */}
-      <SinceLastVisit />
-
-      {/* PERSONALIZED NEWS — based on user interests */}
-      <PersonalizedNews />
-
-      {/* PERSONALIZED RAILS — for voce / quedas / baseado nos favoritos */}
-      <PersonalizedRails />
-
-      {/* POR QUE PROMOSNAP? */}
-      <section className="py-12 md:py-16 section-highlight section-border-top">
+      {/* ===== 18. POR QUE PROMOSNAP? ===== */}
+      <section id="why-promosnap" className="py-12 md:py-16 section-highlight section-border-top">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-semibold mb-4">
@@ -364,8 +372,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* COMMUNITY CHANNELS */}
-      <section className="py-8 section-cool section-border-top">
+      {/* ===== 19. COMMUNITY CHANNELS ===== */}
+      <section id="community" className="py-8 section-cool section-border-top">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -414,13 +422,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* NEWSLETTER */}
+      {/* ===== 20. NEWSLETTER ===== */}
       <div id="newsletter" className="section-deep section-border-top">
         <Newsletter />
       </div>
 
-      {/* SEO */}
-      <section className="py-10 section-alt section-border-top">
+      {/* ===== 21. SEO ===== */}
+      <section id="seo" className="py-10 section-alt section-border-top">
         <div className="max-w-7xl mx-auto px-4 max-w-3xl">
           <h2 className="font-display font-bold text-xl text-text-primary mb-3">
             PromoSnap — Ofertas reais com histórico de preço

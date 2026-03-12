@@ -2,7 +2,8 @@ import {
   Package, Tag, Store, MousePointerClick, BarChart3, Ticket,
   Layers, Clock, CheckCircle, XCircle, AlertTriangle, Loader2,
   Bell, TrendingUp, Heart, ArrowRight, DollarSign, Image,
-  Upload, Zap, Activity, Shield, FileText, Users
+  Upload, Zap, Activity, Shield, FileText, Users, Rocket,
+  Radio, Target, Flame
 } from "lucide-react";
 import Link from "next/link";
 import { getAdminDashboardData } from "@/lib/db/queries";
@@ -39,6 +40,7 @@ export default async function AdminDashboard() {
     alertsActive, trendsCount, revTodayRaw, rev7dRaw, clickouts7d,
     productsTotal, bannersActive, candidatesPending,
     sourcesHealth, lastJob,
+    readyForDistribution, trendingWithoutCoverage, publishedToday,
   ] = await Promise.all([
     prisma.priceAlert.count({ where: { isActive: true, triggeredAt: null } }).catch(() => 0),
     prisma.trendingKeyword.count().catch(() => 0),
@@ -63,6 +65,17 @@ export default async function AdminDashboard() {
       orderBy: { name: "asc" },
     }).catch(() => []),
     prisma.jobRun.findFirst({ orderBy: { startedAt: "desc" }, select: { jobName: true, status: true, startedAt: true } }).catch(() => null),
+    prisma.offer.count({ where: { isActive: true, offerScore: { gte: 50 }, listing: { status: "ACTIVE", product: { status: "ACTIVE", hidden: false } } } }).catch(() => 0),
+    prisma.$queryRaw<{ cnt: bigint }[]>`
+      SELECT COUNT(DISTINCT tk.keyword)::bigint AS cnt
+      FROM trending_keywords tk
+      WHERE tk."fetchedAt" > NOW() - INTERVAL '7 days'
+      AND NOT EXISTS (
+        SELECT 1 FROM products p
+        WHERE p.status = 'ACTIVE' AND p.name ILIKE '%' || tk.keyword || '%'
+      )
+    `.then((r) => Number(r[0]?.cnt ?? 0)).catch(() => 0),
+    prisma.catalogCandidate.count({ where: { status: "IMPORTED", updatedAt: { gte: today } } }).catch(() => 0),
   ]);
 
   const calcRevenue = (rows: SourceRow[]) =>
@@ -152,6 +165,85 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
+      {/* Acoes do dia */}
+      <div className="card p-5 border-l-4 border-l-brand-500">
+        <div className="flex items-center gap-2 mb-3">
+          <Flame className="h-5 w-5 text-brand-500" />
+          <h2 className="text-sm font-semibold font-display text-text-primary">Acoes do Dia</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {candidatesPending > 0 && (
+            <Link
+              href="/admin/ingestao"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-accent-orange/10 hover:bg-accent-orange/20 transition-colors"
+            >
+              <Upload className="h-4 w-4 text-accent-orange flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-text-primary">{candidatesPending} candidatos</p>
+                <p className="text-[10px] text-text-muted">para revisar</p>
+              </div>
+            </Link>
+          )}
+          {readyForDistribution > 0 && (
+            <Link
+              href="/admin/distribution"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-brand-500/10 hover:bg-brand-500/20 transition-colors"
+            >
+              <Radio className="h-4 w-4 text-brand-500 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-text-primary">{readyForDistribution} ofertas</p>
+                <p className="text-[10px] text-text-muted">prontas p/ distribuir</p>
+              </div>
+            </Link>
+          )}
+          {trendingWithoutCoverage > 0 && (
+            <Link
+              href="/admin/growth-ops"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-accent-purple/10 hover:bg-accent-purple/20 transition-colors"
+            >
+              <TrendingUp className="h-4 w-4 text-accent-purple flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-text-primary">{trendingWithoutCoverage} keywords</p>
+                <p className="text-[10px] text-text-muted">sem cobertura</p>
+              </div>
+            </Link>
+          )}
+          <Link
+            href="/admin/banners"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-accent-green/10 hover:bg-accent-green/20 transition-colors"
+          >
+            <Image className="h-4 w-4 text-accent-green flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">{bannersActive} banners</p>
+              <p className="text-[10px] text-text-muted">ativos</p>
+            </div>
+          </Link>
+          {lastJob && (
+            <Link
+              href="/admin/jobs"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                lastJob.status === "FAILED"
+                  ? "bg-red-500/10 hover:bg-red-500/20"
+                  : "bg-surface-100 hover:bg-surface-200"
+              }`}
+            >
+              <Clock className={`h-4 w-4 flex-shrink-0 ${lastJob.status === "FAILED" ? "text-red-500" : "text-text-muted"}`} />
+              <div>
+                <p className="text-sm font-medium text-text-primary">Ultimo job</p>
+                <p className={`text-[10px] ${lastJob.status === "FAILED" ? "text-red-500 font-medium" : "text-text-muted"}`}>
+                  {lastJob.status} {timeAgo(new Date(lastJob.startedAt))}
+                </p>
+              </div>
+            </Link>
+          )}
+        </div>
+        {publishedToday > 0 && (
+          <p className="text-[10px] text-accent-green mt-2">
+            {publishedToday} produto(s) publicado(s) hoje
+          </p>
+        )}
+      </div>
+
       {/* Catalog & platform stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((s) => (
@@ -166,7 +258,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         <Link href="/admin/banners" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
           <div className="flex items-center gap-2">
             <Image className="w-4 h-4 text-accent-purple" />
@@ -215,6 +307,16 @@ export default async function AdminDashboard() {
             <div>
               <p className="text-sm font-medium text-text-primary">Jobs</p>
               <p className="text-xs text-text-muted">Automacao</p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-text-muted" />
+        </Link>
+        <Link href="/admin/growth-ops" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors border border-brand-500/20">
+          <div className="flex items-center gap-2">
+            <Rocket className="w-4 h-4 text-brand-500" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">Growth</p>
+              <p className="text-xs text-text-muted">Oportunidades</p>
             </div>
           </div>
           <ArrowRight className="w-4 h-4 text-text-muted" />

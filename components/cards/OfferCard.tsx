@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Star } from "lucide-react";
+import { ExternalLink, Star, ShieldCheck } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import FavoriteButton from "@/components/ui/FavoriteButton";
@@ -24,6 +24,37 @@ function BadgeChip({ badge }: { badge: Badge }) {
 function ScorePill({ score }: { score: number }) {
   const cls = score >= 75 ? "score-high" : score >= 50 ? "score-mid" : "score-low";
   return <span className={`score-pill ${cls}`}>{Math.round(score)}</span>;
+}
+
+function TrustBadge({ score }: { score: number }) {
+  if (score < 70) return null;
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-green">
+      <ShieldCheck className="h-3 w-3" />
+      <span className="hidden sm:inline">Verificado</span>
+    </span>
+  );
+}
+
+function MiniStars({ rating }: { rating: number }) {
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
+  return (
+    <span className="inline-flex items-center gap-px">
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          className={`h-2.5 w-2.5 ${
+            i < full
+              ? "text-accent-orange fill-current"
+              : i === full && half
+                ? "text-accent-orange fill-current opacity-50"
+                : "text-surface-300"
+          }`}
+        />
+      ))}
+    </span>
+  );
 }
 
 export default function OfferCard({ product }: { product: ProductCard }) {
@@ -70,7 +101,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
 
       {/* Content */}
       <div className="flex-1 flex flex-col px-3 pt-3 pb-3">
-        <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
+        <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1 flex-wrap">
           <span>{bestOffer.sourceName}</span>
           {product.offersCount > 1 && (
             <span className="text-surface-400">+{product.offersCount - 1}</span>
@@ -78,6 +109,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
           {bestOffer.isFreeShipping && (
             <ShippingBadge freeShipping compact />
           )}
+          <TrustBadge score={bestOffer.offerScore} />
         </div>
 
         <Link href={`/produto/${product.slug}`}>
@@ -99,7 +131,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
               <span className="price-old">{formatPrice(bestOffer.originalPrice)}</span>
             )}
             {discount && discount > 0 && (
-              <span className="discount-tag text-sm">-{discount}%</span>
+              <span className="discount-tag text-sm font-display font-bold">-{discount}%</span>
             )}
           </div>
           <div className="price-big mt-0.5">{formatPrice(bestOffer.price)}</div>

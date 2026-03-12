@@ -24,6 +24,9 @@ import PriceTrend from "@/components/product/PriceTrend";
 import ConsolidatedRatingComponent from "@/components/product/ConsolidatedRating";
 import CategoryInsightsComponent from "@/components/product/CategoryInsights";
 import ShippingBadge from "@/components/product/ShippingBadge";
+import ContextualNav from "@/components/product/ContextualNav";
+import DecisionSummary from "@/components/product/DecisionSummary";
+import WhyHighlighted from "@/components/product/WhyHighlighted";
 import { buildMetadata, productSchema, breadcrumbSchema } from "@/lib/seo/metadata";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -197,6 +200,11 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     { name: product.name, url: `/produto/${slug}` },
   ];
 
+  // Brand slug for contextual nav
+  const brandSlug = product.brand?.name
+    ? product.brand.name.toLowerCase().replace(/\s+/g, "-")
+    : undefined;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 pb-24 lg:pb-6">
       {/* Breadcrumb */}
@@ -224,8 +232,20 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         }}
       />
 
+      {/* Mobile contextual nav */}
+      <div className="lg:hidden mb-4">
+        <ContextualNav
+          slug={slug}
+          categoryName={product.category?.name}
+          categorySlug={product.category?.slug}
+          brandName={product.brand?.name}
+          brandSlug={brandSlug}
+          hasPriceAlert={!!bestOffer}
+        />
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left column: Image */}
+        {/* Left column: Image + contextual nav */}
         <div className="lg:col-span-1 space-y-4">
           {/* Product image */}
           <div className="card aspect-square flex items-center justify-center p-8 overflow-hidden">
@@ -239,6 +259,16 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               <ShoppingCart className="h-24 w-24 text-surface-300" />
             )}
           </div>
+
+          {/* Contextual navigation (desktop) */}
+          <ContextualNav
+            slug={slug}
+            categoryName={product.category?.name}
+            categorySlug={product.category?.slug}
+            brandName={product.brand?.name}
+            brandSlug={brandSlug}
+            hasPriceAlert={!!bestOffer}
+          />
 
           {/* Specs section */}
           {specs && Object.keys(specs).length > 0 && (
@@ -305,6 +335,21 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             <PriceTrend trend={priceStats.trend} currentPrice={priceStats.current} avgPrice={priceStats.avg30d} />
           )}
 
+          {/* Decision Summary */}
+          {allOffers.length > 0 && (
+            <DecisionSummary
+              offers={allOffers}
+              productName={product.name}
+              avgHistorical={priceStats?.avg30d}
+              priceStats={priceStats ? {
+                avg30d: priceStats.avg30d,
+                min30d: priceStats.min30d,
+                allTimeMin: priceStats.allTimeMin,
+                trend: priceStats.trend,
+              } : null}
+            />
+          )}
+
           {/* Best price highlight card */}
           {bestOffer && (
             <div className="card p-5 border-accent-blue/30 bg-accent-blue/5">
@@ -337,6 +382,17 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                 </a>
               </div>
             </div>
+          )}
+
+          {/* Why highlighted — transparency block */}
+          {bestOffer && (
+            <WhyHighlighted
+              offerScore={bestOffer.offerScore}
+              price={bestOffer.price}
+              avgPrice={priceStats?.avg30d}
+              rating={bestOffer.rating}
+              isFreeShipping={bestOffer.isFreeShipping}
+            />
           )}
 
           {/* Offer comparison table */}
@@ -492,11 +548,13 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
 
           {/* Price Alert */}
           {bestOffer && product.listings[0] && (
-            <PriceAlertForm
-              listingId={product.listings[0].id}
-              currentPrice={bestPrice}
-              productName={product.name}
-            />
+            <div id="price-alert">
+              <PriceAlertForm
+                listingId={product.listings[0].id}
+                currentPrice={bestPrice}
+                productName={product.name}
+              />
+            </div>
           )}
 
           {/* Trust disclaimer */}
@@ -513,7 +571,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
 
       {/* Similar products rail */}
       {similarProducts.length > 0 && (
-        <section className="mt-10">
+        <section className="mt-10" id="similar-products">
           <h2 className="text-xl font-bold font-display text-text-primary mb-4">
             Produtos Similares
           </h2>
