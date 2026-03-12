@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { seedArticles } from "./seed-articles";
 
 const prisma = new PrismaClient();
 
@@ -483,6 +484,9 @@ async function main() {
     });
   }
   console.log(`✅ ${trends.length} trending keywords`);
+
+  // 8. Articles
+  await seedArticles();
 
   console.log("\n🎉 Seed V8 completo!");
   console.log(`   📦 ${productCount} produtos | 📋 ${listingCount} listings | 💰 ${offerCount} ofertas | 📊 ${snapshotCount} snapshots`);

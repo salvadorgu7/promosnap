@@ -18,6 +18,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${APP_URL}/mais-vendidos`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${APP_URL}/cupons`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${APP_URL}/sobre`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
+    { url: `${APP_URL}/guias`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${APP_URL}/categorias`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${APP_URL}/marcas`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${APP_URL}/indicar`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${APP_URL}/minha-conta`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
+    { url: `${APP_URL}/politica-privacidade`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${APP_URL}/termos`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${APP_URL}/transparencia`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${APP_URL}/lojas`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${APP_URL}/trending`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${APP_URL}/favoritos`, lastModified: now, changeFrequency: "daily", priority: 0.5 },
@@ -27,12 +35,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let categoryPages: MetadataRoute.Sitemap = [];
   let brandPages: MetadataRoute.Sitemap = [];
   let productPages: MetadataRoute.Sitemap = [];
+  let articlePages: MetadataRoute.Sitemap = [];
 
   try {
-    const [categories, brands, products] = await Promise.all([
+    const [categories, brands, products, articles] = await Promise.all([
       prisma.category.findMany({ select: { slug: true, updatedAt: true } }),
       prisma.brand.findMany({ select: { slug: true, updatedAt: true } }),
       prisma.product.findMany({ where: { status: "ACTIVE" }, select: { slug: true, updatedAt: true } }),
+      prisma.article.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, updatedAt: true } }),
     ]);
 
     categoryPages = categories.map((c) => ({
@@ -54,6 +64,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: p.updatedAt,
       changeFrequency: "daily" as const,
       priority: 0.8,
+    }));
+
+    articlePages = articles.map((a) => ({
+      url: `${APP_URL}/guias/${a.slug}`,
+      lastModified: a.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
     }));
   } catch {
     // DB unavailable at build time — return static pages only
@@ -82,5 +99,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...productPages,
     ...melhoresPages,
     ...ofertasPages,
+    ...articlePages,
   ];
 }

@@ -6,6 +6,7 @@ import {
   Search, Flame, TrendingDown, Trophy, Tag, Menu, X, Zap, Heart,
 } from "lucide-react";
 import SearchBar from "@/components/search/SearchBar";
+import NotificationBell from "@/components/engagement/NotificationBell";
 
 const NAV_ITEMS = [
   { href: "/ofertas", label: "Ofertas", icon: Flame, color: "text-accent-red" },
@@ -41,8 +42,9 @@ export default function Header() {
             <SearchBar />
           </div>
 
-          {/* Desktop hot link + favorites */}
+          {/* Desktop hot link + favorites + notifications */}
           <div className="hidden md:flex items-center gap-2">
+            <NotificationBell />
             <Link
               href="/favoritos"
               className="p-2 rounded-lg text-surface-500 hover:text-accent-red hover:bg-surface-100 transition-colors"

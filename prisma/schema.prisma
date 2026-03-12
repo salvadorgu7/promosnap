@@ -181,6 +181,7 @@ model Listing {
   @@unique([sourceId, externalId])
   @@index([productId])
   @@index([sourceId])
+  @@index([status])
   @@map("listings")
 }
 
@@ -221,6 +222,7 @@ model Offer {
   @@index([listingId])
   @@index([offerScore(sort: Desc)])
   @@index([isActive])
+  @@index([currentPrice])
   @@map("offers")
 }
 
@@ -283,6 +285,7 @@ model Clickout {
 
   @@index([offerId])
   @@index([clickedAt])
+  @@index([sourceSlug])
   @@map("clickouts")
 }
 
@@ -296,6 +299,7 @@ model SearchLog {
 
   @@index([normalizedQuery])
   @@index([createdAt])
+  @@index([query])
   @@map("search_logs")
 }
 
@@ -395,4 +399,89 @@ model TrendingKeyword {
   @@unique([keyword, fetchedAt])
   @@index([fetchedAt])
   @@map("trending_keywords")
+}
+
+// ============================================
+// ARTICLES / CONTENT ENGINE
+// ============================================
+
+model Article {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  subtitle    String?
+  content     String        // markdown
+  category    String?
+  tags        String[]
+  imageUrl    String?
+  author      String        @default("PromoSnap")
+  status      ArticleStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([category])
+  @@map("articles")
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ============================================
+// REFERRALS
+// ============================================
+
+model Referral {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  email       String?
+  visits      Int      @default(0)
+  clickouts   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([code])
+  @@map("referrals")
+}
+
+// ============================================
+// NEWSLETTER SUBSCRIBERS
+// ============================================
+
+model Subscriber {
+  id          String           @id @default(cuid())
+  email       String           @unique
+  status      SubscriberStatus @default(ACTIVE)
+  source      String           @default("website")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([status])
+  @@map("subscribers")
+}
+
+enum SubscriberStatus {
+  ACTIVE
+  UNSUBSCRIBED
+}
+
+// ============================================
+// EMAIL LOGS
+// ============================================
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  to          String
+  subject     String
+  template    String
+  status      String   @default("sent")
+  sentAt      DateTime @default(now())
+
+  @@index([sentAt])
+  @@index([template])
+  @@map("email_logs")
 }

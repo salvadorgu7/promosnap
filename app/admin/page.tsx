@@ -1,7 +1,7 @@
 import {
   Package, Tag, Store, MousePointerClick, BarChart3, Ticket,
   Layers, Clock, CheckCircle, XCircle, AlertTriangle, Loader2,
-  Bell, TrendingUp, Heart, ArrowRight
+  Bell, TrendingUp, Heart, ArrowRight, DollarSign
 } from "lucide-react";
 import Link from "next/link";
 import { getAdminDashboardData } from "@/lib/db/queries";
@@ -10,14 +10,53 @@ import prisma from "@/lib/db/prisma";
 
 export const dynamic = "force-dynamic";
 
+const REVENUE_RATES: Record<string, number> = {
+  "amazon-br": 0.04,
+  mercadolivre: 0.03,
+  shopee: 0.025,
+  shein: 0.03,
+};
+
+const DEFAULT_RATE = 0.03;
+
+function getRate(slug: string | null): number {
+  if (!slug) return DEFAULT_RATE;
+  return REVENUE_RATES[slug] ?? DEFAULT_RATE;
+}
+
 export default async function AdminDashboard() {
   const data = await getAdminDashboardData();
   const { stats, recentClickouts, topProducts, jobRuns, couponsActive, clickoutsByDay } = data;
 
-  const [alertsActive, trendsCount] = await Promise.all([
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 86400000);
+
+  type SourceRow = { sourceSlug: string | null; clickouts: bigint; avgPrice: number | null };
+
+  const [alertsActive, trendsCount, revTodayRaw, rev7dRaw, clickouts7d] = await Promise.all([
     prisma.priceAlert.count({ where: { isActive: true, triggeredAt: null } }).catch(() => 0),
     prisma.trendingKeyword.count().catch(() => 0),
+    prisma.$queryRaw<SourceRow[]>`
+      SELECT c."sourceSlug", COUNT(c.id) as clickouts, AVG(o."currentPrice") as "avgPrice"
+      FROM clickouts c JOIN offers o ON c."offerId" = o.id
+      WHERE c."clickedAt" >= ${today}
+      GROUP BY c."sourceSlug"
+    `.catch(() => [] as SourceRow[]),
+    prisma.$queryRaw<SourceRow[]>`
+      SELECT c."sourceSlug", COUNT(c.id) as clickouts, AVG(o."currentPrice") as "avgPrice"
+      FROM clickouts c JOIN offers o ON c."offerId" = o.id
+      WHERE c."clickedAt" >= ${sevenDaysAgo}
+      GROUP BY c."sourceSlug"
+    `.catch(() => [] as SourceRow[]),
+    prisma.clickout.count({ where: { clickedAt: { gte: sevenDaysAgo } } }).catch(() => 0),
   ]);
+
+  const calcRevenue = (rows: SourceRow[]) =>
+    rows.reduce((sum, r) => sum + Number(r.clickouts) * (r.avgPrice ?? 0) * getRate(r.sourceSlug), 0);
+
+  const revenueToday = calcRevenue(revTodayRaw);
+  const revenue7d = calcRevenue(rev7dRaw);
 
   const statCards = [
     { label: "Listings", value: formatNumber(stats.listings), icon: Package, color: "text-accent-blue" },
@@ -45,6 +84,38 @@ export default async function AdminDashboard() {
       <div>
         <h1 className="text-2xl font-bold font-display text-text-primary">Dashboard</h1>
         <p className="text-sm text-text-muted">Visao geral do PromoSnap</p>
+      </div>
+
+      {/* Revenue cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-4 border-l-4 border-l-accent-green">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="h-4 w-4 text-accent-green" />
+            <span className="text-xs text-text-muted uppercase tracking-wider">Revenue Hoje</span>
+          </div>
+          <p className="text-2xl font-bold font-display text-text-primary">{formatPrice(revenueToday)}</p>
+        </div>
+        <div className="card p-4 border-l-4 border-l-accent-blue">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="h-4 w-4 text-accent-blue" />
+            <span className="text-xs text-text-muted uppercase tracking-wider">Revenue 7d</span>
+          </div>
+          <p className="text-2xl font-bold font-display text-text-primary">{formatPrice(revenue7d)}</p>
+        </div>
+        <div className="card p-4 border-l-4 border-l-accent-orange">
+          <div className="flex items-center gap-2 mb-2">
+            <MousePointerClick className="h-4 w-4 text-accent-orange" />
+            <span className="text-xs text-text-muted uppercase tracking-wider">Clickouts Hoje</span>
+          </div>
+          <p className="text-2xl font-bold font-display text-text-primary">{formatNumber(stats.clickoutsToday)}</p>
+        </div>
+        <div className="card p-4 border-l-4 border-l-brand-500">
+          <div className="flex items-center gap-2 mb-2">
+            <MousePointerClick className="h-4 w-4 text-brand-500" />
+            <span className="text-xs text-text-muted uppercase tracking-wider">Clickouts 7d</span>
+          </div>
+          <p className="text-2xl font-bold font-display text-text-primary">{formatNumber(clickouts7d)}</p>
+        </div>
       </div>
 
       {/* Stat cards */}

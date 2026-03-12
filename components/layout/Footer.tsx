@@ -5,28 +5,32 @@ const LINKS = {
   Categorias: [
     { href: "/categoria/celulares", label: "Celulares" },
     { href: "/categoria/notebooks", label: "Notebooks" },
-    { href: "/categoria/smart-tvs", label: "Smart TVs" },
-    { href: "/categoria/audio", label: "Áudio" },
+    { href: "/categoria/tv-audio", label: "Smart TVs" },
+    { href: "/categoria/gamer", label: "Gamer" },
     { href: "/categoria/casa", label: "Casa" },
+    { href: "/categorias", label: "Ver todas →" },
   ],
   Ofertas: [
     { href: "/ofertas", label: "Ofertas Quentes" },
     { href: "/menor-preco", label: "Menor Preço Histórico" },
     { href: "/mais-vendidos", label: "Mais Vendidos" },
     { href: "/cupons", label: "Cupons" },
+    { href: "/guias", label: "Guias de Compra" },
     { href: "/trending", label: "Tendências" },
   ],
   PromoSnap: [
     { href: "/sobre", label: "Sobre" },
+    { href: "/transparencia", label: "Transparência" },
+    { href: "/marcas", label: "Marcas" },
+    { href: "/indicar", label: "Indique" },
+    { href: "/minha-conta", label: "Minha Conta" },
     { href: "/favoritos", label: "Meus Favoritos" },
-    { href: "/melhores/melhores-smartphones", label: "Melhores Smartphones" },
-    { href: "/melhores/melhores-notebooks", label: "Melhores Notebooks" },
   ],
 };
 
 export default function Footer() {
   return (
-    <footer className="border-t border-surface-200 bg-white mt-12">
+    <footer className="border-t border-surface-200 bg-gradient-to-b from-white to-surface-50/80 mt-12">
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 md:col-span-1">
@@ -38,9 +42,10 @@ export default function Footer() {
                 Promo<span className="text-gradient">Snap</span>
               </span>
             </Link>
-            <p className="text-sm text-text-muted leading-relaxed">
-              Ofertas reais, preço de verdade. Compare preços, acompanhe histórico e encontre os melhores descontos.
+            <p className="text-sm text-text-muted leading-relaxed mb-3">
+              Ofertas reais, preço de verdade. Compare preços, acompanhe histórico e encontre os melhores descontos do Brasil.
             </p>
+            <p className="text-xs text-text-muted">promosnap.com.br</p>
           </div>
           {Object.entries(LINKS).map(([title, links]) => (
             <div key={title}>
@@ -57,8 +62,17 @@ export default function Footer() {
             </div>
           ))}
         </div>
-        <div className="mt-8 pt-6 border-t border-surface-200 text-xs text-text-muted text-center">
-          © {new Date().getFullYear()} PromoSnap. Preços e disponibilidade podem variar. Links de afiliado podem gerar comissão.
+
+        {/* Legal links */}
+        <div className="mt-8 pt-6 border-t border-surface-200 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap justify-center gap-4 text-xs text-text-muted">
+            <Link href="/politica-privacidade" className="hover:text-accent-blue transition-colors">Política de Privacidade</Link>
+            <Link href="/termos" className="hover:text-accent-blue transition-colors">Termos de Uso</Link>
+            <Link href="/transparencia" className="hover:text-accent-blue transition-colors">Transparência</Link>
+          </div>
+          <p className="text-xs text-text-muted text-center">
+            © {new Date().getFullYear()} PromoSnap. Preços e disponibilidade podem variar. Links de afiliado podem gerar comissão.
+          </p>
         </div>
       </div>
     </footer>
