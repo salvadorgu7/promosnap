@@ -1,5 +1,5 @@
 import { BaseAdapter } from '../shared/base'
-import type { RawListing, SearchOptions, FetchOffersParams } from '@/types'
+import type { RawListing, SearchOptions, FetchOffersParams, HealthCheckResult } from '@/types'
 
 export class MercadoLivreAdapter extends BaseAdapter {
   name = 'Mercado Livre'
@@ -37,7 +37,10 @@ export class MercadoLivreAdapter extends BaseAdapter {
 
   buildAffiliateUrl(productUrl: string): string {
     if (!this.affiliateId) return productUrl
-    // ML affiliate links only valid for product detail pages (PDP)
     return `https://www.mercadolivre.com.br/affiliate-redirect?url=${encodeURIComponent(productUrl)}&aff_id=${this.affiliateId}`
+  }
+
+  async healthCheck(): Promise<HealthCheckResult> {
+    return { status: "MOCK", latencyMs: 0, message: "Adapter not yet implemented" }
   }
 }

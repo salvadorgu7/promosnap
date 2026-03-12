@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Award, ChevronRight, HelpCircle, Sparkles } from "lucide-react";
+import { Tag, ChevronRight, HelpCircle, Sparkles } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import InternalLinks from "@/components/seo/InternalLinks";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
-import { getProductsByCategory, searchListings } from "@/lib/db/queries";
-import { BEST_PAGES, BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
+import { searchListings } from "@/lib/db/queries";
+import { OFFER_PAGES, OFFER_PAGE_SLUGS } from "@/lib/seo/offer-pages";
 
 export async function generateStaticParams() {
-  return BEST_PAGE_SLUGS.map((slug) => ({ slug }));
+  return OFFER_PAGE_SLUGS.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -18,45 +18,29 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const page = BEST_PAGES[slug];
+  const page = OFFER_PAGES[slug];
   if (!page) return buildMetadata({ title: "Página não encontrada" });
 
   return buildMetadata({
     title: page.title,
     description: page.description,
-    path: `/melhores/${slug}`,
+    path: `/ofertas/${slug}`,
   });
 }
 
-async function fetchProducts(query: { categories?: string[]; brands?: string[]; keywords?: string[] }) {
-  // Try category-based query first
-  if (query.categories?.length) {
-    const { products } = await getProductsByCategory(query.categories[0], {
-      limit: 16,
-      sort: "score",
-    });
-    return products;
-  }
-
-  // Fallback to keyword search
-  if (query.keywords?.length) {
-    const { products } = await searchListings(query.keywords[0], { limit: 16, sort: "score" });
-    return products;
-  }
-
-  return [];
-}
-
-export default async function MelhoresPage({
+export default async function OfertaSlugPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const page = BEST_PAGES[slug];
+  const page = OFFER_PAGES[slug];
   if (!page) notFound();
 
-  const products = await fetchProducts(page.query);
+  const { products, total } = await searchListings(page.searchQuery, {
+    limit: 20,
+    sort: "score",
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -67,8 +51,8 @@ export default async function MelhoresPage({
           __html: JSON.stringify(
             breadcrumbSchema([
               { name: "Home", url: "/" },
-              { name: "Melhores", url: "/melhores" },
-              { name: page.title, url: `/melhores/${slug}` },
+              { name: "Ofertas", url: "/ofertas" },
+              { name: page.title, url: `/ofertas/${slug}` },
             ])
           ),
         }}
@@ -96,7 +80,7 @@ export default async function MelhoresPage({
       <Breadcrumb
         items={[
           { label: "Home", href: "/" },
-          { label: "Melhores", href: "/melhores" },
+          { label: "Ofertas", href: "/ofertas" },
           { label: page.title },
         ]}
       />
@@ -104,12 +88,19 @@ export default async function MelhoresPage({
       {/* Intro section */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-accent-blue/10 flex items-center justify-center">
-            <Award className="w-5 h-5 text-accent-blue" />
+          <div className="w-10 h-10 rounded-xl bg-accent-orange/10 flex items-center justify-center">
+            <Tag className="w-5 h-5 text-accent-orange" />
           </div>
-          <h1 className="text-3xl font-bold font-display text-text-primary">
-            {page.title}
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold font-display text-text-primary">
+              {page.title}
+            </h1>
+            {total > 0 && (
+              <p className="text-sm text-text-muted mt-0.5">
+                {total} produto{total !== 1 ? "s" : ""} encontrado{total !== 1 ? "s" : ""}
+              </p>
+            )}
+          </div>
         </div>
         <p className="text-text-secondary leading-relaxed max-w-3xl">
           {page.intro}
@@ -122,10 +113,10 @@ export default async function MelhoresPage({
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-5 h-5 text-accent-orange" />
             <h2 className="font-display font-bold text-lg text-text-primary">
-              Top Ofertas
+              Melhores Ofertas
             </h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {products.map((p) => (
               <OfferCard key={p.id} product={p} />
             ))}
@@ -134,7 +125,7 @@ export default async function MelhoresPage({
       ) : (
         <div className="mb-12 card p-8 text-center">
           <p className="text-text-muted">
-            Estamos indexando produtos para esta categoria. Volte em breve!
+            Estamos buscando ofertas para esta categoria. Volte em breve!
           </p>
         </div>
       )}
@@ -166,16 +157,15 @@ export default async function MelhoresPage({
       </section>
 
       {/* Internal links */}
-      <InternalLinks type="melhores" currentSlug={slug} />
+      <InternalLinks type="ofertas" currentSlug={slug} />
 
       {/* CTA section */}
-      <section className="card p-8 text-center bg-gradient-to-r from-accent-blue/5 to-brand-500/5">
+      <section className="card p-8 text-center bg-gradient-to-r from-accent-orange/5 to-accent-red/5">
         <h2 className="font-display font-bold text-xl text-text-primary mb-2">
-          Não encontrou o que procurava?
+          Quer mais ofertas?
         </h2>
         <p className="text-sm text-text-muted mb-6 max-w-lg mx-auto">
-          Use nossa busca para encontrar qualquer produto com preço comparado em
-          tempo real.
+          Busque qualquer produto e compare preços em dezenas de lojas em tempo real.
         </p>
         <div className="flex items-center justify-center gap-3 flex-wrap">
           <Link
@@ -188,7 +178,7 @@ export default async function MelhoresPage({
             href="/ofertas"
             className="btn-secondary px-6 py-2.5 rounded-lg text-sm font-semibold"
           >
-            Ver todas as ofertas
+            Todas as ofertas
           </Link>
         </div>
       </section>

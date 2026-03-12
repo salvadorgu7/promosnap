@@ -1,5 +1,5 @@
 import { BaseAdapter } from '../shared/base'
-import type { RawListing, SearchOptions, FetchOffersParams } from '@/types'
+import type { RawListing, SearchOptions, FetchOffersParams, HealthCheckResult } from '@/types'
 
 export class AmazonAdapter extends BaseAdapter {
   name = 'Amazon Brasil'
@@ -36,5 +36,9 @@ export class AmazonAdapter extends BaseAdapter {
     } catch {
       return `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${this.tag}`
     }
+  }
+
+  async healthCheck(): Promise<HealthCheckResult> {
+    return { status: "MOCK", latencyMs: 0, message: "Adapter not yet implemented" }
   }
 }

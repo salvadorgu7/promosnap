@@ -47,11 +47,11 @@ export default function OfferCard({ product }: { product: ProductCard }) {
 
       {/* Image */}
       <Link href={`/produto/${product.slug}`} className="block px-3 pt-3">
-        <div className="relative aspect-square rounded-lg bg-surface-100 overflow-hidden">
+        <div className="relative aspect-square rounded-lg bg-gradient-to-br from-slate-50 to-slate-100/50 overflow-hidden">
           <ImageWithFallback
             src={product.imageUrl}
             alt={product.name}
-            className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500 ease-out"
             width={300}
             height={300}
           />

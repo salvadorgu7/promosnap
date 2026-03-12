@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, TrendingUp } from "lucide-react";
+import VoiceSearch from "./VoiceSearch";
 
 const POPULAR_SEARCHES = [
   "iPhone 15",
@@ -140,6 +141,7 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
             aria-expanded={showDropdown}
             aria-autocomplete="list"
           />
+          <VoiceSearch onResult={(text) => navigate(text)} />
           <button
             type="submit"
             className={`flex-shrink-0 mr-1.5 px-4 rounded-lg bg-gradient-to-r from-accent-blue to-brand-500 text-white font-semibold hover:shadow-glow transition-all ${

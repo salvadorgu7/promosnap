@@ -7,7 +7,10 @@ import CategoryCard from "@/components/cards/CategoryCard";
 import TrendingTags from "@/components/home/TrendingTags";
 import DealOfTheDay from "@/components/home/DealOfTheDay";
 import RecentlyViewedRail from "@/components/home/RecentlyViewedRail";
-import { getHotOffers, getBestSellers, getLowestPrices, getCategories, getSiteStats, getActiveCoupons } from "@/lib/db/queries";
+import SourcesCompare from "@/components/home/SourcesCompare";
+import Newsletter from "@/components/home/Newsletter";
+import CategoryRail from "@/components/home/CategoryRail";
+import { getHotOffers, getBestSellers, getLowestPrices, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory, buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
 import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";
 
@@ -26,6 +29,33 @@ export default async function HomePage() {
 
   // Best deal of the day
   const dealOfTheDay = hotOffers.length > 0 ? hotOffers[0] : null;
+
+  // Source stats for comparison section
+  let sourceStats: { name: string; slug: string; offerCount: number; status: string }[] = [];
+  try {
+    const sources = await prisma.source.findMany({ where: { status: "ACTIVE" } });
+    sourceStats = await Promise.all(
+      sources.map(async (s) => {
+        const offerCount = await prisma.offer.count({
+          where: { isActive: true, listing: { sourceId: s.id } },
+        });
+        return { name: s.name, slug: s.slug, offerCount, status: "READY" };
+      })
+    );
+  } catch {}
+
+  // Category rails (top 3 categories with products)
+  const topCategories = categories.slice(0, 3);
+  const categoryProducts = await Promise.all(
+    topCategories.map(async (c: any) => {
+      try {
+        const { products } = await getProductsByCategory(c.slug, { limit: 8 });
+        return { slug: c.slug, name: c.name, icon: c.icon || "📦", products };
+      } catch {
+        return { slug: c.slug, name: c.name, icon: c.icon || "📦", products: [] };
+      }
+    })
+  );
 
   return (
     <div>
@@ -124,13 +154,15 @@ export default async function HomePage() {
 
       {/* OFERTAS QUENTES */}
       {hotOffers.length > 0 && (
-        <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red">
-          {hotOffers.map((p) => (
-            <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
-              <OfferCard product={p} />
-            </div>
-          ))}
-        </RailSection>
+        <div className="section-alt">
+          <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red">
+            {hotOffers.map((p) => (
+              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+                <OfferCard product={p} />
+              </div>
+            ))}
+          </RailSection>
+        </div>
       )}
 
       {/* CATEGORIAS */}
@@ -152,24 +184,28 @@ export default async function HomePage() {
 
       {/* MENOR PREÇO */}
       {lowestPrices.length > 0 && (
-        <RailSection title="Menor Preço Histórico" subtitle="Nunca estiveram tão baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
-          {lowestPrices.map((p) => (
-            <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
-              <OfferCard product={p} />
-            </div>
-          ))}
-        </RailSection>
+        <div className="section-highlight">
+          <RailSection title="Menor Preço Histórico" subtitle="Nunca estiveram tão baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
+            {lowestPrices.map((p) => (
+              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+                <OfferCard product={p} />
+              </div>
+            ))}
+          </RailSection>
+        </div>
       )}
 
       {/* MAIS VENDIDOS */}
       {bestSellers.length > 0 && (
-        <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
-          {bestSellers.map((p) => (
-            <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
-              <OfferCard product={p} />
-            </div>
-          ))}
-        </RailSection>
+        <div className="section-alt">
+          <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
+            {bestSellers.map((p) => (
+              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+                <OfferCard product={p} />
+              </div>
+            ))}
+          </RailSection>
+        </div>
       )}
 
       {/* CUPONS */}
@@ -205,11 +241,23 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* COMPARAR FONTES */}
+      {sourceStats.length > 0 && (
+        <div className="section-highlight">
+          <SourcesCompare sources={sourceStats} />
+        </div>
+      )}
+
+      {/* TOP POR CATEGORIA */}
+      {categoryProducts.filter((c) => c.products.length > 0).map((c) => (
+        <CategoryRail key={c.slug} title={c.name} slug={c.slug} icon={c.icon} products={c.products} />
+      ))}
+
       {/* RECENTLY VIEWED */}
       <RecentlyViewedRail />
 
       {/* POR QUE PROMOSNAP? */}
-      <section className="py-10 bg-surface-50">
+      <section className="py-10 bg-gradient-to-b from-surface-50 to-white">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="font-display font-bold text-xl text-text-primary text-center mb-8">
             Por que usar o PromoSnap?
@@ -240,8 +288,11 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* NEWSLETTER */}
+      <Newsletter />
+
       {/* SEO */}
-      <section className="py-10">
+      <section className="py-10 section-alt">
         <div className="max-w-7xl mx-auto px-4 max-w-3xl">
           <h2 className="font-display font-bold text-xl text-text-primary mb-3">
             PromoSnap — Ofertas reais com histórico de preço

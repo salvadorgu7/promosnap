@@ -1,5 +1,5 @@
 import { BaseAdapter } from '../shared/base'
-import type { RawListing, SearchOptions, FetchOffersParams } from '@/types'
+import type { RawListing, SearchOptions, FetchOffersParams, HealthCheckResult } from '@/types'
 
 export class ShopeeAdapter extends BaseAdapter {
   name = 'Shopee'
@@ -25,5 +25,9 @@ export class ShopeeAdapter extends BaseAdapter {
   buildAffiliateUrl(productUrl: string): string {
     if (!this.affiliateId) return productUrl
     return `${productUrl}${productUrl.includes('?') ? '&' : '?'}af_id=${this.affiliateId}`
+  }
+
+  async healthCheck(): Promise<HealthCheckResult> {
+    return { status: "MOCK", latencyMs: 0, message: "Adapter not yet implemented" }
   }
 }
