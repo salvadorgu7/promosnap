@@ -33,6 +33,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# claude worktrees and tokens
+.claude/worktrees/
+.ml-token.json
+screenshot.png
+teste.pdf
+
 # prisma
 prisma/dev.db
 prisma/dev.db-journal
