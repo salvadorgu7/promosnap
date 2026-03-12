@@ -115,7 +115,7 @@ async function processRawListing(raw: RawListing, adapterSlug: string) {
       rating: raw.rating,
       reviewsCount: raw.reviewsCount,
       salesCountEstimate: raw.salesCount,
-      rawPayloadJson: raw.rawPayload ? (raw.rawPayload as Prisma.InputJsonValue) : Prisma.DbNull,
+      rawPayloadJson: raw.rawPayload ? JSON.parse(JSON.stringify(raw.rawPayload)) : undefined,
       lastSeenAt: new Date(),
     },
     create: {
@@ -131,7 +131,7 @@ async function processRawListing(raw: RawListing, adapterSlug: string) {
       rating: raw.rating,
       reviewsCount: raw.reviewsCount,
       salesCountEstimate: raw.salesCount,
-      rawPayloadJson: raw.rawPayload ? (raw.rawPayload as Prisma.InputJsonValue) : Prisma.DbNull,
+      rawPayloadJson: raw.rawPayload ? JSON.parse(JSON.stringify(raw.rawPayload)) : undefined,
     },
   })
 

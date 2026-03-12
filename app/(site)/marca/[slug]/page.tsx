@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, Building2 } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
-import { getProductsByCategory, getCategoryBySlug } from "@/lib/db/queries";
+import { getProductsByBrand, getBrandBySlug } from "@/lib/db/queries";
 
 const SORT_OPTIONS = [
   { value: "score", label: "Melhor oferta" },
@@ -22,17 +22,17 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const category = await getCategoryBySlug(slug);
-  const name = category?.name || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const brand = await getBrandBySlug(slug);
+  const name = brand?.name || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return buildMetadata({
     title: `${name} - Melhores Ofertas`,
-    description: `Compare preços e encontre as melhores ofertas de ${name}. Histórico de preços, cupons e frete grátis.`,
-    path: `/categoria/${slug}`,
+    description: `Encontre as melhores ofertas de ${name}. Compare preços, veja descontos reais e economize.`,
+    path: `/marca/${slug}`,
   });
 }
 
-export default async function CategoriaPage({
+export default async function MarcaPage({
   params,
   searchParams,
 }: {
@@ -42,20 +42,20 @@ export default async function CategoriaPage({
   const { slug } = await params;
   const sp = await searchParams;
 
-  const category = await getCategoryBySlug(slug);
-  if (!category) notFound();
+  const brand = await getBrandBySlug(slug);
+  if (!brand) notFound();
 
   const page = Math.max(1, parseInt(sp.page || "1", 10) || 1);
   const sort = sp.sort || "score";
 
-  const { products, total } = await getProductsByCategory(slug, {
+  const { products, total } = await getProductsByBrand(slug, {
     page,
     sort,
     limit: ITEMS_PER_PAGE,
   });
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
-  const name = category.name;
+  const name = brand.name;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -66,7 +66,8 @@ export default async function CategoriaPage({
           __html: JSON.stringify(
             breadcrumbSchema([
               { name: "Home", url: "/" },
-              { name, url: `/categoria/${slug}` },
+              { name: "Marcas", url: "/marcas" },
+              { name, url: `/marca/${slug}` },
             ])
           ),
         }}
@@ -75,21 +76,27 @@ export default async function CategoriaPage({
       <Breadcrumb
         items={[
           { label: "Home", href: "/" },
+          { label: "Marcas", href: "/marcas" },
           { label: name },
         ]}
       />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold font-display text-text-primary">
-            {name}
-          </h1>
-          <p className="text-sm text-text-muted mt-1">
-            {total > 0
-              ? `${total} produto${total !== 1 ? "s" : ""} com preço comparado`
-              : "Nenhum produto encontrado"}
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center">
+            <Building2 className="w-6 h-6 text-surface-400" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold font-display text-text-primary">
+              {name}
+            </h1>
+            <p className="text-sm text-text-muted mt-0.5">
+              {total > 0
+                ? `${total} produto${total !== 1 ? "s" : ""} com preço comparado`
+                : "Nenhum produto encontrado"}
+            </p>
+          </div>
         </div>
 
         {/* Sort pills */}
@@ -99,7 +106,7 @@ export default async function CategoriaPage({
             {SORT_OPTIONS.map((opt) => (
               <Link
                 key={opt.value}
-                href={`/categoria/${slug}?sort=${opt.value}${page > 1 ? `&page=1` : ""}`}
+                href={`/marca/${slug}?sort=${opt.value}${page > 1 ? `&page=1` : ""}`}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   sort === opt.value
                     ? "bg-accent-blue text-white"
@@ -127,7 +134,7 @@ export default async function CategoriaPage({
             <nav className="flex items-center justify-center gap-2 mt-8" aria-label="Paginação">
               {page > 1 && (
                 <Link
-                  href={`/categoria/${slug}?sort=${sort}&page=${page - 1}`}
+                  href={`/marca/${slug}?sort=${sort}&page=${page - 1}`}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-surface-100 text-text-secondary hover:bg-surface-200 transition-colors"
                 >
                   Anterior
@@ -156,7 +163,7 @@ export default async function CategoriaPage({
                   ) : (
                     <Link
                       key={item}
-                      href={`/categoria/${slug}?sort=${sort}&page=${item}`}
+                      href={`/marca/${slug}?sort=${sort}&page=${item}`}
                       className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
                         item === page
                           ? "bg-accent-blue text-white"
@@ -170,7 +177,7 @@ export default async function CategoriaPage({
 
               {page < totalPages && (
                 <Link
-                  href={`/categoria/${slug}?sort=${sort}&page=${page + 1}`}
+                  href={`/marca/${slug}?sort=${sort}&page=${page + 1}`}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-surface-100 text-text-secondary hover:bg-surface-200 transition-colors"
                 >
                   Próxima
@@ -181,9 +188,9 @@ export default async function CategoriaPage({
         </>
       ) : (
         <EmptyState
-          icon={SlidersHorizontal}
+          icon={Building2}
           title="Nenhum produto encontrado"
-          description={`Ainda estamos indexando ofertas para ${name}. Volte em breve!`}
+          description={`Ainda estamos indexando ofertas de ${name}. Volte em breve!`}
           ctaLabel="Ver todas as ofertas"
           ctaHref="/ofertas"
         />

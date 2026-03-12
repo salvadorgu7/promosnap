@@ -6,36 +6,46 @@ export async function GET(
   { params }: { params: Promise<{ offerId: string }> }
 ) {
   const { offerId } = await params;
+  const homeUrl = new URL("/", request.url);
 
   try {
     const offer = await prisma.offer.findUnique({
       where: { id: offerId },
-      select: { affiliateUrl: true, listing: { select: { productUrl: true, source: { select: { slug: true } } } } },
+      include: { listing: { include: { source: true } } },
     });
 
-    if (!offer) {
-      return NextResponse.redirect(new URL("/", request.url));
+    if (!offer || !offer.affiliateUrl) {
+      return NextResponse.redirect(homeUrl, 302);
     }
 
-    // Fire-and-forget: record clickout
-    const referrer = request.headers.get("referer") || undefined;
-    const userAgent = request.headers.get("user-agent") || undefined;
-    const searchParams = request.nextUrl.searchParams;
+    const sourceSlug = offer.listing.source.slug;
+    const referrer = request.headers.get("referer") || null;
+    const userAgent = request.headers.get("user-agent") || null;
+    const sessionId = request.cookies.get("ps_session")?.value || null;
+    const query = request.nextUrl.searchParams.get("q") || null;
+    const categorySlug =
+      request.nextUrl.searchParams.get("cat") || null;
 
-    prisma.clickout.create({
-      data: {
-        offerId,
-        sourceSlug: offer.listing.source.slug,
-        referrer,
-        userAgent,
-        query: searchParams.get("q") || undefined,
-        categorySlug: searchParams.get("cat") || undefined,
-      },
-    }).catch(() => {});
+    // Fire-and-forget: don't await so redirect is instant
+    prisma.clickout
+      .create({
+        data: {
+          offerId: offer.id,
+          sourceSlug,
+          referrer,
+          userAgent,
+          sessionId,
+          query,
+          categorySlug,
+        },
+      })
+      .catch((err) => {
+        console.error("[clickout] Failed to record clickout:", err);
+      });
 
-    const redirectUrl = offer.affiliateUrl || offer.listing.productUrl;
-    return NextResponse.redirect(redirectUrl, 302);
-  } catch {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(offer.affiliateUrl, 302);
+  } catch (error) {
+    console.error("[clickout] Error processing clickout:", error);
+    return NextResponse.redirect(homeUrl, 302);
   }
 }
