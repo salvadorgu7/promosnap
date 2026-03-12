@@ -175,3 +175,4 @@ npm run db:studio    # Prisma Studio
 - Rate limiting nas APIs publicas
 - CDN para imagens
 - A/B testing para CTA e layout
+
