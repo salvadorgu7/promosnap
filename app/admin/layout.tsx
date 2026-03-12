@@ -11,7 +11,7 @@ import {
   Bell,
   TrendingUp,
   BarChart3,
-  Search,
+  Globe,
   Activity,
   FileText,
   Mail,
@@ -22,6 +22,10 @@ import {
   Gift,
   SearchX,
   MailCheck,
+  HeartPulse,
+  ShieldCheck,
+  Rocket,
+  ClipboardCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -40,6 +44,7 @@ const navGroups: NavGroup[] = [
     title: "Overview",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/admin/business", label: "Business OS", icon: BarChart3 },
     ],
   },
   {
@@ -49,11 +54,13 @@ const navGroups: NavGroup[] = [
       { href: "/admin/ofertas", label: "Ofertas", icon: Tag },
       { href: "/admin/fontes", label: "Fontes", icon: Store },
       { href: "/admin/prioridades", label: "Prioridades", icon: Target },
+      { href: "/admin/catalog-governance", label: "Catalogo", icon: ShieldCheck },
     ],
   },
   {
     title: "Conteudo",
     items: [
+      { href: "/admin/content", label: "Conteudo", icon: FileText },
       { href: "/admin/artigos", label: "Artigos", icon: FileText },
       { href: "/admin/tendencias", label: "Tendencias", icon: TrendingUp },
     ],
@@ -61,7 +68,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Growth",
     items: [
-      { href: "/admin/seo", label: "SEO", icon: Search },
+      { href: "/admin/seo", label: "SEO", icon: Globe },
       { href: "/admin/analytics", label: "Analise", icon: Activity },
       { href: "/admin/performance", label: "Desempenho", icon: BarChart3 },
       { href: "/admin/referrals", label: "Indicacoes", icon: Gift },
@@ -89,6 +96,9 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/admin/jobs", label: "Jobs", icon: Clock },
       { href: "/admin/ingestao", label: "Ingestao", icon: Upload },
+      { href: "/admin/health", label: "Health", icon: HeartPulse },
+      { href: "/admin/release", label: "Release", icon: Rocket },
+      { href: "/admin/audit", label: "Auditoria", icon: ClipboardCheck },
     ],
   },
 ];

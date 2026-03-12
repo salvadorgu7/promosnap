@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
+import { validateAdmin } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,10 @@ function getRate(sourceSlug: string | null): number {
   return REVENUE_RATES[sourceSlug] ?? DEFAULT_RATE;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const denied = validateAdmin(req);
+  if (denied) return denied;
+
   try {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());

@@ -1,6 +1,6 @@
 # PromoSnap
 
-Comparador de precos brasileiro com automacao total, content engine, revenue OS e SEO machine. Monitora marketplaces, compara ofertas, mostra historico real de preco e opera com jobs automaticos.
+Comparador de precos brasileiro com automacao total, content engine, revenue OS, SEO machine, business OS, quality gates e governance engine. Monitora marketplaces, compara ofertas, mostra historico real de preco e opera com jobs automaticos.
 
 **Dominio:** promosnap.com.br
 
@@ -86,6 +86,77 @@ npm run dev
 **Executar manualmente:** POST /api/admin/jobs/run `{ "job": "ingest" }`
 **Cron automatico:** GET /api/cron (protegido com CRON_SECRET)
 
+## Business OS (V11)
+
+Sistema de metricas e scorecards executivos:
+
+- **North Star Metric:** clickouts qualificados/dia
+- **Metricas:** aquisicao, engajamento, monetizacao, retencao, operacional
+- **Scorecards:** Business, Product, Catalog, SEO, Revenue
+- **Dashboard:** /admin/business com KPIs, trends 7d/30d, status visual
+- **Helpers:** lib/business/metrics.ts, lib/business/scorecards.ts
+
+## Quality Gates (V11)
+
+Verificacoes automaticas de qualidade:
+
+- Produtos sem imagem, sem brand/categoria
+- Offers sem affiliateUrl
+- Categorias vazias, marcas com catalogo fraco
+- Artigos com conteudo insuficiente
+- Dados incoerentes (preco original < atual)
+- **Dashboard:** /admin/health
+- **API:** /api/health (publico), /api/admin/health (detalhado)
+- **Helpers:** lib/quality/gates.ts, lib/health/checks.ts
+
+## Governance Engine (V11)
+
+### Catalog Governance
+- Classificacao: healthy, incomplete, stale, orphan, weak-canonical
+- Recomendacoes acionaveis por problema
+- Validacao de ingest (titulo, imagem, preco, URL)
+- **Dashboard:** /admin/catalog-governance
+- **Helpers:** lib/catalog/governance.ts, lib/catalog/validation.ts
+
+### SEO Governance
+- Auditoria: metadata, titles, canonicals, conteudo fraco, links internos
+- Score SEO geral 0-100
+- Coverage report (categorias, marcas, comparacoes, precos)
+- Fila de acoes SEO priorizadas
+- **Dashboard:** /admin/seo
+- **Helpers:** lib/seo/governance.ts, lib/seo/coverage.ts
+
+### Content Governance
+- Classificacao de artigos: strong, weak, stale, thin
+- Content score editorial (richness, linking, products, coverage)
+- Recomendacoes: guias faltando, comparacoes, temas quentes
+- **Dashboard:** /admin/content
+- **Helpers:** lib/content/governance.ts, lib/content/score.ts
+
+## Release Readiness (V11)
+
+- Checklist de deploy: envs, DB, sources, sitemap, robots, rotas
+- Smoke tests: home, busca, produto, clickout, sitemap
+- Status: pronto/atencao/bloqueado
+- **Dashboard:** /admin/release
+- **Helpers:** lib/release/readiness.ts, lib/release/smoke.ts
+
+## Audit System (V11)
+
+- Runner consolidado: catalog + SEO + content + sources + quality + design
+- Score global 0-100 com grade (A-F)
+- Issues criticos, warnings, oportunidades
+- **Dashboard:** /admin/audit com botao "Rodar Auditoria"
+- **API:** POST /api/admin/audit/run
+- **Helpers:** lib/audit/runner.ts, lib/audit/visual-score.ts
+
+## Admin Security (V11)
+
+- Todas as rotas /api/admin/* protegidas com ADMIN_SECRET
+- Helper centralizado: lib/auth/admin.ts (validateAdmin)
+- Suporte via header x-admin-secret ou query param ?secret=
+- Cron protegido com CRON_SECRET
+
 ## Content Engine
 
 - Model Article (Prisma) com markdown, categorias, tags
@@ -105,7 +176,7 @@ npm run dev
 
 ## SEO Machine
 
-- Sitemap dinamico com todas as paginas (produtos, categorias, marcas, artigos, melhores, ofertas, comparacoes)
+- Sitemap dinamico com todas as paginas
 - Paginas /melhores/[slug] (13 paginas curadas)
 - Paginas /ofertas/[slug] (10 paginas de keyword)
 - Paginas /comparar/[slug] (10 comparacoes)
@@ -118,13 +189,13 @@ npm run dev
 
 /admin com painel completo e sidebar agrupada:
 
-**Overview:** Dashboard com revenue cards, metricas
-**Catalogo:** Produtos, Ofertas, Fontes
-**Conteudo:** Artigos, Tendencias
-**Growth:** SEO, Analise, Desempenho, Inteligencia, Indicacoes
+**Overview:** Dashboard, Business OS
+**Catalogo:** Produtos, Ofertas, Fontes, Prioridades, Governance
+**Conteudo:** Conteudo, Artigos, Tendencias
+**Growth:** SEO, SEO Gaps, Analise, Desempenho, Indicacoes
 **Monetizacao:** Revenue dashboard
-**Engajamento:** Email, Alertas
-**Operacao:** Jobs, Ingestao, Config
+**Engajamento:** Email, Alertas, Inteligencia, Decisoes, Email Intel
+**Operacao:** Jobs, Ingestao, Health, Release, Auditoria, Config
 
 ## Paginas
 
@@ -137,6 +208,7 @@ npm run dev
 | `/mais-vendidos` | Produtos mais populares |
 | `/busca?q=...` | Busca com filtros, voz, ordenacao |
 | `/produto/[slug]` | Detalhe: comparador, grafico, alertas, savings |
+| `/preco/[slug]` | Historico de preco com chart, stats, recomendacao |
 | `/categoria/[slug]` | Produtos por categoria |
 | `/categorias` | Hub de categorias |
 | `/marca/[slug]` | Produtos por marca |
@@ -158,7 +230,7 @@ npm run dev
 
 ## Tabelas Prisma
 
-Source, Merchant, Category, Brand, Product, ProductVariant, Listing, Offer, PriceSnapshot, Coupon, Clickout, SearchLog, EditorialBlock, JobRun, PriceAlert, TrendingKeyword, **Article**, **Referral**, **Subscriber**, **EmailLog**
+Source, Merchant, Category, Brand, Product, ProductVariant, Listing, Offer, PriceSnapshot, Coupon, Clickout, SearchLog, EditorialBlock, JobRun, PriceAlert, TrendingKeyword, Article, Referral, Subscriber, EmailLog
 
 ## Scripts
 
@@ -173,55 +245,17 @@ npm run db:studio    # Prisma Studio
 
 ## Limitacoes Atuais
 
-- Adapters ML/Amazon/Shopee/Shein em modo MOCK (health check retorna MOCK)
+- Adapters ML/Amazon/Shopee/Shein em modo MOCK
 - OAuth token ML expira a cada 6h
 - Envio de email depende de RESEND_API_KEY configurado
-- PWA icons placeholder (precisa criar icones reais)
+- PWA icons placeholder
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
+- Testes automatizados (unit + e2e) pendentes
+- Rate limiting nas APIs publicas pendente
+- Monitoring (Sentry) nao conectado
 
-## Decision Engine
-
-- Catalog Prioritization: admin/prioridades com regras de peso por fonte, categoria, score
-- Source Routing: roteamento inteligente de ofertas por fonte com fallback
-- Decision dashboard: admin/decisoes com visualizacao de regras ativas
-
-## Personalization
-
-- GrowthBanner component com banners contextuais baseados em comportamento do usuario
-- Ciclo de banners: favoritos, busca, newsletter, indicacao
-- Dismissable com persistencia em localStorage
-
-## Commerce Automation
-
-- SmartCTA engine com urgencia dinamica por contexto de oferta
-- Smart share buttons com texto otimizado por plataforma (WhatsApp, Telegram, Twitter/X)
-- Referral tracking com codigo unico por usuario
-
-## CRM / Email Segmentation
-
-- Subscriber model com segmentacao por interesse
-- Email templates: welcome, daily-deals, alert-triggered, campaign
-- Admin /admin/email com metricas de envio e engajamento
-- EmailLog tracking com status de entrega
-
-## SEO Ops
-
-- Sitemap dinamico com todas as rotas (produtos, categorias, marcas, artigos, comparacoes)
-- 13 paginas curadas /melhores/[slug]
-- 10 paginas de keyword /ofertas/[slug]
-- 10 comparacoes /comparar/[slug]
-- FAQ schema, breadcrumb schema, product schema em todas as paginas
-- InternalLinks component para cross-linking automatico
-
-## Growth V2
-
-- Programa de indicacao polished: hero gradient, steps, share buttons multi-plataforma, FAQ
-- Admin /admin/referrals com dashboard de indicacoes (top referrers, conversao, stats)
-- SmartShare component reutilizavel para compartilhamento em paginas de produto/guia
-- GrowthBanner contextual com ciclo de CTAs
-
-## Proximos Passos (V11)
+## Proximos Passos (V12)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA
@@ -231,3 +265,5 @@ npm run db:studio    # Prisma Studio
 - A/B testing com tracking real
 - Export CSV no admin
 - Dashboard de cohort avancado
+- Monitoring (Sentry)
+- Integrar YouMayLike e PersonalizedRails nas paginas

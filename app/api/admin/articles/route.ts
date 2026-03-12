@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
+import { validateAdmin } from "@/lib/auth/admin";
 
 export async function GET(req: NextRequest) {
+  const denied = validateAdmin(req);
+  if (denied) return denied;
+
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "25", 10)));
@@ -28,6 +32,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const deniedPost = validateAdmin(req);
+  if (deniedPost) return deniedPost;
+
   try {
     const body = await req.json();
     const { title, slug, subtitle, content, category, tags, status, publishedAt } = body;

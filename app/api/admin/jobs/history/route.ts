@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
+import { validateAdmin } from '@/lib/auth/admin'
 
 export async function GET(req: NextRequest) {
+  const denied = validateAdmin(req)
+  if (denied) return denied
+
   const url = new URL(req.url)
   const jobName = url.searchParams.get('job') || undefined
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 200)
