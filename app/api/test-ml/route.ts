@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getMLToken } from '@/lib/ml-auth'
 
 async function mlFetch(url: string, token: string) {
@@ -7,7 +7,15 @@ async function mlFetch(url: string, token: string) {
   return { status: res.status, body }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const secret = process.env.ADMIN_SECRET
+  if (secret) {
+    const url = new URL(req.url)
+    const auth = req.headers.get('authorization')
+    if (auth !== `Bearer ${secret}` && url.searchParams.get('secret') !== secret) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+  }
   try {
     const token = await getMLToken()
 

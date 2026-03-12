@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Package, Tag, Store, Clock, Settings, Zap, Upload } from "lucide-react";
+import { LayoutDashboard, Package, Tag, Store, Clock, Settings, Zap, Upload, Bell, TrendingUp } from "lucide-react";
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -7,7 +7,9 @@ const nav = [
   { href: "/admin/ofertas", label: "Ofertas", icon: Tag },
   { href: "/admin/fontes", label: "Fontes", icon: Store },
   { href: "/admin/jobs", label: "Jobs", icon: Clock },
-  { href: "/admin/ingestao", label: "Ingestao", icon: Upload },
+  { href: "/admin/ingestao", label: "Ingestão", icon: Upload },
+  { href: "/admin/alertas", label: "Alertas", icon: Bell },
+  { href: "/admin/tendencias", label: "Tendências", icon: TrendingUp },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

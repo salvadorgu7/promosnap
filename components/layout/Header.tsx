@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Search, Flame, TrendingDown, Trophy, Tag, Menu, X, Zap,
+  Search, Flame, TrendingDown, Trophy, Tag, Menu, X, Zap, Heart,
 } from "lucide-react";
 import SearchBar from "@/components/search/SearchBar";
 
@@ -41,8 +41,15 @@ export default function Header() {
             <SearchBar />
           </div>
 
-          {/* Desktop hot link */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Desktop hot link + favorites */}
+          <div className="hidden md:flex items-center gap-2">
+            <Link
+              href="/favoritos"
+              className="p-2 rounded-lg text-surface-500 hover:text-accent-red hover:bg-surface-100 transition-colors"
+              title="Meus Favoritos"
+            >
+              <Heart className="w-5 h-5" />
+            </Link>
             <Link
               href="/ofertas"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-red/10 text-accent-red text-sm font-semibold hover:bg-accent-red/15 transition-colors"

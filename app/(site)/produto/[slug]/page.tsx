@@ -17,6 +17,7 @@ import Breadcrumb from "@/components/ui/Breadcrumb";
 import OfferCard from "@/components/cards/OfferCard";
 import MobileCTA from "@/components/product/MobileCTA";
 import ShareButtons from "@/components/product/ShareButtons";
+import PriceAlertForm from "@/components/product/PriceAlertForm";
 import { buildMetadata, productSchema, breadcrumbSchema } from "@/lib/seo/metadata";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -428,6 +429,15 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               price={bestOffer ? formatPrice(bestPrice) : ""}
             />
           </div>
+
+          {/* Price Alert */}
+          {bestOffer && product.listings[0] && (
+            <PriceAlertForm
+              listingId={product.listings[0].id}
+              currentPrice={bestPrice}
+              productName={product.name}
+            />
+          )}
 
           {/* Trust disclaimer */}
           <div className="card p-4 flex items-center gap-3">

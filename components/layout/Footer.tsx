@@ -14,13 +14,13 @@ const LINKS = {
     { href: "/menor-preco", label: "Menor Preço Histórico" },
     { href: "/mais-vendidos", label: "Mais Vendidos" },
     { href: "/cupons", label: "Cupons" },
-    { href: "/lojas", label: "Lojas Parceiras" },
+    { href: "/trending", label: "Tendências" },
   ],
   PromoSnap: [
     { href: "/sobre", label: "Sobre" },
+    { href: "/favoritos", label: "Meus Favoritos" },
     { href: "/melhores/melhores-smartphones", label: "Melhores Smartphones" },
     { href: "/melhores/melhores-notebooks", label: "Melhores Notebooks" },
-    { href: "/melhores/melhores-fones-bluetooth", label: "Melhores Fones" },
   ],
 };
 

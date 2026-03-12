@@ -176,6 +176,7 @@ model Listing {
   product             Product?       @relation(fields: [productId], references: [id])
   variant             ProductVariant? @relation(fields: [variantId], references: [id])
   offers              Offer[]
+  priceAlerts         PriceAlert[]
 
   @@unique([sourceId, externalId])
   @@index([productId])
@@ -342,6 +343,7 @@ model JobRun {
   status      JobStatus @default(RUNNING)
   startedAt   DateTime  @default(now())
   endedAt     DateTime?
+  durationMs  Int?
   itemsTotal  Int?
   itemsDone   Int?
   errorLog    String?
@@ -356,4 +358,41 @@ enum JobStatus {
   SUCCESS
   FAILED
   CANCELLED
+}
+
+// ============================================
+// PRICE ALERTS
+// ============================================
+
+model PriceAlert {
+  id          String    @id @default(cuid())
+  listingId   String
+  email       String
+  targetPrice Float
+  isActive    Boolean   @default(true)
+  triggeredAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([isActive])
+  @@index([listingId])
+  @@map("price_alerts")
+}
+
+// ============================================
+// TRENDING KEYWORDS
+// ============================================
+
+model TrendingKeyword {
+  id        String   @id @default(cuid())
+  keyword   String
+  url       String?
+  position  Int      @default(0)
+  fetchedAt DateTime @default(now())
+
+  @@unique([keyword, fetchedAt])
+  @@index([fetchedAt])
+  @@map("trending_keywords")
 }

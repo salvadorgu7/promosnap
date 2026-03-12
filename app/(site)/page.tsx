@@ -4,20 +4,28 @@ import SearchBar from "@/components/search/SearchBar";
 import RailSection from "@/components/home/RailSection";
 import OfferCard from "@/components/cards/OfferCard";
 import CategoryCard from "@/components/cards/CategoryCard";
+import TrendingTags from "@/components/home/TrendingTags";
+import DealOfTheDay from "@/components/home/DealOfTheDay";
+import RecentlyViewedRail from "@/components/home/RecentlyViewedRail";
 import { getHotOffers, getBestSellers, getLowestPrices, getCategories, getSiteStats, getActiveCoupons } from "@/lib/db/queries";
+import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [hotOffers, bestSellers, lowestPrices, categories, stats, coupons] = await Promise.all([
+  const [hotOffers, bestSellers, lowestPrices, categories, stats, coupons, trendingKeywords] = await Promise.all([
     getHotOffers(16).catch(() => []),
     getBestSellers(16).catch(() => []),
     getLowestPrices(16).catch(() => []),
     getCategories().catch(() => []),
     getSiteStats().catch(() => ({ listings: 0, activeOffers: 0, sources: 4, clickoutsToday: 0, clickoutsWeek: 0, categories: 0, brands: 0 })),
     getActiveCoupons().catch(() => []),
+    prisma.trendingKeyword.findMany({ orderBy: [{ fetchedAt: "desc" }, { position: "asc" }], take: 15 }).catch(() => []),
   ]);
+
+  // Best deal of the day
+  const dealOfTheDay = hotOffers.length > 0 ? hotOffers[0] : null;
 
   return (
     <div>
@@ -86,6 +94,33 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* TRENDING TAGS */}
+      {trendingKeywords.length > 0 && (
+        <TrendingTags keywords={trendingKeywords.map((t: any) => ({ keyword: t.keyword, url: t.url }))} />
+      )}
+
+      {/* DEAL OF THE DAY */}
+      {dealOfTheDay && (
+        <section className="py-6">
+          <div className="max-w-7xl mx-auto px-4">
+            <DealOfTheDay
+              product={{
+                id: dealOfTheDay.id,
+                name: dealOfTheDay.name,
+                slug: dealOfTheDay.slug,
+                imageUrl: dealOfTheDay.imageUrl,
+                price: dealOfTheDay.bestOffer.price,
+                originalPrice: dealOfTheDay.bestOffer.originalPrice,
+                discount: dealOfTheDay.bestOffer.discount,
+                sourceName: dealOfTheDay.bestOffer.sourceName,
+                offerScore: dealOfTheDay.bestOffer.offerScore,
+                isFreeShipping: dealOfTheDay.bestOffer.isFreeShipping,
+              }}
+            />
+          </div>
+        </section>
+      )}
 
       {/* OFERTAS QUENTES */}
       {hotOffers.length > 0 && (
@@ -169,6 +204,9 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* RECENTLY VIEWED */}
+      <RecentlyViewedRail />
 
       {/* POR QUE PROMOSNAP? */}
       <section className="py-10 bg-surface-50">
