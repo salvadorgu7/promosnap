@@ -4,6 +4,15 @@
 
 export type DistributionChannel = "homepage" | "email" | "telegram" | "whatsapp";
 
+export type DistributionSegment =
+  | "geral"
+  | "eletronicos"
+  | "moda"
+  | "casa"
+  | "games"
+  | "cupons"
+  | "ofertas-quentes";
+
 export type DistributionStatus = "pending" | "sent" | "failed" | "previewed";
 
 export interface DistributionPost {

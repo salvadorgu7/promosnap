@@ -14,6 +14,7 @@ import {
   GitCompareArrows,
   ChevronLeft,
   ChevronRight,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { href: "/favoritos", label: "Favoritos", icon: Heart },
   { href: "/mais-vendidos", label: "Trending", icon: TrendingUp },
   { href: "/comparar", label: "Comparar", icon: GitCompareArrows },
+  { href: "/canais", label: "Canais", icon: Users },
 ] as const;
 
 export default function Sidebar() {

@@ -10,10 +10,20 @@ import {
   Minus,
   ArrowUpRight,
   ArrowDownRight,
+  Repeat,
+  Bell,
+  Search,
+  Radio,
+  FileText,
+  Award,
 } from "lucide-react";
 import { getAllBusinessMetrics } from "@/lib/business/metrics";
 import { getAllScorecards } from "@/lib/business/scorecards";
+import { getRetentionMetrics as getDetailedRetention } from "@/lib/business/retention";
+import { getRetentionValueRanking } from "@/lib/business/retention-value";
 import type { MetricResult, MetricStatus, Scorecard, ScorecardItem } from "@/lib/business/types";
+import type { RetentionMetrics } from "@/lib/business/retention";
+import type { RetentionFeatureRank } from "@/lib/business/retention-value";
 import { toSeverity, severityBadge, severityDot } from "@/lib/admin/severity";
 
 export const dynamic = "force-dynamic";
@@ -146,10 +156,87 @@ function ScorecardCard({ scorecard }: { scorecard: Scorecard }) {
 // Page
 // ============================================
 
+const FEATURE_ICONS: Record<string, typeof Bell> = {
+  alerts: Bell,
+  search: Search,
+  distribution: Radio,
+  content: FileText,
+};
+
+function RetentionDetailCard({ retention }: { retention: RetentionMetrics }) {
+  const stats = [
+    { label: "Usuarios recorrentes", value: retention.returningUsers, sub: `de ${retention.totalUniqueUsers} unicos` },
+    { label: "Taxa de retorno", value: `${retention.returnRate}%`, sub: "nos ultimos 30 dias" },
+    { label: "Alertas disparados", value: retention.alertTriggered, sub: `${retention.alertConversionRate}% conversao` },
+    { label: "Media alertas/usuario", value: retention.avgAlertsPerUser, sub: `${retention.totalAlertUsers} usuarios` },
+    { label: "Clickouts recorrentes", value: retention.recurringClickouts, sub: `${retention.recurringRate}% do total` },
+  ];
+
+  return (
+    <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+      <div className="p-4 border-b border-surface-100">
+        <h3 className="font-semibold font-display text-text-primary">Metricas de Retencao</h3>
+        <p className="text-xs text-text-muted">Dados dos ultimos 30 dias</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-surface-100">
+        {stats.map((s) => (
+          <div key={s.label} className="p-4 text-center">
+            <p className="text-xl font-bold font-display text-text-primary">{s.value}</p>
+            <p className="text-xs text-text-muted font-medium">{s.label}</p>
+            <p className="text-[10px] text-text-muted">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FeatureRankingCard({ features }: { features: RetentionFeatureRank[] }) {
+  return (
+    <div className="bg-white rounded-xl border border-surface-200 shadow-sm overflow-hidden">
+      <div className="p-4 border-b border-surface-100">
+        <h3 className="font-semibold font-display text-text-primary">Ranking de Features por Retencao</h3>
+        <p className="text-xs text-text-muted">Quais features geram mais retorno de usuarios</p>
+      </div>
+      <div className="divide-y divide-surface-100">
+        {features.map((f) => {
+          const Icon = FEATURE_ICONS[f.feature] || Award;
+          return (
+            <div key={f.feature} className="px-4 py-3 flex items-center gap-4">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-100 text-text-secondary flex-shrink-0">
+                <span className="text-sm font-bold font-display">#{f.rank}</span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-surface-50 flex items-center justify-center flex-shrink-0">
+                <Icon className="h-4 w-4 text-text-muted" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-text-primary">{f.label}</p>
+                <p className="text-[10px] text-text-muted">{f.description}</p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-lg font-bold font-display text-text-primary">{f.metricValue}</p>
+                <p className="text-[10px] text-text-muted">{f.metricLabel}</p>
+              </div>
+              <div className="text-right flex-shrink-0 min-w-[60px]">
+                <p className={`text-sm font-bold ${f.conversionRate > 20 ? "text-green-600" : f.conversionRate > 5 ? "text-amber-600" : "text-text-muted"}`}>
+                  {f.conversionRate}%
+                </p>
+                <p className="text-[10px] text-text-muted">conversao</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default async function AdminBusinessPage() {
-  const [metrics, scorecards] = await Promise.all([
+  const [metrics, scorecards, detailedRetention, featureRanking] = await Promise.all([
     getAllBusinessMetrics(),
     getAllScorecards(),
+    getDetailedRetention(),
+    getRetentionValueRanking(),
   ]);
 
   return (
@@ -234,6 +321,15 @@ export default async function AdminBusinessPage() {
           {metrics.operational.map((m, i) => (
             <MetricCard key={i} m={m} />
           ))}
+        </div>
+      </section>
+
+      {/* Retencao */}
+      <section>
+        <SectionHeader icon={Repeat} title="Retencao" subtitle="Metricas de retorno de usuarios e valor das features" />
+        <div className="space-y-4">
+          <RetentionDetailCard retention={detailedRetention} />
+          <FeatureRankingCard features={featureRanking} />
         </div>
       </section>
 

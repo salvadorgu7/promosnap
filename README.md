@@ -437,6 +437,44 @@ npm run verify:quick # Testes + smoke (sem build)
 - Highlights engine para selecao inteligente de destaques
 - Usado em carousel, banners, distribuicao
 
+## Retention Loops & Community (V16)
+
+### Retention Loops
+- Favoritos evoluidos para Watchlist real com price tracking
+- "Desde sua ultima visita" — quedas de preco e novos produtos
+- "Novidades para voce" — baseado em favoritos, buscas e categorias
+- Alertas com progress bar (preco atual vs alvo), quick-select targets
+- API /api/updates para atualizacoes personalizadas
+
+### Personalization V3
+- Rails personalizados: "Para voce", "Quedas recentes", "Baseado nos favoritos"
+- Recomendacoes por price drops, categoria, marca
+- Renderiza apenas com sinal suficiente (min 3 favoritos ou 5 views)
+
+### Community Engine
+- Hub /canais com canais (Telegram, WhatsApp, Email) e categorias
+- Landing pages /canais/[slug] para 6 segmentos (eletronicos, cupons, ofertas-quentes, moda, casa, games)
+- Distribution segments (geral + 6 categorias) no admin
+- Social ranking: mais clicados, mais monitorados, mais populares
+
+### Catalog Flywheel
+- Pipeline de candidates com sub-status (PENDING → ENRICHED → NEEDS_REVIEW → APPROVED → PUBLISHED)
+- Catalog Opportunities: categorias/marcas/keywords com gap de cobertura
+- Batch enrichment melhorado: brand aliases, 18 categorias, shipping signals
+- Batch publish: aprovar/rejeitar/publicar candidates em lote
+- Admin /admin/catalog-opportunities
+
+### Retention Monetization
+- Metricas de retencao: returning users, alert-to-clickout, recurring clickouts
+- Retention value ranking: quais features trazem retorno
+- Secao "Retencao" no admin/business
+
+### UX Components
+- WatchlistCard, AlertCard, CommunityCard reutilizaveis
+- SocialProof component na homepage
+- Live indicators (pulse dots, "Atualizado agora")
+- Canais link na sidebar desktop
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)
@@ -448,7 +486,7 @@ npm run verify:quick # Testes + smoke (sem build)
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
 
-## Proximos Passos (V16)
+## Proximos Passos (V17)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA
@@ -458,4 +496,5 @@ npm run verify:quick # Testes + smoke (sem build)
 - Export CSV no admin
 - WhatsApp Business API real
 - Telegram bot commands interativos
-- prisma db push para novos modelos (Banner, ImportBatch, CatalogCandidate, Product flags)
+- User accounts (auth real, login/signup)
+- Gamificacao e badges de usuario

@@ -1,4 +1,4 @@
-import { Flame, TrendingDown, Trophy, Sparkles, Tag, Shield, TrendingUp, BarChart3, ShieldCheck, Store, Bell, Truck, Star, Search } from "lucide-react";
+import { Flame, TrendingDown, Trophy, Sparkles, Tag, Shield, TrendingUp, BarChart3, ShieldCheck, Store, Bell, Truck, Star, Search, Users, Send, MessageCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";
 import RailSection from "@/components/home/RailSection";
@@ -11,7 +11,12 @@ import SourcesCompare from "@/components/home/SourcesCompare";
 import Newsletter from "@/components/home/Newsletter";
 import CategoryRail from "@/components/home/CategoryRail";
 import OfferCarousel from "@/components/home/OfferCarousel";
+import SinceLastVisit from "@/components/home/SinceLastVisit";
+import PersonalizedNews from "@/components/home/PersonalizedNews";
+import PersonalizedRails from "@/components/home/PersonalizedRails";
+import SocialProof from "@/components/home/SocialProof";
 import { getHotOffers, getBestSellers, getLowestPrices, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory, buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
+import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";
 
@@ -27,6 +32,13 @@ export default async function HomePage() {
     getActiveCoupons().catch(() => []),
     prisma.trendingKeyword.findMany({ orderBy: [{ fetchedAt: "desc" }, { position: "asc" }], take: 15 }).catch(() => []),
   ]);
+
+  // Social ranking
+  const socialRanking = await getSocialRanking(6).catch(() => ({
+    mostClicked: [],
+    mostMonitored: [],
+    mostPopular: [],
+  }));
 
   // Best deal of the day
   const dealOfTheDay = hotOffers.length > 0 ? hotOffers[0] : null;
@@ -68,10 +80,13 @@ export default async function HomePage() {
         <div className="relative max-w-7xl mx-auto px-4 pt-12 pb-10 md:pt-16 md:pb-14">
           <div className="max-w-2xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-blue/10 border border-accent-blue/20 text-accent-blue text-xs font-semibold mb-5">
-              <Sparkles className="w-3.5 h-3.5" />
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-blue opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-blue"></span>
+              </span>
               {stats.activeOffers > 0
                 ? `${formatNumber(stats.activeOffers)} ofertas verificadas`
-                : "Ofertas verificadas com histórico real"}
+                : "Ofertas verificadas com historico real"}
             </div>
 
             <h1 className="font-display font-extrabold text-4xl md:text-5xl text-surface-900 tracking-tight leading-[1.1]">
@@ -217,6 +232,19 @@ export default async function HomePage() {
         </div>
       )}
 
+      {/* SOCIAL PROOF / RANKING */}
+      {(socialRanking.mostClicked.length > 0 ||
+        socialRanking.mostMonitored.length > 0 ||
+        socialRanking.mostPopular.length > 0) && (
+        <div className="section-contrast">
+          <SocialProof
+            mostClicked={socialRanking.mostClicked}
+            mostMonitored={socialRanking.mostMonitored}
+            mostPopular={socialRanking.mostPopular}
+          />
+        </div>
+      )}
+
       {/* CUPONS */}
       {coupons.length > 0 && (
         <section className="py-6 section-warm section-border-top">
@@ -264,6 +292,15 @@ export default async function HomePage() {
 
       {/* RECENTLY VIEWED */}
       <RecentlyViewedRail />
+
+      {/* SINCE LAST VISIT — only for returning users */}
+      <SinceLastVisit />
+
+      {/* PERSONALIZED NEWS — based on user interests */}
+      <PersonalizedNews />
+
+      {/* PERSONALIZED RAILS — for voce / quedas / baseado nos favoritos */}
+      <PersonalizedRails />
 
       {/* POR QUE PROMOSNAP? */}
       <section className="py-12 md:py-16 section-highlight section-border-top">
@@ -327,8 +364,58 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* COMMUNITY CHANNELS */}
+      <section className="py-8 section-cool section-border-top">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-brand-500" />
+              <h2 className="font-display font-bold text-lg text-text-primary">
+                Canais da Comunidade
+              </h2>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent-green/10 text-accent-green border border-accent-green/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse" />
+                Atualizado agora
+              </span>
+            </div>
+            <Link href="/canais" className="text-sm text-accent-blue hover:text-brand-500 font-medium flex items-center gap-1">
+              Ver todos <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Link href="/canais" className="card p-5 flex items-center gap-4 hover:-translate-y-1 transition-transform border border-blue-500/10">
+              <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                <Send className="w-5 h-5 text-blue-500" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-display font-bold text-sm text-text-primary">Telegram</h3>
+                <p className="text-xs text-text-muted">Ofertas verificadas em tempo real</p>
+              </div>
+            </Link>
+            <Link href="/canais" className="card p-5 flex items-center gap-4 hover:-translate-y-1 transition-transform border border-green-500/10">
+              <div className="w-11 h-11 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="w-5 h-5 text-green-500" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-display font-bold text-sm text-text-primary">WhatsApp</h3>
+                <p className="text-xs text-text-muted">Resumo diario das melhores ofertas</p>
+              </div>
+            </Link>
+            <Link href="/canais" className="card p-5 flex items-center gap-4 hover:-translate-y-1 transition-transform border border-purple-500/10">
+              <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                <Bell className="w-5 h-5 text-purple-500" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-display font-bold text-sm text-text-primary">Alertas por E-mail</h3>
+                <p className="text-xs text-text-muted">Cupons e alertas de preco na caixa</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* NEWSLETTER */}
-      <div className="section-deep section-border-top">
+      <div id="newsletter" className="section-deep section-border-top">
         <Newsletter />
       </div>
 

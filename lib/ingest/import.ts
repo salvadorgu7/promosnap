@@ -1,6 +1,6 @@
 import prisma from "@/lib/db/prisma";
 import { Prisma } from "@prisma/client";
-import { enrichCandidate } from "./enrich";
+import { enrichCandidate, determineSubStatus } from "./enrich";
 import type { ImportCandidate, CandidateValidation, ImportBatchResult } from "./types";
 
 // ─── CSV Parsing ─────────────────────────────────────────────────────────────
@@ -290,11 +290,16 @@ export async function processImportBatch(batchId: string): Promise<ImportBatchRe
     try {
       // Enrich the candidate
       const enrichment = enrichCandidate(importCandidate);
+      const subStatus = determineSubStatus(enrichment, "PENDING");
+      enrichment.subStatus = subStatus;
+
+      // Map sub-status to DB status: ENRICHED/NEEDS_REVIEW → APPROVED (in DB), actual sub tracked in JSON
+      const dbStatus = subStatus === "REJECTED" ? "REJECTED" : "APPROVED";
 
       await prisma.catalogCandidate.update({
         where: { id: candidate.id },
         data: {
-          status: "APPROVED",
+          status: dbStatus as "APPROVED" | "REJECTED",
           brand: enrichment.detectedBrand || candidate.brand,
           category: enrichment.inferredCategory || candidate.category,
           enrichedData: enrichment as unknown as Prisma.InputJsonValue,

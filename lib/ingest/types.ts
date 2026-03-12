@@ -73,4 +73,11 @@ export interface EnrichmentData {
   affiliateValid: boolean;
   trustScore: number;
   enrichmentNotes: string[];
+  shippingSignals?: {
+    hasFreeShipping: boolean;
+    hasPrimeShipping: boolean;
+    isMarketplace: boolean;
+  };
+  /** Sub-status for richer pipeline tracking within the enrichedData JSON */
+  subStatus?: string;
 }

@@ -9,14 +9,18 @@ import {
   Copy,
   Zap,
   TrendingUp,
+  Filter,
 } from "lucide-react";
 import {
   getChannelStatus,
   getReadyOffers,
+  getReadyOffersBySegment,
   getDistributionHistory,
   formatForChannel,
+  formatForSegment,
+  SEGMENT_LABELS,
 } from "@/lib/distribution/engine";
-import type { DistributionChannel } from "@/lib/distribution/types";
+import type { DistributionChannel, DistributionSegment } from "@/lib/distribution/types";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +117,37 @@ export default async function DistributionPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Segment selector */}
+      <div className="rounded-xl border border-surface-200 bg-white p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="w-4 h-4 text-text-muted" />
+          <h2 className="text-sm font-semibold text-text-primary">
+            Segmento de Distribuicao
+          </h2>
+        </div>
+        <p className="text-xs text-text-muted mb-3">
+          Filtre ofertas por segmento para enviar conteudo direcionado a cada
+          canal de categoria.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(SEGMENT_LABELS) as DistributionSegment[]).map(
+            (seg) => (
+              <span
+                key={seg}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-surface-200 bg-surface-50 text-xs font-medium text-text-secondary hover:bg-surface-100 hover:border-surface-300 cursor-default transition-colors"
+              >
+                {SEGMENT_LABELS[seg]}
+              </span>
+            )
+          )}
+        </div>
+        <p className="text-[10px] text-text-muted mt-2">
+          Selecao de segmento ativa via API — use
+          getReadyOffersBySegment(segment, limit) para filtrar ofertas por
+          segmento no codigo.
+        </p>
       </div>
 
       {/* Ready offers */}

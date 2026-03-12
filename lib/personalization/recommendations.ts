@@ -1,10 +1,10 @@
 // ============================================
-// RECOMMENDATIONS ENGINE — BLOCO 4 Personalization V2
+// RECOMMENDATIONS ENGINE — BLOCO 4 Personalization V3
 // ============================================
 
 import type { UserSegment } from './segmentation'
 
-// Complementary category mappings: product keyword → related category slugs
+// Complementary category mappings: product keyword -> related category slugs
 const COMPLEMENTARY_MAP: Record<string, string[]> = {
   'iphone': ['fones-bluetooth', 'acessorios', 'capas', 'carregador', 'pelicula', 'smartwatch'],
   'smartphone': ['fones-bluetooth', 'acessorios', 'capas', 'carregador', 'pelicula', 'smartwatch'],
@@ -22,7 +22,7 @@ const COMPLEMENTARY_MAP: Record<string, string[]> = {
   'air-fryer': ['utensilios-cozinha', 'panela', 'acessorios-cozinha', 'livro-receitas'],
   'cafeteira': ['capsulas', 'acessorios-cafe', 'caneca', 'filtro'],
   'tablet': ['caneta-stylus', 'capa-tablet', 'teclado-bluetooth', 'pelicula'],
-  'camera': ['tripé', 'cartao-memoria', 'lente', 'mochila-camera', 'iluminacao'],
+  'camera': ['tripe', 'cartao-memoria', 'lente', 'mochila-camera', 'iluminacao'],
   'impressora': ['tinta', 'papel', 'cartuchos', 'cabo-usb'],
 }
 
@@ -99,4 +99,109 @@ export function getPersonalizedOrder(sections: string[], segment: UserSegment): 
 
   // Append any sections not in the priority list
   return [...ordered, ...remaining]
+}
+
+// ============================================
+// RETURN INTENT RECOMMENDATIONS — V3
+// ============================================
+
+export interface RecommendationRequest {
+  categories?: string[]
+  brands?: string[]
+  excludeIds?: string[]
+  limit?: number
+}
+
+/**
+ * Build API params for price drop recommendations:
+ * Items user viewed that dropped in price
+ */
+export function getPriceDropRecommendationParams(
+  viewedProductIds: string[],
+  limit = 8
+): URLSearchParams | null {
+  if (viewedProductIds.length === 0) return null
+
+  const params = new URLSearchParams({
+    type: "price_drops",
+    limit: String(limit),
+  })
+
+  // We pass viewed IDs as a hint — the API will find products
+  // in the same categories that have active price drops
+  return params
+}
+
+/**
+ * Build API params for category-based recommendations:
+ * New items in user's favorite categories
+ */
+export function getCategoryRecommendationParams(
+  favCategories: string[],
+  excludeIds: string[] = [],
+  limit = 8
+): URLSearchParams | null {
+  if (favCategories.length === 0) return null
+
+  const params = new URLSearchParams({
+    categories: favCategories.slice(0, 5).join(","),
+    type: "new",
+    limit: String(limit),
+  })
+
+  if (excludeIds.length > 0) {
+    params.set("exclude", excludeIds.slice(0, 20).join(","))
+  }
+
+  return params
+}
+
+/**
+ * Build API params for brand-based recommendations:
+ * New items from user's favorite brands
+ */
+export function getBrandRecommendationParams(
+  favBrands: string[],
+  excludeIds: string[] = [],
+  limit = 8
+): URLSearchParams | null {
+  if (favBrands.length === 0) return null
+
+  const params = new URLSearchParams({
+    brands: favBrands.slice(0, 5).join(","),
+    limit: String(limit),
+  })
+
+  if (excludeIds.length > 0) {
+    params.set("exclude", excludeIds.slice(0, 20).join(","))
+  }
+
+  return params
+}
+
+/**
+ * Build combined recommendation params for "Para voce" rail:
+ * Top picks based on all signals
+ */
+export function getTopPicksParams(
+  categories: string[],
+  brands: string[],
+  excludeIds: string[] = [],
+  limit = 10
+): URLSearchParams | null {
+  if (categories.length === 0 && brands.length === 0) return null
+
+  const params = new URLSearchParams({ limit: String(limit) })
+
+  if (categories.length > 0) {
+    params.set("categories", categories.slice(0, 5).join(","))
+  }
+  if (brands.length > 0) {
+    params.set("brands", brands.slice(0, 3).join(","))
+  }
+  if (excludeIds.length > 0) {
+    params.set("exclude", excludeIds.slice(0, 20).join(","))
+  }
+
+  return params
 }

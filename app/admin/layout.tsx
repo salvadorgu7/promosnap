@@ -33,6 +33,7 @@ import {
   Radio,
   Image,
   Pencil,
+  Gem,
 } from "lucide-react";
 
 interface NavItem {
@@ -63,6 +64,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/fontes", label: "Fontes", icon: Store },
       { href: "/admin/prioridades", label: "Prioridades", icon: Target },
       { href: "/admin/catalog-governance", label: "Catalogo", icon: ShieldCheck },
+      { href: "/admin/catalog-opportunities", label: "Oportunidades", icon: Gem },
       { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
       { href: "/admin/ingestao", label: "Importacao", icon: Upload },
     ],

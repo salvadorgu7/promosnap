@@ -11,6 +11,7 @@ import {
   ExternalLink,
   Trash2,
   X,
+  TrendingDown,
 } from "lucide-react";
 
 interface Favorite {
@@ -35,7 +36,10 @@ interface Alert {
   targetPrice: number;
   isActive: boolean;
   createdAt: string;
-  listing?: { rawTitle?: string };
+  listing?: {
+    rawTitle?: string;
+    offers?: Array<{ currentPrice: number }>;
+  };
 }
 
 type Tab = "favoritos" | "recentes" | "alertas" | "buscas";
@@ -344,39 +348,78 @@ export default function MinhaContaPage() {
                 ))}
               </div>
             ) : alerts.length > 0 ? (
-              <div className="space-y-2">
-                {alerts.map((alert) => (
-                  <div key={alert.id} className="card flex items-center gap-4 p-4">
-                    <div
-                      className={`p-2 rounded-lg ${
-                        alert.isActive ? "bg-accent-blue/10" : "bg-surface-100"
-                      }`}
-                    >
-                      <Bell
-                        className={`h-4 w-4 ${
-                          alert.isActive ? "text-accent-blue" : "text-text-muted"
-                        }`}
-                      />
+              <div className="space-y-3">
+                {alerts.map((alert) => {
+                  const currentPrice = alert.listing?.offers?.[0]?.currentPrice;
+                  const percentAway = currentPrice && currentPrice > alert.targetPrice
+                    ? Math.round(((currentPrice - alert.targetPrice) / currentPrice) * 100)
+                    : 0;
+                  const maxDisplay = currentPrice ? currentPrice * 1.3 : alert.targetPrice * 1.5;
+                  const range = maxDisplay - alert.targetPrice;
+                  const progress = currentPrice && range > 0
+                    ? Math.min(100, Math.max(0, ((maxDisplay - currentPrice) / range) * 100))
+                    : 0;
+
+                  return (
+                    <div key={alert.id} className="card p-4">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`p-2 rounded-lg flex-shrink-0 ${
+                            alert.isActive ? "bg-accent-orange/10" : "bg-surface-100"
+                          }`}
+                        >
+                          <Bell
+                            className={`h-4 w-4 ${
+                              alert.isActive ? "text-accent-orange" : "text-text-muted"
+                            }`}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-text-primary truncate">
+                            {alert.listing?.rawTitle || `Alerta #${alert.id.slice(0, 8)}`}
+                          </p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            {currentPrice && (
+                              <span className="text-xs text-text-muted">
+                                Atual: R$ {currentPrice.toFixed(2).replace(".", ",")}
+                              </span>
+                            )}
+                            <span className="text-xs text-accent-orange font-medium">
+                              Alvo: R$ {alert.targetPrice.toFixed(2).replace(".", ",")}
+                            </span>
+                          </div>
+                        </div>
+                        <span
+                          className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                            alert.isActive
+                              ? "bg-accent-orange/10 text-accent-orange"
+                              : "bg-accent-green/10 text-accent-green"
+                          }`}
+                        >
+                          {alert.isActive ? "Ativo" : "Disparado"}
+                        </span>
+                      </div>
+
+                      {/* Progress bar */}
+                      {alert.isActive && currentPrice && (
+                        <div className="mt-3">
+                          <div className="relative h-1.5 bg-surface-100 rounded-full overflow-hidden">
+                            <div
+                              className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent-orange to-accent-green rounded-full transition-all"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          {percentAway > 0 && (
+                            <p className="text-[10px] text-text-muted mt-1.5 flex items-center gap-1">
+                              <TrendingDown className="w-3 h-3 text-accent-orange" />
+                              Faltam {percentAway}% para atingir o alvo
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-text-primary truncate">
-                        {alert.listing?.rawTitle || `Alerta #${alert.id.slice(0, 8)}`}
-                      </p>
-                      <p className="text-xs text-text-muted">
-                        Alvo: R$ {alert.targetPrice.toFixed(2).replace(".", ",")}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        alert.isActive
-                          ? "bg-accent-blue/10 text-accent-blue"
-                          : "bg-surface-100 text-text-muted"
-                      }`}
-                    >
-                      {alert.isActive ? "Ativo" : "Disparado"}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">

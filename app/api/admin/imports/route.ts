@@ -11,13 +11,37 @@ export async function GET(request: NextRequest) {
   const denied = validateAdmin(request);
   if (denied) return denied;
 
+  const statusFilter = new URL(request.url).searchParams.get("status");
+  const withCandidates = new URL(request.url).searchParams.get("candidates") === "true";
+
   const batches = await prisma.importBatch.findMany({
     orderBy: { createdAt: "desc" },
     take: 50,
+    ...(statusFilter && { where: { status: statusFilter as any } }),
     include: {
       _count: {
         select: { candidates: true },
       },
+      ...(withCandidates && {
+        candidates: {
+          orderBy: { createdAt: "desc" },
+          take: 200,
+          select: {
+            id: true,
+            title: true,
+            brand: true,
+            category: true,
+            imageUrl: true,
+            price: true,
+            originalPrice: true,
+            affiliateUrl: true,
+            status: true,
+            enrichedData: true,
+            rejectionNote: true,
+            createdAt: true,
+          },
+        },
+      }),
     },
   });
 
@@ -33,6 +57,7 @@ export async function GET(request: NextRequest) {
     candidatesCount: b._count.candidates,
     processedAt: b.processedAt,
     createdAt: b.createdAt,
+    ...(withCandidates && { candidates: (b as any).candidates }),
   }));
 
   return NextResponse.json({ batches: result });
