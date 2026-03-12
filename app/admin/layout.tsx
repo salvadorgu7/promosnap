@@ -65,8 +65,11 @@ const navGroups: NavGroup[] = [
       { href: "/admin/fontes", label: "Fontes", icon: Store },
       { href: "/admin/prioridades", label: "Prioridades", icon: Target },
       { href: "/admin/catalog-governance", label: "Catalogo", icon: ShieldCheck },
+      { href: "/admin/catalog-quality", label: "Qualidade", icon: Gauge },
       { href: "/admin/catalog-opportunities", label: "Oportunidades", icon: Gem },
+      { href: "/admin/catalog-intelligence", label: "Intelligence", icon: Brain },
       { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
+      { href: "/admin/sourcing", label: "Sourcing", icon: Package },
       { href: "/admin/ingestao", label: "Importacao", icon: Upload },
     ],
   },
@@ -104,6 +107,12 @@ const navGroups: NavGroup[] = [
       { href: "/admin/seo-gaps", label: "SEO Gaps", icon: SearchX },
       { href: "/admin/email-intelligence", label: "Email Intel", icon: MailCheck },
       { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
+    ],
+  },
+  {
+    title: "Automacao",
+    items: [
+      { href: "/admin/automation", label: "Automacao", icon: Zap },
     ],
   },
   {

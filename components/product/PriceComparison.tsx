@@ -1,4 +1,4 @@
-import { ExternalLink, Star, Tag, Truck, TrendingDown, Award, ShieldCheck, Crown } from "lucide-react";
+import { ExternalLink, Star, Tag, Truck, TrendingDown, Award, ShieldCheck, Crown, Zap, Timer } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
 interface ComparisonOffer {
@@ -13,11 +13,50 @@ interface ComparisonOffer {
   reviewsCount: number | null;
   affiliateUrl: string;
   offerScore: number;
+  /** Optional: decision value score from smart comparison */
+  decisionScore?: number;
+  /** Optional: whether fast delivery is available */
+  fastDelivery?: boolean;
+  /** Optional: shipping price */
+  shippingPrice?: number | null;
 }
 
 interface PriceComparisonProps {
   offers: ComparisonOffer[];
   productName: string;
+}
+
+/**
+ * Determine the best cost-benefit offer using decision score or computed score.
+ */
+function getBestValueId(offers: ComparisonOffer[]): string | null {
+  if (offers.length === 0) return null;
+
+  // If decision scores are available, use them
+  const hasDecisionScores = offers.some((o) => o.decisionScore !== undefined);
+  if (hasDecisionScores) {
+    return offers.reduce((best, o) =>
+      (o.decisionScore ?? 0) > (best.decisionScore ?? 0) ? o : best
+    , offers[0]).id;
+  }
+
+  // Fallback: compute a simple composite score
+  const bestPrice = Math.min(...offers.map((o) => o.price));
+  return offers.reduce((best, o) => {
+    const priceScore = bestPrice > 0 ? (bestPrice / o.price) * 40 : 0;
+    const trustScore = (o.offerScore / 100) * 30;
+    const shippingBonus = o.isFreeShipping ? 15 : 0;
+    const ratingScore = o.rating ? (o.rating / 5) * 15 : 0;
+    const total = priceScore + trustScore + shippingBonus + ratingScore;
+
+    const bestPriceScore = bestPrice > 0 ? (bestPrice / best.price) * 40 : 0;
+    const bestTrustScore = (best.offerScore / 100) * 30;
+    const bestShippingBonus = best.isFreeShipping ? 15 : 0;
+    const bestRatingScore = best.rating ? (best.rating / 5) * 15 : 0;
+    const bestTotal = bestPriceScore + bestTrustScore + bestShippingBonus + bestRatingScore;
+
+    return total > bestTotal ? o : best;
+  }, offers[0]).id;
 }
 
 export default function PriceComparison({ offers, productName }: PriceComparisonProps) {
@@ -29,6 +68,9 @@ export default function PriceComparison({ offers, productName }: PriceComparison
 
   // Determine "best choice" (highest offerScore)
   const bestChoiceId = offers.reduce((best, o) => (o.offerScore > best.offerScore ? o : best), offers[0]).id;
+
+  // Determine best cost-benefit (decision value based)
+  const bestValueId = getBestValueId(offers);
 
   return (
     <div className="space-y-3">
@@ -53,6 +95,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
               : null;
           const isBest = offer.price === bestPrice;
           const isBestChoice = offer.id === bestChoiceId;
+          const isBestValue = offer.id === bestValueId && bestValueId !== bestChoiceId;
           const priceDiff = offer.price - bestPrice;
 
           return (
@@ -64,7 +107,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                   : "border-surface-200 bg-white hover:border-surface-300"
               }`}
             >
-              {/* Best badge */}
+              {/* Best price badge */}
               {isBest && (
                 <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-accent-blue text-white text-[10px] font-bold uppercase tracking-wide rounded-full">
                   Melhor Preco
@@ -75,6 +118,13 @@ export default function PriceComparison({ offers, productName }: PriceComparison
               {isBestChoice && !isBest && (
                 <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-accent-green text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1">
                   <Crown className="h-2.5 w-2.5" /> Melhor Escolha
+                </div>
+              )}
+
+              {/* Best cost-benefit badge */}
+              {isBestValue && !isBest && !isBestChoice && (
+                <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1">
+                  <Zap className="h-2.5 w-2.5" /> Melhor Custo-Beneficio
                 </div>
               )}
 
@@ -108,6 +158,16 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                   {offer.isFreeShipping && (
                     <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-purple bg-purple-50 px-1.5 py-0.5 rounded-full">
                       <Truck className="h-2.5 w-2.5" /> Frete gratis
+                    </span>
+                  )}
+                  {offer.fastDelivery && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                      <Timer className="h-2.5 w-2.5" /> Entrega rapida
+                    </span>
+                  )}
+                  {!offer.isFreeShipping && offer.shippingPrice != null && offer.shippingPrice > 0 && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted">
+                      <Truck className="h-2.5 w-2.5" /> Frete {formatPrice(offer.shippingPrice)}
                     </span>
                   )}
                   {offer.couponText && (
@@ -161,6 +221,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
               : null;
           const isBest = offer.price === bestPrice;
           const isBestChoice = offer.id === bestChoiceId;
+          const isBestValue = offer.id === bestValueId && bestValueId !== bestChoiceId;
           const priceDiff = offer.price - bestPrice;
 
           return (
@@ -181,6 +242,11 @@ export default function PriceComparison({ offers, productName }: PriceComparison
               {isBestChoice && !isBest && (
                 <div className="absolute -top-2.5 left-3 px-2 py-0.5 bg-accent-green text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1">
                   <Crown className="h-2.5 w-2.5" /> Melhor Escolha
+                </div>
+              )}
+              {isBestValue && !isBest && !isBestChoice && (
+                <div className="absolute -top-2.5 left-3 px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1">
+                  <Zap className="h-2.5 w-2.5" /> Melhor Custo-Beneficio
                 </div>
               )}
 
@@ -219,6 +285,16 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                 {offer.isFreeShipping && (
                   <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-purple bg-purple-50 px-1.5 py-0.5 rounded-full">
                     <Truck className="h-2.5 w-2.5" /> Frete gratis
+                  </span>
+                )}
+                {offer.fastDelivery && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                    <Timer className="h-2.5 w-2.5" /> Entrega rapida
+                  </span>
+                )}
+                {!offer.isFreeShipping && offer.shippingPrice != null && offer.shippingPrice > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted">
+                    <Truck className="h-2.5 w-2.5" /> Frete {formatPrice(offer.shippingPrice)}
                   </span>
                 )}
                 {offer.couponText && (

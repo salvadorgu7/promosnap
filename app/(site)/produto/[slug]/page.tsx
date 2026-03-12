@@ -27,6 +27,8 @@ import ShippingBadge from "@/components/product/ShippingBadge";
 import ContextualNav from "@/components/product/ContextualNav";
 import DecisionSummary from "@/components/product/DecisionSummary";
 import WhyHighlighted from "@/components/product/WhyHighlighted";
+import CanonicalView from "@/components/product/CanonicalView";
+import MiniCluster from "@/components/product/MiniCluster";
 import { buildMetadata, productSchema, breadcrumbSchema } from "@/lib/seo/metadata";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -37,6 +39,7 @@ import {
 import { getConsolidatedRating } from "@/lib/reviews/consolidated";
 import { getCategoryInsights } from "@/lib/reviews/ranking";
 import { getShippingSignals } from "@/lib/shipping/intelligence";
+import prisma from "@/lib/db/prisma";
 import type { PriceHistoryPoint, PriceStats } from "@/types";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -149,6 +152,22 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
   const categoryInsight = product.categoryId
     ? await getCategoryInsights(product.id, product.categoryId)
     : null;
+
+  // Fetch product variants
+  const variants = await prisma.productVariant.findMany({
+    where: { productId: product.id },
+    select: {
+      id: true,
+      variantName: true,
+      color: true,
+      size: true,
+      storage: true,
+    },
+    orderBy: { variantName: "asc" },
+  }).catch(() => []);
+
+  // Count distinct sources for canonical view
+  const distinctSources = new Set(product.listings.map((l) => l.source.slug));
 
   // Shipping signals for each offer
   const offersWithShipping = allOffers.map((offer) => ({
@@ -393,6 +412,41 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               rating={bestOffer.rating}
               isFreeShipping={bestOffer.isFreeShipping}
             />
+          )}
+
+          {/* Canonical View — all sources for this product */}
+          {product.listings.length > 1 && (
+            <CanonicalView
+              listings={product.listings.map((l) => ({
+                id: l.id,
+                rawTitle: l.rawTitle,
+                rating: l.rating,
+                reviewsCount: l.reviewsCount,
+                source: l.source,
+                offers: l.offers.map((o) => ({
+                  id: o.id,
+                  currentPrice: o.currentPrice,
+                  originalPrice: o.originalPrice,
+                  isFreeShipping: o.isFreeShipping,
+                  couponText: o.couponText ?? null,
+                  offerScore: o.offerScore,
+                  affiliateUrl: o.affiliateUrl,
+                })),
+              }))}
+              variants={variants}
+              productName={product.name}
+            />
+          )}
+
+          {/* Cluster badges */}
+          {(distinctSources.size > 1 || variants.length > 0) && product.listings.length <= 1 && (
+            <div className="flex items-center gap-2">
+              <MiniCluster
+                stores={distinctSources.size}
+                variants={variants.length}
+                offers={allOffers.length}
+              />
+            </div>
           )}
 
           {/* Offer comparison table */}

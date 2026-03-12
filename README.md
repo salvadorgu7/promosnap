@@ -475,6 +475,91 @@ npm run verify:quick # Testes + smoke (sem build)
 - Live indicators (pulse dots, "Atualizado agora")
 - Canais link na sidebar desktop
 
+## UX Merchandising & Fusion (V16-V17)
+
+### Visual Depth & Merchandising
+- FeaturedSpotlight com 3 variants (deal-of-day, editors-pick, trending)
+- IntentShowcase com 5 tabs de intencao (custo-beneficio, entrega rapida, mais avaliados, em queda, vale agora)
+- Carousel melhorado: animacoes direcionais, installments, progress bar
+- CSS merchandising: card-deep, card-border-gradient, section-separator, merchandising slots
+- Microinteracoes: hover-card, press-feedback, sidebar-glow, quick-action-hover
+
+### Navigation & Trust UX
+- Sidebar reorganizada em 4 grupos com badges dinamicos
+- ContextualNav no produto: links rapidos para secoes da pagina
+- OfferCard trust badges (Verificado quando score >= 70)
+- DecisionSummary: "Vale a pena comprar?" com confianca e melhor escolha
+- WhyHighlighted: transparencia de ranking com barras de progresso
+- PriceComparison mobile melhorado com "Melhor Escolha" badge
+
+### Personal Feed & Community
+- Feed pessoal na minha-conta com timeline de atividades
+- Indicar melhorado: hero premium, canais de comunidade, motivacao
+- Homepage reordenada com WhatChanged ticker
+- Paginas de canais com generateStaticParams
+
+### Admin Growth & Ops
+- Growth & Ops dashboard com trend-catalog gaps
+- Command Center com "Acoes do Dia"
+- Imports com quick stats
+- Distribution com "Proxima Melhor Oferta"
+
+## Real Catalog Sourcing & Commerce Automation (V18)
+
+### Canonical Product Graph
+- Produto canonico com N listings/ofertas/fontes associadas
+- Canonical matching engine (lib/catalog/canonical-match.ts): heuristica multi-fator (tokens, brand, model, category, storage)
+- Confidence levels: strong (>0.85), probable (0.6-0.85), weak (<0.6)
+- Canonical graph layer (lib/catalog/canonical-graph.ts): view consolidada, merge seguro, variant tree, stats
+- Product attributes extraction: brand, model, storage, color, screenSize, capacity, gender
+- API admin: recalculate matches, merge products, extract attributes
+
+### Normalization Engine
+- 65+ marcas no BRAND_ALIASES (expandido de 30)
+- 18 categorias no CATEGORY_KEYWORDS (expandido de 9)
+- COLOR_MAP com 50+ cores (EN→BR, brand-specific)
+- Funcoes: extractStorage, extractColor, extractScreenSize, extractCapacity, extractGender
+- extractAllAttributes para extracao em passo unico
+- normalizeForMatch: normalizacao pesada para matching (lowercase, sem acentos, tokens ordenados)
+- tokenSimilarity: similaridade Jaccard para comparacao de titulos
+
+### Real Sourcing Strategy
+- 6 modos de sourcing: curated-manual, import-csv-json, affiliate-feed, trends-assisted, candidate-expansion, source-adapter
+- Feed ingestion robusto: CSV, JSON, URL list, title/ID list com validacao por item
+- Admin /admin/sourcing: dashboard completo com pipelines, lotes, candidatos, acoes em lote
+- API /api/admin/sourcing: import, process, recalculate, publish
+
+### Smart Filters & Comparison
+- Filtros por atributos reais: storage, cor, tela, marca, faixa de preco, frete gratis, rating
+- AttributeFilters component responsivo (sidebar desktop, barra mobile)
+- Smart comparison canonica: melhor preco, trust, entrega, avaliacao, custo-beneficio
+- ProductVersions: variantes como pills (128GB/256GB, cores, tamanhos)
+
+### Commerce Automation
+- Rules engine com 5 regras default: highlight-hot-deal, carousel-worthy, deal-of-day, distribution-ready, needs-article
+- Auto merchandising: hero slot, carousel, deal of day, promo strip, banners automaticos
+- Respeita overrides manuais (manual Banner com prioridade maior nao e sobrescrito)
+- Admin /admin/automation: toggle regras, ajustar thresholds, simulacao, aplicacao
+
+### Catalog Quality at Scale
+- Quality score 0-100 por produto (weighted: titulo, imagem, preco, categoria, brand, rating)
+- 6 tipos de issue: matches fracos, sem atributos, duplicatas provaveis, sem imagem, URL fraca, source inconsistente
+- Deteccao de duplicatas por similaridade Jaccard
+- Admin /admin/catalog-quality com distribuicao de scores e secoes expandiveis
+
+### Product Experience V3
+- CanonicalView: visao consolidada com todas as fontes agrupadas
+- VariantSelector: pills de variantes com precos e swatches de cor
+- MiniCluster: badges "3 lojas", "2 versoes", "4 ofertas"
+- ProductGrouping: agrupamento inteligente para categoria/busca
+- Produto page com visao canonica e variantes
+
+### Admin Intelligence
+- Catalog gaps: categorias com demanda mas pouca cobertura, marcas fortes, single-source risk
+- Recommended imports: sugestoes baseadas em trends, buscas, favoritos, artigos, gaps
+- Sourcing-SEO bridge: sugestoes de destaque, distribuicao, artigos, paginas SEO
+- Admin /admin/catalog-intelligence com metricas e acoes priorizadas
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)
@@ -486,7 +571,7 @@ npm run verify:quick # Testes + smoke (sem build)
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
 
-## Proximos Passos (V17)
+## Proximos Passos (V19)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA
@@ -498,3 +583,7 @@ npm run verify:quick # Testes + smoke (sem build)
 - Telegram bot commands interativos
 - User accounts (auth real, login/signup)
 - Gamificacao e badges de usuario
+- Canonical match ML-assisted (embedding similarity)
+- Affiliate feed auto-sync (scheduled imports)
+- Price prediction (historico + tendencia)
+- Dashboard de ROI por canal de distribuicao
