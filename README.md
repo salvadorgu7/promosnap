@@ -121,7 +121,7 @@ npm run dev
 **Overview:** Dashboard com revenue cards, metricas
 **Catalogo:** Produtos, Ofertas, Fontes
 **Conteudo:** Artigos, Tendencias
-**Growth:** SEO, Analise, Desempenho, Inteligencia
+**Growth:** SEO, Analise, Desempenho, Inteligencia, Indicacoes
 **Monetizacao:** Revenue dashboard
 **Engajamento:** Email, Alertas
 **Operacao:** Jobs, Ingestao, Config
@@ -180,7 +180,48 @@ npm run db:studio    # Prisma Studio
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
 
-## Proximos Passos (V10)
+## Decision Engine
+
+- Catalog Prioritization: admin/prioridades com regras de peso por fonte, categoria, score
+- Source Routing: roteamento inteligente de ofertas por fonte com fallback
+- Decision dashboard: admin/decisoes com visualizacao de regras ativas
+
+## Personalization
+
+- GrowthBanner component com banners contextuais baseados em comportamento do usuario
+- Ciclo de banners: favoritos, busca, newsletter, indicacao
+- Dismissable com persistencia em localStorage
+
+## Commerce Automation
+
+- SmartCTA engine com urgencia dinamica por contexto de oferta
+- Smart share buttons com texto otimizado por plataforma (WhatsApp, Telegram, Twitter/X)
+- Referral tracking com codigo unico por usuario
+
+## CRM / Email Segmentation
+
+- Subscriber model com segmentacao por interesse
+- Email templates: welcome, daily-deals, alert-triggered, campaign
+- Admin /admin/email com metricas de envio e engajamento
+- EmailLog tracking com status de entrega
+
+## SEO Ops
+
+- Sitemap dinamico com todas as rotas (produtos, categorias, marcas, artigos, comparacoes)
+- 13 paginas curadas /melhores/[slug]
+- 10 paginas de keyword /ofertas/[slug]
+- 10 comparacoes /comparar/[slug]
+- FAQ schema, breadcrumb schema, product schema em todas as paginas
+- InternalLinks component para cross-linking automatico
+
+## Growth V2
+
+- Programa de indicacao polished: hero gradient, steps, share buttons multi-plataforma, FAQ
+- Admin /admin/referrals com dashboard de indicacoes (top referrers, conversao, stats)
+- SmartShare component reutilizavel para compartilhamento em paginas de produto/guia
+- GrowthBanner contextual com ciclo de CTAs
+
+## Proximos Passos (V11)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA

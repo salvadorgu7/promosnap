@@ -4,7 +4,29 @@
       "Bash(cd \"C:\\\\Users\\\\salva\\\\Downloads\\\\files\\\\promosnap-foundation-v2\\\\promosnap\" && npm run db:seed)",
       "Bash(cd \"C:\\\\Users\\\\salva\\\\Downloads\\\\files\\\\promosnap-foundation-v2\\\\promosnap\" && npm run dev)",
       "Bash(start http://localhost:3000)",
-      "Bash(powershell -Command \"Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $screen = [System.Windows.Forms.Screen]::PrimaryScreen; $bitmap = New-Object System.Drawing.Bitmap\\($screen.Bounds.Width, $screen.Bounds.Height\\); $graphics = [System.Drawing.Graphics]::FromImage\\($bitmap\\); $graphics.CopyFromScreen\\($screen.Bounds.Location, [System.Drawing.Point]::Empty, $screen.Bounds.Size\\); $bitmap.Save\\('C:\\\\Users\\\\salva\\\\AppData\\\\Local\\\\Temp\\\\screenshot.png'\\); $graphics.Dispose\\(\\); $bitmap.Dispose\\(\\)\")"
+      "Bash(powershell -Command \"Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $screen = [System.Windows.Forms.Screen]::PrimaryScreen; $bitmap = New-Object System.Drawing.Bitmap\\($screen.Bounds.Width, $screen.Bounds.Height\\); $graphics = [System.Drawing.Graphics]::FromImage\\($bitmap\\); $graphics.CopyFromScreen\\($screen.Bounds.Location, [System.Drawing.Point]::Empty, $screen.Bounds.Size\\); $bitmap.Save\\('C:\\\\Users\\\\salva\\\\AppData\\\\Local\\\\Temp\\\\screenshot.png'\\); $graphics.Dispose\\(\\); $bitmap.Dispose\\(\\)\")",
+      "Bash(cd \"C:\\\\Users\\\\salva\\\\Downloads\\\\files\\\\promosnap-foundation-v2\\\\promosnap\" && npm run dev 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\salva\\\\Downloads\\\\files\\\\promosnap-foundation-v2\\\\promosnap\" && npx ngrok http 3001 2>&1)",
+      "Bash(ngrok config:*)",
+      "Bash(npx ngrok:*)",
+      "Bash(curl -s http://localhost:4040/api/tunnels 2>&1)",
+      "Bash(ls \"C:\\\\Users\\\\salva\\\\Downloads\\\\files\\\\promosnap-foundation-v2\\\\promosnap\\\\.claude\\\\worktrees\\\\funny-blackwell\\\\app\\\\api\\\\test-ml\"\" 2>/dev/null && echo \"exists in worktree\" || echo \"NOT in worktree \")",
+      "Bash(gh pr:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where npm:*)",
+      "Bash(where node:*)",
+      "Bash(npx prisma:*)",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\salva\\\\Downloads\\\\files\\\\promosnap-foundation-v2\\\\promosnap && node_modules\\\\.bin\\\\prisma db seed\")",
+      "Bash(cmd /c \"C:\\\\Users\\\\salva\\\\Downloads\\\\files\\\\promosnap-foundation-v2\\\\promosnap\\\\node_modules\\\\.bin\\\\prisma db seed --schema=C:\\\\Users\\\\salva\\\\Downloads\\\\files\\\\promosnap-foundation-v2\\\\promosnap\\\\prisma\\\\schema.prisma\")",
+      "Bash(findstr /i \"affiliate\")",
+      "Bash(cmd /c \"findstr /i affiliate C:\\\\Users\\\\salva\\\\Downloads\\\\files\\\\promosnap-foundation-v2\\\\promosnap\\\\.env.local\")",
+      "Bash(node -e \"const p = require\\(''./package.json''\\); console.log\\(JSON.stringify\\({scripts: p.scripts}, null, 2\\)\\)\")",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx next:*)",
+      "Bash(git add:*)",
+      "Bash(find \"/c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/app/\\(site\\)\" -name \"*.tsx\" -o -name \"*.ts\")",
+      "Bash(npx vercel:*)"
     ]
   }
 }

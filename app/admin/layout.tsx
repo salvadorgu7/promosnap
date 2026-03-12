@@ -17,6 +17,11 @@ import {
   Mail,
   DollarSign,
   Lightbulb,
+  Target,
+  Brain,
+  Gift,
+  SearchX,
+  MailCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -43,6 +48,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/produtos", label: "Produtos", icon: Package },
       { href: "/admin/ofertas", label: "Ofertas", icon: Tag },
       { href: "/admin/fontes", label: "Fontes", icon: Store },
+      { href: "/admin/prioridades", label: "Prioridades", icon: Target },
     ],
   },
   {
@@ -58,6 +64,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/seo", label: "SEO", icon: Search },
       { href: "/admin/analytics", label: "Analise", icon: Activity },
       { href: "/admin/performance", label: "Desempenho", icon: BarChart3 },
+      { href: "/admin/referrals", label: "Indicacoes", icon: Gift },
     ],
   },
   {
@@ -72,6 +79,9 @@ const navGroups: NavGroup[] = [
       { href: "/admin/email", label: "Email", icon: Mail },
       { href: "/admin/alertas", label: "Alertas", icon: Bell },
       { href: "/admin/inteligencia", label: "Inteligencia", icon: Lightbulb },
+      { href: "/admin/decisoes", label: "Decisoes", icon: Brain },
+      { href: "/admin/seo-gaps", label: "SEO Gaps", icon: SearchX },
+      { href: "/admin/email-intelligence", label: "Email Intel", icon: MailCheck },
     ],
   },
   {

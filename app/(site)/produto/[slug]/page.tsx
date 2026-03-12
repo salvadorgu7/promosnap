@@ -410,7 +410,12 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               <BarChart3 className="h-4 w-4 text-text-muted" /> Historico de Preco
             </h2>
             {priceHistory.length >= 3 && priceStats ? (
-              <PriceChart data={priceHistory} stats={priceStats} />
+              <>
+                <PriceChart data={priceHistory} stats={priceStats} />
+                <Link href={`/preco/${slug}`} className="mt-2 inline-block text-xs text-accent-blue hover:underline">
+                  Ver historico completo →
+                </Link>
+              </>
             ) : (
               <div className="card p-6 flex items-center gap-3 text-center justify-center">
                 <Clock className="h-5 w-5 text-surface-400" />
