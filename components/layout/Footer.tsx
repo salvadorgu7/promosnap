@@ -33,13 +33,14 @@ export default function Footer() {
       {/* Rich gradient background */}
       <div className="absolute inset-0 bg-gradient-to-b from-surface-50/90 via-surface-100/60 to-surface-100/80 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[200px] bg-accent-blue/3 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[300px] h-[150px] bg-accent-purple/3 rounded-full blur-[60px] pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-blue to-brand-500 flex items-center justify-center">
+            <Link href="/" className="flex items-center gap-2 mb-3 group">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-blue to-brand-500 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
                 <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
               </div>
               <span className="font-display font-extrabold text-lg tracking-tight text-surface-900">
@@ -49,13 +50,13 @@ export default function Footer() {
             <p className="text-sm text-text-muted leading-relaxed mb-3">
               Ofertas reais, preco de verdade. Compare precos, acompanhe historico e encontre os melhores descontos do Brasil.
             </p>
-            <p className="text-xs text-text-muted font-medium">promosnap.com.br</p>
+            <p className="text-xs text-surface-400 font-medium">promosnap.com.br</p>
           </div>
 
           {/* Link columns */}
           {Object.entries(LINKS).map(([title, links]) => (
             <div key={title}>
-              <h3 className="font-display font-semibold text-sm text-text-primary mb-3">
+              <h3 className="font-display font-semibold text-sm text-text-primary mb-3 tracking-tight">
                 {title}
               </h3>
               <ul className="space-y-2">
@@ -63,7 +64,7 @@ export default function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-text-muted hover:text-accent-blue transition-colors"
+                      className="text-sm text-text-muted hover:text-accent-blue transition-colors inline-block"
                     >
                       {link.label}
                     </Link>
@@ -75,8 +76,8 @@ export default function Footer() {
         </div>
 
         {/* Affiliate disclaimer */}
-        <div className="mt-8 pt-6 border-t border-surface-200/60">
-          <p className="text-xs text-text-muted leading-relaxed max-w-3xl mb-4">
+        <div className="mt-8 pt-6 border-t border-surface-200/50">
+          <p className="text-xs text-surface-400 leading-relaxed max-w-3xl mb-4">
             O PromoSnap pode receber comissoes por compras realizadas atraves de links de afiliado.
             Isso nao afeta o preco que voce paga e nos ajuda a manter o servico gratuito.
             Todos os precos exibidos sao obtidos automaticamente e podem variar sem aviso previo.
@@ -86,7 +87,7 @@ export default function Footer() {
 
         {/* Bottom bar: legal links + copyright */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-wrap justify-center gap-4 text-xs text-text-muted">
+          <div className="flex flex-wrap justify-center gap-4 text-xs text-surface-400">
             <Link
               href="/politica-privacidade"
               className="hover:text-accent-blue transition-colors"
@@ -106,7 +107,7 @@ export default function Footer() {
               Transparencia
             </Link>
           </div>
-          <p className="text-xs text-text-muted text-center">
+          <p className="text-xs text-surface-400 text-center">
             &copy; {new Date().getFullYear()} PromoSnap. Precos e disponibilidade podem variar.
           </p>
         </div>

@@ -1,3 +1,8 @@
+/**
+ * Tri-state check status used by production checks and runtime QA.
+ * Equivalent to RuntimeCheck.status in lib/runtime/qa.ts.
+ * See also: HealthStatus ('healthy'|'degraded'|'critical') in lib/health/types.ts
+ */
 export type CheckStatus = 'pass' | 'warn' | 'fail'
 
 export type CheckGroup =

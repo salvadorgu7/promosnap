@@ -195,7 +195,7 @@ Verificacoes automaticas de qualidade:
 **Growth:** SEO, SEO Gaps, Analise, Desempenho, Indicacoes
 **Monetizacao:** Revenue dashboard
 **Engajamento:** Email, Alertas, Inteligencia, Decisoes, Email Intel
-**Operacao:** Jobs, Ingestao, Health, Release, Auditoria, Runtime QA, Config
+**Operacao:** Jobs, Ingestao, Health, Release, Auditoria, Runtime QA, Monitoring, Rate Limits, Production, Config
 
 ## Paginas
 
@@ -241,6 +241,10 @@ npm run db:generate  # Gerar Prisma client
 npm run db:push      # Sync schema
 npm run db:seed      # Seed via CLI
 npm run db:studio    # Prisma Studio
+npm test             # Testes unitarios (136 testes)
+npm run test:smoke   # Smoke tests (rotas, API, sitemap)
+npm run verify       # Testes + smoke + build completo
+npm run verify:quick # Testes + smoke (sem build)
 ```
 
 ## Production Hardening (V12)
@@ -325,6 +329,56 @@ npm run db:studio    # Prisma Studio
 - Animacoes CSS para toasts
 - Aplicado em busca e favoritos
 
+## Safe Consolidation (V14)
+
+### Code Consolidation
+- ImageWithFallback consolidado como wrapper de SafeImage
+- Dead code removido (lib/mock-data.ts)
+- Nomenclatura e doc comments padronizados nos subsistemas health/quality/production/runtime
+
+### Testing Expansion
+- 136 testes unitarios (92 novos): rate-limit, production, monitoring, images, catalog-validation
+- Smoke tests expandidos: sitemap.xml, robots.txt, health API
+- Script verify: npm run verify (tests + smoke + build)
+
+### UX Refinement
+- ErrorState com variants (generic, network, server, permission), modo compact
+- LoadingState com dots variant, sizes (sm/md/lg)
+- EmptyState com children prop, iconBg por variant, sugestoes
+- Toast com borders coloridos, animacoes spring, melhor dismiss
+- Newsletter com validacao de email e feedback visual
+
+### Design Polish
+- OfferCard: image-container branco, btn-offer CTA, badges com shadow
+- RailSection: icone em container, animacao chevron no hover
+- Footer: blur orb decorativo, hover shadow no logo, hierarquia de cores
+- Visual depth: btn active:scale, surface-elevated com 3 sombras, section-contrast
+- PriceChart lazy-loaded via client wrapper (PriceChartLazy)
+
+### Admin Quality of Life
+- Severity helper canonico (lib/admin/severity.ts): ok/info/warning/critical
+- 8 dashboards admin refinados com guidance operacional
+- Mensagens claras para: missing config, source error, provider missing, cron missing
+- Rate limits com indicador de utilizacao colorido
+- Monitoring com health badge, progress bars, stat cards
+
+### Observability
+- Logging estruturado: logDebug, logInfo, logWarn (lib/monitoring/)
+- captureError integrado em clickout, alerts, cron, jobs
+- Logs de timing por job no cron
+- Reducao de ruido em producao
+
+### Security & API
+- 3 rotas admin desprotegidas corrigidas (ingest, seed, trends)
+- 7 respostas HTTP padronizadas ({ error: "msg" } + status codes consistentes)
+- Newsletter nao vaza mais error.message
+- Audit run nao expoe mais details internas
+
+### Performance
+- PriceChart com next/dynamic ssr:false via client wrapper
+- Query redundante removida em getAdminSources
+- recharts lazy-loaded nas paginas de preco e produto
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)
@@ -334,7 +388,7 @@ npm run db:studio    # Prisma Studio
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
 
-## Proximos Passos (V14)
+## Proximos Passos (V15)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA

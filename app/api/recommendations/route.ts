@@ -50,6 +50,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(cards)
   } catch (error) {
     console.error("Failed to fetch recommendations:", error)
-    return NextResponse.json([], { status: 500 })
+    return NextResponse.json({ error: "Failed to fetch recommendations" }, { status: 500 })
   }
 }

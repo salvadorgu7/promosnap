@@ -1,52 +1,79 @@
-import { Store, CheckCircle, AlertTriangle, PauseCircle, XCircle, Settings, Plug, PlugZap } from "lucide-react";
+import {
+  Store,
+  CheckCircle2,
+  AlertTriangle,
+  PauseCircle,
+  XCircle,
+  Settings,
+  Plug,
+  PlugZap,
+  Info,
+} from "lucide-react";
 import { getAdminSources } from "@/lib/db/queries";
 import { timeAgo } from "@/lib/utils";
 import { adapterRegistry } from "@/lib/adapters/registry";
 import type { AdapterStatus } from "@/lib/adapters/types";
+import {
+  toSeverity,
+  severityBadge,
+  severityIconBg,
+  severityBg,
+  type Severity,
+} from "@/lib/admin/severity";
 
 export const dynamic = "force-dynamic";
 
-const statusConfig: Record<string, { icon: typeof CheckCircle; color: string; bg: string; label: string }> = {
-  ACTIVE: { icon: CheckCircle, color: "text-accent-green", bg: "bg-green-50", label: "Ativo" },
-  PAUSED: { icon: PauseCircle, color: "text-accent-orange", bg: "bg-orange-50", label: "Pausado" },
-  ERROR: { icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50", label: "Erro" },
-  DISABLED: { icon: XCircle, color: "text-text-muted", bg: "bg-surface-100", label: "Desativado" },
+const statusConfig: Record<string, { icon: typeof CheckCircle2; severity: Severity; label: string }> = {
+  ACTIVE: { icon: CheckCircle2, severity: "ok", label: "Ativo" },
+  PAUSED: { icon: PauseCircle, severity: "warning", label: "Pausado" },
+  ERROR: { icon: AlertTriangle, severity: "critical", label: "Erro" },
+  DISABLED: { icon: XCircle, severity: "warning", label: "Desativado" },
 };
 
-const healthConfig: Record<string, { color: string; bg: string; label: string }> = {
-  READY: { color: "text-accent-green", bg: "bg-green-50", label: "Pronto" },
-  PARTIAL: { color: "text-accent-orange", bg: "bg-orange-50", label: "Parcial" },
-  MOCK: { color: "text-blue-500", bg: "bg-blue-50", label: "Mock" },
-  BLOCKED: { color: "text-red-500", bg: "bg-red-50", label: "Bloqueado" },
+const healthConfig: Record<string, { severity: Severity; label: string; guidance: string }> = {
+  READY: { severity: "ok", label: "Pronto", guidance: "Adapter configurado e pronto para operar." },
+  PARTIAL: { severity: "warning", label: "Parcial", guidance: "Funcionando com limitacoes. Configure as variaveis faltantes para funcionalidade completa." },
+  MOCK: { severity: "info", label: "Mock", guidance: "Usando dados simulados. Configure as credenciais reais para dados de producao." },
+  BLOCKED: { severity: "critical", label: "Bloqueado", guidance: "Adapter nao funcional. Credenciais ou configuracao critica ausente." },
 };
 
 function AdapterStatusCard({ adapter }: { adapter: AdapterStatus }) {
   const hc = healthConfig[adapter.health] || healthConfig.MOCK;
+  const borderColor = adapter.configured ? "border-l-emerald-500" : "border-l-amber-500";
 
   return (
-    <div className="card p-4 border-l-4" style={{ borderLeftColor: adapter.configured ? '#22c55e' : '#f59e0b' }}>
+    <div className={`rounded-xl border border-surface-200 bg-white p-4 border-l-4 ${borderColor}`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           {adapter.configured ? (
-            <PlugZap className="h-4 w-4 text-accent-green" />
+            <PlugZap className="h-4 w-4 text-emerald-600" />
           ) : (
-            <Plug className="h-4 w-4 text-accent-orange" />
+            <Plug className="h-4 w-4 text-amber-600" />
           )}
           <span className="font-semibold font-display text-sm text-text-primary">{adapter.name}</span>
           <span className="text-xs text-text-muted">({adapter.slug})</span>
         </div>
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${hc.color} ${hc.bg}`}>
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${severityBadge(hc.severity)}`}>
           {hc.label}
         </span>
       </div>
       <p className="text-xs text-text-secondary mb-2">{adapter.message}</p>
       {adapter.missingEnvVars.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {adapter.missingEnvVars.map((v) => (
-            <code key={v} className="text-[10px] bg-orange-50 text-accent-orange px-1.5 py-0.5 rounded font-mono">
-              {v}
-            </code>
-          ))}
+        <div className="space-y-1.5">
+          <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">Variaveis ausentes:</p>
+          <div className="flex flex-wrap gap-1">
+            {adapter.missingEnvVars.map((v) => (
+              <code key={v} className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-mono">
+                {v}
+              </code>
+            ))}
+          </div>
+        </div>
+      )}
+      {!adapter.configured && (
+        <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-surface-100">
+          <Info className="h-3 w-3 flex-shrink-0 mt-0.5 text-text-muted" />
+          <p className="text-[10px] text-text-muted leading-relaxed">{hc.guidance}</p>
         </div>
       )}
     </div>
@@ -57,15 +84,50 @@ export default async function AdminFontesPage() {
   const sources = await getAdminSources();
   const adapterSummary = adapterRegistry.getSummary();
 
+  const allConfigured = adapterSummary.unconfigured === 0;
+  const hasMocks = adapterSummary.adapters.some((a) => a.health === "MOCK");
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold font-display text-text-primary">Fontes</h1>
-        <p className="text-sm text-text-muted">{sources.length} fontes configuradas</p>
+        <p className="text-sm text-text-muted mt-1">
+          {sources.length} fontes no banco de dados — {adapterSummary.configured}/{adapterSummary.total} adapters configurados
+        </p>
       </div>
 
+      {/* Operational guidance */}
+      {adapterSummary.unconfigured > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">
+              {adapterSummary.unconfigured} adapter(s) sem configuracao
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Adapters nao configurados usam dados mock ou estao bloqueados.
+              Adicione as variaveis de ambiente necessarias (listadas abaixo) para ativar dados reais.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {sources.length === 0 && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex items-start gap-3">
+          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-blue-800">Nenhuma fonte cadastrada no banco</p>
+            <p className="text-xs text-blue-700 mt-0.5">
+              Execute a ingestao inicial em /admin/ingestao para criar as fontes automaticamente,
+              ou use /admin/jobs para rodar o pipeline completo.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ---- Adapter Configuration Status ---- */}
-      <div className="card p-5">
+      <div className="rounded-xl border border-surface-200 bg-white p-5">
         <div className="flex items-center gap-2 mb-4">
           <Settings className="h-5 w-5 text-text-muted" />
           <h2 className="text-lg font-bold font-display text-text-primary">Integracao de APIs</h2>
@@ -75,19 +137,19 @@ export default async function AdminFontesPage() {
             <p className="text-2xl font-bold font-display text-text-primary">{adapterSummary.total}</p>
             <p className="text-[10px] text-text-muted uppercase tracking-wider">Total</p>
           </div>
-          <div className="text-center p-3 bg-green-50 rounded-lg">
-            <p className="text-2xl font-bold font-display text-accent-green">{adapterSummary.configured}</p>
-            <p className="text-[10px] text-accent-green uppercase tracking-wider">Configurados</p>
+          <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+            <p className="text-2xl font-bold font-display text-emerald-600">{adapterSummary.configured}</p>
+            <p className="text-[10px] text-emerald-600 uppercase tracking-wider">Configurados</p>
           </div>
-          <div className="text-center p-3 bg-orange-50 rounded-lg">
-            <p className="text-2xl font-bold font-display text-accent-orange">{adapterSummary.unconfigured}</p>
-            <p className="text-[10px] text-accent-orange uppercase tracking-wider">Pendentes</p>
+          <div className="text-center p-3 bg-amber-50 rounded-lg border border-amber-200">
+            <p className="text-2xl font-bold font-display text-amber-600">{adapterSummary.unconfigured}</p>
+            <p className="text-[10px] text-amber-600 uppercase tracking-wider">Pendentes</p>
           </div>
-          <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold font-display text-blue-500">
-              {adapterSummary.adapters.filter((a) => a.health === 'MOCK').length}
+          <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-2xl font-bold font-display text-blue-600">
+              {adapterSummary.adapters.filter((a) => a.health === "MOCK").length}
             </p>
-            <p className="text-[10px] text-blue-500 uppercase tracking-wider">Mock</p>
+            <p className="text-[10px] text-blue-600 uppercase tracking-wider">Mock</p>
           </div>
         </div>
         <div className="grid md:grid-cols-2 gap-3">
@@ -106,7 +168,7 @@ export default async function AdminFontesPage() {
             const StatusIcon = sc.icon;
 
             return (
-              <div key={s.id} className="card p-5">
+              <div key={s.id} className="rounded-xl border border-surface-200 bg-white p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     {s.logoUrl ? (
@@ -121,7 +183,7 @@ export default async function AdminFontesPage() {
                       <span className="text-xs text-text-muted">{s.slug}</span>
                     </div>
                   </div>
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${sc.color} ${sc.bg}`}>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${severityBadge(sc.severity)}`}>
                     <StatusIcon className="h-3 w-3" />
                     {sc.label}
                   </span>
@@ -146,9 +208,29 @@ export default async function AdminFontesPage() {
                   {s.lastUpdate ? (
                     <span>Ultima atualizacao: {timeAgo(new Date(s.lastUpdate))}</span>
                   ) : (
-                    <span>Sem dados ainda</span>
+                    <span className="text-amber-600">
+                      Sem dados ainda. Execute ingestao ou aguarde o proximo cron.
+                    </span>
                   )}
                 </div>
+
+                {s.status === "ERROR" && (
+                  <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-surface-100">
+                    <Info className="h-3 w-3 flex-shrink-0 mt-0.5 text-red-500" />
+                    <p className="text-[10px] text-red-600 leading-relaxed">
+                      Fonte com erro. Verifique logs em /admin/monitoring e credenciais do adapter.
+                    </p>
+                  </div>
+                )}
+
+                {s.status === "PAUSED" && (
+                  <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-surface-100">
+                    <Info className="h-3 w-3 flex-shrink-0 mt-0.5 text-amber-500" />
+                    <p className="text-[10px] text-amber-600 leading-relaxed">
+                      Fonte pausada. Dados nao estao sendo atualizados. Reative se necessario.
+                    </p>
+                  </div>
+                )}
 
                 {s.affiliateConfig && (
                   <div className="mt-3 pt-3 border-t border-surface-100">
@@ -169,8 +251,11 @@ export default async function AdminFontesPage() {
           })}
 
           {sources.length === 0 && (
-            <div className="col-span-2 card p-8 text-center text-text-muted">
-              Nenhuma fonte cadastrada.
+            <div className="col-span-2 rounded-xl border border-surface-200 bg-white p-8 text-center">
+              <Store className="h-8 w-8 mx-auto mb-2 text-text-muted opacity-30" />
+              <p className="text-sm text-text-muted">
+                Nenhuma fonte cadastrada. Execute a ingestao para criar fontes automaticamente.
+              </p>
             </div>
           )}
         </div>

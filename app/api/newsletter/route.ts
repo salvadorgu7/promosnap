@@ -70,12 +70,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[newsletter] Subscribe error:", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Erro ao processar inscricao",
-      },
+      { error: "Erro ao processar inscricao" },
       { status: 500 }
     );
   }

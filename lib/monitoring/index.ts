@@ -4,6 +4,7 @@
  * - In-memory buffer of last 100 errors and 200 events
  * - Optional Sentry integration (only if SENTRY_DSN env is set)
  * - Dynamic import for @sentry/nextjs so it doesn't break if not installed
+ * - Structured log levels to reduce noise in production
  */
 
 import type {
@@ -26,6 +27,32 @@ function nextId(): string {
   return `${Date.now()}-${++idCounter}`;
 }
 
+// ── Log level control ──
+
+const isProduction = process.env.NODE_ENV === "production";
+
+/**
+ * Log at debug level — suppressed in production to reduce noise.
+ */
+export function logDebug(tag: string, message: string, data?: Record<string, unknown>): void {
+  if (isProduction) return;
+  console.log(`[${tag}] ${message}`, data ? JSON.stringify(data) : "");
+}
+
+/**
+ * Log at info level — always shown, but kept concise.
+ */
+export function logInfo(tag: string, message: string, data?: Record<string, unknown>): void {
+  console.log(`[${tag}] ${message}`, data ? JSON.stringify(data) : "");
+}
+
+/**
+ * Log at warn level — indicates a recoverable problem.
+ */
+export function logWarn(tag: string, message: string, data?: Record<string, unknown>): void {
+  console.warn(`[${tag}] ${message}`, data ? JSON.stringify(data) : "");
+}
+
 // ── Sentry integration (lazy, optional) ──
 
 let sentryModule: any = null;
@@ -38,8 +65,6 @@ async function getSentry(): Promise<any> {
   if (!process.env.SENTRY_DSN) return null;
 
   try {
-    // Use dynamic require to avoid webpack static analysis warning
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     sentryModule = require("@sentry/nextjs");
     return sentryModule;
   } catch {
@@ -79,10 +104,11 @@ export async function captureError(
     errorBuffer.length = MAX_ERRORS;
   }
 
-  // Console output
+  // Structured console output
   console.error(
-    `[monitoring] ${captured.type}: ${captured.message}`,
-    context?.route ? `(route: ${context.route})` : ""
+    `[error] ${captured.type}: ${captured.message}`,
+    context?.route ? `route=${context.route}` : "",
+    context?.job ? `job=${context.job}` : ""
   );
 
   // Forward to Sentry if available
@@ -101,6 +127,7 @@ export async function captureError(
 
 /**
  * Capture a named event with optional data.
+ * Uses debug level for high-frequency events to reduce log noise.
  */
 export function captureEvent(
   name: string,
@@ -118,7 +145,13 @@ export function captureEvent(
     eventBuffer.length = MAX_EVENTS;
   }
 
-  console.log(`[monitoring:event] ${name}`, data ? JSON.stringify(data) : "");
+  // Only log events at info level for important events, debug for routine ones
+  const isRoutine = name.startsWith("cron:") || name.startsWith("job:");
+  if (isRoutine && isProduction) {
+    // Suppress routine event logs in production — they're still in the buffer
+  } else {
+    console.log(`[event] ${name}`, data ? JSON.stringify(data) : "");
+  }
 }
 
 /**

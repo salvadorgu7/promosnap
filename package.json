@@ -14,7 +14,9 @@
     "db:migrate": "prisma migrate dev",
     "jobs:ingest": "tsx jobs/ingest/run.ts",
     "test": "npx tsx lib/__tests__/run-all.ts",
-    "test:smoke": "npx tsx scripts/smoke-test.ts"
+    "test:smoke": "npx tsx scripts/smoke-test.ts",
+    "verify": "npx tsx lib/__tests__/run-all.ts && npx tsx scripts/smoke-test.ts && next build",
+    "verify:quick": "npx tsx scripts/verify.ts"
   },
   "dependencies": {
     "next": "^15.1.0",

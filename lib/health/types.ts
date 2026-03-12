@@ -1,3 +1,8 @@
+/**
+ * Health status used by the /api/health endpoint.
+ * Maps to a different domain than CheckStatus ('pass'|'warn'|'fail') in lib/production/types.ts.
+ * healthy = pass, degraded = warn, critical = fail
+ */
 export type HealthStatus = 'healthy' | 'degraded' | 'critical'
 export type Severity = 'low' | 'medium' | 'high'
 

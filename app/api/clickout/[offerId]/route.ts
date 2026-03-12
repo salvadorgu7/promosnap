@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
+import { captureError, logWarn } from "@/lib/monitoring";
 
 export async function GET(
   request: NextRequest,
@@ -28,6 +29,7 @@ export async function GET(
     });
 
     if (!offer || !offer.affiliateUrl) {
+      logWarn("clickout", `Offer not found or missing URL: ${offerId}`);
       return NextResponse.redirect(homeUrl, 302);
     }
 
@@ -53,12 +55,12 @@ export async function GET(
         },
       })
       .catch((err) => {
-        console.error("[clickout] Failed to record clickout:", err);
+        captureError(err, { route: "/api/clickout", offerId: offer.id, sourceSlug });
       });
 
     return NextResponse.redirect(offer.affiliateUrl, 302);
   } catch (error) {
-    console.error("[clickout] Error processing clickout:", error);
+    await captureError(error, { route: "/api/clickout", offerId });
     return NextResponse.redirect(homeUrl, 302);
   }
 }

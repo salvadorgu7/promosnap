@@ -35,7 +35,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
     : "#";
 
   return (
-    <div className="card group flex flex-col w-full overflow-hidden hover:-translate-y-1 transition-transform duration-300">
+    <div className="card group flex flex-col w-full overflow-hidden hover:-translate-y-1">
       {/* Badges */}
       {badges.length > 0 && (
         <div className="flex items-center gap-1 px-3 pt-3 flex-wrap">
@@ -47,11 +47,11 @@ export default function OfferCard({ product }: { product: ProductCard }) {
 
       {/* Image */}
       <Link href={`/produto/${product.slug}`} className="block px-3 pt-3">
-        <div className="relative aspect-square rounded-lg bg-gradient-to-br from-slate-50 to-slate-100/50 overflow-hidden">
+        <div className="relative aspect-square rounded-lg overflow-hidden image-container">
           <ImageWithFallback
             src={product.imageUrl}
             alt={product.name}
-            className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500 ease-out"
+            className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500 ease-out"
             width={300}
             height={300}
           />
@@ -60,7 +60,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
             <ScorePill score={bestOffer.offerScore} />
           </div>
           {discount && discount >= 40 && (
-            <div className="absolute top-2 left-2 bg-accent-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+            <div className="absolute top-2 left-2 bg-accent-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
               MEGA OFERTA
             </div>
           )}
@@ -76,7 +76,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
           )}
           {bestOffer.isFreeShipping && (
             <span className="flex items-center gap-0.5 text-accent-green">
-              <Truck className="w-3 h-3" /> Grátis
+              <Truck className="w-3 h-3" /> Gratis
             </span>
           )}
         </div>
@@ -116,9 +116,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
           href={ctaUrl}
           target="_blank"
           rel="noopener noreferrer nofollow"
-          className="mt-3 flex items-center justify-center gap-2 h-9 sm:h-10 rounded-lg
-                     bg-gradient-to-r from-accent-blue to-brand-500 text-white
-                     text-xs sm:text-sm font-semibold hover:shadow-glow transition-all"
+          className="btn-offer mt-3 h-9 sm:h-10 text-xs sm:text-sm"
         >
           Ver oferta
           <ExternalLink className="w-3.5 h-3.5" />

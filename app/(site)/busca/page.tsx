@@ -332,7 +332,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                         href={buildSearchUrl(params, { page: String(pageNum) })}
                         className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                           page === pageNum
-                            ? "bg-accent-blue text-white"
+                            ? "bg-accent-blue text-white shadow-sm"
                             : "bg-surface-100 text-text-muted hover:bg-surface-200"
                         }`}
                       >
@@ -356,7 +356,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             <EmptyState
               icon={Search}
               title="Nenhum resultado encontrado"
-              description={`Nao encontramos resultados para "${query}". Tente buscar com outras palavras ou remova os filtros.`}
+              description={`Nao encontramos ofertas para "${query}". Tente buscar com termos diferentes, verificar a ortografia ou remover filtros aplicados.`}
               ctaLabel="Limpar filtros"
               ctaHref={`/busca?q=${encodeURIComponent(query)}`}
             />
@@ -364,7 +364,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             <EmptyState
               icon={Search}
               title="Busque um produto"
-              description="Digite o nome do produto, marca ou categoria que deseja encontrar."
+              description="Digite o nome do produto, marca ou categoria para comparar precos nas melhores lojas do Brasil."
             />
           )}
         </div>

@@ -81,10 +81,12 @@ export default function SafeImage({
 
     return (
       <div
-        className={`flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-50 to-slate-100 ${className}`}
+        className={`flex flex-col items-center justify-center gap-2 image-container ${className}`}
         style={!fill ? { width: width ?? "100%", height: height ?? "100%" } : undefined}
       >
-        <FallbackIcon className="w-10 h-10 text-surface-300" />
+        <div className="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center">
+          <FallbackIcon className="w-6 h-6 text-surface-300" />
+        </div>
         <span className="text-[10px] text-surface-300 font-medium">{fallbackLabel}</span>
       </div>
     )
@@ -98,7 +100,7 @@ export default function SafeImage({
     <div className={`relative ${fill ? "w-full h-full" : ""}`}>
       {/* Loading skeleton */}
       {showSkeleton && !loaded && (
-        <div className="absolute inset-0 animate-pulse bg-slate-100 rounded-lg" />
+        <div className="absolute inset-0 shimmer rounded-lg" />
       )}
 
       <Image

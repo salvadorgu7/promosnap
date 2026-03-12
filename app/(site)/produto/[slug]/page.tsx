@@ -12,8 +12,8 @@ import {
   Share2,
   Tag,
 } from "lucide-react";
-import PriceChart from "@/components/charts/PriceChart";
 import Breadcrumb from "@/components/ui/Breadcrumb";
+import PriceChart from "@/components/charts/PriceChartLazy";
 import OfferCard from "@/components/cards/OfferCard";
 import MobileCTA from "@/components/product/MobileCTA";
 import ShareButtons from "@/components/product/ShareButtons";

@@ -11,20 +11,23 @@ import {
   Server,
   Timer,
   XCircle,
+  Info,
 } from 'lucide-react'
+import {
+  toSeverity,
+  severityBadge,
+  severityCard,
+  severityGradient,
+  severityIconBg,
+  severitySolid,
+  type Severity,
+} from '@/lib/admin/severity'
 
 export const dynamic = 'force-dynamic'
 
-const statusColor: Record<HealthStatus, string> = {
-  healthy: 'text-emerald-600 bg-emerald-50 border-emerald-200',
-  degraded: 'text-amber-600 bg-amber-50 border-amber-200',
-  critical: 'text-red-600 bg-red-50 border-red-200',
-}
-
-const statusBadge: Record<HealthStatus, string> = {
-  healthy: 'bg-emerald-500',
-  degraded: 'bg-amber-500',
-  critical: 'bg-red-500',
+/** Map HealthStatus → Severity */
+function healthToSeverity(status: HealthStatus): Severity {
+  return toSeverity(status)
 }
 
 const iconMap: Record<string, typeof Activity> = {
@@ -44,11 +47,36 @@ function StatusIcon({ status }: { status: HealthStatus }) {
   return <XCircle className="h-5 w-5 text-red-500" />
 }
 
+function operationalGuidance(check: HealthCheckResult): string | null {
+  if (check.status === 'healthy') return null
+  const name = check.name.toLowerCase()
+  if (name.includes('database'))
+    return 'Verifique DATABASE_URL e conectividade de rede. Sem banco, nenhuma funcionalidade opera.'
+  if (name.includes('source'))
+    return 'Nenhuma fonte ativa. Acesse /admin/fontes e ative pelo menos uma fonte para ingestao.'
+  if (name.includes('job'))
+    return 'Jobs falhando indicam problemas de dados ou conectividade. Verifique os logs em /admin/monitoring.'
+  if (name.includes('sitemap'))
+    return 'Sitemap nao gerado. Execute o job de sitemap manualmente em /admin/jobs ou aguarde o proximo cron.'
+  if (name.includes('email') || name.includes('resend'))
+    return 'Sem RESEND_API_KEY, emails nao serao enviados. Crie conta em resend.com e configure.'
+  if (name.includes('cron'))
+    return 'Sem CRON_SECRET, jobs agendados nao executam. Precos e scores ficam desatualizados.'
+  if (name.includes('env'))
+    return 'Variaveis de ambiente criticas ausentes. Acesse /admin/config para ver quais faltam.'
+  if (name.includes('build') || name.includes('runtime'))
+    return 'Problema no build ou runtime. Verifique os logs do deploy e o NODE_ENV.'
+  return null
+}
+
 function CheckCard({ check }: { check: HealthCheckResult }) {
   const Icon = iconMap[check.name] || Activity
+  const sev = healthToSeverity(check.status)
+  const guidance = operationalGuidance(check)
+
   return (
     <div
-      className={`rounded-xl border p-4 ${statusColor[check.status]} transition-shadow hover:shadow-md`}
+      className={`rounded-xl border p-4 ${severityCard(sev)} transition-shadow hover:shadow-md`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -64,7 +92,7 @@ function CheckCard({ check }: { check: HealthCheckResult }) {
       </div>
       <div className="flex items-center gap-2 mt-3">
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white ${statusBadge[check.status]}`}
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${severitySolid(sev)}`}
         >
           {check.status}
         </span>
@@ -72,6 +100,12 @@ function CheckCard({ check }: { check: HealthCheckResult }) {
           severity: {check.severity}
         </span>
       </div>
+      {guidance && (
+        <div className="flex items-start gap-1.5 mt-3 pt-2 border-t border-current/10">
+          <Info className="h-3 w-3 flex-shrink-0 mt-0.5 opacity-60" />
+          <p className="text-[10px] opacity-70 leading-relaxed">{guidance}</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -79,11 +113,7 @@ function CheckCard({ check }: { check: HealthCheckResult }) {
 export default async function HealthPage() {
   const report = await runAllHealthChecks()
 
-  const overallColor: Record<HealthStatus, string> = {
-    healthy: 'from-emerald-500 to-emerald-600',
-    degraded: 'from-amber-500 to-amber-600',
-    critical: 'from-red-500 to-red-600',
-  }
+  const overallSev = healthToSeverity(report.status)
 
   return (
     <div className="space-y-6">
@@ -94,17 +124,17 @@ export default async function HealthPage() {
             System Health
           </h1>
           <p className="text-sm text-text-muted mt-1">
-            Control panel — real-time system diagnostics
+            Painel de diagnostico em tempo real do sistema
           </p>
         </div>
         <div className="text-xs text-text-muted">
-          Last checked: {new Date(report.timestamp).toLocaleString('pt-BR')}
+          Verificado: {new Date(report.timestamp).toLocaleString('pt-BR')}
         </div>
       </div>
 
       {/* Overall Status Banner */}
       <div
-        className={`rounded-2xl bg-gradient-to-r ${overallColor[report.status]} p-6 text-white shadow-lg`}
+        className={`rounded-2xl bg-gradient-to-r ${severityGradient(overallSev)} p-6 text-white shadow-lg`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -112,24 +142,28 @@ export default async function HealthPage() {
               <Activity className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-sm font-medium opacity-90">Overall System Status</p>
+              <p className="text-sm font-medium opacity-90">Status Geral do Sistema</p>
               <p className="text-3xl font-bold font-display uppercase tracking-wide">
-                {report.status}
+                {report.status === 'healthy'
+                  ? 'Saudavel'
+                  : report.status === 'degraded'
+                    ? 'Degradado'
+                    : 'Critico'}
               </p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-6 text-center">
             <div>
               <p className="text-2xl font-bold">{report.summary.healthy}</p>
-              <p className="text-xs opacity-80">Healthy</p>
+              <p className="text-xs opacity-80">OK</p>
             </div>
             <div>
               <p className="text-2xl font-bold">{report.summary.degraded}</p>
-              <p className="text-xs opacity-80">Degraded</p>
+              <p className="text-xs opacity-80">Alerta</p>
             </div>
             <div>
               <p className="text-2xl font-bold">{report.summary.critical}</p>
-              <p className="text-xs opacity-80">Critical</p>
+              <p className="text-xs opacity-80">Critico</p>
             </div>
           </div>
         </div>
@@ -137,9 +171,9 @@ export default async function HealthPage() {
 
       {/* Critical Items First */}
       {report.checks.some((c) => c.status === 'critical') && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h2 className="text-sm font-semibold text-red-600 uppercase tracking-wider flex items-center gap-2">
-            <XCircle className="h-4 w-4" /> Critical Issues
+            <XCircle className="h-4 w-4" /> Problemas Criticos
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {report.checks
@@ -153,9 +187,9 @@ export default async function HealthPage() {
 
       {/* Degraded Items */}
       {report.checks.some((c) => c.status === 'degraded') && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h2 className="text-sm font-semibold text-amber-600 uppercase tracking-wider flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" /> Warnings
+            <AlertTriangle className="h-4 w-4" /> Alertas
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {report.checks
@@ -168,9 +202,9 @@ export default async function HealthPage() {
       )}
 
       {/* All Checks Grid */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider">
-          All Checks ({report.summary.total})
+          Todos os Checks ({report.summary.total})
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {report.checks.map((check) => (

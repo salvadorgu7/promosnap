@@ -113,8 +113,14 @@ export default async function AdminAlertasPage() {
               })}
               {alerts.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-text-muted">
-                    Nenhum alerta registrado.
+                  <td colSpan={7} className="py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-10 h-10 rounded-xl bg-surface-100 flex items-center justify-center">
+                        <Bell className="w-5 h-5 text-surface-300" />
+                      </div>
+                      <p className="text-sm font-medium text-text-muted">Nenhum alerta registrado</p>
+                      <p className="text-xs text-surface-400">Alertas de preco criados pelos usuarios aparecerao aqui.</p>
+                    </div>
                   </td>
                 </tr>
               )}

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[api/admin/audit/run] error:', error)
     return NextResponse.json(
-      { error: 'Failed to run audit', details: error instanceof Error ? error.message : 'unknown' },
+      { error: 'Failed to run audit' },
       { status: 500 }
     )
   }

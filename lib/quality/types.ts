@@ -1,3 +1,7 @@
+/**
+ * Quality gate severity levels for data quality checks.
+ * Different scale from CheckStatus ('pass'|'warn'|'fail') — gates measure issue severity, not pass/fail.
+ */
 export type GateSeverity = 'critical' | 'warning' | 'info'
 
 export interface GateItem {

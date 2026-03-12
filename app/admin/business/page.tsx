@@ -14,6 +14,7 @@ import {
 import { getAllBusinessMetrics } from "@/lib/business/metrics";
 import { getAllScorecards } from "@/lib/business/scorecards";
 import type { MetricResult, MetricStatus, Scorecard, ScorecardItem } from "@/lib/business/types";
+import { toSeverity, severityBadge, severityDot } from "@/lib/admin/severity";
 
 export const dynamic = "force-dynamic";
 
@@ -22,24 +23,16 @@ export const dynamic = "force-dynamic";
 // ============================================
 
 function StatusDot({ status }: { status: MetricStatus }) {
-  const colors: Record<MetricStatus, string> = {
-    good: "bg-emerald-500",
-    warning: "bg-amber-500",
-    critical: "bg-red-500",
-  };
-  return <span className={`inline-block w-2 h-2 rounded-full ${colors[status]}`} />;
+  const sev = toSeverity(status);
+  return <span className={`inline-block w-2 h-2 rounded-full ${severityDot(sev)}`} />;
 }
 
 function StatusBadge({ status }: { status: MetricStatus }) {
-  const styles: Record<MetricStatus, string> = {
-    good: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    warning: "bg-amber-50 text-amber-700 border-amber-200",
-    critical: "bg-red-50 text-red-700 border-red-200",
-  };
+  const sev = toSeverity(status);
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${styles[status]}`}>
+    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${severityBadge(sev)}`}>
       <StatusDot status={status} />
-      {status}
+      {status === "good" ? "ok" : status}
     </span>
   );
 }

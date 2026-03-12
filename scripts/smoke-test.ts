@@ -64,47 +64,112 @@ async function checkUrl(name: string, path: string, expectedStatus = 200): Promi
   }
 }
 
-async function main() {
-  console.log(`\n🔍 PromoSnap Smoke Test`);
-  console.log(`   Target: ${BASE_URL}`);
-  console.log("═".repeat(60) + "\n");
+/**
+ * Checks that a URL returns a response with the expected content type.
+ */
+async function checkUrlWithContentType(
+  name: string,
+  path: string,
+  expectedContentType: string,
+  expectedStatus = 200
+): Promise<void> {
+  const url = `${BASE_URL}${path}`;
+  const start = Date.now();
 
-  // Key pages
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+
+    const response = await fetch(url, {
+      signal: controller.signal,
+      redirect: "follow",
+      headers: {
+        "User-Agent": "PromoSnap-SmokeTest/1.0",
+      },
+    });
+
+    clearTimeout(timeout);
+
+    const durationMs = Date.now() - start;
+    const contentType = response.headers.get("content-type") || "";
+    const statusOk = response.status === expectedStatus;
+    const contentOk = contentType.includes(expectedContentType);
+    const ok = statusOk && contentOk;
+
+    results.push({
+      name,
+      url,
+      status: response.status,
+      ok,
+      durationMs,
+      error: !statusOk
+        ? `Expected status ${expectedStatus}, got ${response.status}`
+        : !contentOk
+          ? `Expected content-type containing "${expectedContentType}", got "${contentType}"`
+          : undefined,
+    });
+  } catch (err) {
+    const durationMs = Date.now() - start;
+    const message = err instanceof Error ? err.message : String(err);
+
+    results.push({
+      name,
+      url,
+      status: null,
+      ok: false,
+      durationMs,
+      error: message,
+    });
+  }
+}
+
+async function main() {
+  console.log(`\n  PromoSnap Smoke Test`);
+  console.log(`  Target: ${BASE_URL}`);
+  console.log("=" .repeat(60) + "\n");
+
+  // ── Key pages ──
   await checkUrl("Home Page", "/");
   await checkUrl("Ofertas Page", "/ofertas");
   await checkUrl("Busca Page", "/busca?q=test");
   await checkUrl("Categorias Page", "/categorias");
   await checkUrl("Marcas Page", "/marcas");
 
-  // API routes
+  // ── API routes ──
   await checkUrl("API Health", "/api/health");
   await checkUrl("API Search", "/api/search?q=test");
 
-  // Print results
+  // ── SEO / Infrastructure ──
+  await checkUrlWithContentType("Sitemap XML", "/sitemap.xml", "xml");
+  await checkUrlWithContentType("Robots.txt", "/robots.txt", "text");
+
+  // ── Print results ──
   console.log("Results:\n");
 
   let passCount = 0;
   let failCount = 0;
 
   for (const result of results) {
-    const icon = result.ok ? "\x1b[32m✓\x1b[0m" : "\x1b[31m✗\x1b[0m";
+    const icon = result.ok ? "\x1b[32mPASS\x1b[0m" : "\x1b[31mFAIL\x1b[0m";
     const statusText = result.status !== null ? `${result.status}` : "ERR";
     const duration = `${result.durationMs}ms`;
 
-    console.log(`  ${icon} ${result.name}`);
-    console.log(`    ${result.url} → ${statusText} (${duration})`);
+    console.log(`  [${icon}] ${result.name}`);
+    console.log(`         ${result.url} -> ${statusText} (${duration})`);
 
     if (result.error) {
-      console.log(`    \x1b[31m${result.error}\x1b[0m`);
+      console.log(`         \x1b[31m${result.error}\x1b[0m`);
     }
 
     if (result.ok) passCount++;
     else failCount++;
   }
 
-  console.log("\n" + "─".repeat(60));
+  // ── Summary ──
+  const total = passCount + failCount;
+  console.log("\n" + "-".repeat(60));
   console.log(
-    `  \x1b[32m${passCount} passing\x1b[0m, \x1b[31m${failCount} failing\x1b[0m`
+    `  Total: ${total} | \x1b[32m${passCount} passed\x1b[0m | \x1b[31m${failCount} failed\x1b[0m`
   );
   console.log("");
 
@@ -117,6 +182,8 @@ async function main() {
     );
     process.exit(1);
   }
+
+  console.log("\x1b[32mAll smoke tests passed.\x1b[0m\n");
 }
 
 main().catch((err) => {

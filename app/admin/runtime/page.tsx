@@ -9,21 +9,22 @@ import {
   Shield,
   Database,
   Router,
+  Info,
 } from "lucide-react";
+import {
+  toSeverity,
+  severityCard,
+  severityGradient,
+  severitySolid,
+  type Severity,
+} from "@/lib/admin/severity";
 
 export const dynamic = "force-dynamic";
 
-const statusColor: Record<RuntimeCheck["status"], string> = {
-  pass: "text-emerald-600 bg-emerald-50 border-emerald-200",
-  warn: "text-amber-600 bg-amber-50 border-amber-200",
-  fail: "text-red-600 bg-red-50 border-red-200",
-};
-
-const statusBadge: Record<RuntimeCheck["status"], string> = {
-  pass: "bg-emerald-500",
-  warn: "bg-amber-500",
-  fail: "bg-red-500",
-};
+/** Map runtime check status → Severity */
+function checkToSeverity(status: RuntimeCheck["status"]): Severity {
+  return toSeverity(status);
+}
 
 const categoryIcon: Record<string, typeof Activity> = {
   routes: Globe,
@@ -47,11 +48,28 @@ function StatusIcon({ status }: { status: RuntimeCheck["status"] }) {
   return <XCircle className="h-5 w-5 text-red-500" />;
 }
 
+function runtimeGuidance(check: RuntimeCheck): string | null {
+  if (check.status === "pass") return null;
+  const name = check.name.toLowerCase();
+  if (name.includes("route") || name.includes("page"))
+    return "Pagina retornando erro. Verifique se o componente existe e nao tem erros de importacao.";
+  if (name.includes("api"))
+    return "Endpoint da API falhando. Verifique logs do servidor e dependencias externas.";
+  if (name.includes("security") || name.includes("header"))
+    return "Configuracao de seguranca incompleta. Verifique headers e middleware de seguranca.";
+  if (name.includes("data") || name.includes("integrity"))
+    return "Problema de integridade de dados. Execute cleanup e verifique consistencia do banco.";
+  return null;
+}
+
 function CheckCard({ check }: { check: RuntimeCheck }) {
   const Icon = categoryIcon[check.category] || Activity;
+  const sev = checkToSeverity(check.status);
+  const guidance = runtimeGuidance(check);
+
   return (
     <div
-      className={`rounded-xl border p-4 ${statusColor[check.status]} transition-shadow hover:shadow-md`}
+      className={`rounded-xl border p-4 ${severityCard(sev)} transition-shadow hover:shadow-md`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -67,7 +85,7 @@ function CheckCard({ check }: { check: RuntimeCheck }) {
       </div>
       <div className="flex items-center gap-2 mt-3">
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white ${statusBadge[check.status]}`}
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${severitySolid(sev)}`}
         >
           {check.status}
         </span>
@@ -78,6 +96,12 @@ function CheckCard({ check }: { check: RuntimeCheck }) {
           <span className="text-[10px] opacity-50 ml-auto">{check.details}</span>
         )}
       </div>
+      {guidance && (
+        <div className="flex items-start gap-1.5 mt-3 pt-2 border-t border-current/10">
+          <Info className="h-3 w-3 flex-shrink-0 mt-0.5 opacity-60" />
+          <p className="text-[10px] opacity-70 leading-relaxed">{guidance}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -85,16 +109,12 @@ function CheckCard({ check }: { check: RuntimeCheck }) {
 export default async function RuntimeQAPage() {
   const report: RuntimeReport = await runRuntimeQA();
 
-  const overallColor: Record<RuntimeReport["overall"], string> = {
-    pass: "from-emerald-500 to-emerald-600",
-    warn: "from-amber-500 to-amber-600",
-    fail: "from-red-500 to-red-600",
-  };
+  const overallSev = checkToSeverity(report.overall);
 
   const overallLabel: Record<RuntimeReport["overall"], string> = {
-    pass: "ALL CHECKS PASSING",
-    warn: "WARNINGS DETECTED",
-    fail: "FAILURES DETECTED",
+    pass: "TODOS OS CHECKS OK",
+    warn: "ALERTAS DETECTADOS",
+    fail: "FALHAS DETECTADAS",
   };
 
   const categories = ["routes", "api", "security", "data"] as const;
@@ -108,17 +128,17 @@ export default async function RuntimeQAPage() {
             Runtime QA
           </h1>
           <p className="text-sm text-text-muted mt-1">
-            Automated quality checks for routes, APIs, security and data integrity
+            Checks automaticos de rotas, APIs, seguranca e integridade de dados
           </p>
         </div>
         <div className="text-xs text-text-muted">
-          Checked: {new Date(report.timestamp).toLocaleString("pt-BR")}
+          Verificado: {new Date(report.timestamp).toLocaleString("pt-BR")}
         </div>
       </div>
 
       {/* Overall Status Banner */}
       <div
-        className={`rounded-2xl bg-gradient-to-r ${overallColor[report.overall]} p-6 text-white shadow-lg`}
+        className={`rounded-2xl bg-gradient-to-r ${severityGradient(overallSev)} p-6 text-white shadow-lg`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -135,15 +155,15 @@ export default async function RuntimeQAPage() {
           <div className="grid grid-cols-3 gap-6 text-center">
             <div>
               <p className="text-2xl font-bold">{report.summary.pass}</p>
-              <p className="text-xs opacity-80">Pass</p>
+              <p className="text-xs opacity-80">OK</p>
             </div>
             <div>
               <p className="text-2xl font-bold">{report.summary.warn}</p>
-              <p className="text-xs opacity-80">Warn</p>
+              <p className="text-xs opacity-80">Alerta</p>
             </div>
             <div>
               <p className="text-2xl font-bold">{report.summary.fail}</p>
-              <p className="text-xs opacity-80">Fail</p>
+              <p className="text-xs opacity-80">Falha</p>
             </div>
           </div>
         </div>
@@ -151,9 +171,9 @@ export default async function RuntimeQAPage() {
 
       {/* Failures First */}
       {report.checks.some((c) => c.status === "fail") && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h2 className="text-sm font-semibold text-red-600 uppercase tracking-wider flex items-center gap-2">
-            <XCircle className="h-4 w-4" /> Failures
+            <XCircle className="h-4 w-4" /> Falhas
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {report.checks
@@ -167,9 +187,9 @@ export default async function RuntimeQAPage() {
 
       {/* Warnings */}
       {report.checks.some((c) => c.status === "warn") && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h2 className="text-sm font-semibold text-amber-600 uppercase tracking-wider flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" /> Warnings
+            <AlertTriangle className="h-4 w-4" /> Alertas
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {report.checks
@@ -187,7 +207,7 @@ export default async function RuntimeQAPage() {
         if (catChecks.length === 0) return null;
         const CatIcon = categoryIcon[cat] || Activity;
         return (
-          <div key={cat} className="space-y-2">
+          <div key={cat} className="space-y-3">
             <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider flex items-center gap-2">
               <CatIcon className="h-4 w-4" /> {categoryLabel[cat]} ({catChecks.length})
             </h2>

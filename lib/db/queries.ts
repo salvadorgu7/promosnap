@@ -522,20 +522,13 @@ export async function getAdminSources() {
   // Batch the extra queries instead of N+1
   const sourceIds = sources.map(s => s.id)
   const [offerCounts, lastUpdates] = await Promise.all([
-    prisma.offer.groupBy({
-      by: ['listingId'],
-      where: { isActive: true, listing: { sourceId: { in: sourceIds } } },
-      _count: true,
-    }).then(results => {
-      // We need per-source counts, use a raw query instead for efficiency
-      return prisma.$queryRaw<{ sourceId: string; count: number }[]>`
-        SELECT l."sourceId", COUNT(o.id)::int as count
-        FROM offers o
-        JOIN listings l ON o."listingId" = l.id
-        WHERE o."isActive" = true AND l."sourceId" = ANY(${sourceIds})
-        GROUP BY l."sourceId"
-      `.catch(() => [])
-    }),
+    prisma.$queryRaw<{ sourceId: string; count: number }[]>`
+      SELECT l."sourceId", COUNT(o.id)::int as count
+      FROM offers o
+      JOIN listings l ON o."listingId" = l.id
+      WHERE o."isActive" = true AND l."sourceId" = ANY(${sourceIds})
+      GROUP BY l."sourceId"
+    `.catch(() => []),
     prisma.$queryRaw<{ sourceId: string; lastUpdate: Date }[]>`
       SELECT "sourceId", MAX("updatedAt") as "lastUpdate"
       FROM listings

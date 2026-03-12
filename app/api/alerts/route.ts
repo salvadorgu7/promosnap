@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { rateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
+import { captureError } from '@/lib/monitoring'
 
 export async function POST(req: NextRequest) {
   // Rate limit: 20 req/min for alerts
@@ -11,16 +12,22 @@ export async function POST(req: NextRequest) {
     const { listingId, email, targetPrice } = body
 
     if (!listingId || !email || !targetPrice) {
-      return NextResponse.json({ error: 'listingId, email, and targetPrice are required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'listingId, email e targetPrice sao obrigatorios' },
+        { status: 400 }
+      )
     }
 
     if (typeof targetPrice !== 'number' || targetPrice <= 0) {
-      return NextResponse.json({ error: 'targetPrice must be a positive number' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'targetPrice deve ser um numero positivo' },
+        { status: 400 }
+      )
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
+      return NextResponse.json({ error: 'Email invalido' }, { status: 400 })
     }
 
     // Check listing exists
@@ -29,7 +36,7 @@ export async function POST(req: NextRequest) {
       select: { id: true },
     })
     if (!listing) {
-      return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Listing nao encontrado' }, { status: 404 })
     }
 
     // Check for existing active alert
@@ -51,8 +58,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true })
   } catch (error) {
+    await captureError(error, { route: '/api/alerts', method: 'POST' })
     return NextResponse.json(
-      { error: 'Failed to create alert' },
+      { error: 'Falha ao criar alerta. Tente novamente.' },
       { status: 500 }
     )
   }
@@ -67,7 +75,7 @@ export async function GET(req: NextRequest) {
   const email = url.searchParams.get('email')
 
   if (!email) {
-    return NextResponse.json({ error: 'email param required' }, { status: 400 })
+    return NextResponse.json({ error: 'Parametro email obrigatorio' }, { status: 400 })
   }
 
   try {
@@ -107,7 +115,8 @@ export async function GET(req: NextRequest) {
     }))
 
     return NextResponse.json(safe)
-  } catch {
+  } catch (error) {
+    await captureError(error, { route: '/api/alerts', method: 'GET' })
     return NextResponse.json([], { status: 500 })
   }
 }
@@ -121,7 +130,7 @@ export async function DELETE(req: NextRequest) {
   const alertId = url.searchParams.get('id')
 
   if (!alertId) {
-    return NextResponse.json({ error: 'id param required' }, { status: 400 })
+    return NextResponse.json({ error: 'Parametro id obrigatorio' }, { status: 400 })
   }
 
   try {
@@ -130,7 +139,8 @@ export async function DELETE(req: NextRequest) {
       data: { isActive: false },
     })
     return NextResponse.json({ ok: true })
-  } catch {
-    return NextResponse.json({ error: 'Alert not found' }, { status: 404 })
+  } catch (error) {
+    await captureError(error, { route: '/api/alerts', method: 'DELETE', alertId })
+    return NextResponse.json({ error: 'Alerta nao encontrado' }, { status: 404 })
   }
 }

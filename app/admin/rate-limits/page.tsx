@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ShieldAlert, RefreshCw, Users, Zap, Clock } from "lucide-react";
+import {
+  ShieldAlert,
+  RefreshCw,
+  Users,
+  Zap,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+} from "lucide-react";
 
 interface TopClient {
   ip: string;
@@ -36,7 +45,7 @@ export default function RateLimitsPage() {
       const json = await res.json();
       setData(json);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch");
+      setError(err instanceof Error ? err.message : "Falha ao carregar");
     } finally {
       setLoading(false);
     }
@@ -44,24 +53,24 @@ export default function RateLimitsPage() {
 
   useEffect(() => {
     fetchStats();
-    const interval = setInterval(fetchStats, 10_000); // auto-refresh every 10s
+    const interval = setInterval(fetchStats, 10_000);
     return () => clearInterval(interval);
   }, [fetchStats]);
 
   const typeLabels: Record<string, string> = {
-    public: "Public API",
-    search: "Search",
+    public: "API Publica",
+    search: "Busca",
     clickout: "Clickout",
-    alerts: "Alerts",
+    alerts: "Alertas",
     newsletter: "Newsletter",
   };
 
   const typeColors: Record<string, string> = {
-    public: "border-blue-200 bg-blue-50",
-    search: "border-violet-200 bg-violet-50",
-    clickout: "border-emerald-200 bg-emerald-50",
-    alerts: "border-amber-200 bg-amber-50",
-    newsletter: "border-rose-200 bg-rose-50",
+    public: "border-l-blue-500",
+    search: "border-l-violet-500",
+    clickout: "border-l-emerald-500",
+    alerts: "border-l-amber-500",
+    newsletter: "border-l-rose-500",
   };
 
   return (
@@ -69,11 +78,11 @@ export default function RateLimitsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-orange-100">
-            <ShieldAlert className="h-6 w-6 text-orange-600" />
+          <div className="p-2 rounded-lg bg-amber-50 border border-amber-200">
+            <ShieldAlert className="h-6 w-6 text-amber-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-text-primary">Rate Limits</h1>
+            <h1 className="text-xl font-bold font-display text-text-primary">Rate Limits</h1>
             <p className="text-sm text-text-muted">
               Monitoramento em tempo real dos limites de requisicao
             </p>
@@ -89,112 +98,144 @@ export default function RateLimitsPage() {
         </button>
       </div>
 
-      {/* Timestamp */}
+      {/* Timestamp and auto-refresh indicator */}
       {data && (
-        <p className="text-xs text-text-muted">
-          Ultima atualizacao: {new Date(data.timestamp).toLocaleString("pt-BR")}
-          {" — "}auto-refresh a cada 10s
-        </p>
+        <div className="flex items-center gap-2 text-xs text-text-muted">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Atualizado: {new Date(data.timestamp).toLocaleString("pt-BR")} — auto-refresh a cada 10s</span>
+        </div>
       )}
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          Erro ao carregar dados: {error}
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-800">Erro ao carregar dados</p>
+            <p className="text-xs text-red-700 mt-0.5">{error}</p>
+            <p className="text-xs text-red-600 mt-1 opacity-70">
+              Verifique se o secret esta correto na URL e se a API esta acessivel.
+            </p>
+          </div>
         </div>
       )}
 
       {/* Stats Grid */}
       {data && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {data.stats.map((stat) => (
-            <div
-              key={stat.type}
-              className={`rounded-xl border p-5 space-y-4 ${typeColors[stat.type] || "border-surface-200 bg-white"}`}
-            >
-              {/* Card Header */}
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-text-primary">
-                  {typeLabels[stat.type] || stat.type}
-                </h3>
-                <span className="text-xs font-mono text-text-muted bg-white/60 px-2 py-0.5 rounded">
-                  {stat.config.maxRequests} / {stat.config.windowMs / 1000}s
-                </span>
+        <>
+          {data.stats.length === 0 && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex items-start gap-3">
+              <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-blue-800">Nenhum rate limiter ativo</p>
+                <p className="text-xs text-blue-700 mt-0.5">
+                  Nenhuma requisicao recebida nos endpoints protegidos. Isso e normal se o site acabou de iniciar.
+                </p>
               </div>
-
-              {/* Metrics Row */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex items-center gap-1.5">
-                  <Users className="h-3.5 w-3.5 text-text-muted" />
-                  <div>
-                    <p className="text-lg font-bold text-text-primary">{stat.activeKeys}</p>
-                    <p className="text-[10px] text-text-muted uppercase">IPs ativos</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Zap className="h-3.5 w-3.5 text-text-muted" />
-                  <div>
-                    <p className="text-lg font-bold text-text-primary">
-                      {stat.totalRequestsInWindow}
-                    </p>
-                    <p className="text-[10px] text-text-muted uppercase">Req/janela</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-text-muted" />
-                  <div>
-                    <p className="text-lg font-bold text-text-primary">
-                      {stat.config.windowMs / 1000}s
-                    </p>
-                    <p className="text-[10px] text-text-muted uppercase">Janela</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Top Clients */}
-              {stat.topClients.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-                    Top clientes
-                  </p>
-                  <div className="space-y-0.5">
-                    {stat.topClients.slice(0, 5).map((client) => {
-                      const pct = Math.min(
-                        (client.requests / stat.config.maxRequests) * 100,
-                        100
-                      );
-                      const barColor =
-                        pct > 80
-                          ? "bg-red-400"
-                          : pct > 50
-                            ? "bg-amber-400"
-                            : "bg-emerald-400";
-                      return (
-                        <div key={client.ip} className="flex items-center gap-2 text-xs">
-                          <span className="font-mono text-text-secondary w-28 truncate">
-                            {client.ip}
-                          </span>
-                          <div className="flex-1 h-1.5 bg-white/50 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${barColor}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="text-text-muted w-8 text-right">
-                            {client.requests}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {stat.topClients.length === 0 && (
-                <p className="text-xs text-text-muted italic">Sem atividade na janela atual</p>
-              )}
             </div>
-          ))}
-        </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {data.stats.map((stat) => {
+              const utilization = stat.config.maxRequests > 0
+                ? (stat.totalRequestsInWindow / stat.config.maxRequests) * 100
+                : 0;
+              const isHigh = utilization > 80;
+              const isMedium = utilization > 50;
+
+              return (
+                <div
+                  key={stat.type}
+                  className={`rounded-xl border border-surface-200 bg-white p-5 space-y-4 border-l-4 ${typeColors[stat.type] || "border-l-surface-300"}`}
+                >
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold font-display text-text-primary">
+                      {typeLabels[stat.type] || stat.type}
+                    </h3>
+                    <span className="text-xs font-mono text-text-muted bg-surface-50 px-2 py-0.5 rounded border border-surface-200">
+                      {stat.config.maxRequests} / {stat.config.windowMs / 1000}s
+                    </span>
+                  </div>
+
+                  {/* Metrics Row */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-text-muted" />
+                      <div>
+                        <p className="text-lg font-bold font-display text-text-primary">{stat.activeKeys}</p>
+                        <p className="text-[10px] text-text-muted uppercase">IPs ativos</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Zap className={`h-3.5 w-3.5 ${isHigh ? "text-red-500" : isMedium ? "text-amber-500" : "text-text-muted"}`} />
+                      <div>
+                        <p className={`text-lg font-bold font-display ${isHigh ? "text-red-600" : isMedium ? "text-amber-600" : "text-text-primary"}`}>
+                          {stat.totalRequestsInWindow}
+                        </p>
+                        <p className="text-[10px] text-text-muted uppercase">Req/janela</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-text-muted" />
+                      <div>
+                        <p className="text-lg font-bold font-display text-text-primary">
+                          {stat.config.windowMs / 1000}s
+                        </p>
+                        <p className="text-[10px] text-text-muted uppercase">Janela</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Top Clients */}
+                  {stat.topClients.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                        Top clientes
+                      </p>
+                      <div className="space-y-1">
+                        {stat.topClients.slice(0, 5).map((client) => {
+                          const pct = Math.min(
+                            (client.requests / stat.config.maxRequests) * 100,
+                            100
+                          );
+                          const barColor =
+                            pct > 80
+                              ? "bg-red-500"
+                              : pct > 50
+                                ? "bg-amber-500"
+                                : "bg-emerald-500";
+                          return (
+                            <div key={client.ip} className="flex items-center gap-2 text-xs">
+                              <span className="font-mono text-text-secondary w-28 truncate">
+                                {client.ip}
+                              </span>
+                              <div className="flex-1 h-1.5 bg-surface-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${barColor} transition-all`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <span className={`w-8 text-right font-mono ${pct > 80 ? "text-red-600 font-semibold" : "text-text-muted"}`}>
+                                {client.requests}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {stat.topClients.length === 0 && (
+                    <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                      <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                      <span>Sem atividade na janela atual</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Loading skeleton */}

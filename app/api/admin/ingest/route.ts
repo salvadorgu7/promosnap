@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { Prisma } from '@prisma/client'
 import { MercadoLivreAdapter } from '@/adapters/mercadolivre'
+import { validateAdmin } from '@/lib/auth/admin'
 import type { RawListing } from '@/types'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -104,6 +105,9 @@ async function upsertListings(listings: RawListing[]) {
 // Mantido para quando o search for aprovado pelo ML
 
 export async function GET(request: NextRequest) {
+  const denied = validateAdmin(request)
+  if (denied) return denied
+
   const { searchParams } = new URL(request.url)
   const q = searchParams.get('q') || 'smartphone'
   const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50)
@@ -130,6 +134,9 @@ export async function GET(request: NextRequest) {
 // Body: { ids: ["MLB123", "https://www.mercadolivre.com.br/.../MLB456/..."] }
 
 export async function POST(request: NextRequest) {
+  const denied = validateAdmin(request)
+  if (denied) return denied
+
   let body: { ids?: string[] }
 
   try {

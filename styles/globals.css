@@ -53,11 +53,24 @@
 
   /* ---- Cards ---- */
   .card {
-    @apply bg-white rounded-xl border border-surface-200/80 shadow-sm hover:shadow-md transition-all duration-200;
+    @apply bg-white rounded-xl border border-surface-200/80 shadow-sm;
+    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+  }
+  .card:hover {
+    @apply shadow-md border-surface-200;
   }
   .card-elevated {
-    @apply bg-white rounded-xl border border-surface-200/60 shadow-md hover:shadow-lg transition-all duration-200;
+    @apply bg-white rounded-xl border border-surface-200/60;
     background: linear-gradient(180deg, #fff 0%, #fafbff 100%);
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.04),
+      0 4px 12px rgba(0,0,0,0.05);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .card-elevated:hover {
+    box-shadow:
+      0 2px 4px rgba(0,0,0,0.04),
+      0 8px 20px rgba(0,0,0,0.07);
   }
   .card-glass {
     @apply rounded-xl border border-white/60 shadow-sm backdrop-blur-sm;
@@ -70,17 +83,22 @@
            bg-gradient-to-r from-accent-blue to-brand-500 text-white
            font-semibold text-sm shadow-sm
            hover:from-accent-blue/90 hover:to-brand-600
+           active:scale-[0.98]
            transition-all duration-200 hover:shadow-glow;
   }
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
            bg-surface-100 text-surface-700 font-medium text-sm border border-surface-200
-           hover:bg-surface-200 hover:text-surface-900 transition-colors;
+           hover:bg-surface-200 hover:text-surface-900 hover:border-surface-300
+           active:scale-[0.98]
+           transition-all duration-150;
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
            text-surface-500 font-medium text-sm
-           hover:bg-surface-100 hover:text-surface-700 transition-colors;
+           hover:bg-surface-100 hover:text-surface-700
+           active:bg-surface-200
+           transition-colors;
   }
 
   /* ---- Inputs ---- */
@@ -135,7 +153,17 @@
 
   /* ---- Shimmer loading ---- */
   .shimmer {
-    @apply animate-shimmer bg-gradient-to-r from-surface-100 via-surface-200 to-surface-100 bg-[length:200%_100%];
+    @apply bg-surface-200/60;
+    background-image: linear-gradient(
+      90deg,
+      rgba(0,0,0,0) 0%,
+      rgba(255,255,255,0.5) 40%,
+      rgba(255,255,255,0.7) 50%,
+      rgba(255,255,255,0.5) 60%,
+      rgba(0,0,0,0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer-slide 1.6s ease-in-out infinite;
   }
 
   /* ---- Score indicator ---- */
@@ -148,7 +176,8 @@
 
   /* ---- Image container ---- */
   .image-container {
-    @apply bg-gradient-to-br from-slate-50 to-slate-100/80 rounded-lg overflow-hidden flex items-center justify-center;
+    @apply bg-white rounded-lg overflow-hidden flex items-center justify-center;
+    background: linear-gradient(135deg, #fafbff 0%, #f5f6fa 100%);
   }
 
   /* ---- Dividers ---- */
@@ -244,10 +273,10 @@
     @apply text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3;
   }
   .table-admin td {
-    @apply px-4 py-3 text-text-secondary border-b border-surface-100;
+    @apply px-4 py-3.5 text-text-secondary border-b border-surface-100/80;
   }
   .table-admin tbody tr {
-    @apply hover:bg-surface-50 transition-colors;
+    @apply hover:bg-surface-50/80 transition-colors;
   }
 
   /* ---- Empty state ---- */
@@ -255,19 +284,19 @@
     @apply flex flex-col items-center justify-center py-16 px-4 text-center;
   }
   .empty-state-icon {
-    @apply w-16 h-16 rounded-2xl bg-surface-100 flex items-center justify-center mb-4;
+    @apply w-16 h-16 rounded-2xl bg-surface-100 flex items-center justify-center mb-5 shadow-sm;
   }
   .empty-state-title {
-    @apply font-display font-semibold text-lg text-text-primary mb-1;
+    @apply font-display font-semibold text-lg text-text-primary mb-1.5;
   }
   .empty-state-text {
-    @apply text-sm text-text-muted max-w-sm mb-4;
+    @apply text-sm text-text-muted max-w-sm mb-4 leading-relaxed;
   }
 
   /* ---- Toast ---- */
   .toast {
     @apply fixed bottom-6 right-6 z-[100] px-5 py-3 rounded-xl bg-surface-900 text-white text-sm font-medium
-           shadow-lg animate-slide-up;
+           shadow-xl animate-slide-up;
   }
   .toast-success { @apply bg-accent-green text-white; }
   .toast-error { @apply bg-accent-red text-white; }
@@ -287,11 +316,12 @@
 
   /* ---- Surface elevated — card with subtle shadow + gradient bg ---- */
   .surface-elevated {
-    @apply bg-white rounded-xl shadow-md;
-    background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+    @apply bg-white rounded-xl;
+    background: linear-gradient(180deg, #ffffff 0%, #f9faff 100%);
     box-shadow:
-      0 1px 3px rgba(0,0,0,0.04),
-      0 4px 12px rgba(99,102,241,0.06);
+      0 1px 3px rgba(0,0,0,0.03),
+      0 4px 12px rgba(99,102,241,0.05),
+      0 8px 24px rgba(99,102,241,0.03);
   }
 
   /* ---- Surface sunken — inset/darker bg for contrast sections ---- */
@@ -311,7 +341,7 @@
   .divider-gradient {
     height: 1px;
     border: none;
-    background: linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.15) 20%, rgba(139,92,246,0.12) 80%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.12) 25%, rgba(139,92,246,0.10) 75%, transparent 100%);
   }
 
   /* ---- Glass card — glass morphism effect ---- */
@@ -416,7 +446,7 @@
     @apply block w-full;
     height: 1px;
     border: none;
-    background: linear-gradient(90deg, transparent 5%, rgba(99,102,241,0.12) 30%, rgba(139,92,246,0.10) 70%, transparent 95%);
+    background: linear-gradient(90deg, transparent 5%, rgba(99,102,241,0.10) 25%, rgba(139,92,246,0.08) 75%, transparent 95%);
   }
 
   /* ---- Card hover — lift + shadow transition ---- */
@@ -463,7 +493,7 @@
 
   /* ---- Skeleton — loading placeholder animation ---- */
   .skeleton {
-    @apply rounded-md bg-surface-200/80;
+    @apply rounded-md bg-surface-200/70;
     background-image: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
     background-size: 200% 100%;
     animation: skeleton-pulse 1.8s ease-in-out infinite;
@@ -498,6 +528,31 @@
   }
   .table-admin tbody tr.row-highlight {
     @apply bg-accent-blue/5;
+  }
+
+  /* ---- Section contrast — alternating section backgrounds ---- */
+  .section-contrast {
+    position: relative;
+    background: linear-gradient(180deg, rgba(248,249,255,0.8) 0%, rgba(255,255,255,1) 100%);
+  }
+  .section-contrast::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 10%, rgba(99,102,241,0.08) 50%, transparent 90%);
+  }
+
+  /* ---- Offer CTA button ---- */
+  .btn-offer {
+    @apply flex items-center justify-center gap-2 w-full rounded-lg
+           bg-gradient-to-r from-accent-blue to-brand-500 text-white
+           font-semibold shadow-sm
+           hover:shadow-md hover:from-accent-blue/90 hover:to-brand-600
+           active:scale-[0.98]
+           transition-all duration-200;
   }
 }
 
@@ -546,6 +601,12 @@
   }
 }
 
+/* ---- Shimmer slide animation ---- */
+@keyframes shimmer-slide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ---- Skeleton animation keyframe ---- */
 @keyframes skeleton-pulse {
   0% { background-position: 200% 0; }
@@ -556,29 +617,29 @@
 @keyframes toast-slide-in {
   from {
     opacity: 0;
-    transform: translateX(100%) translateY(0);
+    transform: translateX(80px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateX(0) translateY(0);
+    transform: translateX(0) scale(1);
   }
 }
 
 @keyframes toast-slide-out {
   from {
     opacity: 1;
-    transform: translateX(0) translateY(0);
+    transform: translateX(0) scale(1);
   }
   to {
     opacity: 0;
-    transform: translateX(100%) translateY(0);
+    transform: translateX(80px) scale(0.95);
   }
 }
 
 .toast-enter {
-  animation: toast-slide-in 0.3s ease-out forwards;
+  animation: toast-slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .toast-exit {
-  animation: toast-slide-out 0.3s ease-in forwards;
+  animation: toast-slide-out 0.25s ease-in forwards;
 }

@@ -1,5 +1,7 @@
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { MercadoLivreAdapter } from '@/adapters/mercadolivre'
+import { validateAdmin } from '@/lib/auth/admin'
 
 interface SeedProduct {
   externalId: string
@@ -168,7 +170,10 @@ const ML_PRODUCTS: SeedProduct[] = [
   { externalId: "MLB70900905", brand: null, title: "Box Harry Potter Coleção Completa 7 Livros J.K. Rowling", price: 179, originalPrice: 299, image: "https://http2.mlstatic.com/D_Q_NP_2X_637177-MLA107324926148_032026-E.webp", url: "https://www.mercadolivre.com.br/p/MLB70900905", category: "Livros", rating: 4.9, reviews: 45000, sales: 220000, freeShipping: true },
 ]
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const denied = validateAdmin(req)
+  if (denied) return denied
+
   try {
     const adapter = new MercadoLivreAdapter()
     const mlSource = await prisma.source.upsert({

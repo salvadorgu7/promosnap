@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { validateAdmin } from '@/lib/auth/admin'
 import { getMLToken } from '@/lib/ml-auth'
 
 interface MLTrend {
@@ -6,7 +7,10 @@ interface MLTrend {
   url: string
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const denied = validateAdmin(req)
+  if (denied) return denied
+
   try {
     const token = await getMLToken()
     const res = await fetch('https://api.mercadolibre.com/trends/MLB', {

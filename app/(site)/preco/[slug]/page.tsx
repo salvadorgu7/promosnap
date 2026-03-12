@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BarChart3, TrendingDown, TrendingUp, Minus, Clock, ArrowLeft } from "lucide-react";
-import PriceChart from "@/components/charts/PriceChart";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import PriceAlertForm from "@/components/product/PriceAlertForm";
+import PriceChart from "@/components/charts/PriceChartLazy";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { formatPrice } from "@/lib/utils";
 import { getProductBySlug, getPriceHistory } from "@/lib/db/queries";
