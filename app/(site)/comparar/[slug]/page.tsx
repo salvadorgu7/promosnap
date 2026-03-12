@@ -1,0 +1,406 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowRight, ChevronDown, ExternalLink, Scale, Truck, Star, Package } from "lucide-react";
+import OfferCard from "@/components/cards/OfferCard";
+import Breadcrumb from "@/components/ui/Breadcrumb";
+import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
+import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
+import { COMPARISONS, COMPARISON_SLUGS } from "@/lib/seo/comparisons";
+import type { ComparisonDef } from "@/lib/seo/comparisons";
+import type { ProductCard } from "@/types";
+import prisma from "@/lib/db/prisma";
+import { formatPrice } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
+
+export async function generateStaticParams() {
+  return COMPARISON_SLUGS.map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const def = COMPARISONS[slug];
+  if (!def) return buildMetadata({ title: "Comparativo" });
+
+  return buildMetadata({
+    title: def.title,
+    description: def.description,
+    path: `/comparar/${slug}`,
+  });
+}
+
+async function searchProducts(query: string, limit = 8): Promise<ProductCard[]> {
+  const products = await prisma.product.findMany({
+    where: {
+      status: "ACTIVE",
+      name: { contains: query, mode: "insensitive" },
+      listings: { some: { offers: { some: { isActive: true } } } },
+    },
+    include: PRODUCT_INCLUDE,
+    take: limit,
+    orderBy: { popularityScore: "desc" },
+  });
+  return products.map(buildProductCard).filter(Boolean) as ProductCard[];
+}
+
+function faqPageSchema(def: ComparisonDef) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: def.faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.a,
+      },
+    })),
+  };
+}
+
+function ComparisonRow({
+  label,
+  valueA,
+  valueB,
+  highlight,
+}: {
+  label: string;
+  valueA: string;
+  valueB: string;
+  highlight?: "a" | "b" | null;
+}) {
+  return (
+    <tr className="border-b border-surface-100 last:border-0">
+      <td className="py-3 px-4 text-sm font-medium text-text-secondary bg-surface-50 w-1/4">
+        {label}
+      </td>
+      <td
+        className={`py-3 px-4 text-sm text-center ${
+          highlight === "a" ? "text-accent-green font-semibold" : "text-text-primary"
+        }`}
+      >
+        {valueA}
+      </td>
+      <td
+        className={`py-3 px-4 text-sm text-center ${
+          highlight === "b" ? "text-accent-green font-semibold" : "text-text-primary"
+        }`}
+      >
+        {valueB}
+      </td>
+    </tr>
+  );
+}
+
+function FAQAccordion({ faqs }: { faqs: Array<{ q: string; a: string }> }) {
+  return (
+    <div className="space-y-3">
+      {faqs.map((faq, i) => (
+        <details
+          key={i}
+          className="group rounded-xl border border-surface-200 bg-white overflow-hidden"
+        >
+          <summary className="flex items-center justify-between cursor-pointer px-5 py-4 text-sm font-medium text-text-primary hover:bg-surface-50 transition-colors">
+            {faq.q}
+            <ChevronDown className="w-4 h-4 text-text-muted flex-shrink-0 ml-2 group-open:rotate-180 transition-transform" />
+          </summary>
+          <div className="px-5 pb-4 text-sm text-text-secondary leading-relaxed">
+            {faq.a}
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+function ProductSideCard({
+  label,
+  products,
+}: {
+  label: string;
+  products: ProductCard[];
+}) {
+  const best = products[0];
+  if (!best) {
+    return (
+      <div className="flex-1 rounded-xl border border-surface-200 bg-white p-5">
+        <h3 className="text-lg font-bold font-display text-text-primary mb-2">
+          {label}
+        </h3>
+        <p className="text-sm text-text-muted">
+          Nenhuma oferta encontrada no momento.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 rounded-xl border border-surface-200 bg-white p-5">
+      <h3 className="text-lg font-bold font-display text-text-primary mb-3">
+        {label}
+      </h3>
+      <div className="space-y-2 mb-4">
+        <p className="text-2xl font-bold text-brand-600">
+          {formatPrice(best.bestOffer.price)}
+        </p>
+        {best.bestOffer.originalPrice && best.bestOffer.originalPrice > best.bestOffer.price && (
+          <p className="text-sm text-text-muted line-through">
+            {formatPrice(best.bestOffer.originalPrice)}
+          </p>
+        )}
+        {best.bestOffer.discount && best.bestOffer.discount > 0 && (
+          <span className="discount-tag text-xs">-{best.bestOffer.discount}%</span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 text-xs text-text-muted mb-3">
+        <Package className="w-3.5 h-3.5" />
+        <span>{best.bestOffer.sourceName}</span>
+        {best.bestOffer.isFreeShipping && (
+          <span className="flex items-center gap-0.5 text-accent-green">
+            <Truck className="w-3 h-3" /> Frete Grátis
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 text-xs text-text-muted mb-4">
+        <Star className="w-3.5 h-3.5" />
+        <span>Score: {Math.round(best.bestOffer.offerScore)}/100</span>
+        {best.offersCount > 1 && (
+          <span>em {best.offersCount} lojas</span>
+        )}
+      </div>
+      <a
+        href={best.bestOffer.affiliateUrl}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="flex items-center justify-center gap-2 w-full h-10 rounded-lg
+                   bg-gradient-to-r from-accent-blue to-brand-500 text-white
+                   text-sm font-semibold hover:shadow-glow transition-all"
+      >
+        Ver melhor oferta
+        <ExternalLink className="w-3.5 h-3.5" />
+      </a>
+    </div>
+  );
+}
+
+export default async function CompararPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const def = COMPARISONS[slug];
+  if (!def) notFound();
+
+  const [productsA, productsB] = await Promise.all([
+    searchProducts(def.productA.query),
+    searchProducts(def.productB.query),
+  ]);
+
+  const bestA = productsA[0];
+  const bestB = productsB[0];
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbSchema([
+              { name: "Home", url: "/" },
+              { name: "Comparar", url: "/comparar" },
+              { name: def.title, url: `/comparar/${slug}` },
+            ])
+          ),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqPageSchema(def)),
+        }}
+      />
+
+      <Breadcrumb
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Comparar", href: "/" },
+          { label: def.title },
+        ]}
+      />
+
+      {/* Hero */}
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold mb-4">
+          <Scale className="w-3.5 h-3.5" />
+          Comparativo PromoSnap
+        </div>
+        <h1 className="text-3xl md:text-4xl font-bold font-display text-text-primary mb-4">
+          {def.title}
+        </h1>
+        <p className="text-text-secondary max-w-2xl mx-auto leading-relaxed">
+          {def.intro}
+        </p>
+      </div>
+
+      {/* Side-by-side cards */}
+      <div className="flex flex-col md:flex-row gap-4 mb-10">
+        <ProductSideCard label={def.productA.name} products={productsA} />
+        <div className="flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-surface-100 flex items-center justify-center text-text-muted font-bold text-sm">
+            VS
+          </div>
+        </div>
+        <ProductSideCard label={def.productB.name} products={productsB} />
+      </div>
+
+      {/* Specs comparison table */}
+      {bestA && bestB && (
+        <div className="rounded-xl border border-surface-200 bg-white overflow-hidden mb-10">
+          <div className="px-5 py-4 border-b border-surface-100 bg-surface-50">
+            <h2 className="text-lg font-bold font-display text-text-primary">
+              Tabela Comparativa
+            </h2>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-surface-200">
+                <th className="py-3 px-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider w-1/4">
+                  Aspecto
+                </th>
+                <th className="py-3 px-4 text-center text-xs font-semibold text-text-muted uppercase tracking-wider">
+                  {def.productA.name}
+                </th>
+                <th className="py-3 px-4 text-center text-xs font-semibold text-text-muted uppercase tracking-wider">
+                  {def.productB.name}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <ComparisonRow
+                label="Melhor Preco"
+                valueA={formatPrice(bestA.bestOffer.price)}
+                valueB={formatPrice(bestB.bestOffer.price)}
+                highlight={bestA.bestOffer.price <= bestB.bestOffer.price ? "a" : "b"}
+              />
+              <ComparisonRow
+                label="Loja"
+                valueA={bestA.bestOffer.sourceName}
+                valueB={bestB.bestOffer.sourceName}
+              />
+              <ComparisonRow
+                label="Score"
+                valueA={`${Math.round(bestA.bestOffer.offerScore)}/100`}
+                valueB={`${Math.round(bestB.bestOffer.offerScore)}/100`}
+                highlight={bestA.bestOffer.offerScore >= bestB.bestOffer.offerScore ? "a" : "b"}
+              />
+              <ComparisonRow
+                label="Frete Gratis"
+                valueA={bestA.bestOffer.isFreeShipping ? "Sim" : "Nao"}
+                valueB={bestB.bestOffer.isFreeShipping ? "Sim" : "Nao"}
+                highlight={
+                  bestA.bestOffer.isFreeShipping && !bestB.bestOffer.isFreeShipping
+                    ? "a"
+                    : !bestA.bestOffer.isFreeShipping && bestB.bestOffer.isFreeShipping
+                    ? "b"
+                    : null
+                }
+              />
+              <ComparisonRow
+                label="Desconto"
+                valueA={bestA.bestOffer.discount ? `${bestA.bestOffer.discount}%` : "—"}
+                valueB={bestB.bestOffer.discount ? `${bestB.bestOffer.discount}%` : "—"}
+                highlight={
+                  (bestA.bestOffer.discount || 0) > (bestB.bestOffer.discount || 0) ? "a" :
+                  (bestB.bestOffer.discount || 0) > (bestA.bestOffer.discount || 0) ? "b" : null
+                }
+              />
+              <ComparisonRow
+                label="Ofertas Disponiveis"
+                valueA={`${productsA.reduce((acc, p) => acc + p.offersCount, 0)} ofertas`}
+                valueB={`${productsB.reduce((acc, p) => acc + p.offersCount, 0)} ofertas`}
+              />
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Verdict */}
+      <div className="rounded-xl border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-white p-6 md:p-8 mb-10">
+        <h2 className="text-xl font-bold font-display text-text-primary mb-3 flex items-center gap-2">
+          <Scale className="w-5 h-5 text-brand-500" />
+          Veredito PromoSnap
+        </h2>
+        <p className="text-text-secondary leading-relaxed">{def.verdict}</p>
+        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+          {bestA && (
+            <a
+              href={bestA.bestOffer.affiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg
+                         bg-gradient-to-r from-accent-blue to-brand-500 text-white
+                         text-sm font-semibold hover:shadow-glow transition-all"
+            >
+              Ver {def.productA.name}
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          )}
+          {bestB && (
+            <a
+              href={bestB.bestOffer.affiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg
+                         bg-gradient-to-r from-accent-green to-emerald-500 text-white
+                         text-sm font-semibold hover:shadow-glow transition-all"
+            >
+              Ver {def.productB.name}
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div className="mb-10">
+        <h2 className="text-xl font-bold font-display text-text-primary mb-4">
+          Perguntas Frequentes
+        </h2>
+        <FAQAccordion faqs={def.faqs} />
+      </div>
+
+      {/* Product grids */}
+      {productsA.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-xl font-bold font-display text-text-primary mb-4">
+            Melhores ofertas de {def.productA.name}
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {productsA.slice(0, 4).map((p) => (
+              <OfferCard key={p.id} product={p} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {productsB.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-xl font-bold font-display text-text-primary mb-4">
+            Melhores ofertas de {def.productB.name}
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {productsB.slice(0, 4).map((p) => (
+              <OfferCard key={p.id} product={p} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

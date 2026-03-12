@@ -1,6 +1,8 @@
 # PromoSnap
 
-Comparador de precos brasileiro com automacao total. Monitora marketplaces, compara ofertas, mostra historico real de preco e opera com jobs automaticos.
+Comparador de precos brasileiro com automacao total, content engine, revenue OS e SEO machine. Monitora marketplaces, compara ofertas, mostra historico real de preco e opera com jobs automaticos.
+
+**Dominio:** promosnap.com.br
 
 ## Stack
 
@@ -12,7 +14,9 @@ Comparador de precos brasileiro com automacao total. Monitora marketplaces, comp
 - **Icons:** Lucide React
 - **Fonts:** Plus Jakarta Sans (display) + Inter (body)
 - **Analytics:** GA4 (via NEXT_PUBLIC_GA_ID)
-- **Cron:** Vercel Cron (a cada 6h) ou cron externo
+- **Email:** Resend (via RESEND_API_KEY)
+- **Cron:** Vercel Cron (diario, 9am UTC)
+- **PWA:** manifest.ts + BottomNav mobile
 
 ## Setup Local
 
@@ -26,9 +30,9 @@ cp .env.example .env.local
 
 npx prisma generate
 npx prisma db push
+npx prisma db seed
 
 npm run dev
-# Em outro terminal: curl -X POST http://localhost:3000/api/admin/seed
 ```
 
 ## Setup Vercel
@@ -36,20 +40,30 @@ npm run dev
 1. Conecte o repo no Vercel
 2. Variaveis de ambiente:
    - `DATABASE_URL` — Neon PostgreSQL
+   - `APP_URL` — https://promosnap.com.br
+   - `NEXT_PUBLIC_APP_URL` — https://promosnap.com.br
    - `ADMIN_SECRET` — segredo para rotas admin
    - `CRON_SECRET` — segredo para cron endpoint
    - `ML_CLIENT_ID` / `ML_CLIENT_SECRET` — ML OAuth
    - `ML_REDIRECT_URI` — callback OAuth
+   - `RESEND_API_KEY` — email (opcional)
    - `NEXT_PUBLIC_GA_ID` — GA4 (opcional)
 3. Build command: `prisma generate && next build`
-4. Cron automatico via vercel.json (a cada 6h)
+4. Cron automatico via vercel.json (diario 9am)
 
 ## Setup Neon
 
 1. Crie projeto em neon.tech
 2. Copie connection string para DATABASE_URL
 3. `npx prisma db push`
-4. POST /api/admin/seed
+4. `npx prisma db seed`
+
+## Setup Email (Resend)
+
+1. Crie conta em resend.com
+2. Configure dominio promosnap.com.br
+3. Copie API key para RESEND_API_KEY
+4. Templates: welcome, daily-deals, alert-triggered, campaign
 
 ## ML OAuth
 
@@ -59,8 +73,6 @@ npm run dev
 4. Token salvo e renovado automaticamente
 
 ## Jobs e Automacao
-
-Sistema de jobs robusto com runner generico, scheduler e cron:
 
 | Job | Descricao |
 |-----|-----------|
@@ -73,79 +85,80 @@ Sistema de jobs robusto com runner generico, scheduler e cron:
 
 **Executar manualmente:** POST /api/admin/jobs/run `{ "job": "ingest" }`
 **Cron automatico:** GET /api/cron (protegido com CRON_SECRET)
-**Status:** GET /api/admin/jobs/status
-**Historico:** GET /api/admin/jobs/history
 
-## Alertas de Preco
+## Content Engine
 
-- Usuarios criam alertas na pagina do produto (email + preco alvo)
-- Job `check-alerts` verifica periodicamente
-- API: POST/GET/DELETE /api/alerts
-- Admin: /admin/alertas
+- Model Article (Prisma) com markdown, categorias, tags
+- Paginas /guias e /guias/[slug] com renderer markdown
+- Sidebar com TOC, produtos relacionados, share buttons
+- Admin /admin/artigos com CRUD completo
+- API /api/admin/articles (GET/POST/PUT/DELETE)
+- 8 artigos seed em pt-BR
 
-## Favoritos e Historico
+## Revenue OS
 
-- Favoritos em localStorage (ate 50 items)
-- Historico "vistos recentemente" (ate 20)
-- Pagina /favoritos com dados reais do banco
-- Heart toggle no OfferCard
-- Icon de favoritos no Header
+- Smart CTA engine (lib/revenue/smart-cta.ts) com urgencia dinamica
+- SmartCTA component com variantes visuais (high/medium/low)
+- Dashboard /admin/monetizacao com revenue estimada por source/categoria
+- API /api/admin/revenue com metricas consolidadas
+- Taxas configuraveis por marketplace (Amazon 4%, ML 3%, Shopee 2.5%, Shein 3%)
 
-## Tendencias
+## SEO Machine
 
-- Trends do ML persistidos no banco (TrendingKeyword)
-- Componente "Em alta agora" na homepage
-- Pagina /trending
-- Admin: /admin/tendencias com growth ops
+- Sitemap dinamico com todas as paginas (produtos, categorias, marcas, artigos, melhores, ofertas, comparacoes)
+- Paginas /melhores/[slug] (13 paginas curadas)
+- Paginas /ofertas/[slug] (10 paginas de keyword)
+- Paginas /comparar/[slug] (10 comparacoes)
+- Hubs /categorias e /marcas
+- FAQ schema, breadcrumb schema, product schema
+- Content generators (FAQ, meta, intro)
+- InternalLinks component
 
 ## Admin
 
-/admin com painel completo:
-- **Dashboard:** metricas, clickouts, jobs, alertas, trends
-- **Produtos:** tabela com busca, paginacao
-- **Ofertas:** score, affiliate URL
-- **Fontes:** status por marketplace
-- **Jobs:** cards por job com "Executar agora", historico
-- **Ingestao:** importar via ID/URL do ML
-- **Alertas:** alertas ativos/disparados/inativos
-- **Tendencias:** trends, top buscas, clickouts, oportunidades
+/admin com painel completo e sidebar agrupada:
+
+**Overview:** Dashboard com revenue cards, metricas
+**Catalogo:** Produtos, Ofertas, Fontes
+**Conteudo:** Artigos, Tendencias
+**Growth:** SEO, Analise, Desempenho, Inteligencia
+**Monetizacao:** Revenue dashboard
+**Engajamento:** Email, Alertas
+**Operacao:** Jobs, Ingestao, Config
 
 ## Paginas
 
 | Rota | Descricao |
 |------|-----------|
-| `/` | Homepage: hero, trends, oferta do dia, rails, categorias, recentes |
+| `/` | Homepage: hero, trends, oferta do dia, rails, categorias, newsletter |
 | `/ofertas` | Grid de ofertas quentes |
+| `/ofertas/[slug]` | Paginas SEO por keyword |
 | `/menor-preco` | Maior desconto historico |
 | `/mais-vendidos` | Produtos mais populares |
-| `/busca?q=...` | Busca com filtros, ordenacao, paginacao |
-| `/produto/[slug]` | Detalhe: comparador, grafico, alertas, share |
+| `/busca?q=...` | Busca com filtros, voz, ordenacao |
+| `/produto/[slug]` | Detalhe: comparador, grafico, alertas, savings |
 | `/categoria/[slug]` | Produtos por categoria |
+| `/categorias` | Hub de categorias |
 | `/marca/[slug]` | Produtos por marca |
-| `/melhores/[slug]` | Guias curados |
+| `/marcas` | Hub de marcas |
+| `/melhores/[slug]` | Guias curados (13 paginas) |
+| `/comparar/[slug]` | Comparacoes (10 paginas) |
+| `/guias` | Listagem de artigos |
+| `/guias/[slug]` | Artigo completo |
 | `/cupons` | Cupons ativos |
 | `/trending` | Tendencias atuais |
 | `/favoritos` | Favoritos do usuario |
+| `/minha-conta` | Conta sem login (localStorage) |
+| `/indicar` | Sistema de indicacao |
 | `/sobre` | Sobre o PromoSnap |
+| `/transparencia` | Transparencia e como ganhamos dinheiro |
+| `/politica-privacidade` | Politica de privacidade |
+| `/termos` | Termos de uso |
 | `/admin/*` | Painel administrativo |
-
-## Rotas API
-
-| Rota | Metodo | Descricao |
-|------|--------|-----------|
-| `/api/cron` | GET | Cron endpoint (CRON_SECRET) |
-| `/api/admin/jobs/run` | POST | Executar job (ADMIN_SECRET) |
-| `/api/admin/jobs/status` | GET | Status dos jobs |
-| `/api/admin/jobs/history` | GET | Historico de execucoes |
-| `/api/alerts` | POST/GET/DELETE | Alertas de preco |
-| `/api/favorites` | GET | Dados de favoritos por IDs |
-| `/api/recently-viewed` | GET | Dados por slugs |
-| `/api/clickout/[offerId]` | GET | Tracking + redirect |
-| `/api/search/suggest` | GET | Autocomplete |
 
 ## Tabelas Prisma
 
-Source, Merchant, Category, Brand, Product, ProductVariant, Listing, Offer, PriceSnapshot, Coupon, Clickout, SearchLog, EditorialBlock, JobRun, **PriceAlert**, **TrendingKeyword**
+Source, Merchant, Category, Brand, Product, ProductVariant, Listing, Offer, PriceSnapshot, Coupon, Clickout, SearchLog, EditorialBlock, JobRun, PriceAlert, TrendingKeyword, **Article**, **Referral**, **Subscriber**, **EmailLog**
 
 ## Scripts
 
@@ -160,18 +173,20 @@ npm run db:studio    # Prisma Studio
 
 ## Limitacoes Atuais
 
-- ML search API bloqueada (ingestao via trends + manual)
-- OAuth token expira a cada 6h
-- Rate limits na API publica
-- Alertas preparados mas sem envio de email real (precisa integrar SendGrid/Resend)
+- Adapters ML/Amazon/Shopee/Shein em modo MOCK (health check retorna MOCK)
+- OAuth token ML expira a cada 6h
+- Envio de email depende de RESEND_API_KEY configurado
+- PWA icons placeholder (precisa criar icones reais)
 - Imagens ML podem ter CORS
+- Vercel Hobby: cron limitado a 1x/dia
 
-## Proximas Fases
+## Proximos Passos (V10)
 
-- Envio real de email para alertas (SendGrid/Resend)
-- Integracao Amazon, Shopee, Shein (adapters prontos)
-- PWA completo com push notifications
+- Adapters reais para Amazon PA-API, Shopee, Shein
+- Push notifications via PWA
 - Testes automatizados (unit + e2e)
 - Rate limiting nas APIs publicas
 - CDN para imagens
-- A/B testing para CTA e layout
+- A/B testing com tracking real
+- Export CSV no admin
+- Dashboard de cohort avancado
