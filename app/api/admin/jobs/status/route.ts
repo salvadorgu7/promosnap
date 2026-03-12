@@ -1,9 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
+import { validateAdmin } from '@/lib/auth/admin'
 
 const JOB_NAMES = ['ingest', 'update-prices', 'compute-scores', 'cleanup', 'sitemap', 'check-alerts']
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const denied = validateAdmin(req)
+  if (denied) return denied
+
   const statuses = await Promise.all(
     JOB_NAMES.map(async (name) => {
       const lastRun = await prisma.jobRun.findFirst({

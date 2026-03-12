@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
+import { validateAdmin } from "@/lib/auth/admin";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = validateAdmin(_req);
+  if (denied) return denied;
+
   const { id } = await params;
 
   const article = await prisma.article.findUnique({ where: { id } });
@@ -19,6 +23,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deniedPut = validateAdmin(req);
+  if (deniedPut) return deniedPut;
+
   const { id } = await params;
 
   try {
@@ -71,6 +78,9 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const deniedDel = validateAdmin(_req);
+  if (deniedDel) return deniedDel;
+
   const { id } = await params;
 
   try {

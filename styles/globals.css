@@ -280,6 +280,127 @@
   /* ---- Page section spacing ---- */
   .page-section { @apply py-8 md:py-12; }
   .page-section-sm { @apply py-6 md:py-8; }
+
+  /* ============================================
+     VISUAL DEPTH — surface layers & transitions
+     ============================================ */
+
+  /* ---- Surface elevated — card with subtle shadow + gradient bg ---- */
+  .surface-elevated {
+    @apply bg-white rounded-xl shadow-md;
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.04),
+      0 4px 12px rgba(99,102,241,0.06);
+  }
+
+  /* ---- Surface sunken — inset/darker bg for contrast sections ---- */
+  .surface-sunken {
+    @apply rounded-xl;
+    background: linear-gradient(180deg, #f1f3f9 0%, #eef0f7 100%);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.04), inset 0 -1px 4px rgba(0,0,0,0.02);
+  }
+
+  /* ---- Section gradient — subtle top-to-bottom gradient ---- */
+  .section-gradient {
+    background: linear-gradient(180deg, #ffffff 0%, #f7f8fc 40%, #f3f4fa 100%);
+    position: relative;
+  }
+
+  /* ---- Divider gradient — horizontal gradient line ---- */
+  .divider-gradient {
+    height: 1px;
+    border: none;
+    background: linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.15) 20%, rgba(139,92,246,0.12) 80%, transparent 100%);
+  }
+
+  /* ---- Glass card — glass morphism effect ---- */
+  .glass-card {
+    @apply rounded-xl border border-white/40;
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03);
+  }
+
+  /* ============================================
+     VISUAL CONSISTENCY — headings
+     ============================================ */
+
+  .heading-xl {
+    @apply font-display font-extrabold text-3xl md:text-4xl text-text-primary tracking-tight leading-tight;
+  }
+  .heading-lg {
+    @apply font-display font-bold text-2xl md:text-3xl text-text-primary tracking-tight leading-tight;
+  }
+  .heading-md {
+    @apply font-display font-bold text-xl md:text-2xl text-text-primary tracking-tight;
+  }
+  .heading-sm {
+    @apply font-display font-semibold text-lg text-text-primary tracking-tight;
+  }
+
+  /* ---- Consistent section padding ---- */
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8 py-10 md:py-14;
+  }
+
+  /* ---- Card base — unified default card ---- */
+  .card-base {
+    @apply bg-white rounded-xl border border-surface-200/80 p-5 shadow-sm;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  /* ---- Rail wrapper — horizontal scroll container ---- */
+  .rail-wrapper {
+    @apply overflow-x-auto -mx-4 px-4;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .rail-wrapper::-webkit-scrollbar { display: none; }
+
+  /* ---- Badge semantic set ---- */
+  .badge-success {
+    @apply inline-flex items-center gap-1 h-6 px-2.5 py-0.5 rounded-md text-xs font-semibold
+           bg-accent-green/10 text-accent-green border border-accent-green/20;
+  }
+  .badge-warning {
+    @apply inline-flex items-center gap-1 h-6 px-2.5 py-0.5 rounded-md text-xs font-semibold
+           bg-accent-orange/10 text-accent-orange border border-accent-orange/20;
+  }
+  .badge-danger {
+    @apply inline-flex items-center gap-1 h-6 px-2.5 py-0.5 rounded-md text-xs font-semibold
+           bg-accent-red/10 text-accent-red border border-accent-red/20;
+  }
+  .badge-info {
+    @apply inline-flex items-center gap-1 h-6 px-2.5 py-0.5 rounded-md text-xs font-semibold
+           bg-accent-blue/10 text-accent-blue border border-accent-blue/20;
+  }
+
+  /* ---- Toast improvements ---- */
+  .toast-warning {
+    @apply bg-accent-orange text-white;
+  }
+  .toast-info {
+    @apply bg-accent-blue text-white;
+  }
+
+  /* ---- Admin table improvements ---- */
+  .table-admin thead th {
+    @apply bg-surface-50/80;
+  }
+  .table-admin thead th:first-child {
+    @apply rounded-tl-lg;
+  }
+  .table-admin thead th:last-child {
+    @apply rounded-tr-lg;
+  }
+  .table-admin tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .table-admin tbody tr.row-highlight {
+    @apply bg-accent-blue/5;
+  }
 }
 
 @layer utilities {
@@ -288,5 +409,33 @@
   }
   .text-gradient-warm {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-orange to-accent-red;
+  }
+
+  /* ---- Hover lift — slight raise + stronger shadow ---- */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 4px 12px rgba(0,0,0,0.06),
+      0 8px 24px rgba(99,102,241,0.08);
+  }
+
+  /* ---- Ring glow — subtle glowing ring on focus ---- */
+  .ring-glow:focus,
+  .ring-glow:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px rgba(99,102,241,0.25),
+      0 0 12px rgba(99,102,241,0.12);
+  }
+
+  /* ---- Section border transition ---- */
+  .section-border-top {
+    border-top: 1px solid rgba(99,102,241,0.08);
+  }
+  .section-border-bottom {
+    border-bottom: 1px solid rgba(99,102,241,0.08);
   }
 }
