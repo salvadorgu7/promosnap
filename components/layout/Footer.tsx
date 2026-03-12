@@ -27,9 +27,12 @@ const LINKS = {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-surface-200 mt-12 relative overflow-hidden">
-      {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white via-surface-50/80 to-surface-100/60 pointer-events-none" />
+    <footer className="mt-12 relative overflow-hidden">
+      {/* Top gradient divider */}
+      <div className="section-divider" />
+      {/* Rich gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-surface-50/90 via-surface-100/60 to-surface-100/80 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[200px] bg-accent-blue/3 rounded-full blur-[80px] pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -72,7 +75,7 @@ export default function Footer() {
         </div>
 
         {/* Affiliate disclaimer */}
-        <div className="mt-8 pt-6 border-t border-surface-200/80">
+        <div className="mt-8 pt-6 border-t border-surface-200/60">
           <p className="text-xs text-text-muted leading-relaxed max-w-3xl mb-4">
             O PromoSnap pode receber comissoes por compras realizadas atraves de links de afiliado.
             Isso nao afeta o preco que voce paga e nos ajuda a manter o servico gratuito.

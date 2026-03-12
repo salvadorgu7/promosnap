@@ -12,8 +12,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev",
-    "jobs:ingest": "tsx jobs/ingest.ts",
-    "jobs:reprice": "tsx jobs/reprice.ts"
+    "jobs:ingest": "tsx jobs/ingest/run.ts"
   },
   "dependencies": {
     "next": "^15.1.0",

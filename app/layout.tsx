@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   description:
     "Encontre as melhores ofertas, compare precos e economize de verdade. Historico real de precos, cupons e os produtos mais vendidos.",
   metadataBase: new URL(
-    process.env.APP_URL || "https://promosnap.com.br"
+    process.env.APP_URL || "https://www.promosnap.com.br"
   ),
   openGraph: {
     type: "website",

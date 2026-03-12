@@ -147,7 +147,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
   // Specs
   const specs = product.specsJson as Record<string, string> | null;
 
-  const productUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://promosnap.com.br"}/produto/${slug}`;
+  const productUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br"}/produto/${slug}`;
 
   // Schema.org
   const schemaOffers = allOffers.map((o) => ({

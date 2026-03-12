@@ -24,6 +24,7 @@ import {
   MailCheck,
   HeartPulse,
   ShieldCheck,
+  Shield,
   Rocket,
   ClipboardCheck,
 } from "lucide-react";
@@ -55,6 +56,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/fontes", label: "Fontes", icon: Store },
       { href: "/admin/prioridades", label: "Prioridades", icon: Target },
       { href: "/admin/catalog-governance", label: "Catalogo", icon: ShieldCheck },
+      { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
     ],
   },
   {
@@ -99,6 +101,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/health", label: "Health", icon: HeartPulse },
       { href: "/admin/release", label: "Release", icon: Rocket },
       { href: "/admin/audit", label: "Auditoria", icon: ClipboardCheck },
+      { href: "/admin/runtime", label: "Runtime QA", icon: Activity },
     ],
   },
 ];

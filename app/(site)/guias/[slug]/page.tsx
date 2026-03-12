@@ -76,7 +76,7 @@ export default async function GuiaPage({
     }
   }
 
-  const shareUrl = `https://promosnap.com.br/guias/${article.slug}`;
+  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br"}/guias/${article.slug}`;
   const shareText = encodeURIComponent(article.title);
   const whatsappUrl = `https://wa.me/?text=${shareText}%20${encodeURIComponent(shareUrl)}`;
   const twitterUrl = `https://twitter.com/intent/tweet?text=${shareText}&url=${encodeURIComponent(shareUrl)}`;
@@ -115,7 +115,7 @@ export default async function GuiaPage({
             publisher: {
               "@type": "Organization",
               name: "PromoSnap",
-              url: "https://promosnap.com.br",
+              url: "https://www.promosnap.com.br",
             },
           }),
         }}
