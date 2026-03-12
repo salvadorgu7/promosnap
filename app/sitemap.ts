@@ -2,6 +2,7 @@ import { MetadataRoute } from "next";
 import prisma from "@/lib/db/prisma";
 import { BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
 import { OFFER_PAGE_SLUGS } from "@/lib/seo/offer-pages";
+import { COMPARISON_SLUGS } from "@/lib/seo/comparisons";
 
 export const dynamic = "force-dynamic";
 
@@ -59,12 +60,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
 
-    productPages = products.map((p) => ({
-      url: `${APP_URL}/produto/${p.slug}`,
-      lastModified: p.updatedAt,
-      changeFrequency: "daily" as const,
-      priority: 0.8,
-    }));
+    productPages = products.flatMap((p) => [
+      {
+        url: `${APP_URL}/produto/${p.slug}`,
+        lastModified: p.updatedAt,
+        changeFrequency: "daily" as const,
+        priority: 0.8,
+      },
+      {
+        url: `${APP_URL}/preco/${p.slug}`,
+        lastModified: p.updatedAt,
+        changeFrequency: "daily" as const,
+        priority: 0.6,
+      },
+    ]);
 
     articlePages = articles.map((a) => ({
       url: `${APP_URL}/guias/${a.slug}`,
@@ -92,6 +101,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // "Comparar" pages
+  const compararPages: MetadataRoute.Sitemap = COMPARISON_SLUGS.map((slug) => ({
+    url: `${APP_URL}/comparar/${slug}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
   return [
     ...staticPages,
     ...categoryPages,
@@ -99,6 +116,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...productPages,
     ...melhoresPages,
     ...ofertasPages,
+    ...compararPages,
     ...articlePages,
   ];
 }

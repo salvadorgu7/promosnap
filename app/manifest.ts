@@ -13,6 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       "Compare preços, veja histórico real e encontre os melhores descontos do Brasil",
     start_url: "/",
+    scope: "/",
+    id: "/",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#4f46e5",

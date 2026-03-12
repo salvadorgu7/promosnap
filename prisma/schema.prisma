@@ -457,10 +457,14 @@ model Subscriber {
   email       String           @unique
   status      SubscriberStatus @default(ACTIVE)
   source      String           @default("website")
+  interests   String[]         // category slugs of interest
+  tags        String[]         // segmentation tags: tech, bargain, gamer, etc.
+  frequency   String           @default("weekly") // daily, weekly, monthly
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
   @@index([status])
+  @@index([source])
   @@map("subscribers")
 }
 
