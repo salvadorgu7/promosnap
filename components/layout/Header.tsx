@@ -20,9 +20,9 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-surface-950/90 backdrop-blur-xl border-b border-white/[0.06]">
+    <header className="sticky top-0 z-50 bg-white border-b border-surface-200 shadow-sm">
       {/* Accent bar */}
-      <div className="h-0.5 bg-gradient-to-r from-accent-blue via-accent-purple to-accent-blue" />
+      <div className="h-1 bg-gradient-to-r from-accent-blue via-brand-500 to-accent-purple" />
 
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-14 gap-4">
@@ -31,7 +31,7 @@ export default function Header() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-display font-extrabold text-xl tracking-tight text-white">
+            <span className="font-display font-extrabold text-xl tracking-tight text-surface-900">
               Promo<span className="text-gradient">Snap</span>
             </span>
           </Link>
@@ -53,11 +53,11 @@ export default function Header() {
 
           {/* Mobile buttons */}
           <div className="flex md:hidden items-center gap-1">
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-lg hover:bg-surface-800">
-              <Search className="w-5 h-5 text-surface-400" />
+            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-lg hover:bg-surface-100">
+              <Search className="w-5 h-5 text-surface-600" />
             </button>
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-surface-800">
-              {mobileOpen ? <X className="w-5 h-5 text-surface-400" /> : <Menu className="w-5 h-5 text-surface-400" />}
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-surface-100">
+              {mobileOpen ? <X className="w-5 h-5 text-surface-600" /> : <Menu className="w-5 h-5 text-surface-600" />}
             </button>
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function Header() {
             const Icon = item.icon;
             return (
               <Link key={item.href} href={item.href}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-surface-400 hover:text-white hover:bg-surface-800/60 transition-all">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-surface-600 hover:text-surface-900 hover:bg-surface-100 transition-all">
                 <Icon className={`w-3.5 h-3.5 ${item.color}`} />
                 <span>{item.label}</span>
               </Link>
@@ -84,13 +84,13 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-white/[0.06] bg-surface-900 animate-slide-up">
+        <div className="md:hidden border-t border-surface-200 bg-white animate-slide-up">
           <nav className="px-4 py-3 space-y-1">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-surface-300 hover:bg-surface-800 hover:text-white transition-colors">
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">
                   <Icon className={`w-5 h-5 ${item.color}`} />
                   <span className="font-medium">{item.label}</span>
                 </Link>

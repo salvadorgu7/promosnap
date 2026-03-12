@@ -16,7 +16,7 @@ export default async function OfertasPage() {
       <div className="flex items-center gap-2 mb-6">
         <Flame className="h-6 w-6 text-accent-red" />
         <div>
-          <h1 className="text-3xl font-bold font-display text-white">Ofertas Quentes</h1>
+          <h1 className="text-3xl font-bold font-display text-surface-900">Ofertas Quentes</h1>
           <p className="text-sm text-surface-500">As melhores promoções verificadas do momento</p>
         </div>
       </div>

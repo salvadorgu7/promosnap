@@ -16,7 +16,7 @@ export default async function MenorPrecoPage() {
       <div className="flex items-center gap-2 mb-6">
         <TrendingDown className="h-6 w-6 text-accent-blue" />
         <div>
-          <h1 className="text-3xl font-bold font-display text-white">Menor Preço Histórico</h1>
+          <h1 className="text-3xl font-bold font-display text-surface-900">Menor Preço Histórico</h1>
           <p className="text-sm text-surface-500">Nunca estiveram tão baratos — dados reais</p>
         </div>
       </div>

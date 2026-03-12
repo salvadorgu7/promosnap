@@ -18,7 +18,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold font-display text-white">Dashboard</h1>
+        <h1 className="text-2xl font-bold font-display text-surface-900">Dashboard</h1>
         <p className="text-sm text-surface-500">Visão geral do PromoSnap</p>
       </div>
 
@@ -26,36 +26,36 @@ export default function AdminDashboard() {
         {stats.map((s) => (
           <div key={s.label} className="card p-4">
             <div className="flex items-center gap-2 mb-2">
-              <s.icon className="h-4 w-4 text-surface-500" />
+              <s.icon className="h-4 w-4 text-surface-400" />
               <span className="text-xs text-surface-500 uppercase tracking-wider">{s.label}</span>
             </div>
-            <p className="text-2xl font-bold font-display text-white">{s.value}</p>
+            <p className="text-2xl font-bold font-display text-surface-900">{s.value}</p>
             <p className="text-xs text-surface-500 mt-1">{s.trend}</p>
           </div>
         ))}
       </div>
 
       <div className="card p-4">
-        <h2 className="text-lg font-semibold font-display text-white mb-4">Jobs Recentes</h2>
+        <h2 className="text-lg font-semibold font-display text-surface-900 mb-4">Jobs Recentes</h2>
         <div className="space-y-2">
           {jobs.map((j) => (
-            <div key={j.name} className="flex items-center justify-between p-3 rounded-lg bg-surface-800">
+            <div key={j.name} className="flex items-center justify-between p-3 rounded-lg bg-surface-100">
               <div className="flex items-center gap-3">
-                <Clock className="h-4 w-4 text-surface-500" />
+                <Clock className="h-4 w-4 text-surface-400" />
                 <div>
-                  <p className="text-sm font-medium text-white">{j.name}</p>
+                  <p className="text-sm font-medium text-surface-900">{j.name}</p>
                   <p className="text-xs text-surface-500">{j.time}</p>
                 </div>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded bg-surface-700 text-surface-400">Pendente</span>
+              <span className="text-xs px-2 py-0.5 rounded bg-surface-200 text-surface-500">Pendente</span>
             </div>
           ))}
         </div>
       </div>
 
       <div className="card p-5 border-accent-blue/20 bg-accent-blue/5">
-        <h2 className="text-lg font-semibold font-display text-white mb-3">🚀 Próximos Passos</h2>
-        <div className="space-y-2 text-sm text-surface-300">
+        <h2 className="text-lg font-semibold font-display text-surface-900 mb-3">🚀 Próximos Passos</h2>
+        <div className="space-y-2 text-sm text-surface-600">
           <div className="flex items-start gap-2">
             <CheckCircle className="h-4 w-4 text-accent-green mt-0.5 flex-shrink-0" />
             <span>Projeto criado com Next.js 15 + Prisma + Tailwind</span>

@@ -22,7 +22,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold font-display text-white mb-1">
+        <h1 className="text-2xl font-bold font-display text-surface-900 mb-1">
           {query ? `Resultados para "${query}"` : "Todas as ofertas"}
         </h1>
         <p className="text-sm text-surface-500">{results.length} resultados</p>
@@ -32,20 +32,20 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
         {/* Sidebar */}
         <aside className="hidden lg:block w-56 flex-shrink-0 space-y-4">
           <div className="card p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-1.5">
+            <h3 className="text-sm font-semibold text-surface-900 mb-3 flex items-center gap-1.5">
               <SlidersHorizontal className="h-3.5 w-3.5" /> Filtros
             </h3>
             <div className="space-y-2 mb-4">
-              <p className="text-xs font-medium text-surface-300">Preço</p>
+              <p className="text-xs font-medium text-surface-600">Preço</p>
               <div className="flex gap-2">
                 <input type="number" placeholder="Min" className="input text-xs py-1.5 px-2" />
                 <input type="number" placeholder="Max" className="input text-xs py-1.5 px-2" />
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-xs font-medium text-surface-300">Lojas</p>
+              <p className="text-xs font-medium text-surface-600">Lojas</p>
               {["Mercado Livre"].map((s) => (
-                <label key={s} className="flex items-center gap-2 text-xs text-surface-400 cursor-pointer hover:text-white">
+                <label key={s} className="flex items-center gap-2 text-xs text-surface-500 cursor-pointer hover:text-surface-700">
                   <input type="checkbox" className="rounded" defaultChecked /> {s}
                 </label>
               ))}
@@ -55,7 +55,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
 
         {/* Results */}
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-surface-900/60 border border-white/[0.06]">
+          <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-surface-100 border border-surface-200">
             <div className="flex items-center gap-2 text-sm text-surface-500">
               <ArrowUpDown className="h-3.5 w-3.5" /> Ordenar:
             </div>
@@ -67,7 +67,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
               ].map((opt) => (
                 <a key={opt.value} href={`/busca?q=${encodeURIComponent(query)}&sort=${opt.value}`}
                   className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                    sort === opt.value ? "bg-accent-blue/10 text-accent-blue" : "text-surface-500 hover:bg-surface-800"
+                    sort === opt.value ? "bg-accent-blue/10 text-accent-blue" : "text-surface-500 hover:bg-surface-200"
                   }`}>
                   {opt.label}
                 </a>
@@ -81,11 +81,11 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             </div>
           ) : (
             <div className="text-center py-16 card">
-              <Search className="h-12 w-12 text-surface-600 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-white mb-2">
+              <Search className="h-12 w-12 text-surface-300 mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-surface-900 mb-2">
                 {query ? "Nenhum resultado" : "Busque um produto"}
               </h2>
-              <p className="text-sm text-surface-400">
+              <p className="text-sm text-surface-500">
                 {query ? "Tente buscar com outras palavras." : "Digite o nome do produto acima."}
               </p>
             </div>

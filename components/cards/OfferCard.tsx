@@ -23,9 +23,9 @@ function ScorePill({ score }: { score: number }) {
     ? "text-accent-green border-accent-green/20"
     : score >= 50
     ? "text-accent-orange border-accent-orange/20"
-    : "text-surface-400 border-white/10";
+    : "text-surface-400 border-surface-200";
   return (
-    <span className={`px-2 py-0.5 rounded-md text-xs font-bold font-mono bg-surface-950/80 backdrop-blur border ${color}`}>
+    <span className={`px-2 py-0.5 rounded-md text-xs font-bold font-mono bg-white/90 backdrop-blur border ${color}`}>
       {Math.round(score)}
     </span>
   );
@@ -48,7 +48,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
 
       {/* Image */}
       <Link href={`/produto/${product.slug}`} className="block px-3 pt-3">
-        <div className="relative aspect-square rounded-lg bg-surface-800 overflow-hidden">
+        <div className="relative aspect-square rounded-lg bg-surface-100 overflow-hidden">
           {product.imageUrl ? (
             <img
               src={product.imageUrl}
@@ -56,7 +56,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
               className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-surface-600 text-4xl">
+            <div className="w-full h-full flex items-center justify-center text-surface-300 text-4xl">
               📦
             </div>
           )}
@@ -71,12 +71,12 @@ export default function OfferCard({ product }: { product: ProductCard }) {
         <span className="text-xs text-surface-500 mb-1">
           {bestOffer.sourceName}
           {product.offersCount > 1 && (
-            <span className="text-surface-600"> +{product.offersCount - 1}</span>
+            <span className="text-surface-400"> +{product.offersCount - 1}</span>
           )}
         </span>
 
         <Link href={`/produto/${product.slug}`}>
-          <h3 className="text-sm font-medium text-surface-200 leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors">
+          <h3 className="text-sm font-medium text-surface-800 leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors">
             {product.name}
           </h3>
         </Link>
@@ -89,13 +89,13 @@ export default function OfferCard({ product }: { product: ProductCard }) {
         <div className="mt-auto pt-3">
           <div className="flex items-end gap-2">
             {bestOffer.originalPrice && bestOffer.originalPrice > bestOffer.price && (
-              <span className="text-surface-500 line-through text-sm">{formatPrice(bestOffer.originalPrice)}</span>
+              <span className="text-surface-400 line-through text-sm">{formatPrice(bestOffer.originalPrice)}</span>
             )}
             {discount && discount > 0 && (
               <span className="text-accent-green font-bold text-sm">-{discount}%</span>
             )}
           </div>
-          <div className="text-2xl font-extrabold font-display text-accent-green tracking-tight mt-0.5">
+          <div className="text-2xl font-extrabold font-display text-surface-900 tracking-tight mt-0.5">
             {formatPrice(bestOffer.price)}
           </div>
         </div>

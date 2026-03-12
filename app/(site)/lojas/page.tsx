@@ -17,15 +17,15 @@ export default function LojasPage() {
       <div className="flex items-center gap-2 mb-6">
         <Store className="h-6 w-6 text-accent-purple" />
         <div>
-          <h1 className="text-3xl font-bold font-display text-white">Lojas Parceiras</h1>
+          <h1 className="text-3xl font-bold font-display text-surface-900">Lojas Parceiras</h1>
           <p className="text-sm text-surface-500">Comparamos preços das maiores lojas do Brasil</p>
         </div>
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         {stores.map((s) => (
           <div key={s.slug} className={`card p-6 bg-gradient-to-br ${s.gradient} ${s.border}`}>
-            <h2 className="text-xl font-bold font-display text-white mb-2">{s.name}</h2>
-            <p className="text-sm text-surface-300 mb-4 leading-relaxed">{s.description}</p>
+            <h2 className="text-xl font-bold font-display text-surface-900 mb-2">{s.name}</h2>
+            <p className="text-sm text-surface-600 mb-4 leading-relaxed">{s.description}</p>
             <div className="flex gap-2">
               <Link href={`/busca?source=${s.slug}`} className="btn-secondary text-sm">Ver ofertas</Link>
               <a href={s.url} target="_blank" rel="noopener noreferrer" className="btn-ghost text-sm">

@@ -18,7 +18,7 @@ export default function RailSection({ title, subtitle, href, icon: Icon, iconCol
           <div className="flex items-center gap-2">
             {Icon && <Icon className={`w-5 h-5 ${iconColor}`} />}
             <div>
-              <h2 className="font-display font-bold text-lg text-white">{title}</h2>
+              <h2 className="font-display font-bold text-lg text-surface-900">{title}</h2>
               {subtitle && <p className="text-xs text-surface-500 mt-0.5">{subtitle}</p>}
             </div>
           </div>

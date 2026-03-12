@@ -25,7 +25,7 @@ const LINKS = {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/[0.06] bg-surface-950 mt-12">
+    <footer className="border-t border-surface-200 bg-white mt-12">
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 md:col-span-1">
@@ -33,7 +33,7 @@ export default function Footer() {
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center">
                 <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
               </div>
-              <span className="font-display font-extrabold text-lg tracking-tight text-white">
+              <span className="font-display font-extrabold text-lg tracking-tight text-surface-900">
                 Promo<span className="text-gradient">Snap</span>
               </span>
             </Link>
@@ -43,7 +43,7 @@ export default function Footer() {
           </div>
           {Object.entries(LINKS).map(([title, links]) => (
             <div key={title}>
-              <h3 className="font-display font-semibold text-sm text-white mb-3">{title}</h3>
+              <h3 className="font-display font-semibold text-sm text-surface-900 mb-3">{title}</h3>
               <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link.href}>
@@ -56,7 +56,7 @@ export default function Footer() {
             </div>
           ))}
         </div>
-        <div className="mt-8 pt-6 border-t border-white/[0.06] text-xs text-surface-600 text-center">
+        <div className="mt-8 pt-6 border-t border-surface-200 text-xs text-surface-400 text-center">
           &copy; {new Date().getFullYear()} PromoSnap. Preços e disponibilidade podem variar. Links de afiliado podem gerar comissão.
         </div>
       </div>
