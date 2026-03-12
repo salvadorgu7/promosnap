@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
+import { rateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 20 req/min for alerts
+  const rl = rateLimit(req, 'alerts')
+  if (!rl.success) return rateLimitResponse(rl)
   try {
     const body = await req.json()
     const { listingId, email, targetPrice } = body
@@ -55,6 +59,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  // Rate limit: 20 req/min for alerts
+  const rl = rateLimit(req, 'alerts')
+  if (!rl.success) return rateLimitResponse(rl)
+
   const url = new URL(req.url)
   const email = url.searchParams.get('email')
 
@@ -105,6 +113,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  // Rate limit: 20 req/min for alerts
+  const rl = rateLimit(req, 'alerts')
+  if (!rl.success) return rateLimitResponse(rl)
+
   const url = new URL(req.url)
   const alertId = url.searchParams.get('id')
 

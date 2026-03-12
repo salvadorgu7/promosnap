@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
     const result = await jobFn()
     return NextResponse.json({ ok: true, result })
   } catch (error) {
+    const { captureError } = await import('@/lib/monitoring')
+    await captureError(error, { route: '/api/admin/jobs/run', job: (await req.clone().json().catch(() => ({}))).job })
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Job execution failed' },
       { status: 500 }

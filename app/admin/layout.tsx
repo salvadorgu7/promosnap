@@ -27,6 +27,9 @@ import {
   Shield,
   Rocket,
   ClipboardCheck,
+  MonitorDot,
+  Gauge,
+  ShieldAlert,
 } from "lucide-react";
 
 interface NavItem {
@@ -102,6 +105,9 @@ const navGroups: NavGroup[] = [
       { href: "/admin/release", label: "Release", icon: Rocket },
       { href: "/admin/audit", label: "Auditoria", icon: ClipboardCheck },
       { href: "/admin/runtime", label: "Runtime QA", icon: Activity },
+      { href: "/admin/monitoring", label: "Monitoring", icon: MonitorDot },
+      { href: "/admin/production", label: "Production", icon: Gauge },
+      { href: "/admin/rate-limits", label: "Rate Limits", icon: ShieldAlert },
     ],
   },
 ];

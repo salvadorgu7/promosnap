@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ offerId: string }> }
 ) {
+  // Rate limit: 120 req/min for clickouts
+  const rl = rateLimit(request, "clickout");
+  if (!rl.success) return rateLimitResponse(rl);
+
   const { offerId } = await params;
   const homeUrl = new URL("/", request.url);
 

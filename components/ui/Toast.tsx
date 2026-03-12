@@ -1,75 +1,59 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
-import { CheckCircle, Info, AlertTriangle, X } from "lucide-react";
+import { useEffect, useState } from "react"
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from "lucide-react"
+import { useToast, type ToastVariant, type ToastItem } from "@/lib/toast/context"
 
-type ToastVariant = "success" | "info" | "warning";
-
-interface ToastMessage {
-  id: string;
-  message: string;
-  variant: ToastVariant;
+const variantStyles: Record<ToastVariant, { bg: string; icon: typeof Info }> = {
+  success: { bg: "bg-emerald-600", icon: CheckCircle2 },
+  error: { bg: "bg-red-600", icon: XCircle },
+  warning: { bg: "bg-amber-500", icon: AlertTriangle },
+  info: { bg: "bg-accent-blue", icon: Info },
 }
 
-interface ToastContextType {
-  toast: (message: string, variant?: ToastVariant) => void;
-}
+function ToastMessage({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }) {
+  const [leaving, setLeaving] = useState(false)
+  const { bg, icon: Icon } = variantStyles[toast.variant]
 
-const ToastContext = createContext<ToastContextType>({ toast: () => {} });
-
-export function useToast() {
-  return useContext(ToastContext);
-}
-
-function ToastItem({ toast: t, onDismiss }: { toast: ToastMessage; onDismiss: (id: string) => void }) {
   useEffect(() => {
-    const timer = setTimeout(() => onDismiss(t.id), 3000);
-    return () => clearTimeout(timer);
-  }, [t.id, onDismiss]);
-
-  const icons = {
-    success: <CheckCircle className="w-4 h-4 text-accent-green" />,
-    info: <Info className="w-4 h-4 text-accent-blue" />,
-    warning: <AlertTriangle className="w-4 h-4 text-accent-orange" />,
-  };
-
-  const bgColors = {
-    success: "border-accent-green/20 bg-accent-green/5",
-    info: "border-accent-blue/20 bg-accent-blue/5",
-    warning: "border-accent-orange/20 bg-accent-orange/5",
-  };
+    const timer = setTimeout(() => setLeaving(true), 4500)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg bg-white ${bgColors[t.variant]} animate-slide-up`}>
-      {icons[t.variant]}
-      <span className="text-sm text-surface-800 flex-1">{t.message}</span>
-      <button onClick={() => onDismiss(t.id)} className="text-surface-400 hover:text-surface-600">
-        <X className="w-3.5 h-3.5" />
+    <div
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium ${bg} ${
+        leaving ? "toast-exit" : "toast-enter"
+      }`}
+      role="alert"
+    >
+      <Icon className="h-4 w-4 flex-shrink-0" />
+      <span className="flex-1">{toast.message}</span>
+      <button
+        onClick={onDismiss}
+        className="p-0.5 rounded hover:bg-white/20 transition-colors flex-shrink-0"
+        aria-label="Fechar"
+      >
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
-  );
+  )
 }
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+export default function ToastContainer() {
+  const { toasts, removeToast } = useToast()
 
-  const addToast = useCallback((message: string, variant: ToastVariant = "info") => {
-    const id = Math.random().toString(36).slice(2);
-    setToasts((prev) => [...prev, { id, message, variant }]);
-  }, []);
-
-  const dismiss = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  if (toasts.length === 0) return null
 
   return (
-    <ToastContext.Provider value={{ toast: addToast }}>
-      {children}
-      <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
-        {toasts.map((t) => (
-          <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
-        ))}
-      </div>
-    </ToastContext.Provider>
-  );
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 max-w-sm">
+      {toasts.map((toast) => (
+        <ToastMessage
+          key={toast.id}
+          toast={toast}
+          onDismiss={() => removeToast(toast.id)}
+        />
+      ))}
+    </div>
+  )
 }

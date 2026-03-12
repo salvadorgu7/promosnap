@@ -12,7 +12,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev",
-    "jobs:ingest": "tsx jobs/ingest/run.ts"
+    "jobs:ingest": "tsx jobs/ingest/run.ts",
+    "test": "npx tsx lib/__tests__/run-all.ts",
+    "test:smoke": "npx tsx scripts/smoke-test.ts"
   },
   "dependencies": {
     "next": "^15.1.0",

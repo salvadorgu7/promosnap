@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { captureError, captureEvent } from '@/lib/monitoring'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -11,6 +12,8 @@ export async function GET(req: NextRequest) {
 
   const results: Record<string, any> = {}
   const startTime = Date.now()
+
+  captureEvent('cron:start', { timestamp: new Date().toISOString() })
 
   const jobs = [
     ['ingest', () => import('@/lib/jobs/ingest-ml').then(m => m.ingestMLTrends())],
@@ -25,9 +28,15 @@ export async function GET(req: NextRequest) {
     try {
       results[name] = await fn()
     } catch (error) {
+      await captureError(error, { route: '/api/cron', job: name })
       results[name] = { status: 'FAILED', error: error instanceof Error ? error.message : 'Unknown' }
     }
   }
+
+  captureEvent('cron:complete', {
+    durationMs: Date.now() - startTime,
+    jobCount: jobs.length,
+  })
 
   return NextResponse.json({
     ok: true,

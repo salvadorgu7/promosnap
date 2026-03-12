@@ -276,27 +276,71 @@ npm run db:studio    # Prisma Studio
 - Config page sem exposicao de secrets
 - APIs publicas com payloads minimizados
 
+## Production Readiness (V13)
+
+### Rate Limiting
+- Sliding-window in-memory rate limiter (lib/security/rate-limit.ts)
+- Limites: public API 60/min, search 30/min, clickout 120/min
+- Aplicado em: /api/search, /api/clickout, /api/alerts, /api/newsletter, /api/trending
+- Admin dashboard: /admin/rate-limits
+- API: GET /api/admin/rate-limits
+
+### Monitoring & Observability
+- Error/event capture in-memory buffer (lib/monitoring/)
+- Sentry opcional (dynamic import, nao quebra sem @sentry/nextjs)
+- captureError integrado em cron e jobs
+- Dashboard: /admin/monitoring
+- API: GET /api/admin/monitoring
+
+### Tests & Safety Net
+- Test runner custom (lib/__tests__/test-utils.ts)
+- Testes: rate-limit, data-trust, url, cache
+- Smoke test script: scripts/smoke-test.ts
+- Scripts: npm test, npm run test:smoke
+- DB push helper: scripts/db-push.sh
+
+### Images & CDN Strategy
+- SafeImage component (fallback, skeleton, error handling)
+- Image utilities: getImageUrl, getFallbackImage, isValidImageUrl
+- CDN abstraction via IMAGE_CDN_URL env
+- Image audit: lib/images/audit.ts
+- Helpers: lib/images/
+
+### Source Integration Readiness
+- Adapter interface unificada (lib/adapters/types.ts)
+- Registry centralizado (lib/adapters/registry.ts)
+- Stubs preparados: Amazon PA-API, Mercado Livre, Shopee, Shein
+- Cada adapter com isConfigured() e getStatus()
+- Admin /admin/fontes com status de configuracao
+
+### Production Validation
+- Production readiness checks (envs, DB, data, security, SEO)
+- Score 0-100 com status por check
+- Dashboard: /admin/production
+- API: GET /api/admin/production
+
+### UX Components
+- EmptyState, ErrorState, LoadingState components reutilizaveis
+- Toast notification system (provider + useToast hook)
+- Animacoes CSS para toasts
+- Aplicado em busca e favoritos
+
 ## Limitacoes Atuais
 
-- Adapters ML/Amazon/Shopee/Shein em modo MOCK
+- Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)
 - OAuth token ML expira a cada 6h
 - Envio de email depende de RESEND_API_KEY configurado
 - PWA icons placeholder
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
-- Testes automatizados (unit + e2e) pendentes
-- Rate limiting nas APIs publicas pendente
-- Monitoring (Sentry) nao conectado
 
-## Proximos Passos (V13)
+## Proximos Passos (V14)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA
-- Testes automatizados (unit + e2e)
-- Rate limiting nas APIs publicas
-- CDN para imagens
+- Testes e2e com Playwright
+- CDN real para imagens (Cloudflare/Imgix)
 - A/B testing com tracking real
 - Export CSV no admin
 - Dashboard de cohort avancado
-- Monitoring (Sentry)
 - Integrar YouMayLike e PersonalizedRails nas paginas
