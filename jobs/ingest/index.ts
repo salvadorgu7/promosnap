@@ -1,5 +1,4 @@
 import prisma from '@/lib/db/prisma'
-import { Prisma } from '@prisma/client'
 import { getEnabledAdapters } from '@/adapters/shared/registry'
 import { slugify, normalizeText } from '@/lib/utils'
 import type { RawListing } from '@/types'

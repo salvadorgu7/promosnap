@@ -209,10 +209,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                 className="w-full h-full object-contain"
               />
             ) : (
-              <div className="text-center">
-                <ShoppingCart className="h-24 w-24 text-surface-300 mx-auto" />
-                <p className="text-sm text-surface-400 mt-2">Sem imagem</p>
-              </div>
+              <ShoppingCart className="h-24 w-24 text-surface-300" />
             )}
           </div>
 
@@ -451,40 +448,6 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               receber comissoes por compras realizadas via nossos links.
             </p>
           </div>
-
-          {/* Similar products */}
-          {similarProducts.length > 0 && (
-            <div>
-              <h2 className="text-lg font-bold font-display text-surface-900 mb-3 flex items-center gap-2">
-                <Tag className="h-4 w-4 text-surface-500" /> Você também pode gostar
-              </h2>
-              <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-none">
-                {similarProducts.map((p) => (
-                  <div key={p.id} className="w-[200px] md:w-[220px] flex-shrink-0 snap-start">
-                    <OfferCard product={p} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile sticky CTA bar */}
-      <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-surface-200 shadow-lg p-3 z-40">
-        <div className="flex items-center justify-between gap-3 max-w-7xl mx-auto">
-          <div>
-            <p className="text-lg font-bold font-display text-surface-900">{formatPrice(bestOffer.currentPrice)}</p>
-            {discount > 0 && <span className="text-xs text-accent-green font-semibold">-{discount}%</span>}
-          </div>
-          <a
-            href={bestOffer.affiliateUrl || listing.productUrl}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            className="btn-primary text-sm px-5 py-2.5"
-          >
-            <ExternalLink className="h-4 w-4" /> Ver Oferta
-          </a>
         </div>
       </div>
 

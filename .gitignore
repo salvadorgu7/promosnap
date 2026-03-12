@@ -40,10 +40,3 @@ prisma/dev.db-journal
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# ML OAuth token
-.ml-token.json
-
-.claude/worktrees/
-screenshot.png
-.ml-token.json

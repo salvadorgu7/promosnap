@@ -21,22 +21,13 @@ function BadgeChip({ badge }: { badge: Badge }) {
 }
 
 function ScorePill({ score }: { score: number }) {
-  const color = score >= 75
-    ? "text-accent-green border-accent-green/20"
-    : score >= 50
-    ? "text-accent-orange border-accent-orange/20"
-    : "text-surface-400 border-surface-200";
-  return (
-    <span className={`px-2 py-0.5 rounded-md text-xs font-bold font-mono bg-white/90 backdrop-blur border ${color}`}>
-      {Math.round(score)}
-    </span>
-  );
+  const cls = score >= 75 ? "score-high" : score >= 50 ? "score-mid" : "score-low";
+  return <span className={`score-pill ${cls}`}>{Math.round(score)}</span>;
 }
 
 export default function OfferCard({ product }: { product: ProductCard }) {
   const { bestOffer, badges } = product;
   const discount = bestOffer.discount;
-  const isMegaDeal = (discount ?? 0) >= 40;
 
   // Use clickout tracking URL when we have a real offer
   const ctaUrl = bestOffer.affiliateUrl && bestOffer.affiliateUrl !== "#"
@@ -91,7 +82,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
         </div>
 
         <Link href={`/produto/${product.slug}`}>
-          <h3 className="text-xs sm:text-sm font-medium text-surface-800 leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors">
+          <h3 className="text-sm font-medium text-text-primary leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors">
             {product.name}
           </h3>
         </Link>
@@ -106,10 +97,10 @@ export default function OfferCard({ product }: { product: ProductCard }) {
         <div className="mt-auto pt-3">
           <div className="flex items-end gap-2">
             {bestOffer.originalPrice && bestOffer.originalPrice > bestOffer.price && (
-              <span className="text-surface-400 line-through text-xs sm:text-sm">{formatPrice(bestOffer.originalPrice)}</span>
+              <span className="price-old">{formatPrice(bestOffer.originalPrice)}</span>
             )}
             {discount && discount > 0 && (
-              <span className="text-accent-green font-bold text-xs sm:text-sm">-{discount}%</span>
+              <span className="discount-tag text-sm">-{discount}%</span>
             )}
           </div>
           <div className="price-big mt-0.5">{formatPrice(bestOffer.price)}</div>
@@ -130,7 +121,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
                      text-xs sm:text-sm font-semibold hover:shadow-glow transition-all"
         >
           Ver oferta
-          <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
     </div>
