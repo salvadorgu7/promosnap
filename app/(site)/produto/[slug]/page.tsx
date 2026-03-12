@@ -21,6 +21,9 @@ import PriceAlertForm from "@/components/product/PriceAlertForm";
 import PriceComparison from "@/components/product/PriceComparison";
 import SavingsBlock from "@/components/product/SavingsBlock";
 import PriceTrend from "@/components/product/PriceTrend";
+import ConsolidatedRatingComponent from "@/components/product/ConsolidatedRating";
+import CategoryInsightsComponent from "@/components/product/CategoryInsights";
+import ShippingBadge from "@/components/product/ShippingBadge";
 import { buildMetadata, productSchema, breadcrumbSchema } from "@/lib/seo/metadata";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -28,6 +31,9 @@ import {
   getSimilarProducts,
   getPriceHistory,
 } from "@/lib/db/queries";
+import { getConsolidatedRating } from "@/lib/reviews/consolidated";
+import { getCategoryInsights } from "@/lib/reviews/ranking";
+import { getShippingSignals } from "@/lib/shipping/intelligence";
 import type { PriceHistoryPoint, PriceStats } from "@/types";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -133,6 +139,24 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
   // Similar products
   const similarProducts = await getSimilarProducts(product.category?.slug, slug, 8);
 
+  // Consolidated rating
+  const consolidatedRating = await getConsolidatedRating(product.id);
+
+  // Category insights
+  const categoryInsight = product.categoryId
+    ? await getCategoryInsights(product.id, product.categoryId)
+    : null;
+
+  // Shipping signals for each offer
+  const offersWithShipping = allOffers.map((offer) => ({
+    ...offer,
+    shipping: getShippingSignals({
+      isFreeShipping: offer.isFreeShipping,
+      currentPrice: offer.price,
+      sourceSlug: offer.sourceSlug,
+    }),
+  }));
+
   // Installment calculation
   const installmentCount = 12;
   const showInstallment = bestPrice > 100;
@@ -233,6 +257,11 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             </div>
           )}
 
+          {/* Consolidated rating */}
+          {consolidatedRating && (
+            <ConsolidatedRatingComponent rating={consolidatedRating} />
+          )}
+
           {/* About this product */}
           {product.description && (
             <div className="card p-4">
@@ -265,6 +294,11 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               </p>
             )}
           </div>
+
+          {/* Category insights badges */}
+          {categoryInsight && categoryInsight.badges.length > 0 && (
+            <CategoryInsightsComponent insight={categoryInsight} />
+          )}
 
           {/* Price trend indicator */}
           {priceStats && (
@@ -306,14 +340,14 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           )}
 
           {/* Offer comparison table */}
-          {allOffers.length > 0 && (
+          {offersWithShipping.length > 0 && (
             <div>
               <h2 className="text-lg font-bold font-display text-text-primary mb-3 flex items-center gap-2">
-                <Store className="h-4 w-4 text-text-muted" /> Comparar Precos ({allOffers.length}{" "}
-                {allOffers.length === 1 ? "oferta" : "ofertas"})
+                <Store className="h-4 w-4 text-text-muted" /> Comparar Precos ({offersWithShipping.length}{" "}
+                {offersWithShipping.length === 1 ? "oferta" : "ofertas"})
               </h2>
               <div className="space-y-2">
-                {allOffers.map((offer, i) => {
+                {offersWithShipping.map((offer, i) => {
                   const offerDiscount =
                     offer.originalPrice && offer.originalPrice > offer.price
                       ? Math.round(((offer.originalPrice - offer.price) / offer.originalPrice) * 100)
@@ -350,9 +384,12 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                               )}
                             </span>
                           )}
-                          {offer.isFreeShipping && (
-                            <span className="badge-shipping text-[10px] px-1.5 py-0">Frete gratis</span>
-                          )}
+                          <ShippingBadge
+                            freeShipping={offer.shipping.freeShipping}
+                            fastDelivery={offer.shipping.fastDelivery}
+                            fulfillmentFull={offer.shipping.fulfillmentType === "full"}
+                            compact
+                          />
                           {offer.couponText && (
                             <span className="inline-flex items-center gap-0.5 text-[10px] text-accent-orange font-medium">
                               <Tag className="h-2.5 w-2.5" />

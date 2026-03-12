@@ -185,6 +185,70 @@ export function alertTriggeredEmail(product: {
   );
 }
 
+/**
+ * Distribution email — single offer highlight for channel distribution
+ */
+export function distributionEmail(offer: {
+  name: string;
+  price: number;
+  originalPrice?: number;
+  discount: number;
+  sourceName: string;
+  url: string;
+  isFreeShipping?: boolean;
+  couponText?: string;
+}): string {
+  const priceStr = offer.price.toFixed(2).replace(".", ",");
+  const economia =
+    offer.originalPrice && offer.originalPrice > offer.price
+      ? (offer.originalPrice - offer.price).toFixed(2).replace(".", ",")
+      : null;
+
+  const badges: string[] = [];
+  if (offer.discount > 0) badges.push(`-${offer.discount}% OFF`);
+  if (offer.isFreeShipping) badges.push("Frete gratis");
+  if (offer.couponText) badges.push(`Cupom: ${escapeHtml(offer.couponText)}`);
+
+  const badgeHtml = badges
+    .map(
+      (b) =>
+        `<span style="display:inline-block;background-color:#f0fdf4;color:#16a34a;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-right:6px;">${b}</span>`
+    )
+    .join("");
+
+  const content = `
+    <div class="alert-box">
+      <p style="font-size:11px;color:#16a34a;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">
+        Destaque do PromoSnap
+      </p>
+      <p style="color:#18181b;font-size:18px;font-weight:700;margin:0 0 12px;">
+        ${escapeHtml(offer.name)}
+      </p>
+      ${
+        offer.originalPrice && offer.originalPrice > offer.price
+          ? `<p style="color:#71717a;font-size:13px;text-decoration:line-through;margin:0 0 4px;">De: R$ ${offer.originalPrice.toFixed(2).replace(".", ",")}</p>`
+          : ""
+      }
+      <p class="price">R$ ${priceStr}</p>
+      ${economia ? `<p style="color:#16a34a;font-size:14px;font-weight:600;margin:4px 0 0;">Voce economiza R$ ${economia}</p>` : ""}
+    </div>
+    ${badgeHtml ? `<p style="margin:16px 0;">${badgeHtml}</p>` : ""}
+    <p>Encontramos esta oferta na <strong>${escapeHtml(offer.sourceName)}</strong> e ela passou pelos nossos criterios de qualidade e confiabilidade.</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${escapeHtml(offer.url)}" class="btn">Ver Oferta &rarr;</a>
+    </p>
+    <hr class="divider">
+    <p style="font-size:13px;color:#71717a;">
+      Esta oferta foi selecionada automaticamente pelo sistema de distribuicao do ${APP_NAME} com base em score de qualidade, desconto e confiabilidade da fonte.
+    </p>
+  `;
+
+  return baseLayout(
+    content,
+    `${offer.name} por R$ ${priceStr} — oferta selecionada!`
+  );
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

@@ -102,6 +102,10 @@ model Product {
   specsJson       Json?
   status          ProductStatus   @default(ACTIVE)
   popularityScore Float           @default(0)
+  featured        Boolean         @default(false)
+  hidden          Boolean         @default(false)
+  needsReview     Boolean         @default(false)
+  editorialScore  Int?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -495,4 +499,96 @@ model EmailLog {
   @@index([sentAt])
   @@index([template])
   @@map("email_logs")
+}
+
+// ============================================
+// BANNERS
+// ============================================
+
+model Banner {
+  id          String      @id @default(cuid())
+  title       String
+  subtitle    String?
+  imageUrl    String?
+  ctaText     String?
+  ctaUrl      String?
+  bannerType  BannerType  @default(HERO)
+  priority    Int         @default(0)
+  isActive    Boolean     @default(true)
+  startAt     DateTime?
+  endAt       DateTime?
+  autoMode    String?     // "top-offers", "top-discount", "campaign", null=manual
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([isActive, bannerType, priority(sort: Desc)])
+  @@map("banners")
+}
+
+enum BannerType {
+  HERO
+  MODAL
+  STRIP
+  CAROUSEL
+}
+
+// ============================================
+// IMPORT BATCHES & CATALOG CANDIDATES
+// ============================================
+
+model ImportBatch {
+  id          String        @id @default(cuid())
+  fileName    String?
+  format      String        @default("json") // json, csv
+  status      ImportStatus  @default(PENDING)
+  totalItems  Int           @default(0)
+  imported    Int           @default(0)
+  rejected    Int           @default(0)
+  errors      Json?
+  processedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  candidates  CatalogCandidate[]
+
+  @@map("import_batches")
+}
+
+enum ImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model CatalogCandidate {
+  id            String          @id @default(cuid())
+  importBatchId String?
+  title         String
+  brand         String?
+  category      String?
+  imageUrl      String?
+  price         Float?
+  originalPrice Float?
+  affiliateUrl  String?
+  sourceSlug    String?
+  externalId    String?
+  status        CandidateStatus @default(PENDING)
+  enrichedData  Json?
+  rejectionNote String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  importBatch   ImportBatch?    @relation(fields: [importBatchId], references: [id])
+
+  @@index([status])
+  @@index([importBatchId])
+  @@map("catalog_candidates")
+}
+
+enum CandidateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  IMPORTED
 }

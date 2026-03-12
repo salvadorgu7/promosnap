@@ -190,11 +190,12 @@ Verificacoes automaticas de qualidade:
 /admin com painel completo e sidebar agrupada:
 
 **Overview:** Dashboard, Business OS
-**Catalogo:** Produtos, Ofertas, Fontes, Prioridades, Governance, Data Trust
+**Catalogo:** Produtos, Ofertas, Fontes, Prioridades, Governance, Data Trust, Editor, Importacao
 **Conteudo:** Conteudo, Artigos, Tendencias
 **Growth:** SEO, SEO Gaps, Analise, Desempenho, Indicacoes
 **Monetizacao:** Revenue dashboard
-**Engajamento:** Email, Alertas, Inteligencia, Decisoes, Email Intel
+**Engajamento:** Email, Alertas, Inteligencia, Decisoes, Email Intel, Distribuicao
+**Conteudo:** Conteudo, Artigos, Tendencias, Banners
 **Operacao:** Jobs, Ingestao, Health, Release, Auditoria, Runtime QA, Monitoring, Rate Limits, Production, Config
 
 ## Paginas
@@ -379,16 +380,75 @@ npm run verify:quick # Testes + smoke (sem build)
 - Query redundante removida em getAdminSources
 - recharts lazy-loaded nas paginas de preco e produto
 
+## Commerce Brain & Distribution (V15)
+
+### Product Vision
+- Homepage hero reescrito com proposta de valor clara
+- Secao "Por que usar o PromoSnap?" com 6 cards de diferenciais
+- Pagina /sobre reescrita como central de inteligencia de compra
+
+### Bet-Inspired UX
+- Sidebar desktop sportsbook-inspired (64px compacta, 208px expandida)
+- Carousel inteligente de ofertas na homepage (auto-rotate 5s)
+- PromoBanner strip dismissivel com variants (info/promo/alert)
+- PromoModal session-once com delay e backdrop blur
+
+### Admin Command Center
+- Dashboard principal como cockpit: status, catalogo, banners, candidates, quick actions
+- Backoffice de banners com CRUD completo (HERO/MODAL/STRIP/CAROUSEL)
+- Auto-rules para banners: top-offers, top-discount, campaign
+- Catalog editor com edicao inline, flags (featured/hidden/needsReview), bulk actions
+- Painel de distribuicao multicanal
+
+### Schema (novos modelos)
+- Banner (title, subtitle, image, CTA, type, priority, autoMode, startAt/endAt)
+- ImportBatch (fileName, format, status, totals, errors)
+- CatalogCandidate (title, brand, category, price, status, enrichedData)
+- Product: +featured, +hidden, +needsReview, +editorialScore
+
+### Ingestion Strategy
+- Strategy layer (lib/ingest/strategy.ts): curated, seed, trends, adapter, import
+- Import pipeline CSV/JSON com validacao e enrichment automatico
+- CatalogCandidate: candidatos revisaveis antes de virar produto
+- Enrichment heuristico: brand detection (60+ marcas), category inference (15 categorias)
+- Admin /admin/imports com upload, status de lotes, processamento
+
+### Consolidated Reviews
+- Avaliacao consolidada por produto (lib/reviews/consolidated.ts)
+- Rating ponderado por source trust e volume de reviews
+- ConsolidatedRating component na pagina de produto
+- CategoryInsights: top avaliado, melhor custo-beneficio, mais popular
+
+### Shipping Intelligence
+- Sinais de entrega: frete gratis, entrega rapida, envio full
+- ShippingScore 0-100 com breakdown
+- ShippingBadge component em produto e OfferCard
+- Classificacao honesta (unknown quando dado nao existe)
+
+### Distribution Engine
+- Canais: homepage, email, telegram, whatsapp
+- Templates pt-BR por canal com emoji e copy profissional
+- Telegram: envio real via Bot API (quando configurado)
+- WhatsApp: preview copiavel para envio manual
+- Admin /admin/distribution com status, ofertas prontas, previews, envio
+
+### Decision Value Score
+- Score 0-100 combinando: preco, avaliacao, trust, shipping, revenue
+- Highlights engine para selecao inteligente de destaques
+- Usado em carousel, banners, distribuicao
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)
 - OAuth token ML expira a cada 6h
 - Envio de email depende de RESEND_API_KEY configurado
+- Telegram depende de TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID
+- WhatsApp em modo manual (preview copiavel)
 - PWA icons placeholder
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
 
-## Proximos Passos (V15)
+## Proximos Passos (V16)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA
@@ -396,5 +456,6 @@ npm run verify:quick # Testes + smoke (sem build)
 - CDN real para imagens (Cloudflare/Imgix)
 - A/B testing com tracking real
 - Export CSV no admin
-- Dashboard de cohort avancado
-- Integrar YouMayLike e PersonalizedRails nas paginas
+- WhatsApp Business API real
+- Telegram bot commands interativos
+- prisma db push para novos modelos (Banner, ImportBatch, CatalogCandidate, Product flags)

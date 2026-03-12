@@ -1,4 +1,4 @@
-import { Flame, TrendingDown, Trophy, Sparkles, Tag, Shield, TrendingUp, BarChart3 } from "lucide-react";
+import { Flame, TrendingDown, Trophy, Sparkles, Tag, Shield, TrendingUp, BarChart3, ShieldCheck, Store, Bell, Truck, Star, Search } from "lucide-react";
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";
 import RailSection from "@/components/home/RailSection";
@@ -10,6 +10,7 @@ import RecentlyViewedRail from "@/components/home/RecentlyViewedRail";
 import SourcesCompare from "@/components/home/SourcesCompare";
 import Newsletter from "@/components/home/Newsletter";
 import CategoryRail from "@/components/home/CategoryRail";
+import OfferCarousel from "@/components/home/OfferCarousel";
 import { getHotOffers, getBestSellers, getLowestPrices, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory, buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
 import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";
@@ -74,12 +75,12 @@ export default async function HomePage() {
             </div>
 
             <h1 className="font-display font-extrabold text-4xl md:text-5xl text-surface-900 tracking-tight leading-[1.1]">
-              Encontre ofertas{" "}
-              <span className="text-gradient">de verdade</span>
+              O melhor preço com{" "}
+              <span className="text-gradient">contexto real</span>
             </h1>
 
             <p className="mt-4 text-surface-500 text-lg max-w-lg mx-auto">
-              Compare preços, veja o histórico real e descubra se o desconto é real ou marketing.
+              Compare preços entre lojas, veja o histórico de 90 dias, leia avaliações consolidadas e saiba se o desconto vale a pena antes de comprar.
             </p>
 
             <div className="mt-8 max-w-xl mx-auto">
@@ -129,6 +130,13 @@ export default async function HomePage() {
       {/* TRENDING TAGS */}
       {trendingKeywords.length > 0 && (
         <TrendingTags keywords={trendingKeywords.map((t: any) => ({ keyword: t.keyword, url: t.url }))} />
+      )}
+
+      {/* OFFER CAROUSEL */}
+      {hotOffers.length > 0 && (
+        <div className="section-energy">
+          <OfferCarousel offers={hotOffers.slice(0, 5)} />
+        </div>
       )}
 
       {/* DEAL OF THE DAY */}
@@ -258,32 +266,62 @@ export default async function HomePage() {
       <RecentlyViewedRail />
 
       {/* POR QUE PROMOSNAP? */}
-      <section className="py-10 section-highlight section-border-top">
+      <section className="py-12 md:py-16 section-highlight section-border-top">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="font-display font-bold text-xl text-text-primary text-center mb-8">
-            Por que usar o PromoSnap?
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="card-depth p-6 text-center">
-              <div className="w-12 h-12 rounded-xl bg-accent-blue/10 flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="w-6 h-6 text-accent-blue" />
-              </div>
-              <h3 className="font-display font-semibold text-text-primary mb-2">Histórico Real</h3>
-              <p className="text-sm text-text-muted">Acompanhe se o desconto é real comparando com o histórico de preço dos últimos 90 dias.</p>
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-semibold mb-4">
+              <Sparkles className="w-3.5 h-3.5" />
+              Diferenciais
             </div>
-            <div className="card-depth p-6 text-center">
-              <div className="w-12 h-12 rounded-xl bg-accent-green/10 flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-6 h-6 text-accent-green" />
+            <h2 className="font-display font-extrabold text-2xl md:text-3xl text-text-primary">
+              Por que usar o PromoSnap?
+            </h2>
+            <p className="mt-3 text-surface-500 text-sm md:text-base max-w-xl mx-auto">
+              Mais do que um comparador de preços. Uma camada de inteligência sobre suas compras online.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
+            <div className="card-depth p-6 group hover:border-accent-blue/30">
+              <div className="w-12 h-12 rounded-xl bg-accent-blue/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-6 h-6 text-accent-blue" />
               </div>
-              <h3 className="font-display font-semibold text-text-primary mb-2">Score de Oferta</h3>
-              <p className="text-sm text-text-muted">Nosso algoritmo analisa desconto, popularidade, confiança e frete para gerar um score inteligente.</p>
+              <h3 className="font-display font-bold text-text-primary mb-2">Preco Verificado</h3>
+              <p className="text-sm text-text-muted leading-relaxed">Cada preco e verificado direto na fonte. Historico de 90 dias mostra se o desconto e real ou maquiagem.</p>
             </div>
-            <div className="card-depth p-6 text-center">
-              <div className="w-12 h-12 rounded-xl bg-accent-purple/10 flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-6 h-6 text-accent-purple" />
+            <div className="card-depth p-6 group hover:border-accent-green/30">
+              <div className="w-12 h-12 rounded-xl bg-accent-green/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Store className="w-6 h-6 text-accent-green" />
               </div>
-              <h3 className="font-display font-semibold text-text-primary mb-2">Transparência Total</h3>
-              <p className="text-sm text-text-muted">Mostramos exatamente de onde vêm os dados e como ganhamos dinheiro. Sem pegadinhas.</p>
+              <h3 className="font-display font-bold text-text-primary mb-2">Comparacao entre Lojas</h3>
+              <p className="text-sm text-text-muted leading-relaxed">Amazon, Mercado Livre, Shopee e Shein lado a lado. Veja quem tem o melhor preco agora.</p>
+            </div>
+            <div className="card-depth p-6 group hover:border-accent-orange/30">
+              <div className="w-12 h-12 rounded-xl bg-accent-orange/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Star className="w-6 h-6 text-accent-orange" />
+              </div>
+              <h3 className="font-display font-bold text-text-primary mb-2">Avaliacao Consolidada</h3>
+              <p className="text-sm text-text-muted leading-relaxed">Reunimos avaliacoes de diferentes marketplaces para voce ter uma visao completa antes de decidir.</p>
+            </div>
+            <div className="card-depth p-6 group hover:border-accent-red/30">
+              <div className="w-12 h-12 rounded-xl bg-accent-red/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Bell className="w-6 h-6 text-accent-red" />
+              </div>
+              <h3 className="font-display font-bold text-text-primary mb-2">Alerta de Preco</h3>
+              <p className="text-sm text-text-muted leading-relaxed">Defina o preco desejado e receba um alerta quando o produto atingir o valor. Sem precisar ficar monitorando.</p>
+            </div>
+            <div className="card-depth p-6 group hover:border-accent-purple/30">
+              <div className="w-12 h-12 rounded-xl bg-accent-purple/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Truck className="w-6 h-6 text-accent-purple" />
+              </div>
+              <h3 className="font-display font-bold text-text-primary mb-2">Entrega e Prazo</h3>
+              <p className="text-sm text-text-muted leading-relaxed">Informacoes de frete e prazo de entrega de cada loja. O menor preco nem sempre e a melhor escolha.</p>
+            </div>
+            <div className="card-depth p-6 group hover:border-brand-500/30">
+              <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Search className="w-6 h-6 text-brand-500" />
+              </div>
+              <h3 className="font-display font-bold text-text-primary mb-2">Curadoria Real</h3>
+              <p className="text-sm text-text-muted leading-relaxed">Nao mostramos tudo. Nosso algoritmo filtra ofertas reais e destaca so o que realmente vale a pena.</p>
             </div>
           </div>
         </div>

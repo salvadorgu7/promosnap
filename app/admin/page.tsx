@@ -1,7 +1,8 @@
 import {
   Package, Tag, Store, MousePointerClick, BarChart3, Ticket,
   Layers, Clock, CheckCircle, XCircle, AlertTriangle, Loader2,
-  Bell, TrendingUp, Heart, ArrowRight, DollarSign
+  Bell, TrendingUp, Heart, ArrowRight, DollarSign, Image,
+  Upload, Zap, Activity, Shield, FileText, Users
 } from "lucide-react";
 import Link from "next/link";
 import { getAdminDashboardData } from "@/lib/db/queries";
@@ -34,7 +35,11 @@ export default async function AdminDashboard() {
 
   type SourceRow = { sourceSlug: string | null; clickouts: bigint; avgPrice: number | null };
 
-  const [alertsActive, trendsCount, revTodayRaw, rev7dRaw, clickouts7d] = await Promise.all([
+  const [
+    alertsActive, trendsCount, revTodayRaw, rev7dRaw, clickouts7d,
+    productsTotal, bannersActive, candidatesPending,
+    sourcesHealth, lastJob,
+  ] = await Promise.all([
     prisma.priceAlert.count({ where: { isActive: true, triggeredAt: null } }).catch(() => 0),
     prisma.trendingKeyword.count().catch(() => 0),
     prisma.$queryRaw<SourceRow[]>`
@@ -50,6 +55,14 @@ export default async function AdminDashboard() {
       GROUP BY c."sourceSlug"
     `.catch(() => [] as SourceRow[]),
     prisma.clickout.count({ where: { clickedAt: { gte: sevenDaysAgo } } }).catch(() => 0),
+    prisma.product.count().catch(() => 0),
+    prisma.banner.count({ where: { isActive: true } }).catch(() => 0),
+    prisma.catalogCandidate.count({ where: { status: "PENDING" } }).catch(() => 0),
+    prisma.source.findMany({
+      select: { id: true, name: true, slug: true, status: true },
+      orderBy: { name: "asc" },
+    }).catch(() => []),
+    prisma.jobRun.findFirst({ orderBy: { startedAt: "desc" }, select: { jobName: true, status: true, startedAt: true } }).catch(() => null),
   ]);
 
   const calcRevenue = (rows: SourceRow[]) =>
@@ -58,15 +71,18 @@ export default async function AdminDashboard() {
   const revenueToday = calcRevenue(revTodayRaw);
   const revenue7d = calcRevenue(rev7dRaw);
 
+  const activeSources = sourcesHealth.filter((s) => s.status === "ACTIVE").length;
+  const errorSources = sourcesHealth.filter((s) => s.status === "ERROR").length;
+
   const statCards = [
-    { label: "Listings", value: formatNumber(stats.listings), icon: Package, color: "text-accent-blue" },
+    { label: "Produtos", value: formatNumber(productsTotal), icon: Package, color: "text-accent-blue" },
     { label: "Ofertas Ativas", value: formatNumber(stats.activeOffers), icon: Tag, color: "text-accent-green" },
-    { label: "Clickouts Hoje", value: formatNumber(stats.clickoutsToday), icon: MousePointerClick, color: "text-accent-orange" },
-    { label: "Clickouts 7d", value: formatNumber(stats.clickoutsWeek), icon: BarChart3, color: "text-brand-500" },
-    { label: "Fontes", value: stats.sources.toString(), icon: Store, color: "text-accent-purple" },
+    { label: "Listings", value: formatNumber(stats.listings), icon: Layers, color: "text-brand-500" },
+    { label: "Fontes", value: `${activeSources}/${sourcesHealth.length}`, icon: Store, color: errorSources > 0 ? "text-red-500" : "text-accent-green" },
     { label: "Cupons", value: couponsActive.toString(), icon: Ticket, color: "text-accent-pink" },
     { label: "Marcas", value: stats.brands.toString(), icon: Layers, color: "text-accent-blue" },
     { label: "Categorias", value: stats.categories.toString(), icon: Layers, color: "text-accent-green" },
+    { label: "Banners Ativos", value: bannersActive.toString(), icon: Image, color: "text-accent-purple" },
   ];
 
   const days = clickoutsByDay as { day: Date | string; count: number }[];
@@ -81,9 +97,27 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold font-display text-text-primary">Dashboard</h1>
-        <p className="text-sm text-text-muted">Visao geral do PromoSnap</p>
+      {/* Header with platform status */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold font-display text-text-primary">Command Center</h1>
+          <p className="text-sm text-text-muted">Visao geral do PromoSnap</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-green/10 text-accent-green text-xs font-medium">
+            <Activity className="h-3 w-3" />
+            Platform OK
+          </div>
+          {lastJob && (
+            <div className="text-xs text-text-muted">
+              Ultimo job: <span className="font-medium text-text-secondary">{lastJob.jobName}</span>{" "}
+              <span className={jobStatusIcon[lastJob.status]?.color || "text-text-muted"}>
+                {lastJob.status}
+              </span>{" "}
+              {timeAgo(new Date(lastJob.startedAt))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Revenue cards */}
@@ -118,7 +152,7 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* Stat cards */}
+      {/* Catalog & platform stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((s) => (
           <div key={s.label} className="card p-4">
@@ -131,24 +165,46 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      {/* Quick ops links */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Link href="/admin/alertas" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <Link href="/admin/banners" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
           <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-accent-orange" />
+            <Image className="w-4 h-4 text-accent-purple" />
             <div>
-              <p className="text-sm font-medium text-text-primary">{alertsActive} alertas ativos</p>
-              <p className="text-xs text-text-muted">Alertas de preço</p>
+              <p className="text-sm font-medium text-text-primary">Banners</p>
+              <p className="text-xs text-text-muted">{bannersActive} ativos</p>
             </div>
           </div>
           <ArrowRight className="w-4 h-4 text-text-muted" />
         </Link>
-        <Link href="/admin/tendencias" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
+        <Link href="/admin/catalog-edit" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-accent-blue" />
+            <FileText className="w-4 h-4 text-accent-blue" />
             <div>
-              <p className="text-sm font-medium text-text-primary">{trendsCount} trends</p>
-              <p className="text-xs text-text-muted">Tendências & Growth</p>
+              <p className="text-sm font-medium text-text-primary">Editor</p>
+              <p className="text-xs text-text-muted">Catalogo</p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-text-muted" />
+        </Link>
+        {candidatesPending > 0 && (
+          <Link href="/admin/ingestao" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors border border-accent-orange/30">
+            <div className="flex items-center gap-2">
+              <Upload className="w-4 h-4 text-accent-orange" />
+              <div>
+                <p className="text-sm font-medium text-text-primary">Importacao</p>
+                <p className="text-xs text-accent-orange font-medium">{candidatesPending} pendentes</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-text-muted" />
+          </Link>
+        )}
+        <Link href="/admin/alertas" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
+          <div className="flex items-center gap-2">
+            <Bell className="w-4 h-4 text-accent-orange" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">{alertsActive} alertas</p>
+              <p className="text-xs text-text-muted">Alertas de preco</p>
             </div>
           </div>
           <ArrowRight className="w-4 h-4 text-text-muted" />
@@ -158,22 +214,29 @@ export default async function AdminDashboard() {
             <Clock className="w-4 h-4 text-accent-green" />
             <div>
               <p className="text-sm font-medium text-text-primary">Jobs</p>
-              <p className="text-xs text-text-muted">Automação</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-text-muted" />
-        </Link>
-        <Link href="/admin/ingestao" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
-          <div className="flex items-center gap-2">
-            <Package className="w-4 h-4 text-brand-500" />
-            <div>
-              <p className="text-sm font-medium text-text-primary">Ingestão</p>
-              <p className="text-xs text-text-muted">Importar produtos</p>
+              <p className="text-xs text-text-muted">Automacao</p>
             </div>
           </div>
           <ArrowRight className="w-4 h-4 text-text-muted" />
         </Link>
       </div>
+
+      {/* Sources health */}
+      {errorSources > 0 && (
+        <div className="card p-4 border-l-4 border-l-red-500">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <span className="text-sm font-medium text-text-primary">Fontes com Erro</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sourcesHealth.filter((s) => s.status === "ERROR").map((s) => (
+              <span key={s.id} className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded-md font-medium">
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Clickouts chart */}
       <div className="card p-5">
@@ -270,7 +333,12 @@ export default async function AdminDashboard() {
 
       {/* Job runs */}
       <div className="card p-5">
-        <h2 className="text-lg font-semibold font-display text-text-primary mb-4">Jobs Recentes</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold font-display text-text-primary">Jobs Recentes</h2>
+          <Link href="/admin/jobs" className="text-xs text-brand-500 hover:underline flex items-center gap-1">
+            Ver todos <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
         {jobRuns.length === 0 ? (
           <p className="text-sm text-text-muted">Nenhum job executado.</p>
         ) : (

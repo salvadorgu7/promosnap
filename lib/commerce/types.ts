@@ -57,3 +57,28 @@ export interface TrendingCategoryResult {
   score: number;
   reasons: string[];
 }
+
+// ============================================
+// Decision Value (V15)
+// ============================================
+
+export interface DecisionBreakdown {
+  /** 0-30: how competitive the price is vs category average */
+  priceCompetitiveness: number;
+  /** 0-25: quality of reviews (rating + volume) */
+  reviewQuality: number;
+  /** 0-20: source reliability + offer score */
+  trustScore: number;
+  /** 0-15: shipping cost/speed advantage */
+  shippingQuality: number;
+  /** 0-10: CPC/commission revenue potential */
+  revenueOpportunity: number;
+}
+
+export interface DecisionValue {
+  productId: string;
+  productName: string;
+  /** Composite score 0-100 */
+  score: number;
+  breakdown: DecisionBreakdown;
+}

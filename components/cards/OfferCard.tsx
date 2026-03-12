@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Star, Truck } from "lucide-react";
+import { ExternalLink, Star } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import FavoriteButton from "@/components/ui/FavoriteButton";
+import ShippingBadge from "@/components/product/ShippingBadge";
 import type { ProductCard, Badge } from "@/types";
 
 function BadgeChip({ badge }: { badge: Badge }) {
@@ -75,9 +76,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
             <span className="text-surface-400">+{product.offersCount - 1}</span>
           )}
           {bestOffer.isFreeShipping && (
-            <span className="flex items-center gap-0.5 text-accent-green">
-              <Truck className="w-3 h-3" /> Gratis
-            </span>
+            <ShippingBadge freeShipping compact />
           )}
         </div>
 

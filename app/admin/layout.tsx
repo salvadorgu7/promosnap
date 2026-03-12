@@ -30,6 +30,9 @@ import {
   MonitorDot,
   Gauge,
   ShieldAlert,
+  Radio,
+  Image,
+  Pencil,
 } from "lucide-react";
 
 interface NavItem {
@@ -55,11 +58,13 @@ const navGroups: NavGroup[] = [
     title: "Catalogo",
     items: [
       { href: "/admin/produtos", label: "Produtos", icon: Package },
+      { href: "/admin/catalog-edit", label: "Editor", icon: Pencil },
       { href: "/admin/ofertas", label: "Ofertas", icon: Tag },
       { href: "/admin/fontes", label: "Fontes", icon: Store },
       { href: "/admin/prioridades", label: "Prioridades", icon: Target },
       { href: "/admin/catalog-governance", label: "Catalogo", icon: ShieldCheck },
       { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
+      { href: "/admin/ingestao", label: "Importacao", icon: Upload },
     ],
   },
   {
@@ -67,6 +72,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/admin/content", label: "Conteudo", icon: FileText },
       { href: "/admin/artigos", label: "Artigos", icon: FileText },
+      { href: "/admin/banners", label: "Banners", icon: Image },
       { href: "/admin/tendencias", label: "Tendencias", icon: TrendingUp },
     ],
   },
@@ -94,6 +100,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/decisoes", label: "Decisoes", icon: Brain },
       { href: "/admin/seo-gaps", label: "SEO Gaps", icon: SearchX },
       { href: "/admin/email-intelligence", label: "Email Intel", icon: MailCheck },
+      { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
     ],
   },
   {
@@ -101,6 +108,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/admin/jobs", label: "Jobs", icon: Clock },
       { href: "/admin/ingestao", label: "Ingestao", icon: Upload },
+      { href: "/admin/imports", label: "Import CSV/JSON", icon: Upload },
       { href: "/admin/health", label: "Health", icon: HeartPulse },
       { href: "/admin/release", label: "Release", icon: Rocket },
       { href: "/admin/audit", label: "Auditoria", icon: ClipboardCheck },
