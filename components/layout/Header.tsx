@@ -32,7 +32,9 @@ export default function Header() {
               <Zap className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
             <span className="font-display font-extrabold text-xl tracking-tight text-surface-900">
-              Promo<span className="text-gradient">Snap</span>
+              <span className="hidden sm:inline">Promo</span>
+              <span className="sm:hidden">P</span>
+              <span className="text-gradient"><span className="hidden sm:inline">Snap</span><span className="sm:hidden">S</span></span>
             </span>
           </Link>
 
@@ -53,16 +55,16 @@ export default function Header() {
 
           {/* Mobile buttons */}
           <div className="flex md:hidden items-center gap-1">
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-lg hover:bg-surface-100">
+            <button onClick={() => { setSearchOpen(!searchOpen); setMobileOpen(false); }} className="p-2 rounded-lg hover:bg-surface-100">
               <Search className="w-5 h-5 text-surface-600" />
             </button>
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-surface-100">
+            <button onClick={() => { setMobileOpen(!mobileOpen); setSearchOpen(false); }} className="p-2 rounded-lg hover:bg-surface-100">
               {mobileOpen ? <X className="w-5 h-5 text-surface-600" /> : <Menu className="w-5 h-5 text-surface-600" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile search */}
+        {/* Mobile search - full width */}
         {searchOpen && (
           <div className="md:hidden pb-3 animate-slide-up"><SearchBar /></div>
         )}
@@ -80,24 +82,49 @@ export default function Header() {
             );
           })}
         </nav>
-      </div>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-surface-200 bg-white animate-slide-up">
-          <nav className="px-4 py-3 space-y-1">
+        {/* Mobile horizontal nav categories */}
+        <div className="md:hidden overflow-x-auto pb-2 -mx-1 scrollbar-none">
+          <div className="flex items-center gap-1 min-w-max px-1">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               return (
-                <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">
-                  <Icon className={`w-5 h-5 ${item.color}`} />
-                  <span className="font-medium">{item.label}</span>
+                <Link key={item.href} href={item.href}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-surface-600 hover:bg-surface-100 transition-colors whitespace-nowrap border border-surface-200">
+                  <Icon className={`w-3 h-3 ${item.color}`} />
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
-          </nav>
+          </div>
         </div>
+      </div>
+
+      {/* Mobile slide-in menu */}
+      {mobileOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/20 z-40 md:hidden" onClick={() => setMobileOpen(false)} />
+          <div className="fixed top-0 right-0 bottom-0 w-72 bg-white z-50 md:hidden shadow-xl animate-slide-right overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-surface-200">
+              <span className="font-display font-bold text-surface-900">Menu</span>
+              <button onClick={() => setMobileOpen(false)} className="p-2 rounded-lg hover:bg-surface-100">
+                <X className="w-5 h-5 text-surface-600" />
+              </button>
+            </div>
+            <nav className="p-4 space-y-1">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">
+                    <Icon className={`w-5 h-5 ${item.color}`} />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        </>
       )}
     </header>
   );

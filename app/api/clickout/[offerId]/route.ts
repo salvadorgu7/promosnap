@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-// import prisma from "@/lib/db/prisma";
+import prisma from "@/lib/db/prisma";
 
 export async function GET(
   request: NextRequest,
@@ -7,30 +7,35 @@ export async function GET(
 ) {
   const { offerId } = await params;
 
-  // TODO: Fetch offer from DB and track clickout
-  // const offer = await prisma.offer.findUnique({
-  //   where: { id: offerId },
-  //   include: { listing: { include: { source: true } } },
-  // });
-  //
-  // if (!offer || !offer.affiliateUrl) {
-  //   return NextResponse.redirect(new URL("/", request.url));
-  // }
-  //
-  // // Log the clickout
-  // await prisma.clickout.create({
-  //   data: {
-  //     offerId: offer.id,
-  //     sourceSlug: offer.listing.source.slug,
-  //     referrer: request.headers.get("referer") || null,
-  //     sessionId: request.cookies.get("ps_session")?.value || null,
-  //     query: request.nextUrl.searchParams.get("q") || null,
-  //     userAgent: request.headers.get("user-agent") || null,
-  //   },
-  // });
-  //
-  // return NextResponse.redirect(offer.affiliateUrl);
+  try {
+    const offer = await prisma.offer.findUnique({
+      where: { id: offerId },
+      select: { affiliateUrl: true, listing: { select: { productUrl: true, source: { select: { slug: true } } } } },
+    });
 
-  // For now, redirect to homepage
-  return NextResponse.redirect(new URL("/", request.url));
+    if (!offer) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // Fire-and-forget: record clickout
+    const referrer = request.headers.get("referer") || undefined;
+    const userAgent = request.headers.get("user-agent") || undefined;
+    const searchParams = request.nextUrl.searchParams;
+
+    prisma.clickout.create({
+      data: {
+        offerId,
+        sourceSlug: offer.listing.source.slug,
+        referrer,
+        userAgent,
+        query: searchParams.get("q") || undefined,
+        categorySlug: searchParams.get("cat") || undefined,
+      },
+    }).catch(() => {});
+
+    const redirectUrl = offer.affiliateUrl || offer.listing.productUrl;
+    return NextResponse.redirect(redirectUrl, 302);
+  } catch {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 }

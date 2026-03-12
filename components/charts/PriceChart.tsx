@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
@@ -12,7 +13,17 @@ interface PriceChartProps {
   height?: number;
 }
 
+type TimeRange = "30d" | "60d" | "90d";
+
+function filterByRange(data: PriceHistoryPoint[], range: TimeRange): PriceHistoryPoint[] {
+  if (range === "90d") return data;
+  const count = range === "30d" ? 30 : 60;
+  return data.slice(-count);
+}
+
 export default function PriceChart({ data, stats, height = 220 }: PriceChartProps) {
+  const [range, setRange] = useState<TimeRange>("30d");
+
   if (data.length === 0) {
     return (
       <div className="card flex items-center justify-center text-surface-500 text-sm" style={{ height }}>
@@ -20,6 +31,9 @@ export default function PriceChart({ data, stats, height = 220 }: PriceChartProp
       </div>
     );
   }
+
+  const filtered = filterByRange(data, range);
+  const mobileHeight = typeof window !== "undefined" && window.innerWidth < 640 ? 180 : height;
 
   return (
     <div className="card p-4">
@@ -33,20 +47,28 @@ export default function PriceChart({ data, stats, height = 220 }: PriceChartProp
             <span className="w-2 h-2 rounded-full bg-accent-green" />
             Mín 90d: {formatPrice(stats.min90d)}
           </span>
-          <span className="flex items-center gap-1.5 text-surface-600">
+          <span className="hidden sm:flex items-center gap-1.5 text-surface-600">
             <span className="w-2 h-2 rounded-full bg-surface-400" />
             Média 30d: {formatPrice(stats.avg30d)}
           </span>
         </div>
-        <span className={`text-xs font-semibold ${
-          stats.trend === "down" ? "text-accent-green" : stats.trend === "up" ? "text-accent-red" : "text-surface-500"
-        }`}>
-          {stats.trend === "down" ? "📉 Em queda" : stats.trend === "up" ? "📈 Subindo" : "➡️ Estável"}
-        </span>
+        <div className="flex items-center gap-1">
+          {(["30d", "60d", "90d"] as TimeRange[]).map((r) => (
+            <button
+              key={r}
+              onClick={() => setRange(r)}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                range === r ? "bg-accent-blue/10 text-accent-blue" : "text-surface-500 hover:bg-surface-100"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+      <ResponsiveContainer width="100%" height={mobileHeight}>
+        <AreaChart data={filtered} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
           <defs>
             <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#2962ff" stopOpacity={0.15} />
@@ -64,12 +86,16 @@ export default function PriceChart({ data, stats, height = 220 }: PriceChartProp
               fontSize: "12px",
               boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
             }}
-            formatter={(value: number) => [formatPrice(value), "Preço"]}
+            formatter={(value: number) => {
+              const diff = stats.avg30d > 0 ? ((value - stats.avg30d) / stats.avg30d * 100).toFixed(1) : "0";
+              const sign = Number(diff) > 0 ? "+" : "";
+              return [`${formatPrice(value)} (${sign}${diff}% vs média)`, "Preço"];
+            }}
           />
-          <ReferenceLine y={stats.avg30d} stroke="#9ca3b8" strokeDasharray="4 4" strokeWidth={1} />
+          <ReferenceLine y={stats.avg30d} stroke="#9ca3b8" strokeDasharray="4 4" strokeWidth={1} label={{ value: "Média", position: "right", fill: "#9ca3b8", fontSize: 10 }} />
           <ReferenceLine y={stats.min90d} stroke="#00c853" strokeDasharray="4 4" strokeWidth={1} />
           <Area type="monotone" dataKey="price" stroke="#2962ff" strokeWidth={2} fill="url(#priceGrad)" dot={false}
-            activeDot={{ r: 4, fill: "#2962ff", stroke: "#fff", strokeWidth: 2 }} />
+            activeDot={{ r: 5, fill: "#2962ff", stroke: "#fff", strokeWidth: 2 }} />
         </AreaChart>
       </ResponsiveContainer>
     </div>

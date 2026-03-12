@@ -1,5 +1,6 @@
 import { Search, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
+import EmptyState from "@/components/ui/EmptyState";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { searchListings } from "@/lib/db/queries";
 
@@ -29,7 +30,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
       </div>
 
       <div className="flex gap-6">
-        {/* Sidebar */}
+        {/* Sidebar - desktop */}
         <aside className="hidden lg:block w-56 flex-shrink-0 space-y-4">
           <div className="card p-4">
             <h3 className="text-sm font-semibold text-surface-900 mb-3 flex items-center gap-1.5">
@@ -55,18 +56,19 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
 
         {/* Results */}
         <div className="flex-1">
+          {/* Sort - horizontal scroll on mobile */}
           <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-surface-100 border border-surface-200">
-            <div className="flex items-center gap-2 text-sm text-surface-500">
-              <ArrowUpDown className="h-3.5 w-3.5" /> Ordenar:
+            <div className="flex items-center gap-2 text-sm text-surface-500 shrink-0">
+              <ArrowUpDown className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Ordenar:</span>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 overflow-x-auto scrollbar-none">
               {[
                 { value: "relevance", label: "Relevância" },
                 { value: "price_asc", label: "Menor Preço" },
                 { value: "score", label: "Melhor Oferta" },
               ].map((opt) => (
                 <a key={opt.value} href={`/busca?q=${encodeURIComponent(query)}&sort=${opt.value}`}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap ${
                     sort === opt.value ? "bg-accent-blue/10 text-accent-blue" : "text-surface-500 hover:bg-surface-200"
                   }`}>
                   {opt.label}
@@ -80,15 +82,13 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
               {results.map((p) => <OfferCard key={p.id} product={p} />)}
             </div>
           ) : (
-            <div className="text-center py-16 card">
-              <Search className="h-12 w-12 text-surface-300 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-surface-900 mb-2">
-                {query ? "Nenhum resultado" : "Busque um produto"}
-              </h2>
-              <p className="text-sm text-surface-500">
-                {query ? "Tente buscar com outras palavras." : "Digite o nome do produto acima."}
-              </p>
-            </div>
+            <EmptyState
+              icon={Search}
+              title={query ? "Nenhum resultado" : "Busque um produto"}
+              description={query ? "Tente buscar com outras palavras." : "Digite o nome do produto acima."}
+              actionLabel={query ? "Ver ofertas" : undefined}
+              actionHref={query ? "/ofertas" : undefined}
+            />
           )}
         </div>
       </div>

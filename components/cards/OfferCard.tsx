@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import Image from "next/image";
+import { ExternalLink, Truck, Zap } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import type { ProductCard, Badge } from "@/types";
 
@@ -34,17 +35,26 @@ function ScorePill({ score }: { score: number }) {
 export default function OfferCard({ product }: { product: ProductCard }) {
   const { bestOffer, badges } = product;
   const discount = bestOffer.discount;
+  const isMegaDeal = (discount ?? 0) >= 40;
 
   return (
-    <div className="card group flex flex-col w-full overflow-hidden transition-all duration-200">
+    <div className="card group flex flex-col w-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover">
       {/* Badges */}
-      {badges.length > 0 && (
-        <div className="flex items-center gap-1.5 px-3 pt-3 flex-wrap">
-          {badges.map((b, i) => (
-            <BadgeChip key={i} badge={b} />
-          ))}
-        </div>
-      )}
+      <div className="flex items-center gap-1 px-3 pt-3 flex-wrap">
+        {isMegaDeal && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold bg-accent-red/10 text-accent-red border border-accent-red/20 animate-pulse-glow">
+            <Zap className="w-3 h-3" /> MEGA OFERTA
+          </span>
+        )}
+        {bestOffer.isFreeShipping && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-semibold bg-accent-purple/10 text-accent-purple border border-accent-purple/20">
+            <Truck className="w-3 h-3" /> Frete grátis
+          </span>
+        )}
+        {badges.filter(b => b.type !== 'free_shipping').slice(0, 2).map((b, i) => (
+          <BadgeChip key={i} badge={b} />
+        ))}
+      </div>
 
       {/* Image */}
       <Link href={`/produto/${product.slug}`} className="block px-3 pt-3">
@@ -53,7 +63,8 @@ export default function OfferCard({ product }: { product: ProductCard }) {
             <img
               src={product.imageUrl}
               alt={product.name}
-              className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-surface-300 text-4xl">
@@ -68,7 +79,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
 
       {/* Content */}
       <div className="flex-1 flex flex-col px-3 pt-3 pb-3">
-        <span className="text-xs text-surface-500 mb-1">
+        <span className="text-[10px] sm:text-xs text-surface-500 mb-1">
           {bestOffer.sourceName}
           {product.offersCount > 1 && (
             <span className="text-surface-400"> +{product.offersCount - 1}</span>
@@ -76,26 +87,26 @@ export default function OfferCard({ product }: { product: ProductCard }) {
         </span>
 
         <Link href={`/produto/${product.slug}`}>
-          <h3 className="text-sm font-medium text-surface-800 leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors">
+          <h3 className="text-xs sm:text-sm font-medium text-surface-800 leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors">
             {product.name}
           </h3>
         </Link>
 
         {product.brand && (
-          <span className="text-xs text-surface-500 mt-1">{product.brand}</span>
+          <span className="text-[10px] sm:text-xs text-surface-500 mt-1">{product.brand}</span>
         )}
 
         {/* Price block */}
         <div className="mt-auto pt-3">
           <div className="flex items-end gap-2">
             {bestOffer.originalPrice && bestOffer.originalPrice > bestOffer.price && (
-              <span className="text-surface-400 line-through text-sm">{formatPrice(bestOffer.originalPrice)}</span>
+              <span className="text-surface-400 line-through text-xs sm:text-sm">{formatPrice(bestOffer.originalPrice)}</span>
             )}
             {discount && discount > 0 && (
-              <span className="text-accent-green font-bold text-sm">-{discount}%</span>
+              <span className="text-accent-green font-bold text-xs sm:text-sm">-{discount}%</span>
             )}
           </div>
-          <div className="text-2xl font-extrabold font-display text-surface-900 tracking-tight mt-0.5">
+          <div className="text-xl sm:text-2xl font-extrabold font-display text-surface-900 tracking-tight mt-0.5">
             {formatPrice(bestOffer.price)}
           </div>
         </div>
@@ -105,12 +116,14 @@ export default function OfferCard({ product }: { product: ProductCard }) {
           href={bestOffer.affiliateUrl || "#"}
           target="_blank"
           rel="noopener noreferrer nofollow"
-          className="mt-3 flex items-center justify-center gap-2 h-10 rounded-lg
+          className="mt-3 flex items-center justify-center gap-2 h-9 sm:h-10 rounded-lg
                      bg-gradient-to-r from-accent-blue to-accent-purple text-white
-                     text-sm font-semibold hover:shadow-glow-blue transition-all duration-200"
+                     text-xs sm:text-sm font-semibold
+                     group-hover:shadow-glow-blue group-hover:from-accent-blue group-hover:to-accent-blue
+                     transition-all duration-300"
         >
           Ver oferta
-          <ExternalLink className="w-3.5 h-3.5" />
+          <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
         </a>
       </div>
     </div>

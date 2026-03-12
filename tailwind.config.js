@@ -54,6 +54,14 @@ module.exports = {
         "pulse-glow": "pulseGlow 2s ease-in-out infinite",
         shimmer: "shimmer 2s linear infinite",
         float: "float 3s ease-in-out infinite",
+        "stagger-1": "slideUp 0.4s ease-out 0.05s both",
+        "stagger-2": "slideUp 0.4s ease-out 0.1s both",
+        "stagger-3": "slideUp 0.4s ease-out 0.15s both",
+        "stagger-4": "slideUp 0.4s ease-out 0.2s both",
+        "stagger-5": "slideUp 0.4s ease-out 0.25s both",
+        "stagger-6": "slideUp 0.4s ease-out 0.3s both",
+        "stagger-7": "slideUp 0.4s ease-out 0.35s both",
+        "stagger-8": "slideUp 0.4s ease-out 0.4s both",
       },
       keyframes: {
         fadeIn: {

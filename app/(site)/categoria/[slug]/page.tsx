@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { ChevronRight, SlidersHorizontal } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
+import Breadcrumb from "@/components/ui/Breadcrumb";
+import EmptyState from "@/components/ui/EmptyState";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { MOCK_HOT_OFFERS } from "@/lib/mock-data";
+import { SlidersHorizontal } from "lucide-react";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -19,11 +21,10 @@ export default async function CategoriaPage({ params }: { params: Promise<{ slug
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      <nav className="flex items-center gap-1 text-xs text-surface-500 mb-4">
-        <Link href="/" className="hover:text-accent-blue transition-colors">Home</Link>
-        <ChevronRight className="h-3 w-3" />
-        <span className="text-surface-700">{name}</span>
-      </nav>
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: name },
+      ]} />
 
       <script type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema([{ name: "Home", url: "/" }, { name, url: `/categoria/${slug}` }])) }} />
@@ -36,11 +37,13 @@ export default async function CategoriaPage({ params }: { params: Promise<{ slug
           {products.map((p) => <OfferCard key={p.id} product={p} />)}
         </div>
       ) : (
-        <div className="text-center py-16 card">
-          <SlidersHorizontal className="h-12 w-12 text-surface-300 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-surface-900 mb-2">Em breve</h2>
-          <p className="text-sm text-surface-500">Indexando ofertas para {name}. Volte em breve!</p>
-        </div>
+        <EmptyState
+          icon={SlidersHorizontal}
+          title="Em breve"
+          description={`Indexando ofertas para ${name}. Volte em breve!`}
+          actionLabel="Ver todas ofertas"
+          actionHref="/ofertas"
+        />
       )}
     </div>
   );
