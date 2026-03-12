@@ -1,72 +1,190 @@
-import { Package, Tag, Store, MousePointerClick, CheckCircle, AlertTriangle, Clock } from "lucide-react";
+import {
+  Package, Tag, Store, MousePointerClick, BarChart3, Ticket,
+  Layers, Clock, CheckCircle, XCircle, AlertTriangle, Loader2
+} from "lucide-react";
+import { getAdminDashboardData } from "@/lib/db/queries";
+import { formatNumber, formatPrice, timeAgo } from "@/lib/utils";
 
-const stats = [
-  { label: "Produtos", value: "0", icon: Package, trend: "+0 hoje" },
-  { label: "Ofertas Ativas", value: "0", icon: Tag, trend: "+0 hoje" },
-  { label: "Fontes Ativas", value: "4", icon: Store, trend: "Amazon, ML, Shopee, Shein" },
-  { label: "Clickouts Hoje", value: "0", icon: MousePointerClick, trend: "—" },
-];
+export const dynamic = "force-dynamic";
 
-const jobs = [
-  { name: "Ingestão", status: "pending", time: "Aguardando primeira execução" },
-  { name: "Repricing", status: "pending", time: "Aguardando primeira execução" },
-  { name: "Rematch", status: "pending", time: "Aguardando primeira execução" },
-  { name: "Sitemap", status: "pending", time: "Aguardando primeira execução" },
-];
+export default async function AdminDashboard() {
+  const data = await getAdminDashboardData();
+  const { stats, recentClickouts, topProducts, jobRuns, couponsActive, clickoutsByDay } = data;
 
-export default function AdminDashboard() {
+  const statCards = [
+    { label: "Listings", value: formatNumber(stats.listings), icon: Package, color: "text-accent-blue" },
+    { label: "Ofertas Ativas", value: formatNumber(stats.activeOffers), icon: Tag, color: "text-accent-green" },
+    { label: "Clickouts Hoje", value: formatNumber(stats.clickoutsToday), icon: MousePointerClick, color: "text-accent-orange" },
+    { label: "Clickouts 7d", value: formatNumber(stats.clickoutsWeek), icon: BarChart3, color: "text-brand-500" },
+    { label: "Fontes", value: stats.sources.toString(), icon: Store, color: "text-accent-purple" },
+    { label: "Cupons", value: couponsActive.toString(), icon: Ticket, color: "text-accent-pink" },
+    { label: "Marcas", value: stats.brands.toString(), icon: Layers, color: "text-accent-blue" },
+    { label: "Categorias", value: stats.categories.toString(), icon: Layers, color: "text-accent-green" },
+  ];
+
+  const days = clickoutsByDay as { day: Date | string; count: number }[];
+  const maxClicks = Math.max(...days.map((d) => d.count), 1);
+
+  const jobStatusIcon: Record<string, { icon: typeof CheckCircle; color: string }> = {
+    SUCCESS: { icon: CheckCircle, color: "text-accent-green" },
+    FAILED: { icon: XCircle, color: "text-red-500" },
+    RUNNING: { icon: Loader2, color: "text-accent-blue" },
+    CANCELLED: { icon: AlertTriangle, color: "text-accent-orange" },
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold font-display text-text-primary">Dashboard</h1>
-        <p className="text-sm text-text-muted">Visão geral do PromoSnap</p>
+        <p className="text-sm text-text-muted">Visao geral do PromoSnap</p>
       </div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
+        {statCards.map((s) => (
           <div key={s.label} className="card p-4">
             <div className="flex items-center gap-2 mb-2">
-              <s.icon className="h-4 w-4 text-text-muted" />
+              <s.icon className={`h-4 w-4 ${s.color}`} />
               <span className="text-xs text-text-muted uppercase tracking-wider">{s.label}</span>
             </div>
             <p className="text-2xl font-bold font-display text-text-primary">{s.value}</p>
-            <p className="text-xs text-text-muted mt-1">{s.trend}</p>
           </div>
         ))}
       </div>
 
-      <div className="card p-4">
-        <h2 className="text-lg font-semibold font-display text-text-primary mb-4">Jobs Recentes</h2>
-        <div className="space-y-2">
-          {jobs.map((j) => (
-            <div key={j.name} className="flex items-center justify-between p-3 rounded-lg bg-surface-100">
-              <div className="flex items-center gap-3">
-                <Clock className="h-4 w-4 text-text-muted" />
-                <div>
-                  <p className="text-sm font-medium text-text-primary">{j.name}</p>
-                  <p className="text-xs text-text-muted">{j.time}</p>
+      {/* Clickouts chart */}
+      <div className="card p-5">
+        <h2 className="text-lg font-semibold font-display text-text-primary mb-4">Clickouts - Ultimos 7 dias</h2>
+        {days.length === 0 ? (
+          <p className="text-sm text-text-muted">Sem dados de clickouts.</p>
+        ) : (
+          <div className="flex items-end gap-2 h-40">
+            {days.map((d, i) => {
+              const pct = (d.count / maxClicks) * 100;
+              const dayLabel = new Date(d.day).toLocaleDateString("pt-BR", { weekday: "short", day: "numeric" });
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-xs font-medium text-text-primary">{d.count}</span>
+                  <div className="w-full bg-surface-100 rounded-t" style={{ height: "120px" }}>
+                    <div
+                      className="w-full bg-accent-blue rounded-t transition-all"
+                      style={{ height: `${Math.max(pct, 2)}%`, marginTop: `${100 - Math.max(pct, 2)}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-text-muted">{dayLabel}</span>
                 </div>
-              </div>
-              <span className="text-xs px-2 py-0.5 rounded bg-surface-200 text-text-muted">Pendente</span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Recent clickouts */}
+        <div className="card p-5">
+          <h2 className="text-lg font-semibold font-display text-text-primary mb-4">Ultimos Clickouts</h2>
+          {recentClickouts.length === 0 ? (
+            <p className="text-sm text-text-muted">Nenhum clickout registrado.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-surface-200">
+                    <th className="text-left py-2 text-xs text-text-muted font-medium">Produto</th>
+                    <th className="text-left py-2 text-xs text-text-muted font-medium">Fonte</th>
+                    <th className="text-right py-2 text-xs text-text-muted font-medium">Quando</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentClickouts.slice(0, 10).map((c: any) => (
+                    <tr key={c.id} className="border-b border-surface-100">
+                      <td className="py-2 text-text-primary max-w-[200px] truncate">
+                        {c.offer?.listing?.rawTitle || "—"}
+                      </td>
+                      <td className="py-2 text-text-secondary">
+                        {c.offer?.listing?.source?.name || c.sourceSlug || "—"}
+                      </td>
+                      <td className="py-2 text-right text-text-muted text-xs">
+                        {timeAgo(new Date(c.clickedAt))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
+          )}
+        </div>
+
+        {/* Top products */}
+        <div className="card p-5">
+          <h2 className="text-lg font-semibold font-display text-text-primary mb-4">Top Produtos Clicados</h2>
+          {(topProducts as any[]).length === 0 ? (
+            <p className="text-sm text-text-muted">Sem dados de cliques.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-surface-200">
+                    <th className="text-left py-2 text-xs text-text-muted font-medium">Produto</th>
+                    <th className="text-left py-2 text-xs text-text-muted font-medium">Fonte</th>
+                    <th className="text-right py-2 text-xs text-text-muted font-medium">Cliques</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(topProducts as any[]).map((p: any, i: number) => (
+                    <tr key={i} className="border-b border-surface-100">
+                      <td className="py-2 text-text-primary max-w-[200px] truncate">{p.rawTitle || "—"}</td>
+                      <td className="py-2 text-text-secondary">{p.sourceName || "—"}</td>
+                      <td className="py-2 text-right font-medium text-text-primary">{p.clicks}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="card p-5 border-accent-blue/20">
-        <h2 className="text-lg font-semibold font-display text-text-primary mb-3">🚀 Próximos Passos</h2>
-        <div className="space-y-2 text-sm text-text-secondary">
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-4 w-4 text-accent-green mt-0.5 flex-shrink-0" />
-            <span>Projeto criado com Next.js 15 + Prisma + Tailwind</span>
+      {/* Job runs */}
+      <div className="card p-5">
+        <h2 className="text-lg font-semibold font-display text-text-primary mb-4">Jobs Recentes</h2>
+        {jobRuns.length === 0 ? (
+          <p className="text-sm text-text-muted">Nenhum job executado.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-200">
+                  <th className="text-left py-2 text-xs text-text-muted font-medium">Job</th>
+                  <th className="text-left py-2 text-xs text-text-muted font-medium">Status</th>
+                  <th className="text-left py-2 text-xs text-text-muted font-medium">Iniciado</th>
+                  <th className="text-right py-2 text-xs text-text-muted font-medium">Itens</th>
+                </tr>
+              </thead>
+              <tbody>
+                {jobRuns.map((j: any) => {
+                  const si = jobStatusIcon[j.status] || jobStatusIcon.CANCELLED;
+                  const Icon = si.icon;
+                  return (
+                    <tr key={j.id} className="border-b border-surface-100">
+                      <td className="py-2 font-medium text-text-primary">{j.jobName}</td>
+                      <td className="py-2">
+                        <span className={`inline-flex items-center gap-1 text-xs ${si.color}`}>
+                          <Icon className="h-3 w-3" />
+                          {j.status}
+                        </span>
+                      </td>
+                      <td className="py-2 text-text-muted text-xs">{timeAgo(new Date(j.startedAt))}</td>
+                      <td className="py-2 text-right text-text-secondary">
+                        {j.itemsDone ?? 0}/{j.itemsTotal ?? 0}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          {["Configurar DATABASE_URL no .env.local", "Rodar prisma db push", "Rodar npm run db:seed", "Configurar credenciais de afiliados"].map((step) => (
-            <div key={step} className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-accent-orange mt-0.5 flex-shrink-0" />
-              <span>{step}</span>
-            </div>
-          ))}
-        </div>
+        )}
       </div>
     </div>
   );

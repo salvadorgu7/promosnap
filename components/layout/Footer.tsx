@@ -3,23 +3,24 @@ import { Zap } from "lucide-react";
 
 const LINKS = {
   Categorias: [
-    { href: "/categoria/eletronicos", label: "Eletrônicos" },
-    { href: "/categoria/casa", label: "Casa & Decoração" },
-    { href: "/categoria/moda", label: "Moda" },
-    { href: "/categoria/beleza", label: "Beleza" },
-    { href: "/categoria/gamer", label: "Gamer" },
+    { href: "/categoria/celulares", label: "Celulares" },
+    { href: "/categoria/notebooks", label: "Notebooks" },
+    { href: "/categoria/smart-tvs", label: "Smart TVs" },
+    { href: "/categoria/audio", label: "Áudio" },
+    { href: "/categoria/casa", label: "Casa" },
   ],
   Ofertas: [
     { href: "/ofertas", label: "Ofertas Quentes" },
     { href: "/menor-preco", label: "Menor Preço Histórico" },
     { href: "/mais-vendidos", label: "Mais Vendidos" },
+    { href: "/cupons", label: "Cupons" },
     { href: "/lojas", label: "Lojas Parceiras" },
   ],
-  Sobre: [
+  PromoSnap: [
     { href: "/sobre", label: "Sobre" },
-    { href: "/contato", label: "Contato" },
-    { href: "/termos", label: "Termos de Uso" },
-    { href: "/privacidade", label: "Privacidade" },
+    { href: "/melhores/melhores-smartphones", label: "Melhores Smartphones" },
+    { href: "/melhores/melhores-notebooks", label: "Melhores Notebooks" },
+    { href: "/melhores/melhores-fones-bluetooth", label: "Melhores Fones" },
   ],
 };
 
