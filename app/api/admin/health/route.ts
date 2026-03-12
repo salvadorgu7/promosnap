@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { validateAdmin } from '@/lib/auth/admin'
 import { runAllHealthChecks } from '@/lib/health/checks'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get('x-admin-secret')
-  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = validateAdmin(req)
+  if (authError) return authError
 
   try {
     const report = await runAllHealthChecks()

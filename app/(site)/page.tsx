@@ -60,8 +60,9 @@ export default async function HomePage() {
   return (
     <div>
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary-50 via-white to-white">
+      <section className="hero-premium relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-accent-blue/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[300px] bg-brand-500/3 rounded-full blur-[80px] pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 pt-12 pb-10 md:pt-16 md:pb-14">
           <div className="max-w-2xl mx-auto text-center">
@@ -97,25 +98,25 @@ export default async function HomePage() {
 
           {/* Stats — rendered individually to avoid serialization issues */}
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            <div className="card text-center p-3">
+            <div className="card-depth text-center p-4">
               <div className="font-display font-extrabold text-2xl text-accent-blue">
                 {stats.activeOffers > 0 ? formatNumber(stats.activeOffers) : "100+"}
               </div>
               <div className="text-xs text-text-muted mt-1">Ofertas ativas</div>
             </div>
-            <div className="card text-center p-3">
+            <div className="card-depth text-center p-4">
               <div className="font-display font-extrabold text-2xl text-accent-green">
                 {stats.listings > 0 ? formatNumber(stats.listings) : "107"}
               </div>
               <div className="text-xs text-text-muted mt-1">Produtos monitorados</div>
             </div>
-            <div className="card text-center p-3">
+            <div className="card-depth text-center p-4">
               <div className="font-display font-extrabold text-2xl text-accent-orange">
                 {stats.brands > 0 ? stats.brands : "30+"}
               </div>
               <div className="text-xs text-text-muted mt-1">Marcas comparadas</div>
             </div>
-            <div className="card text-center p-3">
+            <div className="card-depth text-center p-4">
               <div className="font-display font-extrabold text-2xl text-brand-500">
                 {stats.sources}
               </div>
@@ -132,7 +133,7 @@ export default async function HomePage() {
 
       {/* DEAL OF THE DAY */}
       {dealOfTheDay && (
-        <section className="py-6">
+        <section className="py-6 section-border-top">
           <div className="max-w-7xl mx-auto px-4">
             <DealOfTheDay
               product={{
@@ -167,7 +168,7 @@ export default async function HomePage() {
 
       {/* CATEGORIAS */}
       {categories.length > 0 && (
-        <section className="py-6">
+        <section className="py-6 section-cool section-border-top">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center gap-2 mb-4">
               <Tag className="w-5 h-5 text-brand-500" />
@@ -210,7 +211,7 @@ export default async function HomePage() {
 
       {/* CUPONS */}
       {coupons.length > 0 && (
-        <section className="py-6">
+        <section className="py-6 section-warm section-border-top">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -257,27 +258,27 @@ export default async function HomePage() {
       <RecentlyViewedRail />
 
       {/* POR QUE PROMOSNAP? */}
-      <section className="py-10 bg-gradient-to-b from-surface-50 to-white">
+      <section className="py-10 section-highlight section-border-top">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="font-display font-bold text-xl text-text-primary text-center mb-8">
             Por que usar o PromoSnap?
           </h2>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="card p-6 text-center">
+            <div className="card-depth p-6 text-center">
               <div className="w-12 h-12 rounded-xl bg-accent-blue/10 flex items-center justify-center mx-auto mb-4">
                 <BarChart3 className="w-6 h-6 text-accent-blue" />
               </div>
               <h3 className="font-display font-semibold text-text-primary mb-2">Histórico Real</h3>
               <p className="text-sm text-text-muted">Acompanhe se o desconto é real comparando com o histórico de preço dos últimos 90 dias.</p>
             </div>
-            <div className="card p-6 text-center">
+            <div className="card-depth p-6 text-center">
               <div className="w-12 h-12 rounded-xl bg-accent-green/10 flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-6 h-6 text-accent-green" />
               </div>
               <h3 className="font-display font-semibold text-text-primary mb-2">Score de Oferta</h3>
               <p className="text-sm text-text-muted">Nosso algoritmo analisa desconto, popularidade, confiança e frete para gerar um score inteligente.</p>
             </div>
-            <div className="card p-6 text-center">
+            <div className="card-depth p-6 text-center">
               <div className="w-12 h-12 rounded-xl bg-accent-purple/10 flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-6 h-6 text-accent-purple" />
               </div>
@@ -289,10 +290,12 @@ export default async function HomePage() {
       </section>
 
       {/* NEWSLETTER */}
-      <Newsletter />
+      <div className="section-deep section-border-top">
+        <Newsletter />
+      </div>
 
       {/* SEO */}
-      <section className="py-10 section-alt">
+      <section className="py-10 section-alt section-border-top">
         <div className="max-w-7xl mx-auto px-4 max-w-3xl">
           <h2 className="font-display font-bold text-xl text-text-primary mb-3">
             PromoSnap — Ofertas reais com histórico de preço

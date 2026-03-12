@@ -24,7 +24,7 @@ export function buildProductCard(p: any): ProductCard | null {
   const badges: Badge[] = []
   if (best.offerScore >= 80) badges.push({ type: 'hot_deal', label: 'Oferta Quente', color: 'red' })
   if (discount && discount >= 40) badges.push({ type: 'price_drop', label: `${discount}% OFF`, color: 'green' })
-  if (best.isFreeShipping) badges.push({ type: 'free_shipping', label: 'Frete Grátis', color: 'purple' })
+  if (best.isFreeShipping) badges.push({ type: 'free_shipping', label: 'Frete Gratis', color: 'purple' })
   if (best.couponText) badges.push({ type: 'coupon', label: 'Cupom', color: 'orange' })
   if (p.listings?.[0]?.salesCountEstimate > 5000) badges.push({ type: 'best_seller', label: 'Mais Vendido', color: 'yellow' })
 
@@ -52,16 +52,42 @@ export function buildProductCard(p: any): ProductCard | null {
   }
 }
 
+// Lean source select — only fields used by buildProductCard
+const SOURCE_SELECT = { select: { slug: true, name: true } } as const
+
 export const PRODUCT_INCLUDE = {
-  brand: true,
-  category: true,
+  brand: { select: { name: true, slug: true } },
+  category: { select: { name: true, slug: true } },
   listings: {
     where: { status: 'ACTIVE' as const },
-    include: {
-      offers: { where: { isActive: true }, orderBy: { offerScore: 'desc' as const }, take: 3 },
-      source: true,
+    select: {
+      imageUrl: true,
+      salesCountEstimate: true,
+      source: SOURCE_SELECT,
+      offers: {
+        where: { isActive: true },
+        orderBy: { offerScore: 'desc' as const },
+        take: 3,
+        select: {
+          currentPrice: true,
+          originalPrice: true,
+          offerScore: true,
+          isFreeShipping: true,
+          couponText: true,
+          affiliateUrl: true,
+        },
+      },
     },
   },
+}
+
+// Product select — only fields used by buildProductCard
+const PRODUCT_SELECT_FOR_CARD = {
+  id: true,
+  name: true,
+  slug: true,
+  imageUrl: true,
+  popularityScore: true,
 }
 
 // ============================================
@@ -71,9 +97,9 @@ export const PRODUCT_INCLUDE = {
 export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
   const products = await prisma.product.findMany({
     where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true } } } } },
-    include: PRODUCT_INCLUDE,
+    select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     orderBy: { popularityScore: 'desc' },
-    take: limit * 2, // fetch more, filter after
+    take: limit * 2,
   })
   return products.map(buildProductCard).filter(Boolean).sort((a, b) => (b!.bestOffer.offerScore) - (a!.bestOffer.offerScore)).slice(0, limit) as ProductCard[]
 }
@@ -81,7 +107,7 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
 export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
   const products = await prisma.product.findMany({
     where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true } }, salesCountEstimate: { gt: 0 } } } },
-    include: PRODUCT_INCLUDE,
+    select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     orderBy: { popularityScore: 'desc' },
     take: limit,
   })
@@ -91,7 +117,7 @@ export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
 export async function getLowestPrices(limit = 16): Promise<ProductCard[]> {
   const products = await prisma.product.findMany({
     where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true, originalPrice: { not: null } } } } } },
-    include: PRODUCT_INCLUDE,
+    select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     take: limit * 2,
   })
   return products.map(buildProductCard).filter(Boolean)
@@ -119,7 +145,7 @@ export async function getProductsByCategory(slug: string, options: {
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      include: PRODUCT_INCLUDE,
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
       skip: offset,
       take: limit,
       orderBy: { popularityScore: 'desc' },
@@ -151,7 +177,7 @@ export async function getProductsByBrand(slug: string, options: {
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      include: PRODUCT_INCLUDE,
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
       skip: offset,
       take: limit,
       orderBy: { popularityScore: 'desc' },
@@ -175,13 +201,33 @@ export async function getProductBySlug(slug: string) {
   return prisma.product.findUnique({
     where: { slug },
     include: {
-      brand: true,
-      category: true,
+      brand: { select: { name: true, slug: true, logoUrl: true } },
+      category: { select: { name: true, slug: true } },
       listings: {
         where: { status: 'ACTIVE' },
-        include: {
-          offers: { where: { isActive: true }, orderBy: { currentPrice: 'asc' } },
-          source: true,
+        select: {
+          id: true,
+          rawTitle: true,
+          imageUrl: true,
+          rating: true,
+          reviewsCount: true,
+          salesCountEstimate: true,
+          source: SOURCE_SELECT,
+          offers: {
+            where: { isActive: true },
+            orderBy: { currentPrice: 'asc' },
+            select: {
+              id: true,
+              currentPrice: true,
+              originalPrice: true,
+              couponText: true,
+              shippingPrice: true,
+              installmentText: true,
+              isFreeShipping: true,
+              offerScore: true,
+              affiliateUrl: true,
+            },
+          },
         },
       },
     },
@@ -197,7 +243,7 @@ export async function getSimilarProducts(categorySlug: string | undefined, exclu
       slug: { not: excludeSlug },
       listings: { some: { offers: { some: { isActive: true } } } },
     },
-    include: PRODUCT_INCLUDE,
+    select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     take: limit,
     orderBy: { popularityScore: 'desc' },
   })
@@ -209,6 +255,7 @@ export async function getPriceHistory(offerId: string, days = 90) {
   since.setDate(since.getDate() - days)
   return prisma.priceSnapshot.findMany({
     where: { offerId, capturedAt: { gte: since } },
+    select: { price: true, originalPrice: true, capturedAt: true },
     orderBy: { capturedAt: 'asc' },
   })
 }
@@ -240,7 +287,7 @@ export async function searchListings(query: string, options: {
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      include: PRODUCT_INCLUDE,
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
       skip: offset,
       take: limit,
       orderBy: { popularityScore: 'desc' },
@@ -262,7 +309,7 @@ export async function searchListings(query: string, options: {
   else if (sort === 'score') cards.sort((a, b) => b.bestOffer.offerScore - a.bestOffer.offerScore)
   else if (sort === 'discount') cards.sort((a, b) => (b.bestOffer.discount || 0) - (a.bestOffer.discount || 0))
 
-  // Log search
+  // Log search (fire-and-forget)
   prisma.searchLog.create({ data: { query, normalizedQuery: query.toLowerCase().trim(), resultsCount: total } }).catch(() => {})
 
   return { products: cards, total }
@@ -317,7 +364,23 @@ export async function getAdminDashboardData() {
     prisma.clickout.findMany({
       take: 20,
       orderBy: { clickedAt: 'desc' },
-      include: { offer: { include: { listing: { include: { source: true } } } } },
+      select: {
+        id: true,
+        sourceSlug: true,
+        clickedAt: true,
+        query: true,
+        offer: {
+          select: {
+            currentPrice: true,
+            listing: {
+              select: {
+                rawTitle: true,
+                source: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
     }),
     prisma.$queryRaw`
       SELECT o."listingId", COUNT(c.id)::int as clicks, l."rawTitle", s.name as "sourceName"
@@ -330,7 +393,11 @@ export async function getAdminDashboardData() {
       ORDER BY clicks DESC
       LIMIT 10
     `.catch(() => []),
-    prisma.jobRun.findMany({ take: 10, orderBy: { startedAt: 'desc' } }),
+    prisma.jobRun.findMany({
+      take: 10,
+      orderBy: { startedAt: 'desc' },
+      select: { id: true, jobName: true, status: true, startedAt: true, endedAt: true, durationMs: true, itemsTotal: true, itemsDone: true },
+    }),
     prisma.coupon.count({ where: { status: 'ACTIVE' } }),
   ])
 
@@ -363,14 +430,26 @@ export async function getAdminProducts(options: {
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      include: {
-        brand: true,
-        category: true,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        imageUrl: true,
+        status: true,
+        popularityScore: true,
+        updatedAt: true,
+        brand: { select: { name: true, slug: true } },
+        category: { select: { name: true, slug: true } },
         listings: {
           take: 1,
-          include: {
-            offers: { where: { isActive: true }, take: 1, orderBy: { currentPrice: 'asc' } },
-            source: true,
+          select: {
+            offers: {
+              where: { isActive: true },
+              take: 1,
+              orderBy: { currentPrice: 'asc' },
+              select: { currentPrice: true, originalPrice: true },
+            },
+            source: { select: { name: true, slug: true } },
           },
         },
       },
@@ -398,7 +477,23 @@ export async function getAdminOffers(options: {
   const [offers, total] = await Promise.all([
     prisma.offer.findMany({
       where,
-      include: { listing: { include: { source: true } } },
+      select: {
+        id: true,
+        currentPrice: true,
+        originalPrice: true,
+        offerScore: true,
+        isFreeShipping: true,
+        couponText: true,
+        affiliateUrl: true,
+        updatedAt: true,
+        listing: {
+          select: {
+            rawTitle: true,
+            imageUrl: true,
+            source: { select: { name: true, slug: true } },
+          },
+        },
+      },
       skip: offset,
       take: limit,
       orderBy: { offerScore: 'desc' },
@@ -410,34 +505,78 @@ export async function getAdminOffers(options: {
 }
 
 export async function getAdminSources() {
+  // Use a single query with counts to avoid N+1
   const sources = await prisma.source.findMany({
-    include: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      logoUrl: true,
+      status: true,
+      affiliateConfig: true,
+      updatedAt: true,
       _count: { select: { listings: true, coupons: true } },
     },
   })
 
-  // For each source get offer count and last update
-  const enriched = await Promise.all(sources.map(async (s) => {
-    const [offerCount, lastListing] = await Promise.all([
-      prisma.offer.count({ where: { isActive: true, listing: { sourceId: s.id } } }),
-      prisma.listing.findFirst({ where: { sourceId: s.id }, orderBy: { updatedAt: 'desc' }, select: { updatedAt: true } }),
-    ])
-    return {
-      ...s,
-      offerCount,
-      listingCount: s._count.listings,
-      couponCount: s._count.coupons,
-      lastUpdate: lastListing?.updatedAt || null,
-    }
-  }))
+  // Batch the extra queries instead of N+1
+  const sourceIds = sources.map(s => s.id)
+  const [offerCounts, lastUpdates] = await Promise.all([
+    prisma.offer.groupBy({
+      by: ['listingId'],
+      where: { isActive: true, listing: { sourceId: { in: sourceIds } } },
+      _count: true,
+    }).then(results => {
+      // We need per-source counts, use a raw query instead for efficiency
+      return prisma.$queryRaw<{ sourceId: string; count: number }[]>`
+        SELECT l."sourceId", COUNT(o.id)::int as count
+        FROM offers o
+        JOIN listings l ON o."listingId" = l.id
+        WHERE o."isActive" = true AND l."sourceId" = ANY(${sourceIds})
+        GROUP BY l."sourceId"
+      `.catch(() => [])
+    }),
+    prisma.$queryRaw<{ sourceId: string; lastUpdate: Date }[]>`
+      SELECT "sourceId", MAX("updatedAt") as "lastUpdate"
+      FROM listings
+      WHERE "sourceId" = ANY(${sourceIds})
+      GROUP BY "sourceId"
+    `.catch(() => []),
+  ])
 
-  return enriched
+  const offerMap = new Map((offerCounts as any[]).map(r => [r.sourceId, r.count]))
+  const updateMap = new Map((lastUpdates as any[]).map(r => [r.sourceId, r.lastUpdate]))
+
+  return sources.map(s => ({
+    id: s.id,
+    name: s.name,
+    slug: s.slug,
+    logoUrl: s.logoUrl,
+    status: s.status,
+    affiliateConfig: s.affiliateConfig,
+    updatedAt: s.updatedAt,
+    listingCount: s._count.listings,
+    couponCount: s._count.coupons,
+    offerCount: offerMap.get(s.id) || 0,
+    lastUpdate: updateMap.get(s.id) || null,
+  }))
 }
 
 export async function getAdminJobRuns(limit = 50) {
   return prisma.jobRun.findMany({
     take: limit,
     orderBy: { startedAt: 'desc' },
+    select: {
+      id: true,
+      jobName: true,
+      status: true,
+      startedAt: true,
+      endedAt: true,
+      durationMs: true,
+      itemsTotal: true,
+      itemsDone: true,
+      errorLog: true,
+    },
   })
 }
 
@@ -447,7 +586,7 @@ export async function getAdminJobRuns(limit = 50) {
 
 export async function getCategories() {
   return prisma.category.findMany({
-    include: { _count: { select: { products: true } } },
+    select: { id: true, name: true, slug: true, icon: true, position: true, _count: { select: { products: true } } },
     orderBy: { position: 'asc' },
   })
 }
@@ -455,13 +594,13 @@ export async function getCategories() {
 export async function getCategoryBySlug(slug: string) {
   return prisma.category.findUnique({
     where: { slug },
-    include: { _count: { select: { products: true } } },
+    select: { id: true, name: true, slug: true, icon: true, description: true, seoTitle: true, seoDescription: true, _count: { select: { products: true } } },
   })
 }
 
 export async function getBrands() {
   return prisma.brand.findMany({
-    include: { _count: { select: { products: true } } },
+    select: { id: true, name: true, slug: true, logoUrl: true, _count: { select: { products: true } } },
     orderBy: { name: 'asc' },
   })
 }
@@ -469,7 +608,7 @@ export async function getBrands() {
 export async function getBrandBySlug(slug: string) {
   return prisma.brand.findUnique({
     where: { slug },
-    include: { _count: { select: { products: true } } },
+    select: { id: true, name: true, slug: true, logoUrl: true, _count: { select: { products: true } } },
   })
 }
 
@@ -480,7 +619,14 @@ export async function getBrandBySlug(slug: string) {
 export async function getActiveCoupons() {
   return prisma.coupon.findMany({
     where: { status: 'ACTIVE' },
-    include: { source: true },
+    select: {
+      id: true,
+      code: true,
+      description: true,
+      startAt: true,
+      endAt: true,
+      source: { select: { name: true, slug: true } },
+    },
     orderBy: { createdAt: 'desc' },
   })
 }

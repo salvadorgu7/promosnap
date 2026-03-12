@@ -20,7 +20,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Check listing exists
-    const listing = await prisma.listing.findUnique({ where: { id: listingId } })
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId },
+      select: { id: true },
+    })
     if (!listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
@@ -28,24 +31,24 @@ export async function POST(req: NextRequest) {
     // Check for existing active alert
     const existing = await prisma.priceAlert.findFirst({
       where: { listingId, email, isActive: true },
+      select: { id: true },
     })
     if (existing) {
-      // Update target price
-      const updated = await prisma.priceAlert.update({
+      await prisma.priceAlert.update({
         where: { id: existing.id },
         data: { targetPrice },
       })
-      return NextResponse.json({ ok: true, alert: updated, updated: true })
+      return NextResponse.json({ ok: true, updated: true })
     }
 
-    const alert = await prisma.priceAlert.create({
+    await prisma.priceAlert.create({
       data: { listingId, email, targetPrice },
     })
 
-    return NextResponse.json({ ok: true, alert })
+    return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create alert' },
+      { error: 'Failed to create alert' },
       { status: 500 }
     )
   }
@@ -59,29 +62,46 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'email param required' }, { status: 400 })
   }
 
-  const alerts = await prisma.priceAlert.findMany({
-    where: { email, isActive: true },
-    include: {
-      listing: {
-        select: {
-          id: true,
-          rawTitle: true,
-          imageUrl: true,
-          productUrl: true,
-          source: { select: { name: true } },
-          offers: {
-            where: { isActive: true },
-            orderBy: { currentPrice: 'asc' },
-            take: 1,
-            select: { currentPrice: true },
+  try {
+    const alerts = await prisma.priceAlert.findMany({
+      where: { email, isActive: true },
+      select: {
+        id: true,
+        targetPrice: true,
+        createdAt: true,
+        listing: {
+          select: {
+            rawTitle: true,
+            imageUrl: true,
+            source: { select: { name: true, slug: true } },
+            offers: {
+              where: { isActive: true },
+              orderBy: { currentPrice: 'asc' },
+              take: 1,
+              select: { currentPrice: true },
+            },
           },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+      orderBy: { createdAt: 'desc' },
+    })
 
-  return NextResponse.json(alerts)
+    // Shape response to avoid leaking internal IDs beyond alert id
+    const safe = alerts.map((a) => ({
+      id: a.id,
+      targetPrice: a.targetPrice,
+      createdAt: a.createdAt,
+      productName: a.listing.rawTitle,
+      imageUrl: a.listing.imageUrl,
+      sourceName: a.listing.source.name,
+      sourceSlug: a.listing.source.slug,
+      currentPrice: a.listing.offers[0]?.currentPrice ?? null,
+    }))
+
+    return NextResponse.json(safe)
+  } catch {
+    return NextResponse.json([], { status: 500 })
+  }
 }
 
 export async function DELETE(req: NextRequest) {
@@ -92,10 +112,13 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'id param required' }, { status: 400 })
   }
 
-  await prisma.priceAlert.update({
-    where: { id: alertId },
-    data: { isActive: false },
-  })
-
-  return NextResponse.json({ ok: true })
+  try {
+    await prisma.priceAlert.update({
+      where: { id: alertId },
+      data: { isActive: false },
+    })
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ error: 'Alert not found' }, { status: 404 })
+  }
 }

@@ -2,7 +2,7 @@
 
 Comparador de precos brasileiro com automacao total, content engine, revenue OS, SEO machine, business OS, quality gates e governance engine. Monitora marketplaces, compara ofertas, mostra historico real de preco e opera com jobs automaticos.
 
-**Dominio:** promosnap.com.br
+**Dominio Canonico:** www.promosnap.com.br
 
 ## Stack
 
@@ -40,8 +40,8 @@ npm run dev
 1. Conecte o repo no Vercel
 2. Variaveis de ambiente:
    - `DATABASE_URL` — Neon PostgreSQL
-   - `APP_URL` — https://promosnap.com.br
-   - `NEXT_PUBLIC_APP_URL` — https://promosnap.com.br
+   - `APP_URL` — https://www.promosnap.com.br
+   - `NEXT_PUBLIC_APP_URL` — https://www.promosnap.com.br
    - `ADMIN_SECRET` — segredo para rotas admin
    - `CRON_SECRET` — segredo para cron endpoint
    - `ML_CLIENT_ID` / `ML_CLIENT_SECRET` — ML OAuth
@@ -190,12 +190,12 @@ Verificacoes automaticas de qualidade:
 /admin com painel completo e sidebar agrupada:
 
 **Overview:** Dashboard, Business OS
-**Catalogo:** Produtos, Ofertas, Fontes, Prioridades, Governance
+**Catalogo:** Produtos, Ofertas, Fontes, Prioridades, Governance, Data Trust
 **Conteudo:** Conteudo, Artigos, Tendencias
 **Growth:** SEO, SEO Gaps, Analise, Desempenho, Indicacoes
 **Monetizacao:** Revenue dashboard
 **Engajamento:** Email, Alertas, Inteligencia, Decisoes, Email Intel
-**Operacao:** Jobs, Ingestao, Health, Release, Auditoria, Config
+**Operacao:** Jobs, Ingestao, Health, Release, Auditoria, Runtime QA, Config
 
 ## Paginas
 
@@ -243,6 +243,39 @@ npm run db:seed      # Seed via CLI
 npm run db:studio    # Prisma Studio
 ```
 
+## Production Hardening (V12)
+
+### Canonical Domain
+- Dominio canonico: https://www.promosnap.com.br
+- Helper central: lib/seo/url.ts (getBaseUrl, absoluteUrl, canonicalUrl)
+- Todas as refs de URL unificadas (sitemap, robots, metadata, share, email)
+
+### Runtime QA
+- 16 checks automaticos (routes, API, security, data)
+- Dashboard: /admin/runtime
+- API: GET /api/admin/runtime-check
+
+### Data Trust Layer
+- Trust score 0-100 por produto (imagem, brand, categoria, preco, affiliate, source, historico)
+- Validadores de oferta/listing/produto
+- Dashboard: /admin/data-trust
+- Helpers: lib/data-trust/
+
+### Cache System
+- Cache hibrido Redis + in-memory fallback
+- TTLs predefinidos: busca (5min), trending (10min), scorecards (15min)
+- Helper: lib/cache/index.ts
+
+### Query Optimization
+- Queries com select targetado (sem includes excessivos)
+- 7 novos indexes compostos no schema
+- Eliminacao de N+1 em admin sources
+
+### Security
+- Todas as rotas /api/admin/* protegidas com validateAdmin
+- Config page sem exposicao de secrets
+- APIs publicas com payloads minimizados
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo MOCK
@@ -255,7 +288,7 @@ npm run db:studio    # Prisma Studio
 - Rate limiting nas APIs publicas pendente
 - Monitoring (Sentry) nao conectado
 
-## Proximos Passos (V12)
+## Proximos Passos (V13)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA

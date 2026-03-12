@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { validateAdmin } from '@/lib/auth/admin'
 import { runFullAudit } from '@/lib/audit/runner'
 
 export async function POST(req: NextRequest) {
+  const authError = validateAdmin(req)
+  if (authError) return authError
+
   try {
-    const secret = req.headers.get('x-admin-secret')
-    if (!secret || secret !== process.env.ADMIN_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const report = await runFullAudit()
-
     return NextResponse.json(report)
   } catch (error) {
     console.error('[api/admin/audit/run] error:', error)

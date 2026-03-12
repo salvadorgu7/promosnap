@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
+import { getBaseUrl } from "@/lib/seo/url";
 
-const APP_URL = process.env.APP_URL || "https://promosnap.com.br";
+const APP_URL = getBaseUrl();
 
 export default function robots(): MetadataRoute.Robots {
   return {

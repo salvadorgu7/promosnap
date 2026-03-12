@@ -6,7 +6,9 @@ import { COMPARISON_SLUGS } from "@/lib/seo/comparisons";
 
 export const dynamic = "force-dynamic";
 
-const APP_URL = process.env.APP_URL || "https://promosnap.com.br";
+import { getBaseUrl } from "@/lib/seo/url";
+
+const APP_URL = getBaseUrl();
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();

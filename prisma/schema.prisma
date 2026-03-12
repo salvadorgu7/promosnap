@@ -182,6 +182,7 @@ model Listing {
   @@index([productId])
   @@index([sourceId])
   @@index([status])
+  @@index([status, sourceId])
   @@map("listings")
 }
 
@@ -223,6 +224,8 @@ model Offer {
   @@index([offerScore(sort: Desc)])
   @@index([isActive])
   @@index([currentPrice])
+  @@index([isActive, offerScore(sort: Desc)])
+  @@index([isActive, listingId])
   @@map("offers")
 }
 
@@ -286,6 +289,7 @@ model Clickout {
   @@index([offerId])
   @@index([clickedAt])
   @@index([sourceSlug])
+  @@index([sourceSlug, clickedAt])
   @@map("clickouts")
 }
 
@@ -300,6 +304,7 @@ model SearchLog {
   @@index([normalizedQuery])
   @@index([createdAt])
   @@index([query])
+  @@index([normalizedQuery, createdAt])
   @@map("search_logs")
 }
 
@@ -382,6 +387,8 @@ model PriceAlert {
   @@index([email])
   @@index([isActive])
   @@index([listingId])
+  @@index([email, isActive])
+  @@index([isActive, listingId])
   @@map("price_alerts")
 }
 

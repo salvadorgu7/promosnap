@@ -91,7 +91,7 @@ export default function IndicarPage() {
     } catch {}
   }, []);
 
-  const referralUrl = `${typeof window !== "undefined" ? window.location.origin : "https://promosnap.com.br"}/?ref=${code}`;
+  const referralUrl = `${typeof window !== "undefined" ? window.location.origin : "https://www.promosnap.com.br"}/?ref=${code}`;
 
   function copyLink() {
     navigator.clipboard.writeText(referralUrl).then(() => {

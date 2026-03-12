@@ -11,7 +11,15 @@ export async function GET(
   try {
     const offer = await prisma.offer.findUnique({
       where: { id: offerId },
-      include: { listing: { include: { source: true } } },
+      select: {
+        id: true,
+        affiliateUrl: true,
+        listing: {
+          select: {
+            source: { select: { slug: true } },
+          },
+        },
+      },
     });
 
     if (!offer || !offer.affiliateUrl) {

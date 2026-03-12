@@ -3,7 +3,7 @@
 // ============================================
 
 const APP_NAME = "PromoSnap";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://promosnap.com.br";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br";
 const BRAND_COLOR = "#6366f1";
 const BRAND_GRADIENT = "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)";
 

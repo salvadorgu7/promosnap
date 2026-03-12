@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
+import { getBaseUrl, APP_NAME as _APP_NAME } from '@/lib/seo/url'
 
-const APP_NAME = 'PromoSnap'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://promosnap.com.br'
+const APP_NAME = _APP_NAME
+const APP_URL = getBaseUrl()
 const DEFAULT_DESC = 'Compare preços, encontre as melhores ofertas e economize de verdade. Histórico real de preços, cupons e alertas de queda.'
 
 export function buildMetadata(opts: { title?: string; description?: string; path?: string; ogImage?: string; noIndex?: boolean }): Metadata {
