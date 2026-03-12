@@ -20,6 +20,16 @@ export class MercadoLivreAdapter extends BaseAdapter {
     return null
   }
 
+  async fetchByItemIds(ids: string[]): Promise<RawListing[]> {
+    this.log(`Fetching items by IDs: ${ids.length}`)
+    const results: RawListing[] = []
+    for (const id of ids) {
+      const item = await this.fetchProductById(id)
+      if (item) results.push(item)
+    }
+    return results
+  }
+
   async fetchOffers(params?: FetchOffersParams): Promise<RawListing[]> {
     this.log('Fetching offers', params)
     return []
