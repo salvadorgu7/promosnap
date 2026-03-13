@@ -124,24 +124,28 @@ async function fetchProductItems(productId: string): Promise<{
     if (!Array.isArray(results) || results.length === 0) return null
 
     // Pick cheapest active item
+    // Note: /products/{id}/items returns item_id (not id), price, shipping, condition
+    // but NOT title, permalink, pictures, available_quantity, sold_quantity
     const sorted = results
-      .filter((item: any) => item.price > 0)
+      .filter((item: any) => (item.price ?? 0) > 0)
       .sort((a: any, b: any) => a.price - b.price)
 
     const best = sorted[0]
     if (!best) return null
 
-    const thumbnail = best.thumbnail || ''
-    const avail: 'in_stock' | 'out_of_stock' = (best.available_quantity ?? 0) > 0 ? 'in_stock' : 'out_of_stock'
+    const itemId = best.item_id || best.id || ''
+    // Construct permalink from item_id (MLB6205454066 → MLB-6205454066)
+    const mlbNum = itemId.replace(/^MLB/, '')
+    const permalink = `https://www.mercadolivre.com.br/p/${productId}`
 
     return {
-      id: best.id,
+      id: itemId,
       price: best.price,
       originalPrice: best.original_price ?? undefined,
-      permalink: best.permalink,
-      imageUrl: best.pictures?.[0]?.secure_url || best.pictures?.[0]?.url || thumbnail.replace(/-I\.jpg$/, '-O.jpg') || undefined,
+      permalink,
+      imageUrl: undefined, // No images in this endpoint — use parent product images
       isFreeShipping: best.shipping?.free_shipping ?? false,
-      availability: avail,
+      availability: 'in_stock' as const, // Active items are in stock
       availableQuantity: best.available_quantity,
       soldQuantity: best.sold_quantity,
       condition: best.condition,

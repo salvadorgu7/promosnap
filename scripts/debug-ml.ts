@@ -68,11 +68,14 @@ async function main() {
     const results = piData.results || piData || []
     console.log(`  Results: ${Array.isArray(results) ? results.length : 'not array'}`)
     if (Array.isArray(results)) {
+      console.log(`  First item keys: ${Object.keys(results[0] || {}).join(', ')}`)
+      console.log(`  First item (raw): ${JSON.stringify(results[0]).slice(0, 500)}`)
       for (const item of results.slice(0, 3)) {
-        console.log(`  ${item.id}: ${item.title?.slice(0, 50)} — R$${item.price} ${item.shipping?.free_shipping ? '[frete gratis]' : ''}`)
+        console.log(`  ${item.id || item.item_id}: ${(item.title || item.name)?.slice(0, 50)} — R$${item.price} ${item.shipping?.free_shipping ? '[frete gratis]' : ''}`)
       }
     } else {
-      console.log(`  Raw (first 300 chars): ${JSON.stringify(piData).slice(0, 300)}`)
+      console.log(`  Response keys: ${Object.keys(piData).join(', ')}`)
+      console.log(`  Raw (first 500 chars): ${JSON.stringify(piData).slice(0, 500)}`)
     }
   } else {
     const err = await prodItemsRes.text()
