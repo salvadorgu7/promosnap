@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   try {
     const clientId = process.env.MERCADOLIVRE_APP_ID!
     const clientSecret = process.env.MERCADOLIVRE_SECRET!
-    const redirectUri = process.env.NEXT_PUBLIC_APP_URL + '/api/auth/ml/callback'
+    const redirectUri = process.env.MERCADOLIVRE_REDIRECT_URI || process.env.ML_REDIRECT_URI || (process.env.NEXT_PUBLIC_APP_URL + '/api/auth/ml/callback')
 
     const res = await fetch('https://api.mercadolibre.com/oauth/token', {
       method: 'POST',
