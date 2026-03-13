@@ -223,7 +223,10 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       if (!res.ok) {
         const errText = await res.text()
         console.error(`[ML] search failed: ${res.status} — ${errText}`)
-        return []
+        if (res.status === 401 || res.status === 403) {
+          throw new Error('Token ML expirado ou ausente. Autentique via OAuth primeiro.')
+        }
+        throw new Error(`ML API retornou ${res.status}: ${errText.slice(0, 200)}`)
       }
 
       const data: MLSearchResponse = await res.json()

@@ -87,14 +87,14 @@ export default function MlIntegrationPage() {
         { headers: { 'x-admin-secret': adminSecret } }
       )
       const data = await res.json()
-      if (!res.ok) {
-        setSearchError(`Erro ${res.status}: ${data.error || JSON.stringify(data)}`)
+      if (!res.ok || data.error) {
+        setSearchError(data.error || `Erro ${res.status}`)
         return
       }
       if (data.results && data.results.length > 0) {
         setSearchResults(data.results)
       } else {
-        setSearchError('Nenhum resultado encontrado')
+        setSearchError('Nenhum resultado encontrado para essa busca')
       }
     } catch (err) {
       setSearchError(`Erro de rede: ${err}`)
