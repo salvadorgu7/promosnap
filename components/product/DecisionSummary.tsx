@@ -2,10 +2,17 @@ import {
   ExternalLink,
   ShieldCheck,
   TrendingDown,
+  TrendingUp,
+  Minus,
   Star,
   Truck,
   Sparkles,
   BarChart3,
+  Clock,
+  ArrowDown,
+  ArrowUp,
+  DollarSign,
+  Target,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
@@ -59,10 +66,35 @@ export default function DecisionSummary({
     ? freeShippingOffers.reduce((best, o) => (o.offerScore > best.offerScore ? o : best), freeShippingOffers[0])
     : null;
 
-  // Savings calculation
+  // Savings vs highest recent price
+  const highestRecent = priceStats
+    ? Math.max(priceStats.avg30d, bestPrice.price)
+    : avgHistorical ?? 0;
+  const savingsVsHighest = highestRecent > bestPrice.price
+    ? highestRecent - bestPrice.price
+    : null;
+
+  // Savings vs historical avg
   const savings = avgHistorical && avgHistorical > bestPrice.price
     ? avgHistorical - bestPrice.price
     : null;
+
+  // "Momento de compra" indicator
+  const avg = priceStats?.avg30d ?? avgHistorical ?? 0;
+  let momento: { label: string; color: string; bgColor: string; icon: typeof Clock } | null = null;
+  if (avg > 0) {
+    const ratio = bestPrice.price / avg;
+    if (ratio < 0.95) {
+      momento = { label: "Bom momento", color: "text-accent-green", bgColor: "bg-green-50", icon: Target };
+    } else if (ratio > 1.05) {
+      momento = { label: "Espere", color: "text-accent-red", bgColor: "bg-red-50", icon: Clock };
+    } else {
+      momento = { label: "Neutro", color: "text-accent-orange", bgColor: "bg-orange-50", icon: Minus };
+    }
+  }
+
+  // Price trend
+  const trend = priceStats?.trend ?? null;
 
   // Confidence level
   const dataPoints = [
@@ -84,6 +116,7 @@ export default function DecisionSummary({
 
   return (
     <div className="card-premium p-5">
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-bold font-display text-text-primary flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-accent-blue" />
@@ -97,12 +130,39 @@ export default function DecisionSummary({
         </span>
       </div>
 
+      {/* Momento de compra + price trend */}
+      {(momento || trend) && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {momento && (
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${momento.color} ${momento.bgColor}`}>
+              <momento.icon className="h-3.5 w-3.5" />
+              Momento: {momento.label}
+            </span>
+          )}
+          {trend && (
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium ${
+              trend === "down" ? "text-accent-green bg-green-50" :
+              trend === "up" ? "text-accent-red bg-red-50" :
+              "text-text-muted bg-surface-50"
+            }`}>
+              {trend === "down" ? <ArrowDown className="h-3 w-3" /> :
+               trend === "up" ? <ArrowUp className="h-3 w-3" /> :
+               <Minus className="h-3 w-3" />}
+              Tendencia {trend === "down" ? "de queda" : trend === "up" ? "de alta" : "estavel"}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3 mb-4">
         {/* Best Price */}
         <div className="bg-accent-blue/5 rounded-lg p-3 border border-accent-blue/10">
-          <p className="text-[10px] font-medium text-text-muted mb-1 uppercase tracking-wider">
-            Melhor Preco
-          </p>
+          <div className="flex items-center gap-1 mb-1">
+            <DollarSign className="h-3 w-3 text-accent-blue" />
+            <p className="text-[10px] font-medium text-text-muted uppercase tracking-wider">
+              Melhor Preco
+            </p>
+          </div>
           <p className="text-lg font-bold font-display text-accent-blue">
             {formatPrice(bestPrice.price)}
           </p>
@@ -117,9 +177,12 @@ export default function DecisionSummary({
         {/* Best Value */}
         {bestValue.id !== bestPrice.id && (
           <div className="bg-accent-green/5 rounded-lg p-3 border border-accent-green/10">
-            <p className="text-[10px] font-medium text-text-muted mb-1 uppercase tracking-wider">
-              Melhor Custo-Beneficio
-            </p>
+            <div className="flex items-center gap-1 mb-1">
+              <Star className="h-3 w-3 text-accent-green" />
+              <p className="text-[10px] font-medium text-text-muted uppercase tracking-wider">
+                Melhor Custo-Beneficio
+              </p>
+            </div>
             <p className="text-lg font-bold font-display text-accent-green">
               {formatPrice(bestValue.price)}
             </p>
@@ -131,9 +194,12 @@ export default function DecisionSummary({
         )}
         {bestValue.id === bestPrice.id && bestRated && bestRated.id !== bestPrice.id && (
           <div className="bg-accent-orange/5 rounded-lg p-3 border border-accent-orange/10">
-            <p className="text-[10px] font-medium text-text-muted mb-1 uppercase tracking-wider">
-              Melhor Avaliado
-            </p>
+            <div className="flex items-center gap-1 mb-1">
+              <Star className="h-3 w-3 text-accent-orange" />
+              <p className="text-[10px] font-medium text-text-muted uppercase tracking-wider">
+                Melhor Avaliado
+              </p>
+            </div>
             <p className="text-lg font-bold font-display text-accent-orange">
               {(bestRated.rating ?? 0).toFixed(1)} <Star className="h-3 w-3 inline fill-current" />
             </p>
@@ -142,9 +208,12 @@ export default function DecisionSummary({
         )}
         {bestValue.id === bestPrice.id && (!bestRated || bestRated.id === bestPrice.id) && fastestShipping && fastestShipping.id !== bestPrice.id && (
           <div className="bg-accent-purple/5 rounded-lg p-3 border border-accent-purple/10">
-            <p className="text-[10px] font-medium text-text-muted mb-1 uppercase tracking-wider">
-              Entrega Mais Rapida
-            </p>
+            <div className="flex items-center gap-1 mb-1">
+              <Truck className="h-3 w-3 text-accent-purple" />
+              <p className="text-[10px] font-medium text-text-muted uppercase tracking-wider">
+                Entrega Mais Rapida
+              </p>
+            </div>
             <p className="text-lg font-bold font-display text-accent-purple">
               {formatPrice(fastestShipping.price)}
             </p>
@@ -155,9 +224,12 @@ export default function DecisionSummary({
         )}
         {bestValue.id === bestPrice.id && (!bestRated || bestRated.id === bestPrice.id) && (!fastestShipping || fastestShipping.id === bestPrice.id) && (
           <div className="bg-accent-green/5 rounded-lg p-3 border border-accent-green/10">
-            <p className="text-[10px] font-medium text-text-muted mb-1 uppercase tracking-wider">
-              Melhor Custo-Beneficio
-            </p>
+            <div className="flex items-center gap-1 mb-1">
+              <Star className="h-3 w-3 text-accent-green" />
+              <p className="text-[10px] font-medium text-text-muted uppercase tracking-wider">
+                Melhor Custo-Beneficio
+              </p>
+            </div>
             <p className="text-lg font-bold font-display text-accent-green">
               {formatPrice(bestPrice.price)}
             </p>
@@ -166,13 +238,35 @@ export default function DecisionSummary({
         )}
       </div>
 
-      {/* Savings indicator */}
-      {savings && savings > 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-accent-green/5 rounded-lg border border-accent-green/10 mb-4">
+      {/* Economia estimada */}
+      {savingsVsHighest && savingsVsHighest > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-accent-green/5 rounded-lg border border-accent-green/10 mb-3">
+          <TrendingDown className="h-4 w-4 text-accent-green flex-shrink-0" />
+          <p className="text-xs text-text-secondary">
+            Economia estimada de{" "}
+            <span className="font-bold text-accent-green">{formatPrice(savingsVsHighest)}</span>{" "}
+            vs preco mais alto recente
+          </p>
+        </div>
+      )}
+
+      {/* Savings vs historical avg */}
+      {savings && savings > 0 && !savingsVsHighest && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-accent-green/5 rounded-lg border border-accent-green/10 mb-3">
           <TrendingDown className="h-4 w-4 text-accent-green flex-shrink-0" />
           <p className="text-xs text-text-secondary">
             Economia de <span className="font-bold text-accent-green">{formatPrice(savings)}</span>{" "}
             vs media historica
+          </p>
+        </div>
+      )}
+
+      {/* Price at all-time low indicator */}
+      {priceStats && bestPrice.price <= priceStats.allTimeMin * 1.02 && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-accent-blue/5 rounded-lg border border-accent-blue/10 mb-3">
+          <TrendingDown className="h-4 w-4 text-accent-blue flex-shrink-0" />
+          <p className="text-xs text-text-secondary font-medium">
+            Preco proximo ao <span className="text-accent-blue">minimo historico</span>!
           </p>
         </div>
       )}

@@ -67,10 +67,10 @@ export default function OfferCard({ product }: { product: ProductCard }) {
     : "#";
 
   return (
-    <div className="card group flex flex-col w-full overflow-hidden hover:-translate-y-1">
+    <div className="card group flex flex-col w-full overflow-hidden">
       {/* Badges */}
       {badges.length > 0 && (
-        <div className="flex items-center gap-1 px-3 pt-3 flex-wrap">
+        <div className="flex items-center gap-1.5 px-3 pt-3 flex-wrap">
           {badges.slice(0, 3).map((b, i) => (
             <BadgeChip key={i} badge={b} />
           ))}
@@ -87,12 +87,12 @@ export default function OfferCard({ product }: { product: ProductCard }) {
             width={300}
             height={300}
           />
-          <div className="absolute top-2 right-2 flex items-center gap-1">
+          <div className="absolute top-2 right-2 flex items-center gap-1.5">
             <FavoriteButton productId={product.id} size="sm" />
             <ScorePill score={bestOffer.offerScore} />
           </div>
           {discount && discount >= 40 && (
-            <div className="absolute top-2 left-2 bg-accent-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+            <div className="absolute top-2 left-2 bg-gradient-to-r from-accent-red to-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">
               MEGA OFERTA
             </div>
           )}
@@ -100,9 +100,9 @@ export default function OfferCard({ product }: { product: ProductCard }) {
       </Link>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col px-3 pt-3 pb-3">
-        <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1 flex-wrap">
-          <span>{bestOffer.sourceName}</span>
+      <div className="flex-1 flex flex-col px-3 pt-2.5 pb-3">
+        <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1.5 flex-wrap">
+          <span className="font-medium">{bestOffer.sourceName}</span>
           {product.offersCount > 1 && (
             <span className="text-surface-400">+{product.offersCount - 1}</span>
           )}
@@ -113,7 +113,7 @@ export default function OfferCard({ product }: { product: ProductCard }) {
         </div>
 
         <Link href={`/produto/${product.slug}`}>
-          <h3 className="text-sm font-medium text-text-primary leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors">
+          <h3 className="text-sm font-medium text-text-primary leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors duration-200">
             {product.name}
           </h3>
         </Link>

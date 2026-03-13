@@ -117,7 +117,7 @@ export default async function AdminDashboard() {
           <p className="text-sm text-text-muted">Visao geral do PromoSnap</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-green/10 text-accent-green text-xs font-medium">
+          <div className="status-ok">
             <Activity className="h-3 w-3" />
             Platform OK
           </div>
@@ -135,31 +135,31 @@ export default async function AdminDashboard() {
 
       {/* Revenue cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card p-4 border-l-4 border-l-accent-green">
+        <div className="stat-card stat-card-green">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-accent-green" />
-            <span className="text-xs text-text-muted uppercase tracking-wider">Revenue Hoje</span>
+            <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Revenue Hoje</span>
           </div>
           <p className="text-2xl font-bold font-display text-text-primary">{formatPrice(revenueToday)}</p>
         </div>
-        <div className="card p-4 border-l-4 border-l-accent-blue">
+        <div className="stat-card stat-card-blue">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-accent-blue" />
-            <span className="text-xs text-text-muted uppercase tracking-wider">Revenue 7d</span>
+            <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Revenue 7d</span>
           </div>
           <p className="text-2xl font-bold font-display text-text-primary">{formatPrice(revenue7d)}</p>
         </div>
-        <div className="card p-4 border-l-4 border-l-accent-orange">
+        <div className="stat-card stat-card-orange">
           <div className="flex items-center gap-2 mb-2">
             <MousePointerClick className="h-4 w-4 text-accent-orange" />
-            <span className="text-xs text-text-muted uppercase tracking-wider">Clickouts Hoje</span>
+            <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Clickouts Hoje</span>
           </div>
           <p className="text-2xl font-bold font-display text-text-primary">{formatNumber(stats.clickoutsToday)}</p>
         </div>
-        <div className="card p-4 border-l-4 border-l-brand-500">
+        <div className="stat-card stat-card-purple">
           <div className="flex items-center gap-2 mb-2">
             <MousePointerClick className="h-4 w-4 text-brand-500" />
-            <span className="text-xs text-text-muted uppercase tracking-wider">Clickouts 7d</span>
+            <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Clickouts 7d</span>
           </div>
           <p className="text-2xl font-bold font-display text-text-primary">{formatNumber(clickouts7d)}</p>
         </div>
@@ -247,10 +247,12 @@ export default async function AdminDashboard() {
       {/* Catalog & platform stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((s) => (
-          <div key={s.label} className="card p-4">
+          <div key={s.label} className="admin-card">
             <div className="flex items-center gap-2 mb-2">
-              <s.icon className={`h-4 w-4 ${s.color}`} />
-              <span className="text-xs text-text-muted uppercase tracking-wider">{s.label}</span>
+              <div className="w-7 h-7 rounded-lg bg-surface-50 flex items-center justify-center">
+                <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
+              </div>
+              <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">{s.label}</span>
             </div>
             <p className="text-2xl font-bold font-display text-text-primary">{s.value}</p>
           </div>
@@ -341,8 +343,13 @@ export default async function AdminDashboard() {
       )}
 
       {/* Clickouts chart */}
-      <div className="card p-5">
-        <h2 className="text-lg font-semibold font-display text-text-primary mb-4">Clickouts - Ultimos 7 dias</h2>
+      <div className="admin-card">
+        <div className="admin-section-header">
+          <BarChart3 className="h-5 w-5 text-accent-blue" />
+          <div>
+            <h2 className="admin-section-title">Clickouts - Ultimos 7 dias</h2>
+          </div>
+        </div>
         {days.length === 0 ? (
           <p className="text-sm text-text-muted">Sem dados de clickouts.</p>
         ) : (
@@ -369,13 +376,16 @@ export default async function AdminDashboard() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Recent clickouts */}
-        <div className="card p-5">
-          <h2 className="text-lg font-semibold font-display text-text-primary mb-4">Ultimos Clickouts</h2>
+        <div className="admin-card">
+          <div className="admin-section-header">
+            <MousePointerClick className="h-5 w-5 text-accent-orange" />
+            <h2 className="admin-section-title">Ultimos Clickouts</h2>
+          </div>
           {recentClickouts.length === 0 ? (
             <p className="text-sm text-text-muted">Nenhum clickout registrado.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="table-admin">
                 <thead>
                   <tr className="border-b border-surface-200">
                     <th className="text-left py-2 text-xs text-text-muted font-medium">Produto</th>
@@ -404,13 +414,16 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Top products */}
-        <div className="card p-5">
-          <h2 className="text-lg font-semibold font-display text-text-primary mb-4">Top Produtos Clicados</h2>
+        <div className="admin-card">
+          <div className="admin-section-header">
+            <TrendingUp className="h-5 w-5 text-accent-green" />
+            <h2 className="admin-section-title">Top Produtos Clicados</h2>
+          </div>
           {(topProducts as any[]).length === 0 ? (
             <p className="text-sm text-text-muted">Sem dados de cliques.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="table-admin">
                 <thead>
                   <tr className="border-b border-surface-200">
                     <th className="text-left py-2 text-xs text-text-muted font-medium">Produto</th>
@@ -434,9 +447,12 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Job runs */}
-      <div className="card p-5">
+      <div className="admin-card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold font-display text-text-primary">Jobs Recentes</h2>
+          <div className="flex items-center gap-3">
+            <Clock className="h-5 w-5 text-accent-blue" />
+            <h2 className="admin-section-title">Jobs Recentes</h2>
+          </div>
           <Link href="/admin/jobs" className="text-xs text-brand-500 hover:underline flex items-center gap-1">
             Ver todos <ArrowRight className="h-3 w-3" />
           </Link>

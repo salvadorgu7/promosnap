@@ -29,6 +29,57 @@ interface AutoFillResult {
   bannersCreated: number;
   bannersSkipped: number;
   errors: string[];
+  /** V19: detailed log of what was auto-filled and why */
+  log: AutoFillLogEntry[];
+}
+
+/** V19: structured log entry for auto-fill operations */
+export interface AutoFillLogEntry {
+  timestamp: string;
+  slotType: string;
+  action: "filled" | "skipped" | "error";
+  productName?: string;
+  reason: string;
+  score?: number;
+}
+
+/** V19: content suggestion for articles/guides */
+export interface ContentSuggestion {
+  productId: string;
+  productName: string;
+  productSlug: string;
+  categorySlug: string | null;
+  popularityScore: number;
+  reason: string;
+  suggestedType: "guide" | "review" | "comparison" | "tips";
+  priority: "high" | "medium" | "low";
+}
+
+/** V19: import suggestion based on trends + catalog gaps */
+export interface ImportSuggestion {
+  keyword: string;
+  trendPosition: number;
+  reason: string;
+  suggestedAction: "import" | "expand" | "monitor";
+  priority: "high" | "medium" | "low";
+  matchingProducts: number;
+}
+
+// ─── Internal state for logging ─────────────────────────────────────────────
+
+const fillLog: AutoFillLogEntry[] = [];
+const MAX_LOG_ENTRIES = 200;
+
+function logEntry(entry: Omit<AutoFillLogEntry, "timestamp">) {
+  fillLog.unshift({ ...entry, timestamp: new Date().toISOString() });
+  if (fillLog.length > MAX_LOG_ENTRIES) fillLog.length = MAX_LOG_ENTRIES;
+}
+
+/**
+ * Get recent auto-fill log entries.
+ */
+export function getAutoFillLog(limit = 50): AutoFillLogEntry[] {
+  return fillLog.slice(0, limit);
 }
 
 // ─── Internal helpers ───────────────────────────────────────────────────────
@@ -99,7 +150,10 @@ function buildSlot(
  */
 export async function autoFillHeroSlot(): Promise<MerchandisingSlot | null> {
   const candidates = await fetchTopCandidates(20);
-  if (candidates.length === 0) return null;
+  if (candidates.length === 0) {
+    logEntry({ slotType: "hero", action: "skipped", reason: "Nenhum candidato encontrado" });
+    return null;
+  }
 
   let bestSlot: MerchandisingSlot | null = null;
   let bestScore = -1;
@@ -143,6 +197,16 @@ export async function autoFillHeroSlot(): Promise<MerchandisingSlot | null> {
 
       bestSlot = buildSlot("hero", offer, dv.score, reasons);
     }
+  }
+
+  if (bestSlot) {
+    logEntry({
+      slotType: "hero",
+      action: "filled",
+      productName: bestSlot.productName,
+      reason: `Score combinado: ${bestScore.toFixed(1)} | ${bestSlot.reasons.join(", ")}`,
+      score: bestScore,
+    });
   }
 
   return bestSlot;
@@ -191,11 +255,26 @@ export async function autoFillCarousel(
       if (offer.isFreeShipping) reasons.push("Frete gratis");
 
       const slot = buildSlot("carousel", offer, dv.score, reasons);
-      if (slot) slots.push(slot);
+      if (slot) {
+        slots.push(slot);
+        logEntry({
+          slotType: "carousel",
+          action: "filled",
+          productName: product.name,
+          reason: `DV: ${dv.score.toFixed(0)} | OfferScore: ${offer.offerScore}`,
+          score: dv.score,
+        });
+      }
     }
 
     if (slots.length >= limit) break;
   }
+
+  logEntry({
+    slotType: "carousel",
+    action: slots.length > 0 ? "filled" : "skipped",
+    reason: `${slots.length}/${limit} slots preenchidos`,
+  });
 
   return slots.sort((a, b) => b.decisionScore - a.decisionScore);
 }
@@ -224,7 +303,10 @@ export async function autoFillDealOfDay(): Promise<MerchandisingSlot | null> {
     }));
 
   const deal = decideOfertaDoDia(productCandidates);
-  if (!deal) return null;
+  if (!deal) {
+    logEntry({ slotType: "deal_of_day", action: "skipped", reason: "Nenhum candidato qualificado" });
+    return null;
+  }
 
   // Find the matching offer
   const matchingOffer = candidates.find((o) => o.id === deal.offerId);
@@ -243,6 +325,14 @@ export async function autoFillDealOfDay(): Promise<MerchandisingSlot | null> {
     shippingPrice: matchingOffer.shippingPrice,
     commissionRate: null,
     activeOfferCount: 1,
+  });
+
+  logEntry({
+    slotType: "deal_of_day",
+    action: "filled",
+    productName: deal.productName,
+    reason: `Score: ${deal.offerScore} | ${deal.reasons.join(", ")}`,
+    score: deal.offerScore,
   });
 
   return buildSlot("deal_of_day", matchingOffer, dv.score, deal.reasons);
@@ -272,7 +362,10 @@ export async function autoFillPromoStrip(): Promise<MerchandisingSlot | null> {
     }
   }
 
-  if (!bestOffer || !bestOffer.listing.product) return null;
+  if (!bestOffer || !bestOffer.listing.product) {
+    logEntry({ slotType: "promo_strip", action: "skipped", reason: "Nenhum produto com desconto encontrado" });
+    return null;
+  }
 
   const dv = calculateDecisionValue({
     productId: bestOffer.listing.product.id,
@@ -289,6 +382,14 @@ export async function autoFillPromoStrip(): Promise<MerchandisingSlot | null> {
     activeOfferCount: 1,
   });
 
+  logEntry({
+    slotType: "promo_strip",
+    action: "filled",
+    productName: bestOffer.listing.product.name,
+    reason: `${bestDiscount}% de desconto`,
+    score: bestOffer.offerScore,
+  });
+
   return buildSlot("promo_strip", bestOffer, dv.score, [
     `${bestDiscount}% de desconto`,
   ]);
@@ -300,6 +401,7 @@ export async function autoFillPromoStrip(): Promise<MerchandisingSlot | null> {
  */
 export async function autoFillBanners(): Promise<AutoFillResult> {
   const errors: string[] = [];
+  const log: AutoFillLogEntry[] = [];
   let bannersCreated = 0;
   let bannersSkipped = 0;
   const allSlots: MerchandisingSlot[] = [];
@@ -340,6 +442,12 @@ export async function autoFillBanners(): Promise<AutoFillResult> {
 
       if (manualBanner) {
         bannersSkipped++;
+        logEntry({
+          slotType: slot.type,
+          action: "skipped",
+          productName: slot.productName,
+          reason: `Banner manual com prioridade ${manualBanner.priority} prevalece`,
+        });
         continue;
       }
 
@@ -375,12 +483,172 @@ export async function autoFillBanners(): Promise<AutoFillResult> {
         await prisma.banner.create({ data: bannerData });
       }
       bannersCreated++;
+      logEntry({
+        slotType: slot.type,
+        action: "filled",
+        productName: slot.productName,
+        reason: `Banner ${existingAuto ? "atualizado" : "criado"}: ${bannerData.title}`,
+        score: slot.offerScore,
+      });
     }
   } catch (err) {
-    errors.push(
-      `Erro ao preencher banners: ${err instanceof Error ? err.message : "Erro desconhecido"}`
-    );
+    const msg = `Erro ao preencher banners: ${err instanceof Error ? err.message : "Erro desconhecido"}`;
+    errors.push(msg);
+    logEntry({ slotType: "banners", action: "error", reason: msg });
   }
 
-  return { slots: allSlots, bannersCreated, bannersSkipped, errors };
+  // Collect recent log entries relevant to this run
+  log.push(...getAutoFillLog(20));
+
+  return { slots: allSlots, bannersCreated, bannersSkipped, errors, log };
+}
+
+// ─── V19: Content Suggestions ─────────────────────────────────────────────
+
+/**
+ * Suggest articles/guides based on product catalog gaps.
+ * Finds popular products that lack associated editorial content.
+ */
+export async function autoSuggestContent(
+  limit = 10
+): Promise<ContentSuggestion[]> {
+  try {
+    // Find popular products without articles
+    const products = await prisma.product.findMany({
+      where: {
+        status: "ACTIVE",
+        hidden: false,
+        popularityScore: { gte: 30 },
+      },
+      orderBy: { popularityScore: "desc" },
+      take: limit * 3,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        popularityScore: true,
+        category: { select: { slug: true, name: true } },
+        _count: { select: { listings: true } },
+      },
+    });
+
+    // Check which products already have articles
+    const productIds = products.map((p) => p.id);
+    let productsWithArticles = new Set<string>();
+    try {
+      const articleLinks: { productId: string }[] = await prisma.$queryRaw`
+        SELECT DISTINCT "productId" FROM article_products WHERE "productId" = ANY(${productIds}::text[])
+      `;
+      productsWithArticles = new Set(articleLinks.map((a) => a.productId));
+    } catch {
+      // table may not exist
+    }
+
+    const suggestions: ContentSuggestion[] = [];
+
+    for (const product of products) {
+      if (productsWithArticles.has(product.id)) continue;
+
+      const priority: ContentSuggestion["priority"] =
+        product.popularityScore >= 70 ? "high" :
+        product.popularityScore >= 50 ? "medium" : "low";
+
+      // Determine suggested content type
+      let suggestedType: ContentSuggestion["suggestedType"] = "review";
+      if (product._count.listings >= 3) suggestedType = "comparison";
+      else if (product.category?.slug) suggestedType = "guide";
+
+      let reason = `Produto popular (score: ${product.popularityScore}) sem conteudo editorial`;
+      if (product._count.listings >= 3) {
+        reason += ` — ${product._count.listings} listings, ideal para comparativo`;
+      }
+
+      suggestions.push({
+        productId: product.id,
+        productName: product.name,
+        productSlug: product.slug,
+        categorySlug: product.category?.slug ?? null,
+        popularityScore: product.popularityScore,
+        reason,
+        suggestedType,
+        priority,
+      });
+
+      if (suggestions.length >= limit) break;
+    }
+
+    return suggestions;
+  } catch {
+    return [];
+  }
+}
+
+// ─── V19: Import Suggestions ──────────────────────────────────────────────
+
+/**
+ * Suggest product imports based on trending keywords + catalog gaps.
+ * Finds trending keywords that have no or few matching products.
+ */
+export async function autoSuggestImports(
+  limit = 10
+): Promise<ImportSuggestion[]> {
+  try {
+    // Get trending keywords
+    const keywords = await prisma.trendingKeyword.findMany({
+      orderBy: [{ fetchedAt: "desc" }, { position: "asc" }],
+      take: 30,
+    });
+
+    const suggestions: ImportSuggestion[] = [];
+
+    for (const kw of keywords) {
+      // Check how many products match this keyword
+      const matchCount = await prisma.product.count({
+        where: {
+          status: "ACTIVE",
+          hidden: false,
+          OR: [
+            { name: { contains: kw.keyword, mode: "insensitive" } },
+            { slug: { contains: kw.keyword.toLowerCase().replace(/\s+/g, "-") } },
+          ],
+        },
+      });
+
+      let suggestedAction: ImportSuggestion["suggestedAction"];
+      let priority: ImportSuggestion["priority"];
+      let reason: string;
+
+      if (matchCount === 0) {
+        suggestedAction = "import";
+        priority = kw.position <= 5 ? "high" : "medium";
+        reason = `Keyword trending (#${kw.position}) sem nenhum produto no catalogo`;
+      } else if (matchCount <= 2) {
+        suggestedAction = "expand";
+        priority = kw.position <= 10 ? "medium" : "low";
+        reason = `Apenas ${matchCount} produto(s) para keyword trending (#${kw.position})`;
+      } else {
+        suggestedAction = "monitor";
+        priority = "low";
+        reason = `${matchCount} produtos existem, monitorar competitividade`;
+      }
+
+      // Skip if well covered
+      if (matchCount > 5) continue;
+
+      suggestions.push({
+        keyword: kw.keyword,
+        trendPosition: kw.position,
+        reason,
+        suggestedAction,
+        priority,
+        matchingProducts: matchCount,
+      });
+
+      if (suggestions.length >= limit) break;
+    }
+
+    return suggestions;
+  } catch {
+    return [];
+  }
 }

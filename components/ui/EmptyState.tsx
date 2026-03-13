@@ -3,24 +3,27 @@ import { PackageSearch, Search, Database, AlertTriangle, type LucideIcon } from 
 
 type EmptyStateVariant = "search" | "data" | "error"
 
-const variantDefaults: Record<EmptyStateVariant, { icon: LucideIcon; title: string; description: string; iconBg: string }> = {
+const variantDefaults: Record<EmptyStateVariant, { icon: LucideIcon; title: string; description: string; iconBg: string; iconColor: string }> = {
   search: {
     icon: Search,
     title: "Nenhum resultado encontrado",
     description: "Tente buscar com outras palavras ou remova os filtros aplicados.",
-    iconBg: "bg-blue-50",
+    iconBg: "bg-accent-blue/8",
+    iconColor: "text-accent-blue",
   },
   data: {
     icon: Database,
     title: "Nenhum dado disponivel",
     description: "Esta secao ainda nao possui conteudo. Volte mais tarde para novidades.",
     iconBg: "bg-surface-100",
+    iconColor: "text-surface-400",
   },
   error: {
     icon: AlertTriangle,
     title: "Algo deu errado",
     description: "Ocorreu um erro ao carregar os dados. Tente novamente.",
     iconBg: "bg-red-50",
+    iconColor: "text-accent-red",
   },
 }
 
@@ -53,11 +56,18 @@ export default function EmptyState({
   const displayTitle = title || defaults?.title || "Sem dados"
   const displayDesc = description || defaults?.description || ""
   const iconBg = defaults?.iconBg || "bg-surface-100"
+  const iconColor = defaults?.iconColor || "text-surface-400"
 
   return (
     <div className="text-center py-16 px-4">
-      <div className={`w-16 h-16 rounded-2xl ${iconBg} flex items-center justify-center mx-auto mb-5 shadow-sm`}>
-        <Icon className="h-7 w-7 text-surface-400" />
+      {/* Decorative background glow */}
+      <div className="relative inline-block mb-5">
+        <div className="absolute inset-0 rounded-2xl bg-accent-blue/5 blur-xl scale-150 pointer-events-none" />
+        <div className={`relative w-16 h-16 rounded-2xl ${iconBg} flex items-center justify-center mx-auto`}
+          style={{ boxShadow: "0 2px 8px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}
+        >
+          <Icon className={`h-7 w-7 ${iconColor}`} />
+        </div>
       </div>
       <h2 className="font-display font-semibold text-lg text-text-primary mb-2">{displayTitle}</h2>
       <p className="text-sm text-text-muted max-w-md mx-auto leading-relaxed">{displayDesc}</p>
@@ -65,7 +75,7 @@ export default function EmptyState({
       {ctaLabel && ctaHref && (
         <Link
           href={ctaHref}
-          className="inline-block mt-6 btn-primary px-6 py-2.5 rounded-lg text-sm font-semibold shadow-sm hover:shadow-md transition-shadow"
+          className="inline-block mt-6 btn-primary px-6 py-2.5 rounded-lg text-sm font-semibold"
         >
           {ctaLabel}
         </Link>

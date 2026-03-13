@@ -20,6 +20,9 @@ import {
   Layers,
   Zap,
   RotateCcw,
+  Eye,
+  Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -33,6 +36,8 @@ interface CandidateItem {
   enrichedData: {
     trustScore?: number;
     subStatus?: string;
+    detectedBrand?: string;
+    inferredCategory?: string;
   } | null;
   createdAt: string;
 }
@@ -79,6 +84,41 @@ const BATCH_STATUS: Record<string, { label: string; color: string; icon: typeof 
   FAILED: { label: "Falhou", color: "text-red-600 bg-red-50", icon: XCircle },
 };
 
+// ─── V19: Pipeline health indicator colors ──────────────────────────────────
+
+function getPipelineHealth(pipeline: PipelineInfo): { color: string; label: string } {
+  if (!pipeline.isActive) return { color: "bg-gray-300", label: "Inativo" };
+
+  // Check last run — if never ran or more than 7 days ago, yellow
+  if (!pipeline.lastRunAt) return { color: "bg-amber-400", label: "Nunca executado" };
+
+  const lastRun = new Date(pipeline.lastRunAt);
+  const hoursSinceRun = (Date.now() - lastRun.getTime()) / (1000 * 60 * 60);
+
+  if (hoursSinceRun > 168) return { color: "bg-red-500", label: "Desatualizado" }; // 7 days
+  if (hoursSinceRun > 48) return { color: "bg-amber-400", label: "Atencao" }; // 2 days
+  if (pipeline.itemsPending > 50) return { color: "bg-amber-400", label: "Fila grande" };
+
+  return { color: "bg-green-500", label: "Saudavel" };
+}
+
+// ─── V19: Time ago helper ───────────────────────────────────────────────────
+
+function timeAgo(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return "agora";
+  if (diffMins < 60) return `${diffMins}min atras`;
+  if (diffHours < 24) return `${diffHours}h atras`;
+  if (diffDays < 7) return `${diffDays}d atras`;
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 export default function SourcingActions() {
@@ -93,6 +133,14 @@ export default function SourcingActions() {
   const [importSource, setImportSource] = useState("manual");
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
+  // V19: dry run
+  const [isDryRunning, setIsDryRunning] = useState(false);
+  const [dryRunResult, setDryRunResult] = useState<{
+    total: number;
+    valid: number;
+    invalid: number;
+    itemErrors: { line: number; field: string | null; reason: string }[];
+  } | null>(null);
 
   // Batch actions
   const [processingBatchId, setProcessingBatchId] = useState<string | null>(null);
@@ -146,6 +194,7 @@ export default function SourcingActions() {
     if (!importContent.trim()) return;
     setIsImporting(true);
     setImportResult(null);
+    setDryRunResult(null);
 
     try {
       const res = await fetch("/api/admin/sourcing", {
@@ -177,6 +226,42 @@ export default function SourcingActions() {
     }
   }
 
+  // V19: Dry run handler
+  async function handleDryRun() {
+    if (!importContent.trim()) return;
+    setIsDryRunning(true);
+    setDryRunResult(null);
+
+    try {
+      const res = await fetch("/api/admin/sourcing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "dry-run",
+          content: importContent,
+          format: importFormat,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        setDryRunResult({
+          total: result.total,
+          valid: result.valid,
+          invalid: result.invalid,
+          itemErrors: result.itemErrors || [],
+        });
+      } else {
+        setError(result.error || "Erro na validacao");
+      }
+    } catch {
+      setError("Erro de rede");
+    } finally {
+      setIsDryRunning(false);
+    }
+  }
+
   // ── Process Batch ──
 
   async function handleProcessBatch(batchId: string) {
@@ -204,7 +289,7 @@ export default function SourcingActions() {
   // ── Batch Actions on Candidates ──
 
   async function handleCandidateAction(
-    action: "approve" | "reject" | "publish" | "recalculate"
+    action: "approve" | "reject" | "publish" | "recalculate" | "enrich-batch" | "publish-batch"
   ) {
     if (selectedIds.size === 0) return;
     setActionLoading(true);
@@ -215,15 +300,15 @@ export default function SourcingActions() {
           ? "/api/admin/catalog/batch"
           : "/api/admin/sourcing";
 
-      const body =
-        action === "approve" || action === "reject"
-          ? { action, candidateIds: Array.from(selectedIds) }
-          : { action, candidateIds: Array.from(selectedIds) };
+      const apiAction = action === "approve" || action === "reject" ? action : action;
 
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          action: apiAction,
+          candidateIds: Array.from(selectedIds),
+        }),
       });
 
       if (res.ok) {
@@ -259,7 +344,8 @@ export default function SourcingActions() {
       filtered = filtered.filter(
         (c) =>
           c.title.toLowerCase().includes(q) ||
-          (c.brand && c.brand.toLowerCase().includes(q))
+          (c.brand && c.brand.toLowerCase().includes(q)) ||
+          (c.category && c.category.toLowerCase().includes(q))
       );
     }
     return filtered;
@@ -324,7 +410,7 @@ export default function SourcingActions() {
         </div>
 
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-text-muted">
               {selectedIds.size} selecionados
             </span>
@@ -343,7 +429,14 @@ export default function SourcingActions() {
               <X className="h-3 w-3" /> Rejeitar
             </button>
             <button
-              onClick={() => handleCandidateAction("publish")}
+              onClick={() => handleCandidateAction("enrich-batch")}
+              disabled={actionLoading}
+              className="text-xs px-2.5 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 inline-flex items-center gap-1 disabled:opacity-50"
+            >
+              <Sparkles className="h-3 w-3" /> Enriquecer
+            </button>
+            <button
+              onClick={() => handleCandidateAction("publish-batch")}
               disabled={actionLoading}
               className="text-xs px-2.5 py-1 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200 inline-flex items-center gap-1 disabled:opacity-50"
             >
@@ -444,7 +537,55 @@ export default function SourcingActions() {
             className="w-full h-40 px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30 focus:border-accent-blue font-mono resize-y"
           />
 
+          {/* V19: Dry run result */}
+          {dryRunResult && (
+            <div className="p-3 rounded-lg border border-surface-200 bg-surface-50 space-y-2">
+              <div className="flex items-center gap-3 text-sm">
+                <Eye className="h-4 w-4 text-accent-blue" />
+                <span className="font-medium text-text-primary">Resultado da Validacao</span>
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <span className="text-text-muted">Total: {dryRunResult.total}</span>
+                <span className="text-green-600">Validos: {dryRunResult.valid}</span>
+                <span className="text-red-500">Invalidos: {dryRunResult.invalid}</span>
+              </div>
+              {dryRunResult.itemErrors.length > 0 && (
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {dryRunResult.itemErrors.slice(0, 10).map((err, idx) => (
+                    <div key={idx} className="text-xs text-red-600 flex items-start gap-1.5">
+                      <AlertTriangle className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                      <span>Linha {err.line}{err.field ? ` (${err.field})` : ""}: {err.reason}</span>
+                    </div>
+                  ))}
+                  {dryRunResult.itemErrors.length > 10 && (
+                    <p className="text-xs text-text-muted">
+                      ...e mais {dryRunResult.itemErrors.length - 10} erros
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
+            {/* V19: Dry run button */}
+            <button
+              onClick={handleDryRun}
+              disabled={!importContent.trim() || isDryRunning}
+              className="btn-secondary text-sm px-4 py-2.5 inline-flex items-center gap-2 disabled:opacity-50"
+            >
+              {isDryRunning ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Validando...
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4" />
+                  Validar (Dry Run)
+                </>
+              )}
+            </button>
             <button
               onClick={handleImport}
               disabled={!importContent.trim() || isImporting}
@@ -463,7 +604,7 @@ export default function SourcingActions() {
               )}
             </button>
             <button
-              onClick={() => setShowImport(false)}
+              onClick={() => { setShowImport(false); setDryRunResult(null); }}
               className="btn-secondary text-sm px-4 py-2.5"
             >
               Cancelar
@@ -536,16 +677,14 @@ export default function SourcingActions() {
                               {batch.imported} importados
                             </span>
                           )}
-                          <span>
-                            {new Date(batch.createdAt).toLocaleDateString(
-                              "pt-BR",
-                              {
-                                day: "2-digit",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
+                          {batch.rejected > 0 && (
+                            <span className="text-red-500">
+                              {batch.rejected} rejeitados
+                            </span>
+                          )}
+                          {/* V19: timestamp */}
+                          <span title={new Date(batch.createdAt).toLocaleString("pt-BR")}>
+                            {timeAgo(batch.createdAt)}
                           </span>
                         </div>
                       </div>
@@ -597,7 +736,7 @@ export default function SourcingActions() {
 
         {expandedSections.has("candidates") && (
           <div className="border-t border-surface-200 p-5 space-y-4">
-            {/* Filters */}
+            {/* Filters — V19: also search by category */}
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <Filter className="h-3.5 w-3.5 text-text-muted" />
@@ -619,13 +758,21 @@ export default function SourcingActions() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar candidato..."
-                  className="text-xs border border-surface-200 rounded px-2 py-1 bg-white text-text-primary w-48"
+                  placeholder="Buscar por titulo, marca ou categoria..."
+                  className="text-xs border border-surface-200 rounded px-2 py-1 bg-white text-text-primary w-64"
                 />
               </div>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="text-xs text-text-muted hover:text-text-primary"
+                >
+                  Limpar
+                </button>
+              )}
             </div>
 
-            {/* Candidate list */}
+            {/* Candidate list — V19: enhanced cards with more info */}
             {filtered.length === 0 ? (
               <p className="text-sm text-text-muted text-center py-4">
                 Nenhum candidato encontrado
@@ -634,6 +781,8 @@ export default function SourcingActions() {
               <div className="space-y-1">
                 {filtered.slice(0, 50).map((c) => {
                   const trust = c.enrichedData?.trustScore;
+                  const detectedBrand = c.enrichedData?.detectedBrand;
+                  const inferredCategory = c.enrichedData?.inferredCategory;
                   return (
                     <div
                       key={c.id}
@@ -664,9 +813,22 @@ export default function SourcingActions() {
                         <p className="text-sm text-text-primary truncate">
                           {c.title}
                         </p>
-                        <div className="flex items-center gap-2 text-[10px] text-text-muted">
-                          {c.brand && <span>{c.brand}</span>}
-                          {c.category && <span>{c.category}</span>}
+                        <div className="flex items-center gap-2 text-[10px] text-text-muted flex-wrap">
+                          {/* V19: Show detected brand/category from enrichment */}
+                          {(detectedBrand || c.brand) && (
+                            <span className="inline-flex items-center gap-0.5">
+                              {detectedBrand && detectedBrand !== c.brand && (
+                                <Sparkles className="h-2.5 w-2.5 text-purple-400" />
+                              )}
+                              {detectedBrand || c.brand}
+                            </span>
+                          )}
+                          {(inferredCategory || c.category) && (
+                            <span>{inferredCategory || c.category}</span>
+                          )}
+                          {c.enrichedData?.subStatus && c.enrichedData.subStatus !== c.status && (
+                            <span className="text-amber-500">{c.enrichedData.subStatus}</span>
+                          )}
                         </div>
                       </div>
 
@@ -679,6 +841,7 @@ export default function SourcingActions() {
                                 ? "bg-amber-100 text-amber-700"
                                 : "bg-red-100 text-red-700"
                           }`}
+                          title={`Trust Score: ${trust}`}
                         >
                           {trust}
                         </span>
@@ -698,7 +861,7 @@ export default function SourcingActions() {
         )}
       </div>
 
-      {/* Pipeline overview */}
+      {/* Pipeline overview — V19: health indicators */}
       {data.pipelines && data.pipelines.length > 0 && (
         <div className="card overflow-hidden">
           <button
@@ -721,48 +884,57 @@ export default function SourcingActions() {
           {expandedSections.has("pipelines") && (
             <div className="border-t border-surface-200 p-5">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {data.pipelines.map((pipeline) => (
-                  <div
-                    key={pipeline.mode}
-                    className={`p-4 rounded-lg border ${
-                      pipeline.isActive
-                        ? "border-accent-blue bg-blue-50/50"
-                        : "border-surface-200 bg-surface-50"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-sm font-semibold text-text-primary">
-                        {pipeline.label}
-                      </h4>
-                      {pipeline.isActive && (
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-accent-blue text-white">
-                          Ativo
-                        </span>
+                {data.pipelines.map((pipeline) => {
+                  const health = getPipelineHealth(pipeline);
+                  return (
+                    <div
+                      key={pipeline.mode}
+                      className={`p-4 rounded-lg border ${
+                        pipeline.isActive
+                          ? "border-accent-blue bg-blue-50/50"
+                          : "border-surface-200 bg-surface-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          {/* V19: Health indicator dot */}
+                          <span
+                            className={`w-2.5 h-2.5 rounded-full ${health.color}`}
+                            title={health.label}
+                          />
+                          <h4 className="text-sm font-semibold text-text-primary">
+                            {pipeline.label}
+                          </h4>
+                        </div>
+                        {pipeline.isActive && (
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-accent-blue text-white">
+                            Ativo
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-muted mb-2">
+                        {pipeline.description}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-text-muted">
+                        <span>{pipeline.itemsTotal} total</span>
+                        <span>{pipeline.itemsPending} pendentes</span>
+                      </div>
+                      {/* V19: last run timestamp with relative time */}
+                      {pipeline.lastRunAt ? (
+                        <p
+                          className="text-[10px] text-text-muted mt-1"
+                          title={new Date(pipeline.lastRunAt).toLocaleString("pt-BR")}
+                        >
+                          Ultima execucao: {timeAgo(pipeline.lastRunAt)}
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-amber-500 mt-1">
+                          Nunca executado
+                        </p>
                       )}
                     </div>
-                    <p className="text-xs text-text-muted mb-2">
-                      {pipeline.description}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-text-muted">
-                      <span>{pipeline.itemsTotal} total</span>
-                      <span>{pipeline.itemsPending} pendentes</span>
-                    </div>
-                    {pipeline.lastRunAt && (
-                      <p className="text-[10px] text-text-muted mt-1">
-                        Ultima execucao:{" "}
-                        {new Date(pipeline.lastRunAt).toLocaleDateString(
-                          "pt-BR",
-                          {
-                            day: "2-digit",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
-                        )}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

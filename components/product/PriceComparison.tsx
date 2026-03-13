@@ -1,4 +1,4 @@
-import { ExternalLink, Star, Tag, Truck, TrendingDown, Award, ShieldCheck, Crown, Zap, Timer } from "lucide-react";
+import { ExternalLink, Star, Tag, Truck, TrendingDown, Award, ShieldCheck, Crown, Zap, Timer, Clock } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
 interface ComparisonOffer {
@@ -19,6 +19,8 @@ interface ComparisonOffer {
   fastDelivery?: boolean;
   /** Optional: shipping price */
   shippingPrice?: number | null;
+  /** Optional: estimated delivery days */
+  deliveryDays?: number | null;
 }
 
 interface PriceComparisonProps {
@@ -57,6 +59,56 @@ function getBestValueId(offers: ComparisonOffer[]): string | null {
 
     return total > bestTotal ? o : best;
   }, offers[0]).id;
+}
+
+function DeliveryInfo({ offer }: { offer: ComparisonOffer }) {
+  if (offer.isFreeShipping) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-purple bg-purple-50 px-1.5 py-0.5 rounded-full">
+        <Truck className="h-2.5 w-2.5" /> Frete gratis
+        {offer.deliveryDays != null && offer.deliveryDays > 0 && (
+          <span className="text-text-muted ml-0.5">({offer.deliveryDays}d)</span>
+        )}
+      </span>
+    );
+  }
+  if (offer.fastDelivery) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+        <Timer className="h-2.5 w-2.5" /> Entrega rapida
+        {offer.deliveryDays != null && offer.deliveryDays > 0 && (
+          <span className="text-text-muted ml-0.5">({offer.deliveryDays}d)</span>
+        )}
+      </span>
+    );
+  }
+  if (offer.shippingPrice != null && offer.shippingPrice > 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted">
+        <Truck className="h-2.5 w-2.5" /> Frete {formatPrice(offer.shippingPrice)}
+        {offer.deliveryDays != null && offer.deliveryDays > 0 && (
+          <span className="ml-0.5">({offer.deliveryDays}d)</span>
+        )}
+      </span>
+    );
+  }
+  if (offer.deliveryDays != null && offer.deliveryDays > 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted">
+        <Clock className="h-2.5 w-2.5" /> Entrega em {offer.deliveryDays} dias
+      </span>
+    );
+  }
+  return null;
+}
+
+function VerifiedBadge({ score }: { score: number }) {
+  if (score < 70) return null;
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-accent-green bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">
+      <ShieldCheck className="h-3 w-3" /> Verificado
+    </span>
+  );
 }
 
 export default function PriceComparison({ offers, productName }: PriceComparisonProps) {
@@ -102,22 +154,24 @@ export default function PriceComparison({ offers, productName }: PriceComparison
             <div
               key={offer.id}
               className={`relative flex items-center gap-3 p-4 rounded-xl border transition-all ${
-                isBest
-                  ? "border-accent-blue/40 bg-gradient-to-r from-accent-blue/5 to-transparent shadow-sm"
-                  : "border-surface-200 bg-white hover:border-surface-300"
+                isBestChoice
+                  ? "border-accent-green/40 bg-gradient-to-r from-accent-green/5 to-transparent shadow-sm ring-1 ring-accent-green/20"
+                  : isBest
+                    ? "border-accent-blue/40 bg-gradient-to-r from-accent-blue/5 to-transparent shadow-sm"
+                    : "border-surface-200 bg-white hover:border-surface-300"
               }`}
             >
-              {/* Best price badge */}
-              {isBest && (
-                <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-accent-blue text-white text-[10px] font-bold uppercase tracking-wide rounded-full">
-                  Melhor Preco
+              {/* Best choice badge — most prominent */}
+              {isBestChoice && (
+                <div className="absolute -top-2.5 left-4 px-2.5 py-0.5 bg-accent-green text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1 shadow-sm">
+                  <Crown className="h-2.5 w-2.5" /> Melhor Escolha
                 </div>
               )}
 
-              {/* Best choice badge (when different from best price) */}
-              {isBestChoice && !isBest && (
-                <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-accent-green text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1">
-                  <Crown className="h-2.5 w-2.5" /> Melhor Escolha
+              {/* Best price badge (when different from best choice) */}
+              {isBest && !isBestChoice && (
+                <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-accent-blue text-white text-[10px] font-bold uppercase tracking-wide rounded-full">
+                  Melhor Preco
                 </div>
               )}
 
@@ -131,7 +185,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
               {/* Rank */}
               <div
                 className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold flex-shrink-0 ${
-                  isBest ? "bg-accent-blue text-white" : "bg-surface-100 text-text-muted"
+                  isBestChoice ? "bg-accent-green text-white" : isBest ? "bg-accent-blue text-white" : "bg-surface-100 text-text-muted"
                 }`}
               >
                 {i + 1}
@@ -141,9 +195,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <p className="text-sm font-semibold text-text-primary">{offer.sourceName}</p>
-                  {offer.offerScore >= 70 && (
-                    <ShieldCheck className="h-3.5 w-3.5 text-accent-green" />
-                  )}
+                  <VerifiedBadge score={offer.offerScore} />
                 </div>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {offer.rating != null && (
@@ -155,21 +207,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                       )}
                     </span>
                   )}
-                  {offer.isFreeShipping && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-purple bg-purple-50 px-1.5 py-0.5 rounded-full">
-                      <Truck className="h-2.5 w-2.5" /> Frete gratis
-                    </span>
-                  )}
-                  {offer.fastDelivery && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
-                      <Timer className="h-2.5 w-2.5" /> Entrega rapida
-                    </span>
-                  )}
-                  {!offer.isFreeShipping && offer.shippingPrice != null && offer.shippingPrice > 0 && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted">
-                      <Truck className="h-2.5 w-2.5" /> Frete {formatPrice(offer.shippingPrice)}
-                    </span>
-                  )}
+                  <DeliveryInfo offer={offer} />
                   {offer.couponText && (
                     <span className="inline-flex items-center gap-0.5 text-[10px] text-accent-orange font-medium">
                       <Tag className="h-2.5 w-2.5" /> {offer.couponText}
@@ -183,7 +221,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                 {offer.originalPrice && offer.originalPrice > offer.price && (
                   <p className="text-xs text-text-muted line-through">{formatPrice(offer.originalPrice)}</p>
                 )}
-                <p className={`text-lg font-bold font-display ${isBest ? "text-accent-blue" : "text-text-primary"}`}>
+                <p className={`text-lg font-bold font-display ${isBestChoice ? "text-accent-green" : isBest ? "text-accent-blue" : "text-text-primary"}`}>
                   {formatPrice(offer.price)}
                 </p>
                 <div className="flex items-center gap-1.5 justify-end">
@@ -202,7 +240,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                 target="_blank"
                 rel="noopener noreferrer nofollow"
                 className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  isBest ? "btn-primary" : "btn-secondary"
+                  isBestChoice ? "btn-primary" : isBest ? "btn-primary" : "btn-secondary"
                 }`}
               >
                 <ExternalLink className="h-3.5 w-3.5" /> Ver
@@ -212,7 +250,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
         })}
       </div>
 
-      {/* Mobile stacked cards */}
+      {/* Mobile stacked cards — improved with all key info visible */}
       <div className="sm:hidden space-y-3">
         {offers.map((offer, i) => {
           const discount =
@@ -228,20 +266,22 @@ export default function PriceComparison({ offers, productName }: PriceComparison
             <div
               key={offer.id}
               className={`relative rounded-xl border p-4 ${
-                isBest
-                  ? "border-accent-blue/40 bg-gradient-to-br from-accent-blue/5 to-transparent shadow-sm"
-                  : "border-surface-200 bg-white"
+                isBestChoice
+                  ? "border-accent-green/40 bg-gradient-to-br from-accent-green/5 to-transparent shadow-sm ring-1 ring-accent-green/20"
+                  : isBest
+                    ? "border-accent-blue/40 bg-gradient-to-br from-accent-blue/5 to-transparent shadow-sm"
+                    : "border-surface-200 bg-white"
               }`}
             >
               {/* Badge */}
-              {isBest && (
-                <div className="absolute -top-2.5 left-3 px-2 py-0.5 bg-accent-blue text-white text-[10px] font-bold uppercase tracking-wide rounded-full">
-                  Melhor Preco
+              {isBestChoice && (
+                <div className="absolute -top-2.5 left-3 px-2.5 py-0.5 bg-accent-green text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1 shadow-sm">
+                  <Crown className="h-2.5 w-2.5" /> Melhor Escolha
                 </div>
               )}
-              {isBestChoice && !isBest && (
-                <div className="absolute -top-2.5 left-3 px-2 py-0.5 bg-accent-green text-white text-[10px] font-bold uppercase tracking-wide rounded-full flex items-center gap-1">
-                  <Crown className="h-2.5 w-2.5" /> Melhor Escolha
+              {isBest && !isBestChoice && (
+                <div className="absolute -top-2.5 left-3 px-2 py-0.5 bg-accent-blue text-white text-[10px] font-bold uppercase tracking-wide rounded-full">
+                  Melhor Preco
                 </div>
               )}
               {isBestValue && !isBest && !isBestChoice && (
@@ -250,12 +290,12 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                 </div>
               )}
 
-              {/* Header: source + rank */}
+              {/* Header: source + rank + verified */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <div
                     className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                      isBest ? "bg-accent-blue text-white" : "bg-surface-100 text-text-muted"
+                      isBestChoice ? "bg-accent-green text-white" : isBest ? "bg-accent-blue text-white" : "bg-surface-100 text-text-muted"
                     }`}
                   >
                     {i + 1}
@@ -263,54 +303,51 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                   <div>
                     <div className="flex items-center gap-1">
                       <p className="text-sm font-semibold text-text-primary">{offer.sourceName}</p>
-                      {offer.offerScore >= 70 && (
-                        <ShieldCheck className="h-3 w-3 text-accent-green" />
-                      )}
                     </div>
                   </div>
                 </div>
+                <VerifiedBadge score={offer.offerScore} />
               </div>
 
-              {/* Meta row */}
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                {offer.rating != null && (
-                  <span className="flex items-center gap-0.5 text-xs text-accent-orange">
-                    <Star className="h-3 w-3 fill-current" />
-                    {offer.rating.toFixed(1)}
-                    {offer.reviewsCount != null && (
-                      <span className="text-text-muted">({offer.reviewsCount.toLocaleString("pt-BR")})</span>
-                    )}
-                  </span>
-                )}
-                {offer.isFreeShipping && (
-                  <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-purple bg-purple-50 px-1.5 py-0.5 rounded-full">
-                    <Truck className="h-2.5 w-2.5" /> Frete gratis
-                  </span>
-                )}
-                {offer.fastDelivery && (
-                  <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
-                    <Timer className="h-2.5 w-2.5" /> Entrega rapida
-                  </span>
-                )}
-                {!offer.isFreeShipping && offer.shippingPrice != null && offer.shippingPrice > 0 && (
-                  <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted">
-                    <Truck className="h-2.5 w-2.5" /> Frete {formatPrice(offer.shippingPrice)}
-                  </span>
-                )}
+              {/* Info grid — compact, all visible */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mb-3">
+                {/* Rating */}
+                <div className="flex items-center gap-1">
+                  {offer.rating != null ? (
+                    <span className="flex items-center gap-0.5 text-xs text-accent-orange">
+                      <Star className="h-3 w-3 fill-current" />
+                      {offer.rating.toFixed(1)}
+                      {offer.reviewsCount != null && (
+                        <span className="text-text-muted">({offer.reviewsCount.toLocaleString("pt-BR")})</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-text-muted">Sem avaliacao</span>
+                  )}
+                </div>
+
+                {/* Shipping/Delivery */}
+                <div className="flex items-center justify-end">
+                  <DeliveryInfo offer={offer} />
+                </div>
+
+                {/* Coupon */}
                 {offer.couponText && (
-                  <span className="inline-flex items-center gap-0.5 text-[10px] text-accent-orange font-medium">
-                    <Tag className="h-2.5 w-2.5" /> {offer.couponText}
-                  </span>
+                  <div className="col-span-2">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] text-accent-orange font-medium bg-orange-50 px-1.5 py-0.5 rounded-full">
+                      <Tag className="h-2.5 w-2.5" /> {offer.couponText}
+                    </span>
+                  </div>
                 )}
               </div>
 
               {/* Price + CTA row */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-2 border-t border-surface-100">
                 <div>
                   {offer.originalPrice && offer.originalPrice > offer.price && (
                     <p className="text-xs text-text-muted line-through">{formatPrice(offer.originalPrice)}</p>
                   )}
-                  <p className={`text-xl font-bold font-display ${isBest ? "text-accent-blue" : "text-text-primary"}`}>
+                  <p className={`text-xl font-bold font-display ${isBestChoice ? "text-accent-green" : isBest ? "text-accent-blue" : "text-text-primary"}`}>
                     {formatPrice(offer.price)}
                   </p>
                   <div className="flex items-center gap-1.5">
@@ -327,7 +364,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                    isBest ? "btn-primary" : "btn-secondary"
+                    isBestChoice ? "btn-primary" : isBest ? "btn-primary" : "btn-secondary"
                   }`}
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Ver

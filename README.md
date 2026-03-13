@@ -560,6 +560,93 @@ npm run verify:quick # Testes + smoke (sem build)
 - Sourcing-SEO bridge: sugestoes de destaque, distribuicao, artigos, paginas SEO
 - Admin /admin/catalog-intelligence com metricas e acoes priorizadas
 
+## Full Review & Maturity Fusion (V18-V19)
+
+### Deep Project Review
+- Auditoria completa: app site, admin, API routes, lib helpers, schema, components
+- Fix: metadataBase usando getBaseUrl() em vez de env raw
+- Fix: import duplicado em lib/seo/metadata.ts
+- Fix: nav item duplicado no admin layout
+- Fix: TypeScript error em indicar/page.tsx (as const narrowing)
+- Verificacao: todas as 23 rotas admin protegidas com validateAdmin
+- Dead code identificado: PersonalizedRails.tsx, YouMayLike.tsx (mantidos para uso futuro)
+
+### Project Integrity Module
+- lib/project/integrity.ts: getIntegrityReport() com score 0-100
+- Checks: dominio, modulos criticos (24), rotas admin (23), schema (23 models), metadata, env vars
+- Score ponderado por categoria
+
+### Canonical Graph Strengthened
+- EAN/GTIN matching (0.98 confidence imediata)
+- Model extraction preciso (Galaxy S24 vs S24 Ultra, variantes separadas)
+- Penalidade por category mismatch
+- Deteccao acessorio vs produto principal
+- batchCanonicalMatch para processamento em lote
+- getCanonicalFamily: produto + variantes + similares com tipo de relacao
+- splitCanonical: reverso do merge (separar listings em novo produto)
+- Stats melhorados: coverage %, avg confidence, strong/probable/weak counts
+
+### Normalization Expanded
+- RAM extraction: "8GB RAM", "8GB/128GB", "8GB LPDDR5"
+- Processor extraction: Snapdragon Gen, Google Tensor, Apple A-series, Intel Core Ultra, AMD Ryzen PRO
+- Connectivity: 5G/4G, Wi-Fi 6/6E/7, Bluetooth, NFC, USB-C, eSIM
+- Battery extraction: mAh e Wh
+- Frequency voting com peso duplo para product name
+
+### Sourcing Pipeline Matured
+- CSV parsing RFC 4180 (quoted fields, auto-detect delimiter)
+- URL list: validacao de formato, domain extraction
+- Error reporting por item (line, field, reason, rawValue)
+- Dry run mode (validar sem persistir)
+- Publish pipeline transacional: publishBatch, enrichBatch, rejectBatch, getPublishPreview
+- Pipeline health indicators (green/yellow/red)
+- Last run timestamps
+- Search/filter em candidates
+
+### Trust & Decision UX Evolved
+- DecisionSummary: "Momento de compra" (Bom/Neutro/Espere), trend arrow, economia estimada
+- PriceComparison: delivery time, mobile cards melhorados, Verificado mais prominente
+- BuyingGuide: "Guia Rapido" com specs, pros e consideracoes (colapsavel mobile)
+
+### Community & Retention Strengthened
+- Favoritos: sort options, alerta ativo badge, criar alerta inline, empty state melhorado
+- PersonalizedNews: razao da recomendacao, limite 6 items, "Ver mais"
+- SinceLastVisit: timeline layout, price arrows, "Novos guias"
+- Canais: hero melhorado, subscriber estimates, "Por que participar?"
+- Indicar: gamificacao com 4 niveis, atividade recente, copy feedback individual
+- Distribution: distributeToSegment, history por canal, personalizacao por segmento
+
+### Commerce Automation Expanded
+- 8 regras (3 novas): content-opportunity, single-source-risk, trending-uncovered
+- getRuleResults por regra individual
+- ActionSuggestion com prioridade por match
+- autoSuggestContent e autoSuggestImports
+- Logging estruturado de auto-fill (slot, reason, score)
+- Automation bridge: bridgeCanonicalToActions, getAutomationSuggestions unificado
+
+### Growth & Revenue Intelligence
+- Revenue by category/source com trends
+- Top revenue products, underperformers
+- Revenue opportunities por categoria/marca
+- Commercial ranking unificado com score 0-100
+- Growth Ops melhorado: revenue opportunities, acoes sugeridas, trend indicators, quick actions
+
+### UI/UX Polish
+- Cards: multi-layer shadows, indigo-tinted hover borders
+- Buttons: btn-danger, btn-success, blue glow no primary
+- Stat cards: gradient bg, hover lift, radial glow accent
+- Admin tables: gradient header, hover rows
+- Status badges: ok/warning/critical/neutral com gradients
+- Toast: gradient bg, progress bar auto-dismiss, backdrop blur
+- EmptyState: glow decorativo, gradient icon bg
+- LoadingState: dots animation com stagger
+- OfferCard: badge spacing, MEGA OFERTA gradient
+- Footer: glow shadow, gradient divider
+- RailSection: gradient icon container, hover bg no "Ver tudo"
+- Homepage: section separators, section headers com icons, branding "Central de Inteligencia"
+- ProductGrouping: store/offer pills, best price, smooth expand/collapse
+- OfferCarousel: "Oferta verificada" badge, economia display, transition debounce
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)
@@ -571,7 +658,7 @@ npm run verify:quick # Testes + smoke (sem build)
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
 
-## Proximos Passos (V19)
+## Proximos Passos (V20)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA
@@ -587,3 +674,6 @@ npm run verify:quick # Testes + smoke (sem build)
 - Affiliate feed auto-sync (scheduled imports)
 - Price prediction (historico + tendencia)
 - Dashboard de ROI por canal de distribuicao
+- Webhook integrations (Slack, Discord)
+- Multi-currency support
+- Admin role-based access control

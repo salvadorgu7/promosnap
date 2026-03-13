@@ -2,7 +2,22 @@
 
 import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
-import { Heart, ShoppingBag, TrendingUp, TrendingDown, Minus, Bell, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import {
+  Heart,
+  ShoppingBag,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Bell,
+  ArrowUpRight,
+  ArrowDownRight,
+  ArrowDownUp,
+  SortAsc,
+  Clock,
+  Search,
+  Sparkles,
+  BellRing,
+} from "lucide-react"
 import { useWatchlist } from "@/lib/hooks/useWatchlist"
 import OfferCard from "@/components/cards/OfferCard"
 import EmptyState from "@/components/ui/EmptyState"
@@ -12,6 +27,27 @@ import { formatPrice } from "@/lib/utils"
 import type { ProductCard } from "@/types"
 
 type GroupMode = "all" | "category"
+type SortMode = "recent" | "price_drop" | "alphabetical"
+
+const ALERTS_KEY = "promosnap_price_alerts"
+
+function readAlerts(): Record<string, boolean> {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = localStorage.getItem(ALERTS_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function setAlert(productId: string) {
+  try {
+    const alerts = readAlerts()
+    alerts[productId] = true
+    localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts))
+  } catch {}
+}
 
 export default function FavoritosPage() {
   const { favorites, getPriceChange, updatePriceCacheBatch } = useWatchlist()
@@ -19,6 +55,12 @@ export default function FavoritosPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [groupMode, setGroupMode] = useState<GroupMode>("all")
+  const [sortMode, setSortMode] = useState<SortMode>("recent")
+  const [alerts, setAlerts] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    setAlerts(readAlerts())
+  }, [])
 
   const fetchFavorites = () => {
     if (favorites.length === 0) {
@@ -55,17 +97,42 @@ export default function FavoritosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [favorites])
 
+  // Sort products
+  const sortedProducts = useMemo(() => {
+    const sorted = [...products]
+    switch (sortMode) {
+      case "price_drop":
+        sorted.sort((a, b) => {
+          const changeA = getPriceChange(a.id, a.bestOffer.price)
+          const changeB = getPriceChange(b.id, b.bestOffer.price)
+          // Products with drops first (negative diff), then by how much they dropped
+          const scoreA = changeA.change === "down" ? -changeA.diffPercent : changeA.change === "up" ? changeA.diffPercent : 0
+          const scoreB = changeB.change === "down" ? -changeB.diffPercent : changeB.change === "up" ? changeB.diffPercent : 0
+          return scoreA - scoreB
+        })
+        break
+      case "alphabetical":
+        sorted.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+        break
+      case "recent":
+      default:
+        // Keep original order (most recently added first)
+        break
+    }
+    return sorted
+  }, [products, sortMode, getPriceChange])
+
   // Group products by category
   const grouped = useMemo(() => {
     if (groupMode !== "category") return null
     const groups: Record<string, ProductCard[]> = {}
-    for (const p of products) {
+    for (const p of sortedProducts) {
       const cat = p.category || "Outros"
       if (!groups[cat]) groups[cat] = []
       groups[cat].push(p)
     }
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-  }, [products, groupMode])
+  }, [sortedProducts, groupMode])
 
   // Summary stats
   const stats = useMemo(() => {
@@ -78,6 +145,11 @@ export default function FavoritosPage() {
     }
     return { drops, rises }
   }, [products, getPriceChange])
+
+  function handleCreateAlert(productId: string) {
+    setAlert(productId)
+    setAlerts((prev) => ({ ...prev, [productId]: true }))
+  }
 
   function PriceChangeIndicator({ product }: { product: ProductCard }) {
     const { change, diff, diffPercent } = getPriceChange(product.id, product.bestOffer.price)
@@ -108,6 +180,8 @@ export default function FavoritosPage() {
   }
 
   function WatchlistCard({ product }: { product: ProductCard }) {
+    const hasAlert = alerts[product.id] === true
+
     return (
       <div className="relative">
         <OfferCard product={product} />
@@ -115,13 +189,26 @@ export default function FavoritosPage() {
         <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-surface-100 px-3 py-2 rounded-b-xl">
           <div className="flex items-center justify-between gap-2">
             <PriceChangeIndicator product={product} />
-            <Link
-              href={`/produto/${product.slug}#alerta`}
-              className="inline-flex items-center gap-1 text-[10px] text-accent-orange hover:text-accent-orange/80 font-medium transition-colors"
-            >
-              <Bell className="w-3 h-3" />
-              Alerta
-            </Link>
+            <div className="flex items-center gap-1.5">
+              {hasAlert ? (
+                <span className="inline-flex items-center gap-0.5 text-[10px] text-accent-green font-semibold bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">
+                  <BellRing className="w-2.5 h-2.5" />
+                  Alerta ativo
+                </span>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleCreateAlert(product.id)
+                  }}
+                  className="inline-flex items-center gap-0.5 text-[10px] text-accent-orange hover:text-accent-orange/80 font-medium transition-colors bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 hover:bg-orange-100"
+                >
+                  <Bell className="w-2.5 h-2.5" />
+                  Criar alerta
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -147,25 +234,64 @@ export default function FavoritosPage() {
           </div>
         </div>
 
-        {/* Group toggle */}
-        {products.length > 3 && (
-          <div className="flex items-center gap-1 p-1 bg-surface-100 rounded-lg">
-            <button
-              onClick={() => setGroupMode("all")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                groupMode === "all" ? "bg-white text-text-primary shadow-sm" : "text-text-muted hover:text-text-secondary"
-              }`}
-            >
-              Todos
-            </button>
-            <button
-              onClick={() => setGroupMode("category")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                groupMode === "category" ? "bg-white text-text-primary shadow-sm" : "text-text-muted hover:text-text-secondary"
-              }`}
-            >
-              Por categoria
-            </button>
+        {/* Controls row */}
+        {products.length > 1 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Sort selector */}
+            <div className="flex items-center gap-1 p-1 bg-surface-100 rounded-lg">
+              <button
+                onClick={() => setSortMode("recent")}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
+                  sortMode === "recent" ? "bg-white text-text-primary shadow-sm" : "text-text-muted hover:text-text-secondary"
+                }`}
+                title="Recentes"
+              >
+                <Clock className="w-3 h-3" />
+                <span className="hidden sm:inline">Recentes</span>
+              </button>
+              <button
+                onClick={() => setSortMode("price_drop")}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
+                  sortMode === "price_drop" ? "bg-white text-text-primary shadow-sm" : "text-text-muted hover:text-text-secondary"
+                }`}
+                title="Queda de preco"
+              >
+                <ArrowDownUp className="w-3 h-3" />
+                <span className="hidden sm:inline">Preco</span>
+              </button>
+              <button
+                onClick={() => setSortMode("alphabetical")}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
+                  sortMode === "alphabetical" ? "bg-white text-text-primary shadow-sm" : "text-text-muted hover:text-text-secondary"
+                }`}
+                title="Alfabetico"
+              >
+                <SortAsc className="w-3 h-3" />
+                <span className="hidden sm:inline">A-Z</span>
+              </button>
+            </div>
+
+            {/* Group toggle */}
+            {products.length > 3 && (
+              <div className="flex items-center gap-1 p-1 bg-surface-100 rounded-lg">
+                <button
+                  onClick={() => setGroupMode("all")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    groupMode === "all" ? "bg-white text-text-primary shadow-sm" : "text-text-muted hover:text-text-secondary"
+                  }`}
+                >
+                  Todos
+                </button>
+                <button
+                  onClick={() => setGroupMode("category")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    groupMode === "category" ? "bg-white text-text-primary shadow-sm" : "text-text-muted hover:text-text-secondary"
+                  }`}
+                >
+                  Por categoria
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -220,7 +346,7 @@ export default function FavoritosPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {products.map((p) => (
+            {sortedProducts.map((p) => (
               <WatchlistCard key={p.id} product={p} />
             ))}
           </div>
@@ -233,16 +359,46 @@ export default function FavoritosPage() {
           ctaLabel="Explorar Ofertas"
           ctaHref="/ofertas"
         >
-          <div className="flex items-center justify-center gap-6 mt-6 text-xs text-text-muted">
-            <span className="flex items-center gap-1.5">
-              <ShoppingBag className="w-3.5 h-3.5" /> Compare precos
-            </span>
-            <span className="flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5" /> Acompanhe historico
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Bell className="w-3.5 h-3.5" /> Crie alertas
-            </span>
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-center gap-6 text-xs text-text-muted">
+              <span className="flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5" /> Compare precos
+              </span>
+              <span className="flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5" /> Acompanhe historico
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5" /> Crie alertas
+              </span>
+            </div>
+
+            {/* Suggestions */}
+            <div className="pt-4 border-t border-surface-100">
+              <p className="text-sm font-medium text-text-secondary mb-3 flex items-center justify-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-accent-purple" />
+                Sugestoes para comecar
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Link
+                  href="/ofertas?sort=score"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent-blue/5 text-accent-blue text-xs font-medium hover:bg-accent-blue/10 transition-colors border border-accent-blue/10"
+                >
+                  <TrendingDown className="w-3.5 h-3.5" /> Melhores ofertas
+                </Link>
+                <Link
+                  href="/ofertas?badge=price_drop"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent-green/5 text-accent-green text-xs font-medium hover:bg-accent-green/10 transition-colors border border-accent-green/10"
+                >
+                  <ArrowDownRight className="w-3.5 h-3.5" /> Quedas de preco
+                </Link>
+                <Link
+                  href="/busca"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent-purple/5 text-accent-purple text-xs font-medium hover:bg-accent-purple/10 transition-colors border border-accent-purple/10"
+                >
+                  <Search className="w-3.5 h-3.5" /> Buscar produto
+                </Link>
+              </div>
+            </div>
           </div>
         </EmptyState>
       )}

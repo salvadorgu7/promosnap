@@ -12,6 +12,12 @@ import {
   ArrowRight,
   Zap,
   Clock,
+  ShieldCheck,
+  TrendingDown,
+  Gift,
+  Target,
+  Heart,
+  BarChart3,
 } from "lucide-react";
 import Link from "next/link";
 import Breadcrumb from "@/components/ui/Breadcrumb";
@@ -37,6 +43,7 @@ const MAIN_CHANNELS = [
     bg: "bg-blue-500/10",
     borderColor: "border-blue-500/20",
     memberCount: "Novo",
+    estimatedMembers: "Crescendo",
     envKey: "TELEGRAM_CHAT_ID",
     href: process.env.TELEGRAM_CHAT_ID
       ? `https://t.me/${process.env.TELEGRAM_CHAT_ID}`
@@ -54,6 +61,7 @@ const MAIN_CHANNELS = [
     bg: "bg-green-500/10",
     borderColor: "border-green-500/20",
     memberCount: "Novo",
+    estimatedMembers: "Crescendo",
     envKey: "WHATSAPP_GROUP_LINK",
     href: process.env.WHATSAPP_GROUP_LINK || null,
     ctaLabel: "Entrar no WhatsApp",
@@ -69,6 +77,7 @@ const MAIN_CHANNELS = [
     bg: "bg-purple-500/10",
     borderColor: "border-purple-500/20",
     memberCount: "Novo",
+    estimatedMembers: "Crescendo",
     envKey: null,
     href: "/#newsletter",
     ctaLabel: "Cadastrar e-mail",
@@ -123,6 +132,37 @@ const CATEGORY_CHANNELS = [
   },
 ];
 
+const WHY_PARTICIPATE = [
+  {
+    icon: ShieldCheck,
+    title: "Ofertas verificadas",
+    description: "Cada oferta passa por verificacao automatica de score e historico de preco.",
+    color: "text-accent-green",
+    bg: "bg-accent-green/10",
+  },
+  {
+    icon: TrendingDown,
+    title: "Alertas de preco",
+    description: "Seja notificado quando o produto que voce quer atingir o preco ideal.",
+    color: "text-accent-blue",
+    bg: "bg-accent-blue/10",
+  },
+  {
+    icon: Gift,
+    title: "Cupons exclusivos",
+    description: "Acesso a cupons e codigos promocionais antes de todo mundo.",
+    color: "text-accent-orange",
+    bg: "bg-accent-orange/10",
+  },
+  {
+    icon: Target,
+    title: "Zero spam",
+    description: "Sem mensagens desnecessarias. So enviamos o que realmente vale a pena.",
+    color: "text-accent-purple",
+    bg: "bg-accent-purple/10",
+  },
+];
+
 export default function CanaisPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -145,8 +185,14 @@ export default function CanaisPage() {
         ]}
       />
 
-      {/* Hero */}
-      <section className="text-center max-w-3xl mx-auto mb-14 mt-4">
+      {/* Hero — enhanced */}
+      <section className="relative text-center max-w-3xl mx-auto mb-14 mt-4">
+        {/* Background decoration */}
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute top-0 left-1/4 w-64 h-64 bg-accent-blue/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-accent-purple/5 rounded-full blur-3xl" />
+        </div>
+
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-blue/10 border border-accent-blue/20 text-accent-blue text-xs font-semibold mb-5">
           <Users className="w-3.5 h-3.5" />
           Comunidade PromoSnap
@@ -155,15 +201,36 @@ export default function CanaisPage() {
           Ofertas verificadas,{" "}
           <span className="text-gradient">direto no seu canal</span>
         </h1>
-        <p className="text-lg text-text-secondary leading-relaxed max-w-2xl mx-auto">
+        <p className="text-lg text-text-secondary leading-relaxed max-w-2xl mx-auto mb-8">
           Receba alertas de preco, cupons e ofertas com score alto no Telegram,
           WhatsApp ou e-mail. Escolha seu canal preferido e nunca mais perca uma
           oportunidade real.
         </p>
+
+        {/* Quick CTAs in hero */}
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          {MAIN_CHANNELS.slice(0, 2).map((ch) => {
+            const Icon = ch.icon;
+            return (
+              <a
+                key={ch.id}
+                href={ch.href || "#canais"}
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md ${
+                  ch.id === "telegram-geral"
+                    ? "bg-[#0088cc] text-white hover:bg-[#0077b5]"
+                    : "bg-[#25D366] text-white hover:bg-[#22c55e]"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {ch.ctaLabel}
+              </a>
+            );
+          })}
+        </div>
       </section>
 
-      {/* Stats bar */}
-      <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-14">
+      {/* Stats bar — enhanced */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-14">
         <div className="card-depth text-center p-4">
           <div className="font-display font-extrabold text-2xl text-accent-blue">
             3+
@@ -184,10 +251,16 @@ export default function CanaisPage() {
           </div>
           <div className="text-xs text-text-muted mt-1">Ofertas verificadas</div>
         </div>
+        <div className="card-depth text-center p-4">
+          <div className="font-display font-extrabold text-2xl text-accent-purple">
+            0
+          </div>
+          <div className="text-xs text-text-muted mt-1">Spam enviado</div>
+        </div>
       </div>
 
-      {/* Main channels */}
-      <section className="mb-16">
+      {/* Main channels — enhanced with member counts */}
+      <section className="mb-16" id="canais">
         <div className="flex items-center gap-2 mb-6">
           <Zap className="w-5 h-5 text-brand-500" />
           <h2 className="font-display font-bold text-xl text-text-primary">
@@ -201,7 +274,7 @@ export default function CanaisPage() {
             return (
               <div
                 key={channel.id}
-                className={`card-depth p-6 flex flex-col border ${channel.borderColor} hover:border-opacity-50`}
+                className={`card-depth p-6 flex flex-col border ${channel.borderColor} hover:border-opacity-50 hover:shadow-md transition-all`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div
@@ -209,10 +282,16 @@ export default function CanaisPage() {
                   >
                     <Icon className={`w-6 h-6 ${channel.color}`} />
                   </div>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent-green/10 text-accent-green border border-accent-green/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse" />
-                    {channel.memberCount}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent-green/10 text-accent-green border border-accent-green/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse" />
+                      Ativo
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-text-muted">
+                      <Users className="w-2.5 h-2.5" />
+                      {channel.estimatedMembers}
+                    </span>
+                  </div>
                 </div>
                 <h3 className="font-display font-bold text-lg text-text-primary mb-2">
                   {channel.name}
@@ -225,7 +304,7 @@ export default function CanaisPage() {
                     href={channel.href!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-primary w-full text-center text-sm"
+                    className="btn-primary w-full text-center text-sm flex items-center justify-center gap-2"
                   >
                     {channel.ctaLabel}
                     <ArrowRight className="w-4 h-4" />
@@ -233,7 +312,7 @@ export default function CanaisPage() {
                 ) : (
                   <Link
                     href={channel.id === "email-daily" ? "/#newsletter" : "#"}
-                    className="btn-primary w-full text-center text-sm"
+                    className="btn-primary w-full text-center text-sm flex items-center justify-center gap-2"
                   >
                     {channel.ctaLabel}
                     <ArrowRight className="w-4 h-4" />
@@ -242,6 +321,39 @@ export default function CanaisPage() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* "Por que participar?" section */}
+      <section className="mb-16">
+        <div className="card-premium p-8 md:p-10">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-extrabold font-display text-text-primary mb-2 flex items-center justify-center gap-2">
+              <Heart className="w-5 h-5 text-accent-red" />
+              Por que participar?
+            </h2>
+            <p className="text-sm text-text-muted max-w-lg mx-auto">
+              Nossos canais sao feitos para quem quer economizar de verdade, sem perder tempo com ofertas falsas.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {WHY_PARTICIPATE.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="text-center p-4">
+                  <div className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center mx-auto mb-3`}>
+                    <Icon className={`w-6 h-6 ${item.color}`} />
+                  </div>
+                  <h3 className="font-display font-bold text-sm text-text-primary mb-1.5">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-text-muted leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -284,7 +396,7 @@ export default function CanaisPage() {
                 </p>
                 <Link
                   href={`/canais/${channel.slug}`}
-                  className="btn-secondary w-full text-center text-xs"
+                  className="btn-secondary w-full text-center text-xs flex items-center justify-center gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   Quero ser avisado

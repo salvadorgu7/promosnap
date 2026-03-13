@@ -15,9 +15,15 @@ export default function RailSection({ title, subtitle, href, icon: Icon, iconCol
     <section className="py-6">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             {Icon && (
-              <div className="w-8 h-8 rounded-lg bg-surface-100 flex items-center justify-center flex-shrink-0">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.06) 100%)",
+                  boxShadow: "0 1px 4px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.5)",
+                }}
+              >
                 <Icon className={`w-4.5 h-4.5 ${iconColor}`} />
               </div>
             )}
@@ -29,7 +35,7 @@ export default function RailSection({ title, subtitle, href, icon: Icon, iconCol
           {href && (
             <Link
               href={href}
-              className="flex items-center gap-1 text-sm text-accent-blue hover:text-brand-500 transition-colors font-medium group/link"
+              className="flex items-center gap-1 text-sm text-accent-blue hover:text-brand-500 transition-colors duration-200 font-medium group/link px-3 py-1.5 rounded-lg hover:bg-accent-blue/5"
             >
               Ver tudo
               <ChevronRight className="w-4 h-4 group-hover/link:translate-x-0.5 transition-transform" />

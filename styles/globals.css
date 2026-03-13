@@ -53,11 +53,18 @@
 
   /* ---- Cards ---- */
   .card {
-    @apply bg-white rounded-xl border border-surface-200/80 shadow-sm;
-    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+    @apply bg-white rounded-xl border border-surface-200/80;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.03),
+      0 2px 8px rgba(0,0,0,0.04);
+    transition: box-shadow 0.3s cubic-bezier(0.22,1,0.36,1), transform 0.3s cubic-bezier(0.22,1,0.36,1), border-color 0.3s ease;
   }
   .card:hover {
-    @apply shadow-md border-surface-200;
+    border-color: rgba(99,102,241,0.12);
+    box-shadow:
+      0 2px 4px rgba(0,0,0,0.04),
+      0 8px 24px rgba(99,102,241,0.08),
+      0 4px 12px rgba(0,0,0,0.05);
   }
   .card-elevated {
     @apply bg-white rounded-xl border border-surface-200/60;
@@ -81,24 +88,49 @@
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
            bg-gradient-to-r from-accent-blue to-brand-500 text-white
-           font-semibold text-sm shadow-sm
-           hover:from-accent-blue/90 hover:to-brand-600
-           active:scale-[0.98]
-           transition-all duration-200 hover:shadow-glow;
+           font-semibold text-sm
+           active:scale-[0.97]
+           transition-all duration-200;
+    box-shadow: 0 1px 3px rgba(41,98,255,0.2), 0 4px 12px rgba(41,98,255,0.15);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 2px 6px rgba(41,98,255,0.25), 0 8px 20px rgba(41,98,255,0.2);
+    filter: brightness(1.05);
   }
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
-           bg-surface-100 text-surface-700 font-medium text-sm border border-surface-200
-           hover:bg-surface-200 hover:text-surface-900 hover:border-surface-300
-           active:scale-[0.98]
-           transition-all duration-150;
+           bg-white text-surface-700 font-medium text-sm border border-surface-200
+           hover:bg-surface-50 hover:text-surface-900 hover:border-surface-300
+           active:scale-[0.97]
+           transition-all duration-200;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .btn-secondary:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
            text-surface-500 font-medium text-sm
-           hover:bg-surface-100 hover:text-surface-700
-           active:bg-surface-200
-           transition-colors;
+           hover:bg-surface-100/80 hover:text-surface-700
+           active:bg-surface-200/60 active:scale-[0.97]
+           transition-all duration-150;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+           bg-accent-red text-white font-semibold text-sm
+           hover:bg-red-600 active:scale-[0.97]
+           transition-all duration-200;
+    box-shadow: 0 1px 3px rgba(255,23,68,0.2), 0 4px 12px rgba(255,23,68,0.15);
+  }
+  .btn-danger:hover {
+    box-shadow: 0 2px 6px rgba(255,23,68,0.25), 0 8px 20px rgba(255,23,68,0.2);
+  }
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+           bg-accent-green text-white font-semibold text-sm
+           hover:bg-green-600 active:scale-[0.97]
+           transition-all duration-200;
+    box-shadow: 0 1px 3px rgba(0,200,83,0.2), 0 4px 12px rgba(0,200,83,0.15);
   }
 
   /* ---- Inputs ---- */
@@ -247,7 +279,18 @@
 
   /* ---- Stat card ---- */
   .stat-card {
-    @apply bg-white rounded-xl border border-surface-200/80 shadow-sm p-5 relative overflow-hidden;
+    @apply bg-white rounded-xl border border-surface-200/80 p-5 relative overflow-hidden;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfcff 100%);
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.03),
+      0 4px 12px rgba(0,0,0,0.04);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .stat-card:hover {
+    box-shadow:
+      0 2px 4px rgba(0,0,0,0.04),
+      0 8px 20px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
   }
   .stat-card::before {
     content: "";
@@ -258,25 +301,48 @@
     width: 4px;
     border-radius: 0 4px 4px 0;
   }
+  .stat-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    opacity: 0.04;
+    pointer-events: none;
+    transform: translate(20px, -20px);
+  }
   .stat-card-blue::before { @apply bg-accent-blue; }
+  .stat-card-blue::after { background: radial-gradient(circle, #2962ff, transparent 70%); }
   .stat-card-green::before { @apply bg-accent-green; }
+  .stat-card-green::after { background: radial-gradient(circle, #00c853, transparent 70%); }
   .stat-card-purple::before { @apply bg-accent-purple; }
+  .stat-card-purple::after { background: radial-gradient(circle, #7c4dff, transparent 70%); }
   .stat-card-orange::before { @apply bg-accent-orange; }
+  .stat-card-orange::after { background: radial-gradient(circle, #ff9100, transparent 70%); }
   .stat-card-red::before { @apply bg-accent-red; }
+  .stat-card-red::after { background: radial-gradient(circle, #ff1744, transparent 70%); }
 
   /* ---- Admin table ---- */
   .table-admin {
     @apply w-full text-sm;
+    border-collapse: separate;
+    border-spacing: 0;
   }
-  .table-admin thead { @apply border-b border-surface-200; }
+  .table-admin thead { @apply border-b-2 border-surface-200/80; }
   .table-admin th {
     @apply text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3;
+    background: linear-gradient(180deg, #f8f9fc 0%, #f4f5fa 100%);
   }
   .table-admin td {
-    @apply px-4 py-3.5 text-text-secondary border-b border-surface-100/80;
+    @apply px-4 py-3.5 text-text-secondary border-b border-surface-100/60;
   }
   .table-admin tbody tr {
-    @apply hover:bg-surface-50/80 transition-colors;
+    @apply transition-colors;
+  }
+  .table-admin tbody tr:hover {
+    background: linear-gradient(90deg, rgba(99,102,241,0.02) 0%, rgba(99,102,241,0.04) 50%, rgba(99,102,241,0.02) 100%);
   }
 
   /* ---- Empty state ---- */
@@ -284,7 +350,9 @@
     @apply flex flex-col items-center justify-center py-16 px-4 text-center;
   }
   .empty-state-icon {
-    @apply w-16 h-16 rounded-2xl bg-surface-100 flex items-center justify-center mb-5 shadow-sm;
+    @apply w-16 h-16 rounded-2xl flex items-center justify-center mb-5;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.06) 100%);
+    box-shadow: 0 2px 8px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
   }
   .empty-state-title {
     @apply font-display font-semibold text-lg text-text-primary mb-1.5;
@@ -295,11 +363,20 @@
 
   /* ---- Toast ---- */
   .toast {
-    @apply fixed bottom-6 right-6 z-[100] px-5 py-3 rounded-xl bg-surface-900 text-white text-sm font-medium
-           shadow-xl animate-slide-up;
+    @apply fixed bottom-6 right-6 z-[100] px-5 py-3 rounded-xl bg-surface-900 text-white text-sm font-medium;
+    box-shadow:
+      0 4px 12px rgba(0,0,0,0.15),
+      0 12px 36px rgba(0,0,0,0.12);
+    backdrop-filter: blur(8px);
   }
-  .toast-success { @apply bg-accent-green text-white; }
-  .toast-error { @apply bg-accent-red text-white; }
+  .toast-success {
+    @apply text-white;
+    background: linear-gradient(135deg, #00c853 0%, #00b248 100%);
+  }
+  .toast-error {
+    @apply text-white;
+    background: linear-gradient(135deg, #ff1744 0%, #e01540 100%);
+  }
 
   /* ---- Heading section ---- */
   .heading-section {
@@ -409,10 +486,50 @@
 
   /* ---- Toast improvements ---- */
   .toast-warning {
-    @apply bg-accent-orange text-white;
+    @apply text-white;
+    background: linear-gradient(135deg, #ff9100 0%, #e68200 100%);
   }
   .toast-info {
-    @apply bg-accent-blue text-white;
+    @apply text-white;
+    background: linear-gradient(135deg, #2962ff 0%, #2356e0 100%);
+  }
+
+  /* ---- Status badges — admin dashboard consistency ---- */
+  .status-ok {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: linear-gradient(135deg, rgba(0,200,83,0.1) 0%, rgba(0,200,83,0.06) 100%);
+    color: #00a844;
+    border: 1px solid rgba(0,200,83,0.2);
+  }
+  .status-warning {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: linear-gradient(135deg, rgba(255,145,0,0.1) 0%, rgba(255,145,0,0.06) 100%);
+    color: #cc7400;
+    border: 1px solid rgba(255,145,0,0.2);
+  }
+  .status-critical {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: linear-gradient(135deg, rgba(255,23,68,0.1) 0%, rgba(255,23,68,0.06) 100%);
+    color: #d41442;
+    border: 1px solid rgba(255,23,68,0.2);
+  }
+  .status-neutral {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(99,102,241,0.04) 100%);
+    color: #4b50b8;
+    border: 1px solid rgba(99,102,241,0.15);
+  }
+
+  /* ---- Admin section header ---- */
+  .admin-section-header {
+    @apply flex items-center gap-3 mb-5 pb-3;
+    border-bottom: 1px solid rgba(99,102,241,0.08);
+  }
+  .admin-section-title {
+    @apply font-display font-bold text-lg text-text-primary tracking-tight;
+  }
+  .admin-section-subtitle {
+    @apply text-xs text-text-muted mt-0.5;
   }
 
   /* ---- Card depth — stronger multi-layer shadow ---- */
@@ -502,15 +619,17 @@
   /* ---- Admin card — admin dashboard card ---- */
   .admin-card {
     @apply bg-white rounded-xl border border-surface-200/80 p-5;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfcff 100%);
     box-shadow:
-      0 1px 3px rgba(0,0,0,0.03),
+      0 1px 2px rgba(0,0,0,0.03),
       0 4px 12px rgba(0,0,0,0.04);
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
   }
   .admin-card:hover {
     box-shadow:
       0 2px 6px rgba(0,0,0,0.05),
-      0 8px 20px rgba(0,0,0,0.06);
+      0 8px 24px rgba(99,102,241,0.06);
+    transform: translateY(-1px);
   }
 
   /* ---- Admin table improvements ---- */
@@ -549,10 +668,15 @@
   .btn-offer {
     @apply flex items-center justify-center gap-2 w-full rounded-lg
            bg-gradient-to-r from-accent-blue to-brand-500 text-white
-           font-semibold shadow-sm
-           hover:shadow-md hover:from-accent-blue/90 hover:to-brand-600
-           active:scale-[0.98]
+           font-semibold
+           active:scale-[0.97]
            transition-all duration-200;
+    box-shadow: 0 2px 6px rgba(41,98,255,0.2), 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .btn-offer:hover {
+    box-shadow: 0 4px 12px rgba(41,98,255,0.28), 0 2px 4px rgba(0,0,0,0.08);
+    filter: brightness(1.06);
+    transform: translateY(-1px);
   }
 
   /* ============================================
@@ -1013,33 +1137,37 @@
 
 /* ---- Toast animations ---- */
 @keyframes toast-slide-in {
-  from {
+  0% {
     opacity: 0;
-    transform: translateX(80px) scale(0.95);
+    transform: translateX(100px) scale(0.92);
   }
-  to {
+  60% {
+    opacity: 1;
+    transform: translateX(-4px) scale(1.01);
+  }
+  100% {
     opacity: 1;
     transform: translateX(0) scale(1);
   }
 }
 
 @keyframes toast-slide-out {
-  from {
+  0% {
     opacity: 1;
     transform: translateX(0) scale(1);
   }
-  to {
+  100% {
     opacity: 0;
-    transform: translateX(80px) scale(0.95);
+    transform: translateX(80px) scale(0.92);
   }
 }
 
 .toast-enter {
-  animation: toast-slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: toast-slide-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .toast-exit {
-  animation: toast-slide-out 0.25s ease-in forwards;
+  animation: toast-slide-out 0.3s cubic-bezier(0.55, 0, 1, 0.45) forwards;
 }
 
 /* ---- Sidebar label animation ---- */

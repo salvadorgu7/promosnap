@@ -9,36 +9,41 @@ const variantStyles: Record<ToastVariant, {
   border: string
   icon: typeof Info
   iconColor: string
+  progressColor: string
 }> = {
   success: {
     bg: "bg-emerald-600",
-    border: "border-emerald-500",
+    border: "border-emerald-500/60",
     icon: CheckCircle2,
     iconColor: "text-emerald-200",
+    progressColor: "rgba(167,243,208,0.4)",
   },
   error: {
     bg: "bg-red-600",
-    border: "border-red-500",
+    border: "border-red-500/60",
     icon: XCircle,
     iconColor: "text-red-200",
+    progressColor: "rgba(254,202,202,0.4)",
   },
   warning: {
     bg: "bg-amber-500",
-    border: "border-amber-400",
+    border: "border-amber-400/60",
     icon: AlertTriangle,
     iconColor: "text-amber-200",
+    progressColor: "rgba(253,230,138,0.4)",
   },
   info: {
     bg: "bg-accent-blue",
-    border: "border-blue-400",
+    border: "border-blue-400/60",
     icon: Info,
     iconColor: "text-blue-200",
+    progressColor: "rgba(191,219,254,0.4)",
   },
 }
 
 function ToastMessage({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }) {
   const [leaving, setLeaving] = useState(false)
-  const { bg, border, icon: Icon, iconColor } = variantStyles[toast.variant]
+  const { bg, border, icon: Icon, iconColor, progressColor } = variantStyles[toast.variant]
 
   useEffect(() => {
     const timer = setTimeout(() => setLeaving(true), 4500)
@@ -47,9 +52,13 @@ function ToastMessage({ toast, onDismiss }: { toast: ToastItem; onDismiss: () =>
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-white text-sm font-medium border ${bg} ${border} backdrop-blur-sm ${
+      className={`relative flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm font-medium border overflow-hidden ${bg} ${border} ${
         leaving ? "toast-exit" : "toast-enter"
       }`}
+      style={{
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15), 0 12px 36px rgba(0,0,0,0.1)",
+        backdropFilter: "blur(8px)",
+      }}
       role="alert"
     >
       <div className="flex-shrink-0">
@@ -63,6 +72,20 @@ function ToastMessage({ toast, onDismiss }: { toast: ToastItem; onDismiss: () =>
       >
         <X className="h-3.5 w-3.5" />
       </button>
+      {/* Auto-dismiss progress bar */}
+      <div
+        className="absolute bottom-0 left-0 h-[2px] rounded-b-xl"
+        style={{
+          background: progressColor,
+          animation: "toast-progress 5s linear forwards",
+        }}
+      />
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes toast-progress {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      ` }} />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
+import { getBaseUrl } from "@/lib/seo/url";
 import "@/styles/globals.css";
 
 const inter = Inter({
@@ -22,9 +23,7 @@ export const metadata: Metadata = {
   },
   description:
     "Encontre as melhores ofertas, compare precos e economize de verdade. Historico real de precos, cupons e os produtos mais vendidos.",
-  metadataBase: new URL(
-    process.env.APP_URL || "https://www.promosnap.com.br"
-  ),
+  metadataBase: new URL(getBaseUrl()),
   openGraph: {
     type: "website",
     locale: "pt_BR",

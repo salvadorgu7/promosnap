@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ExternalLink, Truck, Zap, ShieldCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Truck, Zap, ShieldCheck, BadgeCheck, Percent } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import type { ProductCard } from "@/types";
@@ -18,29 +18,39 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
   const [paused, setPaused] = useState(false);
   const [direction, setDirection] = useState<"right" | "left">("right");
   const [progressKey, setProgressKey] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const total = Math.min(offers.length, 5);
   const slides = offers.slice(0, total);
 
   const goTo = useCallback(
     (index: number) => {
+      if (isTransitioning) return;
+      setIsTransitioning(true);
       setDirection(index > current ? "right" : "left");
       setCurrent(index);
       setProgressKey((k) => k + 1);
+      setTimeout(() => setIsTransitioning(false), 400);
     },
-    [current]
+    [current, isTransitioning]
   );
 
   const next = useCallback(() => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
     setDirection("right");
     setCurrent((c) => (c + 1) % total);
     setProgressKey((k) => k + 1);
-  }, [total]);
+    setTimeout(() => setIsTransitioning(false), 400);
+  }, [total, isTransitioning]);
 
   const prev = useCallback(() => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
     setDirection("left");
     setCurrent((c) => (c - 1 + total) % total);
     setProgressKey((k) => k + 1);
-  }, [total]);
+    setTimeout(() => setIsTransitioning(false), 400);
+  }, [total, isTransitioning]);
 
   // Auto-rotate
   useEffect(() => {
@@ -53,6 +63,7 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
 
   const offer = slides[current];
   const discount = offer.bestOffer.discount;
+  const isVerified = offer.bestOffer.offerScore >= 70;
   const ctaUrl =
     offer.bestOffer.affiliateUrl && offer.bestOffer.affiliateUrl !== "#"
       ? offer.bestOffer.affiliateUrl
@@ -60,6 +71,12 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
 
   const slideClass =
     direction === "right" ? "carousel-slide-right" : "carousel-slide-left";
+
+  // Calculate savings amount
+  const savingsAmount =
+    offer.bestOffer.originalPrice && offer.bestOffer.originalPrice > offer.bestOffer.price
+      ? offer.bestOffer.originalPrice - offer.bestOffer.price
+      : 0;
 
   return (
     <section className="py-6">
@@ -99,17 +116,26 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
                   height={256}
                 />
               </div>
-              {/* Discount badge — larger */}
+              {/* Discount badge — larger and more prominent */}
               {discount && discount > 0 && (
-                <div className="absolute -top-3 -right-3 bg-gradient-to-br from-accent-red to-red-600 text-white font-display font-bold text-base px-3 py-1.5 rounded-xl shadow-lg shadow-red-500/25">
+                <div className="absolute -top-3 -right-3 bg-gradient-to-br from-accent-red to-red-600 text-white font-display font-bold text-base px-3 py-1.5 rounded-xl shadow-lg shadow-red-500/25 flex items-center gap-1">
+                  <Percent className="w-3.5 h-3.5" />
                   -{discount}%
+                </div>
+              )}
+              {/* Verified badge */}
+              {isVerified && (
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent-green/90 text-white text-[10px] font-bold shadow-lg backdrop-blur-sm">
+                  <BadgeCheck className="w-3 h-3" />
+                  Oferta verificada
                 </div>
               )}
             </div>
 
             {/* Details */}
             <div className="flex-1 text-center md:text-left min-w-0">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
+              {/* Trust indicators bar */}
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-3 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-accent-blue/20 text-accent-blue text-xs font-bold tracking-wide uppercase">
                   <Zap className="w-3.5 h-3.5" /> Destaque
                 </span>
@@ -117,6 +143,11 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
                   <ShieldCheck className="w-3 h-3" />
                   {offer.bestOffer.sourceName}
                 </span>
+                {offer.bestOffer.offerScore >= 70 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-green/20 text-accent-green text-[10px] font-semibold">
+                    Score {offer.bestOffer.offerScore}
+                  </span>
+                )}
               </div>
 
               <Link href={`/produto/${offer.slug}`}>
@@ -133,8 +164,15 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
               <div className="mt-5">
                 {offer.bestOffer.originalPrice &&
                   offer.bestOffer.originalPrice > offer.bestOffer.price && (
-                    <div className="text-surface-500 line-through text-base">
-                      {formatPrice(offer.bestOffer.originalPrice)}
+                    <div className="flex items-center justify-center md:justify-start gap-2">
+                      <span className="text-surface-500 line-through text-base">
+                        {formatPrice(offer.bestOffer.originalPrice)}
+                      </span>
+                      {savingsAmount > 0 && (
+                        <span className="text-accent-green text-xs font-bold">
+                          Economia de {formatPrice(savingsAmount)}
+                        </span>
+                      )}
                     </div>
                   )}
                 <div className="font-display font-extrabold text-4xl md:text-5xl text-white tracking-tight">

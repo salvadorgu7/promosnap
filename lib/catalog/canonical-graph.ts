@@ -1,7 +1,9 @@
 // ============================================
-// CANONICAL GRAPH — V18
+// CANONICAL GRAPH — V18→V19
 // Product graph layer for consolidated views,
 // variant trees, and safe merges
+// V19: getCanonicalFamily, splitCanonical,
+//      improved stats with coverage + confidence
 // ============================================
 
 import prisma from "@/lib/db/prisma";
@@ -89,6 +91,14 @@ export interface CanonicalStats {
   avgListingsPerProduct: number;
   productsWithMultipleSources: number;
   totalVariants: number;
+  // V19 additions
+  coveragePercentage: number; // matched / (matched + unmatched)
+  avgConfidence: number; // avg matchConfidence across matched listings
+  strongMatchCount: number; // listings with confidence > 0.85
+  probableMatchCount: number; // listings with confidence 0.6-0.85
+  weakMatchCount: number; // listings with confidence < 0.6
+  productsWithVariants: number;
+  productsNoListings: number;
 }
 
 export interface MergeResult {
@@ -97,6 +107,36 @@ export interface MergeResult {
   sourceProductId: string;
   listingsMoved: number;
   variantsMoved: number;
+  error?: string;
+}
+
+// V19: Canonical Family types
+export interface CanonicalFamilyMember {
+  productId: string;
+  productName: string;
+  slug: string;
+  relation: "self" | "variant" | "similar-brand" | "same-category";
+  sharedAttributes: string[];
+  listingCount: number;
+}
+
+export interface CanonicalFamily {
+  product: {
+    id: string;
+    name: string;
+    slug: string;
+    brandName: string | null;
+    categoryName: string | null;
+  };
+  members: CanonicalFamilyMember[];
+  totalRelated: number;
+}
+
+// V19: Split result
+export interface SplitResult {
+  success: boolean;
+  newProductId: string | null;
+  listingsMoved: number;
   error?: string;
 }
 
@@ -453,7 +493,215 @@ export async function mergeIntoCanonical(
 }
 
 // ============================================
-// getCanonicalStats — graph-wide statistics
+// V19: getCanonicalFamily
+// Returns a product + all related canonicals
+// (same brand+category variants, similar products)
+// ============================================
+
+export async function getCanonicalFamily(productId: string): Promise<CanonicalFamily | null> {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      brandId: true,
+      categoryId: true,
+      specsJson: true,
+      brand: { select: { name: true } },
+      category: { select: { name: true } },
+      _count: { select: { listings: true } },
+    },
+  });
+
+  if (!product) return null;
+
+  const members: CanonicalFamilyMember[] = [];
+
+  // Self
+  members.push({
+    productId: product.id,
+    productName: product.name,
+    slug: product.slug,
+    relation: "self",
+    sharedAttributes: [],
+    listingCount: product._count.listings,
+  });
+
+  // Find variants: same brand, same category, similar name (likely different storage/color)
+  if (product.brandId && product.categoryId) {
+    const variants = await prisma.product.findMany({
+      where: {
+        id: { not: product.id },
+        brandId: product.brandId,
+        categoryId: product.categoryId,
+        status: { in: ["ACTIVE", "PENDING_REVIEW"] },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        specsJson: true,
+        _count: { select: { listings: true } },
+      },
+      take: 20,
+    });
+
+    for (const v of variants) {
+      const shared: string[] = [];
+      if (product.brandId) shared.push("brand");
+      if (product.categoryId) shared.push("category");
+
+      // Determine if it's a variant (very similar name) or just similar
+      const nameA = product.name.toLowerCase().replace(/\d+\s*gb|\d+\s*tb/gi, '').trim();
+      const nameB = v.name.toLowerCase().replace(/\d+\s*gb|\d+\s*tb/gi, '').trim();
+      const isVariant = nameA === nameB || nameA.includes(nameB) || nameB.includes(nameA);
+
+      if (isVariant) shared.push("model-base");
+
+      members.push({
+        productId: v.id,
+        productName: v.name,
+        slug: v.slug,
+        relation: isVariant ? "variant" : "same-category",
+        sharedAttributes: shared,
+        listingCount: v._count.listings,
+      });
+    }
+  } else if (product.brandId) {
+    // Same brand, different category
+    const sameBrand = await prisma.product.findMany({
+      where: {
+        id: { not: product.id },
+        brandId: product.brandId,
+        status: { in: ["ACTIVE", "PENDING_REVIEW"] },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        _count: { select: { listings: true } },
+      },
+      take: 10,
+    });
+
+    for (const sb of sameBrand) {
+      members.push({
+        productId: sb.id,
+        productName: sb.name,
+        slug: sb.slug,
+        relation: "similar-brand",
+        sharedAttributes: ["brand"],
+        listingCount: sb._count.listings,
+      });
+    }
+  }
+
+  return {
+    product: {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      brandName: product.brand?.name ?? null,
+      categoryName: product.category?.name ?? null,
+    },
+    members,
+    totalRelated: members.length - 1, // exclude self
+  };
+}
+
+// ============================================
+// V19: splitCanonical
+// Split specific listings from a product into a new product
+// (reverse of merge)
+// ============================================
+
+export async function splitCanonical(
+  productId: string,
+  listingIds: string[]
+): Promise<SplitResult> {
+  if (listingIds.length === 0) {
+    return { success: false, newProductId: null, listingsMoved: 0, error: "No listing IDs provided" };
+  }
+
+  // Get the source product and verify listings belong to it
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      brandId: true,
+      categoryId: true,
+      imageUrl: true,
+      _count: { select: { listings: true } },
+    },
+  });
+
+  if (!product) {
+    return { success: false, newProductId: null, listingsMoved: 0, error: "Product not found" };
+  }
+
+  // Verify all listing IDs belong to this product
+  const listings = await prisma.listing.findMany({
+    where: { id: { in: listingIds }, productId },
+    select: { id: true, rawTitle: true, imageUrl: true },
+  });
+
+  if (listings.length === 0) {
+    return { success: false, newProductId: null, listingsMoved: 0, error: "No matching listings found for this product" };
+  }
+
+  // Don't allow splitting ALL listings — at least one must remain
+  if (listings.length >= product._count.listings) {
+    return { success: false, newProductId: null, listingsMoved: 0, error: "Cannot split all listings — at least one must remain on the original product" };
+  }
+
+  // Create new product from the first listing's title
+  const newName = listings[0].rawTitle;
+  const baseSlug = newName
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 100);
+
+  const result = await prisma.$transaction(async (tx) => {
+    // Check for slug collision
+    const existing = await tx.product.findUnique({ where: { slug: baseSlug } });
+    const slug = existing ? `${baseSlug}-${Date.now().toString(36)}` : baseSlug;
+
+    // Create the new product
+    const newProduct = await tx.product.create({
+      data: {
+        name: newName,
+        slug,
+        brandId: product.brandId,
+        categoryId: product.categoryId,
+        imageUrl: listings[0].imageUrl ?? product.imageUrl,
+        status: "PENDING_REVIEW",
+      },
+    });
+
+    // Move the specified listings
+    const updated = await tx.listing.updateMany({
+      where: { id: { in: listingIds }, productId },
+      data: { productId: newProduct.id },
+    });
+
+    return { newProductId: newProduct.id, listingsMoved: updated.count };
+  });
+
+  return {
+    success: true,
+    newProductId: result.newProductId,
+    listingsMoved: result.listingsMoved,
+  };
+}
+
+// ============================================
+// getCanonicalStats — V19: improved graph-wide statistics
 // ============================================
 
 export async function getCanonicalStats(): Promise<CanonicalStats> {
@@ -462,16 +710,59 @@ export async function getCanonicalStats(): Promise<CanonicalStats> {
     matchedListings,
     unmatchedListings,
     totalVariants,
+    productsNoListingsCount,
   ] = await Promise.all([
     prisma.product.count({ where: { status: { in: ["ACTIVE", "PENDING_REVIEW"] } } }),
     prisma.listing.count({ where: { productId: { not: null } } }),
     prisma.listing.count({ where: { productId: null } }),
     prisma.productVariant.count(),
+    prisma.product.count({
+      where: {
+        status: { in: ["ACTIVE", "PENDING_REVIEW"] },
+        listings: { none: {} },
+      },
+    }),
   ]);
 
   const avgListingsPerProduct = totalProducts > 0
     ? matchedListings / totalProducts
     : 0;
+
+  const totalListings = matchedListings + unmatchedListings;
+  const coveragePercentage = totalListings > 0
+    ? Math.round((matchedListings / totalListings) * 10000) / 100
+    : 0;
+
+  // V19: Confidence distribution
+  let avgConfidence = 0;
+  let strongMatchCount = 0;
+  let probableMatchCount = 0;
+  let weakMatchCount = 0;
+
+  try {
+    const confidenceRows: {
+      avg_conf: number | null;
+      strong: bigint;
+      probable: bigint;
+      weak: bigint;
+    }[] = await prisma.$queryRaw`
+      SELECT
+        AVG("matchConfidence")::float AS avg_conf,
+        COUNT(*) FILTER (WHERE "matchConfidence" > 0.85)::bigint AS strong,
+        COUNT(*) FILTER (WHERE "matchConfidence" >= 0.6 AND "matchConfidence" <= 0.85)::bigint AS probable,
+        COUNT(*) FILTER (WHERE "matchConfidence" < 0.6 AND "matchConfidence" IS NOT NULL)::bigint AS weak
+      FROM listings
+      WHERE "productId" IS NOT NULL AND "matchConfidence" IS NOT NULL
+    `;
+    if (confidenceRows[0]) {
+      avgConfidence = Math.round((confidenceRows[0].avg_conf ?? 0) * 100) / 100;
+      strongMatchCount = Number(confidenceRows[0].strong);
+      probableMatchCount = Number(confidenceRows[0].probable);
+      weakMatchCount = Number(confidenceRows[0].weak);
+    }
+  } catch (e) {
+    console.error("[canonical-graph] confidence query error:", e);
+  }
 
   // Products with listings from 2+ sources
   let productsWithMultipleSources = 0;
@@ -491,6 +782,17 @@ export async function getCanonicalStats(): Promise<CanonicalStats> {
     console.error("[canonical-graph] multiSource query error:", e);
   }
 
+  // V19: Products with at least one variant
+  let productsWithVariants = 0;
+  try {
+    const variantResult: { cnt: bigint }[] = await prisma.$queryRaw`
+      SELECT COUNT(DISTINCT "productId")::bigint AS cnt FROM product_variants
+    `;
+    productsWithVariants = Number(variantResult[0]?.cnt ?? 0);
+  } catch (e) {
+    console.error("[canonical-graph] variantsCount query error:", e);
+  }
+
   return {
     totalProducts,
     matchedListings,
@@ -498,5 +800,12 @@ export async function getCanonicalStats(): Promise<CanonicalStats> {
     avgListingsPerProduct: Math.round(avgListingsPerProduct * 100) / 100,
     productsWithMultipleSources,
     totalVariants,
+    coveragePercentage,
+    avgConfidence,
+    strongMatchCount,
+    probableMatchCount,
+    weakMatchCount,
+    productsWithVariants,
+    productsNoListings: productsNoListingsCount,
   };
 }

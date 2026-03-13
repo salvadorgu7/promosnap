@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
-import { getBaseUrl, APP_NAME as _APP_NAME } from '@/lib/seo/url'
-
-const APP_NAME = _APP_NAME
+import { getBaseUrl, APP_NAME } from '@/lib/seo/url'
 const APP_URL = getBaseUrl()
 const DEFAULT_DESC = 'Compare preços, encontre as melhores ofertas e economize de verdade. Histórico real de preços, cupons e alertas de queda.'
 

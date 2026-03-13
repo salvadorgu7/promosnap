@@ -70,7 +70,6 @@ const navGroups: NavGroup[] = [
       { href: "/admin/catalog-intelligence", label: "Intelligence", icon: Brain },
       { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
       { href: "/admin/sourcing", label: "Sourcing", icon: Package },
-      { href: "/admin/ingestao", label: "Importacao", icon: Upload },
     ],
   },
   {
@@ -135,7 +134,7 @@ const navGroups: NavGroup[] = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
-      <aside className="w-56 border-r border-surface-200 bg-white flex flex-col">
+      <aside className="w-56 border-r border-surface-200/80 bg-white flex flex-col" style={{ background: "linear-gradient(180deg, #ffffff 0%, #fcfcff 100%)" }}>
         <div className="p-4 border-b border-surface-200">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-brand-500 flex items-center justify-center">
@@ -176,7 +175,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         </div>
       </aside>
-      <main className="flex-1 p-6 bg-surface-50 overflow-auto">{children}</main>
+      <main className="flex-1 p-6 overflow-auto" style={{ background: "linear-gradient(180deg, #f8f9fc 0%, #f4f5fa 100%)" }}>{children}</main>
     </div>
   );
 }

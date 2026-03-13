@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Gift,
   Copy,
@@ -20,6 +20,10 @@ import {
   Send,
   MessageCircle,
   Link2,
+  Star,
+  Award,
+  Target,
+  Clock,
 } from "lucide-react";
 
 function generateCode(): string {
@@ -29,6 +33,37 @@ function generateCode(): string {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
   return code;
+}
+
+const REFERRAL_CODE_KEY = "promosnap_referral_code";
+const REFERRAL_STATS_KEY = "promosnap_referral_stats";
+const REFERRAL_HISTORY_KEY = "promosnap_referral_history";
+
+interface ReferralActivity {
+  type: "visit" | "clickout";
+  timestamp: number;
+  label: string;
+}
+
+// Gamification levels
+const LEVELS = [
+  { name: "Iniciante", minClickouts: 0, icon: Star, color: "text-surface-400", bg: "bg-surface-100" },
+  { name: "Colaborador", minClickouts: 5, icon: Zap, color: "text-accent-blue", bg: "bg-accent-blue/10" },
+  { name: "Influenciador", minClickouts: 20, icon: Trophy, color: "text-accent-orange", bg: "bg-accent-orange/10" },
+  { name: "Embaixador", minClickouts: 50, icon: Award, color: "text-accent-purple", bg: "bg-accent-purple/10" },
+] as const;
+
+function getLevel(clickouts: number) {
+  let current: (typeof LEVELS)[number] = LEVELS[0];
+  let next: (typeof LEVELS)[number] | null = LEVELS[1] ?? null;
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (clickouts >= LEVELS[i].minClickouts) {
+      current = LEVELS[i];
+      next = LEVELS[i + 1] ?? null;
+      break;
+    }
+  }
+  return { current, next };
 }
 
 const STEPS = [
@@ -108,29 +143,58 @@ const MOTIVATION_ITEMS = [
 export default function IndicarPage() {
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedFeedback, setCopiedFeedback] = useState<string | null>(null);
   const [stats, setStats] = useState({ visits: 0, clickouts: 0 });
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [recentActivity, setRecentActivity] = useState<ReferralActivity[]>([]);
 
   useEffect(() => {
-    let stored = localStorage.getItem("ps_referral_code");
+    let stored = localStorage.getItem(REFERRAL_CODE_KEY);
     if (!stored) {
-      stored = generateCode();
-      localStorage.setItem("ps_referral_code", stored);
+      // Migrate from old key if exists
+      stored = localStorage.getItem("ps_referral_code");
+      if (stored) {
+        localStorage.setItem(REFERRAL_CODE_KEY, stored);
+      } else {
+        stored = generateCode();
+        localStorage.setItem(REFERRAL_CODE_KEY, stored);
+      }
     }
     setCode(stored);
 
     try {
-      const raw = localStorage.getItem("ps_referral_stats");
+      const raw = localStorage.getItem(REFERRAL_STATS_KEY) || localStorage.getItem("ps_referral_stats");
       if (raw) setStats(JSON.parse(raw));
+    } catch {}
+
+    try {
+      const rawHistory = localStorage.getItem(REFERRAL_HISTORY_KEY);
+      if (rawHistory) {
+        const history: ReferralActivity[] = JSON.parse(rawHistory);
+        setRecentActivity(history.slice(0, 10));
+      }
     } catch {}
   }, []);
 
   const referralUrl = `${typeof window !== "undefined" ? window.location.origin : "https://www.promosnap.com.br"}/?ref=${code}`;
 
-  function copyLink() {
+  const level = useMemo(() => getLevel(stats.clickouts), [stats.clickouts]);
+
+  const progressToNext = useMemo(() => {
+    if (!level.next) return 100;
+    const range = level.next.minClickouts - level.current.minClickouts;
+    const progress = stats.clickouts - level.current.minClickouts;
+    return Math.min(Math.round((progress / range) * 100), 100);
+  }, [level, stats.clickouts]);
+
+  function handleCopy(source: string) {
     navigator.clipboard.writeText(referralUrl).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopiedFeedback(source);
+      setTimeout(() => {
+        setCopied(false);
+        setCopiedFeedback(null);
+      }, 2000);
     });
   }
 
@@ -161,7 +225,7 @@ export default function IndicarPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero gradient section — premium design */}
+      {/* Hero gradient section */}
       <div className="hero-gradient py-16 md:py-24 px-4">
         <div className="relative z-10 max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs font-semibold mb-6">
@@ -181,14 +245,14 @@ export default function IndicarPage() {
           {/* Quick CTA in hero */}
           <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 max-w-md mx-auto">
             <button
-              onClick={copyLink}
+              onClick={() => handleCopy("hero")}
               className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
-                copied
+                copied && copiedFeedback === "hero"
                   ? "bg-accent-green text-white"
                   : "bg-white text-surface-900 hover:bg-white/90 shadow-lg hover:shadow-xl"
               }`}
             >
-              {copied ? (
+              {copied && copiedFeedback === "hero" ? (
                 <>
                   <Check className="h-4 w-4" /> Link Copiado!
                 </>
@@ -212,7 +276,51 @@ export default function IndicarPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 -mt-8 relative z-10 pb-12">
-        {/* How it works - premium steps */}
+        {/* Gamification level card */}
+        <div className="card-premium p-6 md:p-8 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold font-display text-text-primary flex items-center gap-2">
+              <Target className="h-5 w-5 text-accent-purple" />
+              Seu Nivel
+            </h2>
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-lg ${level.current.bg} flex items-center justify-center`}>
+                <level.current.icon className={`h-4 w-4 ${level.current.color}`} />
+              </div>
+              <span className={`font-display font-bold text-sm ${level.current.color}`}>
+                {level.current.name}
+              </span>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          {level.next && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-text-muted">
+                  {stats.clickouts} / {level.next.minClickouts} clickouts
+                </span>
+                <span className="text-xs text-text-muted flex items-center gap-1">
+                  Proximo: <span className={`font-semibold ${level.next.color}`}>{level.next.name}</span>
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-surface-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-accent-blue to-accent-purple transition-all duration-500"
+                  style={{ width: `${progressToNext}%` }}
+                />
+              </div>
+            </div>
+          )}
+          {!level.next && (
+            <p className="text-sm text-accent-purple font-medium flex items-center gap-1.5">
+              <Award className="h-4 w-4" />
+              Nivel maximo alcancado! Voce e um Embaixador PromoSnap.
+            </p>
+          )}
+        </div>
+
+        {/* How it works */}
         <div className="card-premium p-6 md:p-8 mb-6">
           <h2 className="heading-section text-lg mb-6 flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-accent-purple" />
@@ -251,14 +359,14 @@ export default function IndicarPage() {
           </div>
         </div>
 
-        {/* Referral code card — enhanced */}
+        {/* Referral code card */}
         <div className="card p-6 md:p-8 mb-6">
           <h2 className="text-base font-bold font-display text-text-primary mb-5 flex items-center gap-2">
             <Share2 className="h-5 w-5 text-accent-blue" />
             Seu Codigo de Indicacao
           </h2>
 
-          {/* Code display — bigger, bolder */}
+          {/* Code display */}
           <div className="flex flex-col sm:flex-row items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-accent-blue/5 via-accent-purple/5 to-brand-500/5 border border-surface-200 mb-6">
             <div className="flex-1 text-center sm:text-left">
               <p className="text-xs text-text-muted mb-1 uppercase tracking-wider font-semibold">Seu codigo exclusivo</p>
@@ -267,14 +375,14 @@ export default function IndicarPage() {
               </p>
             </div>
             <button
-              onClick={copyLink}
+              onClick={() => handleCopy("code")}
               className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${
-                copied
+                copied && copiedFeedback === "code"
                   ? "bg-accent-green text-white shadow-accent-green/20"
                   : "btn-primary shadow-accent-blue/20"
               }`}
             >
-              {copied ? (
+              {copied && copiedFeedback === "code" ? (
                 <>
                   <Check className="h-4 w-4" /> Copiado!
                 </>
@@ -294,7 +402,7 @@ export default function IndicarPage() {
             </p>
           </div>
 
-          {/* Share buttons — enhanced layout */}
+          {/* Share buttons — with copy feedback */}
           <div className="space-y-3">
             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">
               Compartilhar via
@@ -328,17 +436,28 @@ export default function IndicarPage() {
                 Twitter/X
               </button>
               <button
-                onClick={copyLink}
-                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-surface-100 text-text-secondary font-bold text-sm hover:bg-surface-200 hover:shadow-sm transition-all"
+                onClick={() => handleCopy("share")}
+                className={`flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold text-sm transition-all ${
+                  copied && copiedFeedback === "share"
+                    ? "bg-accent-green/10 text-accent-green"
+                    : "bg-surface-100 text-text-secondary hover:bg-surface-200 hover:shadow-sm"
+                }`}
               >
-                <Copy className="h-5 w-5" />
-                Copiar Link
+                {copied && copiedFeedback === "share" ? (
+                  <>
+                    <Check className="h-5 w-5" /> Copiado!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-5 w-5" /> Copiar Link
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Stats — enhanced with conversion rate */}
+        {/* Stats — enhanced with level */}
         <div className="card p-6 md:p-8 mb-6">
           <h2 className="text-base font-bold font-display text-text-primary mb-5 flex items-center gap-2">
             <Users className="h-5 w-5 text-accent-purple" />
@@ -373,7 +492,7 @@ export default function IndicarPage() {
                 Compartilhe seu link para comecar a rastrear suas indicacoes.
               </p>
               <button
-                onClick={copyLink}
+                onClick={() => handleCopy("stats-empty")}
                 className="btn-primary mt-3 px-5 py-2 text-sm"
               >
                 <Copy className="h-4 w-4" /> Copiar Link Agora
@@ -381,6 +500,45 @@ export default function IndicarPage() {
             </div>
           )}
         </div>
+
+        {/* Recent referral activity */}
+        {recentActivity.length > 0 && (
+          <div className="card p-6 md:p-8 mb-6">
+            <h2 className="text-base font-bold font-display text-text-primary mb-4 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-accent-blue" />
+              Atividade Recente
+            </h2>
+            <div className="space-y-2">
+              {recentActivity.map((activity, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-surface-50 border border-surface-100"
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    activity.type === "clickout" ? "bg-accent-green/10" : "bg-accent-blue/10"
+                  }`}>
+                    {activity.type === "clickout" ? (
+                      <MousePointerClick className="h-4 w-4 text-accent-green" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-accent-blue" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-text-primary">{activity.label}</p>
+                    <p className="text-[10px] text-text-muted">
+                      {new Date(activity.timestamp).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Community channels connection */}
         <div className="card-premium p-6 md:p-8 mb-6">

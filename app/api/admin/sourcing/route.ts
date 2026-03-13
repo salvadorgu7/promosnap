@@ -10,8 +10,15 @@ import {
 import {
   processSourceFeed,
   processBatchItems,
+  dryRunImport,
 } from "@/lib/sourcing/feed-ingestion";
 import type { FeedFormat } from "@/lib/sourcing/feed-ingestion";
+import {
+  publishBatch,
+  enrichBatch,
+  rejectBatch,
+  getPublishPreview,
+} from "@/lib/sourcing/publish-pipeline";
 
 // ─── GET /api/admin/sourcing ────────────────────────────────────────────────
 
@@ -135,6 +142,7 @@ export async function POST(request: NextRequest) {
     sourceSlug?: string;
     batchId?: string;
     candidateIds?: string[];
+    reason?: string;
   };
 
   try {
@@ -147,6 +155,7 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (action) {
+      // ─── Import ───────────────────────────────────────────────────
       case "import": {
         const { content, format = "json", sourceSlug = "manual" } = body;
         if (!content) {
@@ -160,6 +169,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(result);
       }
 
+      // ─── V19: Dry-run import ──────────────────────────────────────
+      case "dry-run": {
+        const { content, format = "json" } = body;
+        if (!content) {
+          return NextResponse.json(
+            { error: "Conteudo obrigatorio para validacao" },
+            { status: 400 }
+          );
+        }
+
+        const result = await dryRunImport(content, format);
+        return NextResponse.json({ action: "dry-run", ...result });
+      }
+
+      // ─── Process batch ────────────────────────────────────────────
       case "process": {
         const { batchId } = body;
         if (!batchId) {
@@ -173,6 +197,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(result);
       }
 
+      // ─── Recalculate ──────────────────────────────────────────────
       case "recalculate": {
         const { candidateIds } = body;
         if (!candidateIds || candidateIds.length === 0) {
@@ -194,6 +219,21 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // ─── V19: Publish batch (via publish pipeline) ────────────────
+      case "publish-batch": {
+        const { candidateIds } = body;
+        if (!candidateIds || candidateIds.length === 0) {
+          return NextResponse.json(
+            { error: "candidateIds obrigatorio" },
+            { status: 400 }
+          );
+        }
+
+        const result = await publishBatch(candidateIds);
+        return NextResponse.json({ action: "publish-batch", ...result });
+      }
+
+      // ─── Legacy publish (kept for backward compat) ────────────────
       case "publish": {
         const { candidateIds } = body;
         if (!candidateIds || candidateIds.length === 0) {
@@ -203,91 +243,66 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Delegate to existing batch action logic
-        const candidates = await prisma.catalogCandidate.findMany({
-          where: { id: { in: candidateIds }, status: "APPROVED" },
+        // Delegate to new publish pipeline
+        const result = await publishBatch(candidateIds);
+        return NextResponse.json({
+          action: "publish",
+          total: result.total,
+          published: result.published,
+          errors: result.results
+            .filter(r => !r.success)
+            .map(r => `${r.title}: ${r.error}`)
+            .slice(0, 20),
         });
+      }
 
-        if (candidates.length === 0) {
+      // ─── V19: Enrich batch ────────────────────────────────────────
+      case "enrich-batch": {
+        const { candidateIds } = body;
+        if (!candidateIds || candidateIds.length === 0) {
           return NextResponse.json(
-            { error: "Nenhum candidato aprovado encontrado" },
+            { error: "candidateIds obrigatorio" },
             { status: 400 }
           );
         }
 
-        let published = 0;
-        const errors: string[] = [];
+        const result = await enrichBatch(candidateIds);
+        return NextResponse.json({ action: "enrich-batch", ...result });
+      }
 
-        for (const candidate of candidates) {
-          try {
-            const baseSlug = candidate.title
-              .toLowerCase()
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .replace(/[^a-z0-9]+/g, "-")
-              .replace(/(^-|-$)/g, "")
-              .slice(0, 100);
-
-            const existing = await prisma.product.findUnique({
-              where: { slug: baseSlug },
-            });
-            const slug = existing
-              ? `${baseSlug}-${Date.now().toString(36)}`
-              : baseSlug;
-
-            let brandId: string | undefined;
-            if (candidate.brand) {
-              const brand = await prisma.brand.findFirst({
-                where: {
-                  name: { equals: candidate.brand, mode: "insensitive" },
-                },
-              });
-              brandId = brand?.id;
-            }
-
-            let categoryId: string | undefined;
-            if (candidate.category) {
-              const category = await prisma.category.findFirst({
-                where: { slug: candidate.category },
-              });
-              categoryId = category?.id;
-            }
-
-            await prisma.product.create({
-              data: {
-                name: candidate.title,
-                slug,
-                imageUrl: candidate.imageUrl,
-                status: "ACTIVE",
-                ...(brandId && { brandId }),
-                ...(categoryId && { categoryId }),
-              },
-            });
-
-            await prisma.catalogCandidate.update({
-              where: { id: candidate.id },
-              data: { status: "IMPORTED" },
-            });
-
-            published++;
-          } catch (err) {
-            errors.push(`${candidate.title}: ${String(err)}`);
-          }
+      // ─── V19: Reject batch with reason ────────────────────────────
+      case "reject-batch": {
+        const { candidateIds, reason } = body;
+        if (!candidateIds || candidateIds.length === 0) {
+          return NextResponse.json(
+            { error: "candidateIds obrigatorio" },
+            { status: 400 }
+          );
         }
 
-        return NextResponse.json({
-          action: "publish",
-          total: candidates.length,
-          published,
-          errors: errors.slice(0, 20),
-        });
+        const result = await rejectBatch(candidateIds, reason || "Rejected by admin");
+        return NextResponse.json({ action: "reject-batch", ...result });
+      }
+
+      // ─── V19: Publish preview ─────────────────────────────────────
+      case "publish-preview": {
+        const { candidateIds } = body;
+        if (!candidateIds || candidateIds.length === 0) {
+          return NextResponse.json(
+            { error: "candidateIds obrigatorio" },
+            { status: 400 }
+          );
+        }
+
+        const result = await getPublishPreview(candidateIds);
+        return NextResponse.json({ action: "publish-preview", ...result });
       }
 
       default:
         return NextResponse.json(
           {
             error:
-              "Action invalida. Use: import, process, recalculate, publish",
+              "Action invalida. Use: import, dry-run, process, recalculate, publish, publish-batch, enrich-batch, reject-batch, publish-preview",
           },
           { status: 400 }
         );

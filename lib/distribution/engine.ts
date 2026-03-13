@@ -35,8 +35,43 @@ export function addDistributionPost(
   return entry;
 }
 
-export function getDistributionHistory(limit = 20): DistributionPost[] {
+/**
+ * Get recent distribution history.
+ * Optionally filter by channel.
+ */
+export function getDistributionHistory(
+  limit = 20,
+  channel?: DistributionChannel
+): DistributionPost[] {
+  if (channel) {
+    return distributionHistory
+      .filter((p) => p.channel === channel)
+      .slice(0, limit);
+  }
   return distributionHistory.slice(0, limit);
+}
+
+/**
+ * Get distribution history grouped by channel.
+ * Returns last N distributions per channel.
+ */
+export function getDistributionHistoryByChannel(
+  limitPerChannel = 10
+): Record<DistributionChannel, DistributionPost[]> {
+  const result: Record<DistributionChannel, DistributionPost[]> = {
+    homepage: [],
+    email: [],
+    telegram: [],
+    whatsapp: [],
+  };
+
+  for (const post of distributionHistory) {
+    if (result[post.channel].length < limitPerChannel) {
+      result[post.channel].push(post);
+    }
+  }
+
+  return result;
 }
 
 // ============================================
@@ -352,4 +387,129 @@ export function formatForSegment(
       : `[${segmentLabel}] `;
 
   return prefix + base;
+}
+
+// ============================================
+// Distribute to segment — select + format + distribute offers
+// ============================================
+
+export interface DistributeToSegmentResult {
+  segment: DistributionSegment;
+  channel: DistributionChannel;
+  offers: DistributableOffer[];
+  formattedMessages: string[];
+  post: DistributionPost;
+}
+
+/**
+ * Selects offers for a specific segment and formats them for a channel.
+ * Applies segment filtering (category, coupon, score threshold).
+ * Records the distribution in history.
+ */
+export async function distributeToSegment(
+  segment: DistributionSegment,
+  channel: DistributionChannel,
+  limit = 5
+): Promise<DistributeToSegmentResult> {
+  // Get segment-filtered offers
+  const offers = await getReadyOffersBySegment(segment, limit);
+
+  // Format each offer with segment-specific personalization
+  const formattedMessages = offers.map((offer) =>
+    formatForSegmentPersonalized(offer, channel, segment)
+  );
+
+  // Record in distribution history
+  const post = addDistributionPost({
+    channel,
+    title: `${SEGMENT_LABELS[segment]} — ${offers.length} ofertas`,
+    body: formattedMessages.join("\n\n---\n\n"),
+    offerIds: offers.map((o) => o.offerId),
+    status: "previewed",
+    sentAt: null,
+    error: null,
+  });
+
+  // Record channel send
+  recordChannelSend(channel);
+
+  return {
+    segment,
+    channel,
+    offers,
+    formattedMessages,
+    post,
+  };
+}
+
+// ============================================
+// Enhanced personalization per segment
+// ============================================
+
+/**
+ * Format offer with segment-specific personalization.
+ * Adds contextual messaging based on the segment.
+ */
+function formatForSegmentPersonalized(
+  offer: DistributableOffer,
+  channel: DistributionChannel,
+  segment: DistributionSegment
+): string {
+  const base = formatForChannel(offer, channel);
+  if (segment === "geral") return base;
+
+  const segmentLabel = SEGMENT_LABELS[segment];
+
+  // Segment-specific prefixes and suffixes
+  let prefix = "";
+  let suffix = "";
+
+  switch (segment) {
+    case "ofertas-quentes":
+      prefix = channel === "telegram"
+        ? `🔥 [${segmentLabel}] `
+        : channel === "whatsapp"
+        ? `*🔥 [${segmentLabel}]* `
+        : `[${segmentLabel}] `;
+      if (offer.offerScore >= 80) {
+        suffix = channel === "telegram"
+          ? `\n⭐ Score: ${offer.offerScore}/100`
+          : ` | Score: ${offer.offerScore}/100`;
+      }
+      break;
+
+    case "cupons":
+      prefix = channel === "telegram"
+        ? `🎟️ [${segmentLabel}] `
+        : channel === "whatsapp"
+        ? `*🎟️ [${segmentLabel}]* `
+        : `[${segmentLabel}] `;
+      if (offer.couponText) {
+        suffix = channel === "telegram"
+          ? `\n🏷️ Cupom: ${offer.couponText}`
+          : ` | Cupom: ${offer.couponText}`;
+      }
+      break;
+
+    case "eletronicos":
+    case "moda":
+    case "casa":
+    case "games":
+      prefix = channel === "telegram"
+        ? `[${segmentLabel}] `
+        : channel === "whatsapp"
+        ? `*[${segmentLabel}]* `
+        : `[${segmentLabel}] `;
+      if (offer.isFreeShipping) {
+        suffix = channel === "telegram"
+          ? "\n🚚 Frete gratis!"
+          : " | Frete gratis!";
+      }
+      break;
+
+    default:
+      prefix = `[${segmentLabel}] `;
+  }
+
+  return prefix + base + suffix;
 }
