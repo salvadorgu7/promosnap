@@ -674,9 +674,13 @@
     box-shadow: 0 2px 6px rgba(41,98,255,0.2), 0 1px 2px rgba(0,0,0,0.06);
   }
   .btn-offer:hover {
-    box-shadow: 0 4px 12px rgba(41,98,255,0.28), 0 2px 4px rgba(0,0,0,0.08);
-    filter: brightness(1.06);
-    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(41,98,255,0.32), 0 2px 6px rgba(0,0,0,0.10);
+    filter: brightness(1.08);
+    transform: translateY(-1px) scale(1.01);
+  }
+  .btn-offer:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 4px rgba(41,98,255,0.18);
   }
 
   /* ============================================
@@ -1038,6 +1042,96 @@
     @apply border-accent-blue bg-accent-blue text-white shadow-sm;
     box-shadow: 0 2px 8px rgba(99,102,241,0.25);
   }
+
+  /* ============================================
+     PULSE DOT — small green pulsing indicator
+     ============================================ */
+
+  .pulse-dot {
+    @apply relative inline-flex h-2 w-2;
+  }
+  .pulse-dot::before {
+    content: "";
+    @apply absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75;
+    animation: pulse-dot-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .pulse-dot::after {
+    content: "";
+    @apply relative inline-flex rounded-full h-2 w-2 bg-accent-green;
+  }
+
+  /* ============================================
+     CARD LIVE — subtle animated border gradient
+     ============================================ */
+
+  .card-live {
+    @apply bg-white rounded-xl;
+    position: relative;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.03),
+      0 4px 12px rgba(0,0,0,0.04);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .card-live::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(0,200,83,0.12), rgba(99,102,241,0.08), rgba(0,200,83,0.06));
+    background-size: 200% 200%;
+    animation: card-live-border 4s ease-in-out infinite;
+    z-index: -1;
+  }
+  .card-live:hover {
+    box-shadow:
+      0 2px 6px rgba(0,0,0,0.05),
+      0 8px 24px rgba(0,200,83,0.08);
+    transform: translateY(-2px);
+  }
+
+  /* ============================================
+     OPPORTUNITY CARD — gradient left border + hover lift
+     ============================================ */
+
+  .opportunity-card {
+    @apply bg-white rounded-xl overflow-hidden;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.04),
+      0 4px 12px rgba(0,0,0,0.03);
+    transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+  }
+  .opportunity-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(180deg, #00c853 0%, #2962ff 50%, #7c4dff 100%);
+  }
+  .opportunity-card:hover {
+    border-color: rgba(0,200,83,0.15);
+    box-shadow:
+      0 4px 12px rgba(0,0,0,0.06),
+      0 8px 28px rgba(0,200,83,0.10);
+    transform: translateY(-4px);
+  }
+
+  /* ============================================
+     SECTION LIVE INDICATOR — "Ao vivo" / "Atualizado"
+     ============================================ */
+
+  .section-live-indicator {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold;
+    background: linear-gradient(135deg, rgba(0,200,83,0.08) 0%, rgba(0,200,83,0.04) 100%);
+    color: #00a844;
+    border: 1px solid rgba(0,200,83,0.15);
+  }
 }
 
 @layer utilities {
@@ -1258,4 +1352,16 @@
 .rail-smooth {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+}
+
+/* ---- Pulse dot animation ---- */
+@keyframes pulse-dot-ping {
+  0% { transform: scale(1); opacity: 0.75; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ---- Card live border animation ---- */
+@keyframes card-live-border {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }

@@ -27,6 +27,13 @@ const variantDefaults: Record<EmptyStateVariant, { icon: LucideIcon; title: stri
   },
 }
 
+interface EmptyStateAction {
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  variant?: "primary" | "secondary";
+}
+
 interface EmptyStateProps {
   icon?: LucideIcon;
   title?: string;
@@ -36,6 +43,8 @@ interface EmptyStateProps {
   variant?: EmptyStateVariant;
   onAction?: () => void;
   actionLabel?: string;
+  /** Structured action CTA — takes precedence over onAction/actionLabel when provided */
+  action?: EmptyStateAction;
   /** Optional children rendered below the description */
   children?: React.ReactNode;
 }
@@ -49,6 +58,7 @@ export default function EmptyState({
   variant,
   onAction,
   actionLabel,
+  action,
   children,
 }: EmptyStateProps) {
   const defaults = variant ? variantDefaults[variant] : null
@@ -87,6 +97,27 @@ export default function EmptyState({
         >
           {actionLabel}
         </button>
+      )}
+      {action && (
+        action.href ? (
+          <Link
+            href={action.href}
+            className={`inline-block mt-6 px-6 py-2.5 rounded-lg text-sm font-semibold ${
+              action.variant === "secondary" ? "btn-secondary" : "btn-primary"
+            }`}
+          >
+            {action.label}
+          </Link>
+        ) : action.onClick ? (
+          <button
+            onClick={action.onClick}
+            className={`inline-block mt-6 px-6 py-2.5 rounded-lg text-sm font-semibold ${
+              action.variant === "secondary" ? "btn-secondary" : "btn-primary"
+            }`}
+          >
+            {action.label}
+          </button>
+        ) : null
       )}
     </div>
   );

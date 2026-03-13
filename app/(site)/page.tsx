@@ -1,4 +1,5 @@
 import { Flame, TrendingDown, Trophy, Sparkles, Tag, Shield, TrendingUp, BarChart3, ShieldCheck, Store, Bell, Truck, Star, Search, Users, Send, MessageCircle, ArrowRight, Zap, Eye, Activity } from "lucide-react";
+import DailyOpportunities from "@/components/home/DailyOpportunities";
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";
 import RailSection from "@/components/home/RailSection";
@@ -205,6 +206,9 @@ export default async function HomePage() {
       {/* ===== 3. WHAT CHANGED — compact stats ticker ===== */}
       <WhatChanged />
 
+      {/* ===== 3.5. OPORTUNIDADES DO DIA ===== */}
+      <DailyOpportunities />
+
       <SectionSeparator />
 
       {/* ===== 4. OFFER CAROUSEL ===== */}
@@ -285,7 +289,7 @@ export default async function HomePage() {
       {/* ===== 10. OFERTAS QUENTES ===== */}
       {hotOffers.length > 0 && (
         <div id="hot-offers" className="section-alt py-2">
-          <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red">
+          <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
             {hotOffers.map((p) => (
               <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
                 <OfferCard product={p} />

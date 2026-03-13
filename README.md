@@ -647,6 +647,59 @@ npm run verify:quick # Testes + smoke (sem build)
 - ProductGrouping: store/offer pills, best price, smooth expand/collapse
 - OfferCarousel: "Oferta verificada" badge, economia display, transition debounce
 
+## Opportunity Engine & Executive Cockpit (V20)
+
+### Opportunity Engine
+- lib/opportunity/engine.ts: motor central de oportunidades priorizadas
+- 10 tipos: catalog-weak, high-potential, category-gap, low-monetization, low-trust, highlight-candidate, content-missing, distribution-recommended, campaign-recommended, needs-review
+- Scoring real via Prisma: clickouts, CTR, views, revenue, trust, decision value, gaps, trends, alertas, favoritos
+- calculateImpact, calculateEffort, calculateConfidence (0-100 cada)
+- getOpportunities, getTopOpportunities, summarizeOpportunities
+
+### Executive Cockpit
+- /admin/cockpit: centro de comando executivo
+- "Hoje no PromoSnap": 5-10 acoes prioritarias do dia com impact/confidence bars
+- "Destaques da Semana": clickouts delta, novos produtos, listings, subscribers, top categorias
+- "Riscos e Alertas": low trust, stale offers, failed jobs, weak matches
+- API /api/admin/cockpit com dados reais
+
+### Assisted Operations
+- lib/operations/assisted-actions.ts: quick actions por contexto (catalog, growth, distribution, merchandising)
+- lib/operations/context-lists.ts: 12 listas operaveis (needs-review, weak-match, missing-image, high-potential, uncovered-trends, ready-to-distribute, carousel-candidates, etc.)
+- Acoes com prioridade, URL, e flag canAutoExecute
+
+### Smart Merchandising
+- lib/merchandising/candidates.ts: candidatos rankeados por slot (hero, carousel, banner, deal-of-day, promo-strip)
+- Score composto: decision value, trust, desconto, clickout heat
+- Razoes por candidato: "Alto desconto", "Trust elevado", "Entrega rapida", "Community heat"
+- /admin/merchandising: slots, candidatos, scores, acoes
+
+### Growth Ops + Revenue Compounding
+- Money Map: interest vs revenue vs gap por categoria/marca/fonte
+- Revenue Compounding: produtos recorrentes, categorias com recorrencia, conteudo que converte, canais com retorno
+- lib/business/money-map.ts: getMoneyMap, getCompoundingRevenue
+- Growth Ops melhorado: money map tables, revenue compounding, recommended next actions
+
+### Catalog Governance at Scale
+- lib/catalog/governance-score.ts: score 0-100 com 7 dimensoes (image, brand, category, match, trust, attributes, delivery)
+- Breakdown com progress bars por dimensao
+- Trend: comparacao vs 7 dias atras
+- Recomendacoes baseadas nas dimensoes mais fracas
+- lib/catalog/expansion-recommendations.ts: next imports, categorias para fortalecer, marcas para adicionar, agrupamentos para criar
+
+### Project Integrity Expanded
+- Checks de opportunity engine (6 modulos), automation (6 modulos), sourcing pipeline (6+4 adapters)
+- getIntegritySummary: status + score + critical/warning counts
+- 28 admin API routes verificadas com validateAdmin
+
+### Front-end Evolution
+- DailyOpportunities: "Oportunidades do Dia" na homepage com price drops e decision value
+- OfferCard: "N lojas" pill, delivery estimate, "Popular" heat indicator
+- Sidebar: notification dots em items com acoes pendentes, link Cockpit
+- RailSection: liveBadge "Ao vivo" com pulse dot
+- CSS: pulse-dot, card-live, opportunity-card, section-live-indicator, btn-offer melhorado
+- EmptyState: action prop para CTA estruturado
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)
@@ -658,7 +711,7 @@ npm run verify:quick # Testes + smoke (sem build)
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
 
-## Proximos Passos (V20)
+## Proximos Passos (V21)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein
 - Push notifications via PWA

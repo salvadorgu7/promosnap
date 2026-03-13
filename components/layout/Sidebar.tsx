@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Users,
   Radio,
+  Gauge,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -31,10 +32,14 @@ interface NavGroup {
   items: NavItem[];
 }
 
+// Nav items that show a notification dot (static heuristics)
+const NOTIFICATION_PATHS = new Set(["/admin/imports", "/admin/cockpit"]);
+
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Principal",
     items: [
+      { href: "/admin/cockpit", label: "Cockpit", icon: Gauge },
       { href: "/", label: "Home", icon: Home },
       { href: "/ofertas", label: "Ofertas", icon: Flame },
       { href: "/mais-vendidos", label: "Trending", icon: TrendingUp },
@@ -109,6 +114,11 @@ export default function Sidebar() {
     return null;
   };
 
+  // Notification dot for items with pending actions
+  const hasNotification = (href: string): boolean => {
+    return NOTIFICATION_PATHS.has(href);
+  };
+
   return (
     <aside
       className={`sidebar-root hidden lg:flex flex-col flex-shrink-0 sticky top-0 h-screen z-40 transition-all duration-300 ease-out ${
@@ -156,6 +166,7 @@ export default function Sidebar() {
                   const Icon = item.icon;
                   const active = isActive(item.href);
                   const badge = getBadge(item.href);
+                  const notif = hasNotification(item.href);
                   return (
                     <Link
                       key={item.href}
@@ -182,6 +193,10 @@ export default function Sidebar() {
                         {/* Badge dot when collapsed */}
                         {!expanded && badge !== null && (
                           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-accent-blue" />
+                        )}
+                        {/* Notification dot for pending actions */}
+                        {notif && badge === null && (
+                          <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-accent-orange animate-pulse" />
                         )}
                       </div>
                       {expanded && (

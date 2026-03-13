@@ -34,6 +34,7 @@ import {
   Image,
   Pencil,
   Gem,
+  ShoppingBag,
 } from "lucide-react";
 
 interface NavItem {
@@ -52,6 +53,7 @@ const navGroups: NavGroup[] = [
     title: "Overview",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/admin/cockpit", label: "Cockpit", icon: Gauge },
       { href: "/admin/business", label: "Business OS", icon: BarChart3 },
       { href: "/admin/growth-ops", label: "Growth & Ops", icon: Rocket },
     ],
@@ -109,8 +111,9 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Automacao",
+    title: "Comercial",
     items: [
+      { href: "/admin/merchandising", label: "Merchandising", icon: ShoppingBag },
       { href: "/admin/automation", label: "Automacao", icon: Zap },
     ],
   },

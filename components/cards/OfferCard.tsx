@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Star, ShieldCheck } from "lucide-react";
+import { ExternalLink, Star, ShieldCheck, Store, Truck, Flame as FireIcon } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import FavoriteButton from "@/components/ui/FavoriteButton";
@@ -104,12 +104,21 @@ export default function OfferCard({ product }: { product: ProductCard }) {
         <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1.5 flex-wrap">
           <span className="font-medium">{bestOffer.sourceName}</span>
           {product.offersCount > 1 && (
-            <span className="text-surface-400">+{product.offersCount - 1}</span>
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-surface-100 text-[9px] font-medium text-text-muted">
+              <Store className="h-2.5 w-2.5" />
+              {product.offersCount} lojas
+            </span>
           )}
           {bestOffer.isFreeShipping && (
             <ShippingBadge freeShipping compact />
           )}
           <TrustBadge score={bestOffer.offerScore} />
+          {product.popularityScore > 60 && (
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-orange">
+              <FireIcon className="h-2.5 w-2.5" />
+              <span className="hidden sm:inline">Popular</span>
+            </span>
+          )}
         </div>
 
         <Link href={`/produto/${product.slug}`}>
@@ -138,6 +147,12 @@ export default function OfferCard({ product }: { product: ProductCard }) {
           {bestOffer.price > 100 && (
             <p className="text-[10px] text-text-muted mt-0.5">
               ou 12x de {formatPrice(bestOffer.price / 12)}
+            </p>
+          )}
+          {bestOffer.isFreeShipping && (
+            <p className="text-[10px] text-accent-green mt-0.5 flex items-center gap-0.5">
+              <Truck className="h-2.5 w-2.5" />
+              Entrega: 2-5 dias
             </p>
           )}
         </div>

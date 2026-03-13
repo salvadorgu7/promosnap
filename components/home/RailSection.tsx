@@ -7,10 +7,11 @@ interface RailSectionProps {
   href?: string;
   icon?: LucideIcon;
   iconColor?: string;
+  liveBadge?: boolean;
   children: React.ReactNode;
 }
 
-export default function RailSection({ title, subtitle, href, icon: Icon, iconColor = "text-accent-blue", children }: RailSectionProps) {
+export default function RailSection({ title, subtitle, href, icon: Icon, iconColor = "text-accent-blue", liveBadge, children }: RailSectionProps) {
   return (
     <section className="py-6">
       <div className="max-w-7xl mx-auto px-4">
@@ -28,7 +29,15 @@ export default function RailSection({ title, subtitle, href, icon: Icon, iconCol
               </div>
             )}
             <div>
-              <h2 className="font-display font-bold text-lg text-text-primary tracking-tight">{title}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-display font-bold text-lg text-text-primary tracking-tight">{title}</h2>
+                {liveBadge && (
+                  <span className="section-live-indicator">
+                    <span className="pulse-dot" />
+                    Ao vivo
+                  </span>
+                )}
+              </div>
               {subtitle && <p className="text-xs text-text-muted mt-0.5 leading-relaxed">{subtitle}</p>}
             </div>
           </div>
