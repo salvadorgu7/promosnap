@@ -59,6 +59,26 @@ async function main() {
     console.log(`  Error: ${err.slice(0, 200)}`)
   }
 
+  // Try /products/{id}/items — get actual listings for catalog product
+  console.log(`\n=== 2b. PRODUCT ITEMS: /products/${firstId}/items ===`)
+  const prodItemsRes = await fetch(`${ML_API}/products/${firstId}/items?status=active&limit=5`, { headers })
+  console.log(`  Status: ${prodItemsRes.status}`)
+  if (prodItemsRes.ok) {
+    const piData = await prodItemsRes.json()
+    const results = piData.results || piData || []
+    console.log(`  Results: ${Array.isArray(results) ? results.length : 'not array'}`)
+    if (Array.isArray(results)) {
+      for (const item of results.slice(0, 3)) {
+        console.log(`  ${item.id}: ${item.title?.slice(0, 50)} — R$${item.price} ${item.shipping?.free_shipping ? '[frete gratis]' : ''}`)
+      }
+    } else {
+      console.log(`  Raw (first 300 chars): ${JSON.stringify(piData).slice(0, 300)}`)
+    }
+  } else {
+    const err = await prodItemsRes.text()
+    console.log(`  Error: ${err.slice(0, 200)}`)
+  }
+
   // Try multi-get /items?ids=
   const ids = entries.slice(0, 5).map((e: any) => e.id || e.item_id || e.product_id).filter(Boolean)
   console.log(`\n=== 3. MULTI-GET /items?ids=${ids.join(',')} ===`)

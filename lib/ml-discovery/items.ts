@@ -74,7 +74,81 @@ async function hydrateCatalogProduct(id: string): Promise<MLProduct | null> {
   if (!res.ok) return null
 
   const data = await res.json()
-  return normalizeCatalogProduct(data, id)
+  const product = normalizeCatalogProduct(data, id)
+
+  // If no buy_box_winner (price = 0), try /products/{id}/items to find actual listings
+  if (product && product.currentPrice === 0) {
+    const itemsFromProduct = await fetchProductItems(id)
+    if (itemsFromProduct) {
+      return {
+        ...product,
+        externalId: itemsFromProduct.id,
+        currentPrice: itemsFromProduct.price,
+        originalPrice: itemsFromProduct.originalPrice,
+        productUrl: itemsFromProduct.permalink,
+        imageUrl: itemsFromProduct.imageUrl || product.imageUrl,
+        isFreeShipping: itemsFromProduct.isFreeShipping,
+        availability: itemsFromProduct.availability,
+        availableQuantity: itemsFromProduct.availableQuantity,
+        soldQuantity: itemsFromProduct.soldQuantity,
+        condition: itemsFromProduct.condition,
+      }
+    }
+  }
+
+  return product
+}
+
+/**
+ * Fetch actual item listings for a catalog product via /products/{id}/items.
+ * Returns the best available listing (cheapest with stock).
+ */
+async function fetchProductItems(productId: string): Promise<{
+  id: string
+  price: number
+  originalPrice?: number
+  permalink: string
+  imageUrl?: string
+  isFreeShipping: boolean
+  availability: 'in_stock' | 'out_of_stock' | 'unknown'
+  availableQuantity?: number
+  soldQuantity?: number
+  condition?: string
+} | null> {
+  try {
+    const res = await mlFetch(`${ML_API}/products/${productId}/items?status=active&limit=5`)
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const results = data.results || data || []
+    if (!Array.isArray(results) || results.length === 0) return null
+
+    // Pick cheapest active item
+    const sorted = results
+      .filter((item: any) => item.price > 0)
+      .sort((a: any, b: any) => a.price - b.price)
+
+    const best = sorted[0]
+    if (!best) return null
+
+    const thumbnail = best.thumbnail || ''
+    const avail: 'in_stock' | 'out_of_stock' = (best.available_quantity ?? 0) > 0 ? 'in_stock' : 'out_of_stock'
+
+    return {
+      id: best.id,
+      price: best.price,
+      originalPrice: best.original_price ?? undefined,
+      permalink: best.permalink,
+      imageUrl: best.pictures?.[0]?.secure_url || best.pictures?.[0]?.url || thumbnail.replace(/-I\.jpg$/, '-O.jpg') || undefined,
+      isFreeShipping: best.shipping?.free_shipping ?? false,
+      availability: avail,
+      availableQuantity: best.available_quantity,
+      soldQuantity: best.sold_quantity,
+      condition: best.condition,
+    }
+  } catch {
+    return null
+  }
 }
 
 // ============================================================================
