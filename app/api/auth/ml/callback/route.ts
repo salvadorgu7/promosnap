@@ -48,15 +48,9 @@ export async function GET(req: NextRequest) {
     const body = await res.json()
 
     if (!res.ok) {
-      console.error('[ml-auth] Token exchange failed:', JSON.stringify(body))
+      console.error('[ml-auth] Token exchange failed:', JSON.stringify(body), { ml_status: res.status, pkce_used: !!codeVerifier, redirect_uri: redirectUri })
       return NextResponse.json(
-        {
-          error: 'Token exchange failed',
-          ml_response: body,
-          ml_status: res.status,
-          pkce_used: !!codeVerifier,
-          redirect_uri: redirectUri,
-        },
+        { error: 'Token exchange failed' },
         { status: 500 }
       )
     }
@@ -75,7 +69,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('[ml-auth] Callback error:', error)
     return NextResponse.json(
-      { error: 'Falha na autenticacao ML', detail: String(error) },
+      { error: 'Falha na autenticacao ML' },
       { status: 500 }
     )
   }

@@ -225,7 +225,7 @@ async function publishSingleCandidate(
         rawBrand: candidate.brand,
         rawCategory: candidate.category,
         imageUrl: candidate.imageUrl,
-        productUrl: candidate.affiliateUrl || `https://promosnap.com.br/p/${productId}`,
+        productUrl: candidate.affiliateUrl || `https://www.promosnap.com.br/p/${productId}`,
         matchConfidence: bestMatch?.score ?? null,
         status: "ACTIVE",
       },

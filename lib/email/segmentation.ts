@@ -118,7 +118,7 @@ export interface SegmentDeal {
  * Falls back to top deals if no segment-specific deals are found.
  */
 export async function getSegmentedDeals(segment: SubscriberSegment): Promise<SegmentDeal[]> {
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://promosnap.com.br'
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.promosnap.com.br'
 
   // Extract the category/keyword from segment key
   const [segType, segValue] = segment.key.split(':')

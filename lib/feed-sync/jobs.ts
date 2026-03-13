@@ -135,7 +135,7 @@ export async function sourceSyncJob(
         title: c.title,
         price: c.price!,
         originalPrice: c.originalPrice ?? undefined,
-        url: c.affiliateUrl || `https://promosnap.com.br/p/${c.id}`,
+        url: c.affiliateUrl || `https://www.promosnap.com.br/p/${c.id}`,
         imageUrl: c.imageUrl ?? undefined,
         brand: c.brand ?? undefined,
         category: c.category ?? undefined,

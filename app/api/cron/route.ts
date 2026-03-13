@@ -4,9 +4,14 @@ import { captureError, captureEvent, logInfo, logWarn } from '@/lib/monitoring'
 const CRON_SECRET = process.env.CRON_SECRET
 
 export async function GET(req: NextRequest) {
+  if (!CRON_SECRET) {
+    logWarn('cron', 'CRON_SECRET is not configured')
+    return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
+  }
+
   // Vercel Cron sends Authorization header
   const authHeader = req.headers.get('authorization')
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
     logWarn('cron', 'Unauthorized cron request rejected')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

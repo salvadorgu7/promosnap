@@ -9,18 +9,7 @@ export async function GET(
     const { productId } = await params;
     const days = parseInt(request.nextUrl.searchParams.get("days") || "90");
 
-    // TODO: Fetch from DB
-    // const since = new Date();
-    // since.setDate(since.getDate() - days);
-    //
-    // const snapshots = await prisma.priceSnapshot.findMany({
-    //   where: {
-    //     offer: { listing: { productId } },
-    //     capturedAt: { gte: since },
-    //   },
-    //   orderBy: { capturedAt: 'asc' },
-    //   select: { price: true, capturedAt: true },
-    // });
+    // TODO: Fetch price snapshots from DB
 
     return NextResponse.json({
       productId,

@@ -73,22 +73,31 @@ export default function MlIntegrationPage() {
     }
   }
 
+  const [searchError, setSearchError] = useState<string | null>(null)
+
   async function handleSearch() {
     if (!searchQuery.trim()) return
     setSearching(true)
     setSearchResults([])
     setImportResult(null)
+    setSearchError(null)
     try {
       const res = await fetch(
         `/api/admin/ml/search?q=${encodeURIComponent(searchQuery)}&limit=${searchLimit}`,
         { headers: { 'x-admin-secret': adminSecret } }
       )
       const data = await res.json()
-      if (data.results) {
-        setSearchResults(data.results)
+      if (!res.ok) {
+        setSearchError(`Erro ${res.status}: ${data.error || JSON.stringify(data)}`)
+        return
       }
-    } catch {
-      setSearchResults([])
+      if (data.results && data.results.length > 0) {
+        setSearchResults(data.results)
+      } else {
+        setSearchError('Nenhum resultado encontrado')
+      }
+    } catch (err) {
+      setSearchError(`Erro de rede: ${err}`)
     } finally {
       setSearching(false)
     }
@@ -98,6 +107,7 @@ export default function MlIntegrationPage() {
     if (!searchQuery.trim()) return
     setImporting(true)
     setImportResult(null)
+    setSearchError(null)
     try {
       const res = await fetch('/api/admin/ml/import', {
         method: 'POST',
@@ -107,7 +117,11 @@ export default function MlIntegrationPage() {
         },
         body: JSON.stringify({ query: searchQuery, limit: searchLimit }),
       })
-      const data: ImportResult = await res.json()
+      const data = await res.json()
+      if (!res.ok) {
+        setImportResult({ imported: 0, skipped: 0, total: 0, message: `Erro ${res.status}: ${data.error || JSON.stringify(data)}` })
+        return
+      }
       setImportResult(data)
     } catch {
       setImportResult({ imported: 0, skipped: 0, total: 0, message: 'Erro de rede' })
@@ -309,6 +323,14 @@ export default function MlIntegrationPage() {
               Importar pro Catalogo
             </button>
           </div>
+
+          {/* Search error */}
+          {searchError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <XCircle className="inline h-4 w-4 mr-1" />
+              {searchError}
+            </div>
+          )}
 
           {/* Import result */}
           {importResult && (
