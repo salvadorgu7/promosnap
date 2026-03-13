@@ -5,7 +5,6 @@ import {
   ShoppingBag,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   ExternalLink,
   Key,
   Link2,
@@ -15,6 +14,8 @@ import {
   Search,
   Download,
   Package,
+  TrendingUp,
+  Tag,
 } from 'lucide-react'
 
 interface SearchResult {
@@ -25,6 +26,7 @@ interface SearchResult {
   imageUrl?: string
   isFreeShipping: boolean
   availability: string
+  category?: string
 }
 
 interface ImportResult {
@@ -35,6 +37,22 @@ interface ImportResult {
   message: string
 }
 
+// Quick category buttons for the UI
+const QUICK_CATEGORIES = [
+  { label: 'Celulares', query: 'celular' },
+  { label: 'Notebooks', query: 'notebook' },
+  { label: 'Fones', query: 'fone' },
+  { label: 'TVs', query: 'tv' },
+  { label: 'Smartwatches', query: 'smartwatch' },
+  { label: 'Consoles', query: 'console' },
+  { label: 'Tablets', query: 'tablet' },
+  { label: 'Cameras', query: 'camera' },
+  { label: 'Monitores', query: 'monitor' },
+  { label: 'Tenis', query: 'tenis' },
+  { label: 'Perfumes', query: 'perfume' },
+  { label: 'Cafeteiras', query: 'cafeteira' },
+]
+
 export default function MlIntegrationPage() {
   const [authStatus, setAuthStatus] = useState<'ok' | 'error' | null>(null)
 
@@ -43,24 +61,20 @@ export default function MlIntegrationPage() {
     const auth = params.get('auth')
     if (auth === 'ok' || auth === 'error') {
       setAuthStatus(auth)
-      // Clean URL without reload
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
 
-  const [testResult, setTestResult] = useState<{
-    success: boolean
-    message: string
-  } | null>(null)
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
   const [testing, setTesting] = useState(false)
-
-  // Import state
   const [searchQuery, setSearchQuery] = useState('')
   const [searchLimit, setSearchLimit] = useState(20)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [searchMeta, setSearchMeta] = useState<{ category?: string; method?: string } | null>(null)
   const [diagnosing, setDiagnosing] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [diagResult, setDiagResult] = useState<Record<string, any> | null>(null)
@@ -73,10 +87,7 @@ export default function MlIntegrationPage() {
     try {
       const res = await fetch('/api/admin/integrations/test', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-secret': adminSecret,
-        },
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
         body: JSON.stringify({ key: 'ml' }),
       })
       const data = await res.json()
@@ -88,8 +99,6 @@ export default function MlIntegrationPage() {
     }
   }
 
-  const [searchError, setSearchError] = useState<string | null>(null)
-
   async function handleDiagnose() {
     setDiagnosing(true)
     setDiagResult(null)
@@ -97,8 +106,7 @@ export default function MlIntegrationPage() {
       const res = await fetch('/api/admin/ml/token-check', {
         headers: { 'x-admin-secret': adminSecret },
       })
-      const data = await res.json()
-      setDiagResult(data)
+      setDiagResult(await res.json())
     } catch (err) {
       setDiagResult({ error: String(err) })
     } finally {
@@ -106,98 +114,31 @@ export default function MlIntegrationPage() {
     }
   }
 
-  // Client-side ML search: calls ML API directly from the browser (Brazilian IP)
-  // This bypasses the Vercel server-side 403 geo-block
-  async function searchMLDirect(query: string, limit: number): Promise<SearchResult[]> {
-    const searchUrl = `https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(query)}&limit=${limit}`
+  async function handleSearch(overrideQuery?: string) {
+    const q = overrideQuery || searchQuery
+    if (!q.trim()) return
+    if (overrideQuery) setSearchQuery(overrideQuery)
 
-    // Try 1: with token from our server (some ML endpoints need auth)
-    let accessToken = ''
-    try {
-      const tokenRes = await fetch('/api/admin/ml/access-token', {
-        headers: { 'x-admin-secret': adminSecret },
-      })
-      const tokenData = await tokenRes.json()
-      if (tokenData.access_token) accessToken = tokenData.access_token
-    } catch {
-      // proceed without token
-    }
-
-    // Try with token first, then without
-    const attempts: { url: string; headers: Record<string, string> }[] = accessToken
-      ? [
-          { url: searchUrl, headers: { Authorization: `Bearer ${accessToken}` } },
-          { url: `${searchUrl}&access_token=${accessToken}`, headers: {} },
-          { url: searchUrl, headers: {} },
-        ]
-      : [{ url: searchUrl, headers: {} }]
-
-    for (const attempt of attempts) {
-      try {
-        const res = await fetch(attempt.url, {
-          headers: Object.keys(attempt.headers).length > 0 ? attempt.headers : undefined,
-        })
-        if (!res.ok) continue
-
-        const data = await res.json()
-        if (!data.results?.length) continue
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return data.results.map((item: any) => ({
-          externalId: item.id,
-          title: item.title,
-          currentPrice: item.price,
-          originalPrice: item.original_price ?? undefined,
-          productUrl: item.permalink,
-          imageUrl: item.thumbnail?.replace(/-I\.jpg$/, '-O.jpg'),
-          isFreeShipping: item.shipping?.free_shipping ?? false,
-          availability: item.available_quantity > 0 ? 'in_stock' : 'out_of_stock',
-        }))
-      } catch {
-        continue
-      }
-    }
-
-    throw new Error('Todas as tentativas client-side falharam')
-  }
-
-  async function handleSearch() {
-    if (!searchQuery.trim()) return
     setSearching(true)
     setSearchResults([])
     setImportResult(null)
     setSearchError(null)
+    setSearchMeta(null)
+
     try {
-      // Strategy 1: server-side search (might work if preferredRegion=gru1 is active)
       const res = await fetch(
-        `/api/admin/ml/search?q=${encodeURIComponent(searchQuery)}&limit=${searchLimit}`,
+        `/api/admin/ml/search?q=${encodeURIComponent(q)}&limit=${searchLimit}`,
         { headers: { 'x-admin-secret': adminSecret } }
       )
       const data = await res.json()
 
       if (data.results && data.results.length > 0) {
         setSearchResults(data.results)
-        return
-      }
-
-      // Strategy 2: client-side search (browser is in Brazil, no geo-block)
-      if (data.error?.includes('403') || data.error?.includes('forbidden')) {
-        console.log('[ml] Server blocked by ML geo-filter, trying client-side...')
-        try {
-          const directResults = await searchMLDirect(searchQuery, searchLimit)
-          if (directResults.length > 0) {
-            setSearchResults(directResults)
-            return
-          }
-        } catch (clientErr) {
-          console.error('[ml] Client-side search also failed:', clientErr)
-        }
-      }
-
-      if (data.error) {
+        setSearchMeta({ category: data.category, method: data.method })
+      } else if (data.error) {
         setSearchError(data.error)
       } else {
-        setSearchError('Nenhum resultado encontrado para essa busca')
+        setSearchError(`Nenhum resultado para "${q}". Tente uma das categorias abaixo.`)
       }
     } catch (err) {
       setSearchError(`Erro de rede: ${err}`)
@@ -207,23 +148,20 @@ export default function MlIntegrationPage() {
   }
 
   async function handleImport() {
-    if (!searchQuery.trim() && searchResults.length === 0) return
+    if (searchResults.length === 0 && !searchQuery.trim()) return
     setImporting(true)
     setImportResult(null)
     setSearchError(null)
+
     try {
-      // If we have client-side results, import by IDs (bypass search 403)
-      // Otherwise, let server search + import
+      // Always import by IDs when we have results (avoids geo-block on server search)
       const importBody = searchResults.length > 0
         ? { externalIds: searchResults.map((r) => r.externalId) }
         : { query: searchQuery, limit: searchLimit }
 
       const res = await fetch('/api/admin/ml/import', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-secret': adminSecret,
-        },
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
         body: JSON.stringify(importBody),
       })
       const data = await res.json()
@@ -248,7 +186,7 @@ export default function MlIntegrationPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Mercado Livre</h1>
-          <p className="text-sm text-gray-500">Integracao OAuth 2.0 + Importacao</p>
+          <p className="text-sm text-gray-500">Importacao automatica via API — best sellers por categoria</p>
         </div>
       </div>
 
@@ -256,77 +194,9 @@ export default function MlIntegrationPage() {
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Status OAuth</h2>
         <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
-          <ConfigRow
-            label="Client ID"
-            envKey="ML_CLIENT_ID ou MERCADOLIVRE_APP_ID"
-            icon={<Key className="h-4 w-4" />}
-          />
-          <ConfigRow
-            label="Client Secret"
-            envKey="ML_CLIENT_SECRET ou MERCADOLIVRE_SECRET"
-            icon={<Shield className="h-4 w-4" />}
-          />
-          <ConfigRow
-            label="Redirect URI"
-            envKey="ML_REDIRECT_URI"
-            icon={<Link2 className="h-4 w-4" />}
-          />
-        </div>
-      </section>
-
-      {/* Token Status */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Status do Token</h2>
-        <div className="rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            <div>
-              <p className="text-sm font-medium text-gray-900">Token de acesso</p>
-              <p className="text-xs text-gray-500">
-                Tokens sao gerenciados via fluxo OAuth. Inicie o fluxo abaixo para obter/renovar.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Callback URL */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">URL de Callback esperada</h2>
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <code className="text-sm text-blue-800 break-all">
-            {typeof window !== 'undefined'
-              ? `${window.location.origin}/api/auth/ml/callback`
-              : '[APP_URL]/api/auth/ml/callback'}
-          </code>
-          <p className="mt-2 text-xs text-blue-600">
-            Configure esta URL no painel de desenvolvedores do Mercado Livre.
-          </p>
-        </div>
-      </section>
-
-      {/* Limitations */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Limitacoes</h2>
-        <div className="rounded-xl border border-gray-200 p-4 space-y-3">
-          <div>
-            <h3 className="text-sm font-medium text-emerald-700">Funciona</h3>
-            <ul className="mt-1 space-y-1 text-sm text-gray-600">
-              <li>- Busca de produtos publica (sem auth)</li>
-              <li>- Detalhes de anuncios publicos</li>
-              <li>- Categorias e tendencias</li>
-              <li>- OAuth flow completo</li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-amber-700">Bloqueado / Limitado</h3>
-            <ul className="mt-1 space-y-1 text-sm text-gray-600">
-              <li>- Busca limitada a 1000 resultados por query</li>
-              <li>- Rate limit: ~10 requests/segundo</li>
-              <li>- Certificacao necessaria para operacoes de venda</li>
-              <li>- Dados de vendedor requerem token autenticado</li>
-            </ul>
-          </div>
+          <ConfigRow label="Client ID" envKey="MERCADOLIVRE_APP_ID" icon={<Key className="h-4 w-4" />} />
+          <ConfigRow label="Client Secret" envKey="MERCADOLIVRE_SECRET" icon={<Shield className="h-4 w-4" />} />
+          <ConfigRow label="Redirect URI" envKey="ML_REDIRECT_URI" icon={<Link2 className="h-4 w-4" />} />
         </div>
       </section>
 
@@ -334,13 +204,13 @@ export default function MlIntegrationPage() {
       {authStatus === 'ok' && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
-          <span>OAuth concluido com sucesso! Token salvo no banco de dados. Agora voce pode buscar e importar produtos.</span>
+          <span>OAuth concluido com sucesso! Token salvo.</span>
         </div>
       )}
       {authStatus === 'error' && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2">
           <XCircle className="h-5 w-5 flex-shrink-0" />
-          <span>Falha no OAuth. Verifique os logs do Vercel e tente novamente.</span>
+          <span>Falha no OAuth. Verifique os logs do Vercel.</span>
         </div>
       )}
 
@@ -348,55 +218,32 @@ export default function MlIntegrationPage() {
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Acoes</h2>
         <div className="flex flex-wrap gap-3">
-          <button
-            onClick={handleTest}
-            disabled={testing}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {testing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
+          <button onClick={handleTest} disabled={testing}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Testar Auth
           </button>
-          <a
-            href="/api/auth/ml"
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-          >
+          <a href="/api/auth/ml"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
             <ExternalLink className="h-4 w-4" />
             Iniciar OAuth
           </a>
-          <button
-            onClick={handleDiagnose}
-            disabled={diagnosing}
-            className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50 transition-colors"
-          >
+          <button onClick={handleDiagnose} disabled={diagnosing}
+            className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50 transition-colors">
             {diagnosing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
-            Diagnosticar Token
+            Diagnosticar
           </button>
         </div>
 
         {testResult && (
-          <div
-            className={`rounded-lg border p-3 text-sm ${
-              testResult.success
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-red-200 bg-red-50 text-red-700'
-            }`}
-          >
-            {testResult.success ? (
-              <CheckCircle2 className="inline h-4 w-4 mr-1" />
-            ) : (
-              <XCircle className="inline h-4 w-4 mr-1" />
-            )}
+          <div className={`rounded-lg border p-3 text-sm ${testResult.success ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+            {testResult.success ? <CheckCircle2 className="inline h-4 w-4 mr-1" /> : <XCircle className="inline h-4 w-4 mr-1" />}
             {testResult.message}
           </div>
         )}
 
         {diagResult && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs font-mono text-gray-800 overflow-auto max-h-80">
-            <p className="text-sm font-semibold text-amber-700 mb-2">Diagnostico do Token ML</p>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs font-mono text-gray-800 overflow-auto max-h-60">
             <pre className="whitespace-pre-wrap">{JSON.stringify(diagResult, null, 2)}</pre>
           </div>
         )}
@@ -411,6 +258,25 @@ export default function MlIntegrationPage() {
           <h2 className="text-lg font-semibold text-gray-900">Importar Produtos do ML</h2>
         </div>
 
+        <p className="text-sm text-gray-500">
+          Busca best sellers por categoria usando a API do Mercado Livre. Clique numa categoria ou digite uma palavra-chave.
+        </p>
+
+        {/* Quick category buttons */}
+        <div className="flex flex-wrap gap-2">
+          {QUICK_CATEGORIES.map((cat) => (
+            <button
+              key={cat.query}
+              onClick={() => handleSearch(cat.query)}
+              disabled={searching}
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-yellow-50 hover:border-yellow-300 hover:text-yellow-700 disabled:opacity-50 transition-colors"
+            >
+              <Tag className="h-3 w-3" />
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
         <div className="rounded-xl border border-gray-200 p-4 space-y-4">
           {/* Search input */}
           <div className="flex gap-2">
@@ -419,7 +285,7 @@ export default function MlIntegrationPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Ex: iphone, notebook, fone bluetooth..."
+              placeholder="Ex: celular, notebook, fone, tv, smartwatch..."
               className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
             />
             <select
@@ -430,37 +296,31 @@ export default function MlIntegrationPage() {
               <option value={5}>5</option>
               <option value={10}>10</option>
               <option value={20}>20</option>
-              <option value={50}>50</option>
             </select>
           </div>
 
           {/* Buttons */}
           <div className="flex gap-2">
-            <button
-              onClick={handleSearch}
-              disabled={searching || !searchQuery.trim()}
-              className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 transition-colors"
-            >
-              {searching ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
+            <button onClick={() => handleSearch()} disabled={searching || !searchQuery.trim()}
+              className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 transition-colors">
+              {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               Buscar (preview)
             </button>
-            <button
-              onClick={handleImport}
-              disabled={importing || !searchQuery.trim()}
-              className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50 transition-colors"
-            >
-              {importing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
+            <button onClick={handleImport} disabled={importing || (searchResults.length === 0 && !searchQuery.trim())}
+              className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50 transition-colors">
+              {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Importar pro Catalogo
             </button>
           </div>
+
+          {/* Search metadata */}
+          {searchMeta && (
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <TrendingUp className="h-3 w-3" />
+              {searchMeta.category && <span>Categoria: <strong>{searchMeta.category}</strong></span>}
+              {searchMeta.method && <span className="text-gray-400">({searchMeta.method})</span>}
+            </div>
+          )}
 
           {/* Search error */}
           {searchError && (
@@ -472,13 +332,7 @@ export default function MlIntegrationPage() {
 
           {/* Import result */}
           {importResult && (
-            <div
-              className={`rounded-lg border p-3 text-sm ${
-                importResult.imported > 0
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                  : 'border-amber-200 bg-amber-50 text-amber-700'
-              }`}
-            >
+            <div className={`rounded-lg border p-3 text-sm ${importResult.imported > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
               <CheckCircle2 className="inline h-4 w-4 mr-1" />
               {importResult.message}
               {importResult.errors && importResult.errors.length > 0 && (
@@ -495,23 +349,19 @@ export default function MlIntegrationPage() {
           {searchResults.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs text-gray-500 font-medium">
-                {searchResults.length} resultados encontrados:
+                {searchResults.length} produtos encontrados:
               </p>
               <div className="max-h-96 overflow-y-auto divide-y divide-gray-100 rounded-lg border border-gray-200">
                 {searchResults.map((item) => (
                   <div key={item.externalId} className="flex items-center gap-3 p-3">
                     {item.imageUrl && (
-                      <img
-                        src={item.imageUrl}
-                        alt=""
-                        className="h-12 w-12 rounded-lg object-cover bg-gray-100"
-                      />
+                      <img src={item.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover bg-gray-100" />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-gray-900 truncate">{item.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-sm font-semibold text-emerald-600">
-                          R$ {item.currentPrice.toFixed(2)}
+                          R$ {item.currentPrice?.toFixed(2) || '—'}
                         </span>
                         {item.originalPrice && item.originalPrice > item.currentPrice && (
                           <span className="text-xs text-gray-400 line-through">
@@ -535,21 +385,7 @@ export default function MlIntegrationPage() {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Config row — shows configured/missing without exposing values
-// ---------------------------------------------------------------------------
-
-function ConfigRow({
-  label,
-  envKey,
-  icon,
-}: {
-  label: string
-  envKey: string
-  icon: React.ReactNode
-}) {
-  // Client components cannot read process.env at runtime, so we show the env key name
-  // The actual check happens via the test endpoint
+function ConfigRow({ label, envKey, icon }: { label: string; envKey: string; icon: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <span className="text-gray-400">{icon}</span>
@@ -557,7 +393,6 @@ function ConfigRow({
         <p className="text-sm font-medium text-gray-900">{label}</p>
         <p className="text-xs text-gray-400 truncate">{envKey}</p>
       </div>
-      <span className="text-xs text-gray-400">via teste</span>
     </div>
   )
 }

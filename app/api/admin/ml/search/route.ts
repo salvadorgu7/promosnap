@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
-import { getMLToken } from '@/lib/ml-auth'
+import { discoverProducts, getTrends, ML_CATEGORIES } from '@/lib/ml-discovery'
 
 export const dynamic = 'force-dynamic'
-export const preferredRegion = 'gru1' // São Paulo — ML blocks non-Brazilian IPs
-
-const ML_API_BASE = 'https://api.mercadolibre.com'
-const ML_SITE = 'MLB'
 
 export async function GET(req: NextRequest) {
   const authError = validateAdmin(req)
@@ -14,80 +10,42 @@ export async function GET(req: NextRequest) {
 
   const query = req.nextUrl.searchParams.get('q')
   const limit = parseInt(req.nextUrl.searchParams.get('limit') || '20')
-  const page = parseInt(req.nextUrl.searchParams.get('page') || '0')
+  const mode = req.nextUrl.searchParams.get('mode') // 'trends' or 'categories'
 
+  // Mode: list available categories
+  if (mode === 'categories') {
+    const unique = new Map<string, string>()
+    for (const cat of Object.values(ML_CATEGORIES)) {
+      unique.set(cat.id, cat.name)
+    }
+    return NextResponse.json({
+      categories: Array.from(unique.entries()).map(([id, name]) => ({ id, name })),
+    })
+  }
+
+  // Mode: get trends
+  if (mode === 'trends') {
+    const trends = await getTrends()
+    return NextResponse.json({ trends })
+  }
+
+  // Search mode
   if (!query) {
     return NextResponse.json({ error: 'Parametro q obrigatorio' }, { status: 400 })
   }
 
-  // getMLToken() automatically falls back: user token → app token (client_credentials)
-  let accessToken: string
   try {
-    accessToken = await getMLToken()
-  } catch (err) {
-    return NextResponse.json({
-      error: `Nao foi possivel obter token ML: ${err instanceof Error ? err.message : String(err)}`,
-      results: [],
-    })
-  }
+    console.log(`[ml-search] Discovering products for: "${query}" limit=${limit}`)
 
-  try {
-    const url = new URL(`${ML_API_BASE}/sites/${ML_SITE}/search`)
-    url.searchParams.set('q', query)
-    url.searchParams.set('limit', String(Math.min(limit, 50)))
-    url.searchParams.set('offset', String(page * limit))
+    const { results, category, method } = await discoverProducts(query, limit)
 
-    console.log(`[ml-search] Fetching: ${url.toString()}`)
-
-    const res = await fetch(url.toString(), {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      next: { revalidate: 0 },
-    })
-
-    if (!res.ok) {
-      const errText = await res.text()
-      console.error(`[ml-search] ML API error: ${res.status} — ${errText}`)
-      return NextResponse.json({
-        error: `ML API retornou ${res.status}: ${errText.slice(0, 300)}`,
-        query,
-        results: [],
-      })
-    }
-
-    const data = await res.json()
-    console.log(`[ml-search] "${query}" → ${data.results?.length ?? 0} results (total: ${data.paging?.total ?? 0})`)
-
-    const results = (data.results || []).map((item: {
-      id: string
-      title: string
-      price: number
-      original_price: number | null
-      permalink: string
-      thumbnail: string
-      shipping?: { free_shipping?: boolean }
-      available_quantity: number
-      installments?: { quantity: number; amount: number } | null
-    }) => ({
-      externalId: item.id,
-      title: item.title,
-      currentPrice: item.price,
-      originalPrice: item.original_price ?? undefined,
-      productUrl: item.permalink,
-      imageUrl: item.thumbnail?.replace(/-I\.jpg$/, '-O.jpg'),
-      isFreeShipping: item.shipping?.free_shipping ?? false,
-      availability: item.available_quantity > 0 ? 'in_stock' : 'out_of_stock',
-      installment: item.installments
-        ? `${item.installments.quantity}x R$ ${item.installments.amount.toFixed(2)}`
-        : undefined,
-    }))
+    console.log(`[ml-search] "${query}" → ${results.length} results via ${method} (category: ${category || 'multi'})`)
 
     return NextResponse.json({
       query,
       count: results.length,
-      total: data.paging?.total ?? 0,
+      category,
+      method,
       results,
     })
   } catch (error) {
