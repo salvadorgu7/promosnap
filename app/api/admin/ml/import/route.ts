@@ -4,6 +4,7 @@ import prisma from '@/lib/db/prisma'
 import { MercadoLivreSourceAdapter } from '@/lib/adapters/mercadolivre'
 
 export const dynamic = 'force-dynamic'
+export const preferredRegion = 'gru1' // São Paulo — ML blocks non-Brazilian IPs
 
 const ml = new MercadoLivreSourceAdapter()
 

@@ -106,6 +106,61 @@ export default function MlIntegrationPage() {
     }
   }
 
+  // Client-side ML search: calls ML API directly from the browser (Brazilian IP)
+  // This bypasses the Vercel server-side 403 geo-block
+  async function searchMLDirect(query: string, limit: number): Promise<SearchResult[]> {
+    const searchUrl = `https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(query)}&limit=${limit}`
+
+    // Try 1: with token from our server (some ML endpoints need auth)
+    let accessToken = ''
+    try {
+      const tokenRes = await fetch('/api/admin/ml/access-token', {
+        headers: { 'x-admin-secret': adminSecret },
+      })
+      const tokenData = await tokenRes.json()
+      if (tokenData.access_token) accessToken = tokenData.access_token
+    } catch {
+      // proceed without token
+    }
+
+    // Try with token first, then without
+    const attempts: { url: string; headers: Record<string, string> }[] = accessToken
+      ? [
+          { url: searchUrl, headers: { Authorization: `Bearer ${accessToken}` } },
+          { url: `${searchUrl}&access_token=${accessToken}`, headers: {} },
+          { url: searchUrl, headers: {} },
+        ]
+      : [{ url: searchUrl, headers: {} }]
+
+    for (const attempt of attempts) {
+      try {
+        const res = await fetch(attempt.url, {
+          headers: Object.keys(attempt.headers).length > 0 ? attempt.headers : undefined,
+        })
+        if (!res.ok) continue
+
+        const data = await res.json()
+        if (!data.results?.length) continue
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return data.results.map((item: any) => ({
+          externalId: item.id,
+          title: item.title,
+          currentPrice: item.price,
+          originalPrice: item.original_price ?? undefined,
+          productUrl: item.permalink,
+          imageUrl: item.thumbnail?.replace(/-I\.jpg$/, '-O.jpg'),
+          isFreeShipping: item.shipping?.free_shipping ?? false,
+          availability: item.available_quantity > 0 ? 'in_stock' : 'out_of_stock',
+        }))
+      } catch {
+        continue
+      }
+    }
+
+    throw new Error('Todas as tentativas client-side falharam')
+  }
+
   async function handleSearch() {
     if (!searchQuery.trim()) return
     setSearching(true)
@@ -113,17 +168,34 @@ export default function MlIntegrationPage() {
     setImportResult(null)
     setSearchError(null)
     try {
+      // Strategy 1: server-side search (might work if preferredRegion=gru1 is active)
       const res = await fetch(
         `/api/admin/ml/search?q=${encodeURIComponent(searchQuery)}&limit=${searchLimit}`,
         { headers: { 'x-admin-secret': adminSecret } }
       )
       const data = await res.json()
-      if (!res.ok || data.error) {
-        setSearchError(data.error || `Erro ${res.status}`)
-        return
-      }
+
       if (data.results && data.results.length > 0) {
         setSearchResults(data.results)
+        return
+      }
+
+      // Strategy 2: client-side search (browser is in Brazil, no geo-block)
+      if (data.error?.includes('403') || data.error?.includes('forbidden')) {
+        console.log('[ml] Server blocked by ML geo-filter, trying client-side...')
+        try {
+          const directResults = await searchMLDirect(searchQuery, searchLimit)
+          if (directResults.length > 0) {
+            setSearchResults(directResults)
+            return
+          }
+        } catch (clientErr) {
+          console.error('[ml] Client-side search also failed:', clientErr)
+        }
+      }
+
+      if (data.error) {
+        setSearchError(data.error)
       } else {
         setSearchError('Nenhum resultado encontrado para essa busca')
       }
@@ -135,18 +207,24 @@ export default function MlIntegrationPage() {
   }
 
   async function handleImport() {
-    if (!searchQuery.trim()) return
+    if (!searchQuery.trim() && searchResults.length === 0) return
     setImporting(true)
     setImportResult(null)
     setSearchError(null)
     try {
+      // If we have client-side results, import by IDs (bypass search 403)
+      // Otherwise, let server search + import
+      const importBody = searchResults.length > 0
+        ? { externalIds: searchResults.map((r) => r.externalId) }
+        : { query: searchQuery, limit: searchLimit }
+
       const res = await fetch('/api/admin/ml/import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-admin-secret': adminSecret,
         },
-        body: JSON.stringify({ query: searchQuery, limit: searchLimit }),
+        body: JSON.stringify(importBody),
       })
       const data = await res.json()
       if (!res.ok) {

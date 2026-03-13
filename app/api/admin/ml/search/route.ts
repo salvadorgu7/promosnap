@@ -3,6 +3,7 @@ import { validateAdmin } from '@/lib/auth/admin'
 import { getMLToken } from '@/lib/ml-auth'
 
 export const dynamic = 'force-dynamic'
+export const preferredRegion = 'gru1' // São Paulo — ML blocks non-Brazilian IPs
 
 const ML_API_BASE = 'https://api.mercadolibre.com'
 const ML_SITE = 'MLB'

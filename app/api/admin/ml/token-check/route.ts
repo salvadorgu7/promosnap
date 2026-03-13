@@ -4,6 +4,7 @@ import { mlTokenStore, getMLAppToken } from '@/lib/ml-auth'
 import prisma from '@/lib/db/prisma'
 
 export const dynamic = 'force-dynamic'
+export const preferredRegion = 'gru1' // São Paulo — ML blocks non-Brazilian IPs
 
 // GET /api/admin/ml/token-check
 // Full diagnostic: token status + search endpoint testing with multiple auth strategies
