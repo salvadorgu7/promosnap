@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Get code_verifier from PKCE store
-  const codeVerifier = state ? pkceStore.get(state) : undefined
-  if (state) pkceStore.delete(state) // one-time use
+  // Get code_verifier from PKCE store (database-persisted)
+  const codeVerifier = state ? await pkceStore.get(state) : undefined
+  if (state) await pkceStore.delete(state) // one-time use
 
   try {
     const params: Record<string, string> = {
@@ -61,16 +61,12 @@ export async function GET(req: NextRequest) {
 
     console.log('[ml-auth] Token obtained successfully, expires_in:', body.expires_in)
 
-    return NextResponse.json({
-      ok: true,
-      expires_in: body.expires_in,
-      user_id: body.user_id,
-    })
+    // Redirect back to admin ML page with success indicator
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
+    return NextResponse.redirect(`${appUrl}/admin/integrations/ml?auth=ok`)
   } catch (error) {
     console.error('[ml-auth] Callback error:', error)
-    return NextResponse.json(
-      { error: 'Falha na autenticacao ML' },
-      { status: 500 }
-    )
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
+    return NextResponse.redirect(`${appUrl}/admin/integrations/ml?auth=error`)
   }
 }

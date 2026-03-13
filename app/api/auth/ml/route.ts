@@ -12,14 +12,11 @@ export async function GET() {
   const { verifier, challenge } = generatePKCE()
   const state = generateState()
 
-  // Store verifier keyed by state
-  pkceStore.set(state, verifier)
+  // Store verifier in database (persists across Vercel instances)
+  await pkceStore.set(state, verifier)
 
-  // Clean old entries (keep max 20)
-  if (pkceStore.size > 20) {
-    const firstKey = pkceStore.keys().next().value
-    if (firstKey) pkceStore.delete(firstKey)
-  }
+  // Clean up old PKCE entries
+  await pkceStore.cleanup()
 
   const url = new URL('https://auth.mercadolivre.com.br/authorization')
   url.searchParams.set('response_type', 'code')
