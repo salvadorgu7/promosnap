@@ -799,6 +799,42 @@ npm run verify:quick # Testes + smoke (sem build)
 - Sourcing API: action=sync, refresh-offer, sync-recommendations
 - Sync recommendations engine: staleness, gaps, failed batches, provider needs
 
+## Platform Activation & Real Integrations Setup (V22.5)
+
+### Integration Readiness
+- lib/integrations/readiness.ts: checks centralizados por integracao
+- Status padronizado: NOT_CONFIGURED, CONFIG_PARTIAL, READY_TO_TEST, READY_PRODUCTION, BLOCKED_EXTERNAL
+- Checks: ML, Telegram, Email, Slack, Discord, WhatsApp, Cron, Dominio
+- Activation score 0-100
+
+### Setup Wizard
+- /admin/setup: pagina central de ativacao com score e checklist global
+- Cards por integracao: status, missing requirements, next steps
+- API /api/admin/setup com readiness data
+
+### Integration Detail Pages
+- /admin/integrations: lista de todas as integracoes com status e health
+- /admin/integrations/ml: OAuth status, token, callback URL, limitacoes, botoes teste/auth
+- /admin/integrations/email: Resend status, templates, teste por template
+- /admin/integrations/telegram: bot token, chat ID, execution log, teste
+- /admin/integrations/slack: webhook status, readiness, teste
+- /admin/integrations/discord: webhook status, readiness, teste
+- /admin/integrations/whatsapp: provider readiness, modo preview/API, payload preview
+- /admin/integrations/cron: CRON_SECRET, vercel.json, JobRuns, teste auth
+- /admin/integrations/domain: URLs, HTTPS check, consistency check, copy buttons
+
+### Test Tools
+- /api/admin/integrations/test: teste real por integracao (telegram, slack, discord, email, cron, ml)
+- /api/admin/integrations/email/test: teste por template (welcome, daily-deals, campaign, alert)
+- Todos os testes logam no execution engine
+
+### URL Helper
+- lib/integrations/url-helper.ts: URLs da plataforma (callback ML, cron, sitemap, robots, health, webhooks)
+
+### Config Improvements
+- /admin/config com resumo de integracoes e links rapidos
+- Admin nav: Setup (Overview), Integracoes (Ativacao group)
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)

@@ -37,6 +37,7 @@ import {
   ShoppingBag,
   Play,
   RefreshCw,
+  Plug,
 } from "lucide-react";
 
 interface NavItem {
@@ -56,6 +57,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/cockpit", label: "Cockpit", icon: Gauge },
+      { href: "/admin/setup", label: "Setup", icon: Settings },
       { href: "/admin/business", label: "Business OS", icon: BarChart3 },
       { href: "/admin/growth-ops", label: "Growth & Ops", icon: Rocket },
     ],
@@ -135,6 +137,12 @@ const navGroups: NavGroup[] = [
       { href: "/admin/monitoring", label: "Monitoring", icon: MonitorDot },
       { href: "/admin/production", label: "Production", icon: Gauge },
       { href: "/admin/rate-limits", label: "Rate Limits", icon: ShieldAlert },
+    ],
+  },
+  {
+    title: "Ativacao",
+    items: [
+      { href: "/admin/integrations", label: "Integracoes", icon: Plug },
     ],
   },
 ];

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Settings,
   Database,
@@ -15,6 +16,8 @@ import {
   Clock,
   Server,
   Info,
+  Plug,
+  ArrowRight,
 } from "lucide-react";
 import prisma from "@/lib/db/prisma";
 import { existsSync } from "fs";
@@ -26,6 +29,10 @@ import {
   severityBg,
   severityIconBg,
 } from "@/lib/admin/severity";
+import {
+  getAllIntegrationReadiness,
+  getActivationScore,
+} from "@/lib/integrations/readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -455,6 +462,72 @@ export default async function AdminConfigPage() {
             );
           })}
         </div>
+      </div>
+
+      {/* ── Integracoes readiness summary ── */}
+      <IntegrationReadinessSummary />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Integration Readiness Summary (inline component)
+// ---------------------------------------------------------------------------
+
+function IntegrationReadinessSummary() {
+  const integrations = getAllIntegrationReadiness();
+  const score = getActivationScore();
+
+  const ready = integrations.filter((i) => i.status === "READY_PRODUCTION").length;
+  const partial = integrations.filter(
+    (i) => i.status === "CONFIG_PARTIAL" || i.status === "READY_TO_TEST",
+  ).length;
+  const missing = integrations.filter((i) => i.status === "NOT_CONFIGURED").length;
+
+  const scoreColor =
+    score >= 80 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : "text-red-600";
+
+  return (
+    <div className="rounded-xl border border-surface-200 bg-white p-5">
+      <h2 className="text-lg font-semibold font-display text-text-primary mb-4 flex items-center gap-2">
+        <Plug className="h-4 w-4 text-text-muted" />
+        Integracoes
+      </h2>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div className="p-3 rounded-lg bg-surface-50 text-center">
+          <p className={`text-2xl font-bold font-display ${scoreColor}`}>{score}</p>
+          <p className="text-xs text-text-muted">Activation Score</p>
+        </div>
+        <div className="p-3 rounded-lg bg-emerald-50 text-center">
+          <p className="text-2xl font-bold font-display text-emerald-700">{ready}</p>
+          <p className="text-xs text-emerald-600">Producao</p>
+        </div>
+        <div className="p-3 rounded-lg bg-amber-50 text-center">
+          <p className="text-2xl font-bold font-display text-amber-700">{partial}</p>
+          <p className="text-xs text-amber-600">Parcial / Teste</p>
+        </div>
+        <div className="p-3 rounded-lg bg-red-50 text-center">
+          <p className="text-2xl font-bold font-display text-red-700">{missing}</p>
+          <p className="text-xs text-red-600">Nao configurado</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <Link
+          href="/admin/setup"
+          className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
+        >
+          <ArrowRight className="h-4 w-4" />
+          Ativacao da Plataforma
+        </Link>
+        <Link
+          href="/admin/integrations"
+          className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
+        >
+          <ArrowRight className="h-4 w-4" />
+          Painel de Integracoes
+        </Link>
       </div>
     </div>
   );
