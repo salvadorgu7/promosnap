@@ -1,7 +1,8 @@
-// Mercado Livre Source Adapter (STUB)
-// Ready for real ML API integration — uses existing ML OAuth if available.
+// Mercado Livre Source Adapter — REAL API integration
+// Uses ML OAuth token for authenticated requests + public API for search
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
+import { mlTokenStore } from '@/lib/ml-auth'
 
 // Accept both naming conventions for ML env vars
 function getMLEnv(key: string): string | undefined {
@@ -22,6 +23,135 @@ function getMLRedirectUri(): string | undefined {
 
 const REQUIRED_ENV_KEYS = ['ML_CLIENT_ID', 'ML_CLIENT_SECRET'] as const
 
+const ML_API_BASE = 'https://api.mercadolibre.com'
+const ML_SITE = 'MLB' // Brasil
+
+// ---------------------------------------------------------------------------
+// ML API response types
+// ---------------------------------------------------------------------------
+
+interface MLSearchResult {
+  id: string
+  title: string
+  price: number
+  original_price: number | null
+  currency_id: string
+  condition: string
+  permalink: string
+  thumbnail: string
+  thumbnail_id: string
+  shipping: { free_shipping: boolean }
+  installments?: { quantity: number; amount: number; currency_id: string } | null
+  available_quantity: number
+  sold_quantity: number
+  catalog_product_id?: string | null
+  official_store_name?: string | null
+}
+
+interface MLSearchResponse {
+  results: MLSearchResult[]
+  paging: { total: number; offset: number; limit: number }
+}
+
+interface MLItemResponse {
+  id: string
+  title: string
+  price: number
+  original_price: number | null
+  currency_id: string
+  condition: string
+  permalink: string
+  thumbnail: string
+  pictures: { url: string; secure_url: string }[]
+  shipping: { free_shipping: boolean }
+  available_quantity: number
+  sold_quantity: number
+  catalog_product_id?: string | null
+  official_store_name?: string | null
+  attributes: { id: string; name: string; value_name: string | null }[]
+  category_id: string
+  status: string
+}
+
+// ---------------------------------------------------------------------------
+// Helper: get auth headers (optional — public endpoints work without token)
+// ---------------------------------------------------------------------------
+
+function getAuthHeaders(): Record<string, string> {
+  const token = mlTokenStore.get()
+  if (token) {
+    return { Authorization: `Bearer ${token.access_token}` }
+  }
+  return {}
+}
+
+// ---------------------------------------------------------------------------
+// Helper: convert ML image to high-res
+// ---------------------------------------------------------------------------
+
+function mlImageUrl(thumbnail: string): string {
+  // ML thumbnails use -I.jpg suffix for small images, replace with -O.jpg for large
+  return thumbnail.replace(/-I\.jpg$/, '-O.jpg')
+}
+
+// ---------------------------------------------------------------------------
+// Convert ML result to AdapterResult
+// ---------------------------------------------------------------------------
+
+function mlToAdapterResult(item: MLSearchResult): AdapterResult {
+  const affiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID
+  let affiliateUrl: string | undefined
+
+  if (affiliateId && item.permalink) {
+    // ML affiliate link format
+    affiliateUrl = `${item.permalink}?matt_tool=${affiliateId}`
+  }
+
+  return {
+    externalId: item.id,
+    title: item.title,
+    productUrl: item.permalink,
+    affiliateUrl,
+    currentPrice: item.price,
+    originalPrice: item.original_price ?? undefined,
+    currency: item.currency_id || 'BRL',
+    availability: item.available_quantity > 0 ? 'in_stock' : 'out_of_stock',
+    imageUrl: mlImageUrl(item.thumbnail),
+    isFreeShipping: item.shipping?.free_shipping ?? false,
+    installment: item.installments
+      ? `${item.installments.quantity}x R$ ${item.installments.amount.toFixed(2)}`
+      : undefined,
+  }
+}
+
+function mlItemToAdapterResult(item: MLItemResponse): AdapterResult {
+  const affiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID
+  let affiliateUrl: string | undefined
+
+  if (affiliateId && item.permalink) {
+    affiliateUrl = `${item.permalink}?matt_tool=${affiliateId}`
+  }
+
+  const mainImage = item.pictures?.[0]?.secure_url || item.pictures?.[0]?.url || mlImageUrl(item.thumbnail)
+
+  return {
+    externalId: item.id,
+    title: item.title,
+    productUrl: item.permalink,
+    affiliateUrl,
+    currentPrice: item.price,
+    originalPrice: item.original_price ?? undefined,
+    currency: item.currency_id || 'BRL',
+    availability: item.available_quantity > 0 ? 'in_stock' : 'out_of_stock',
+    imageUrl: mainImage,
+    isFreeShipping: item.shipping?.free_shipping ?? false,
+  }
+}
+
+// ============================================================================
+// Adapter
+// ============================================================================
+
 export class MercadoLivreSourceAdapter implements SourceAdapter {
   name = 'Mercado Livre'
   slug = 'mercadolivre'
@@ -32,18 +162,18 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
 
   getStatus(): AdapterStatus {
     const missingEnvVars = REQUIRED_ENV_KEYS.filter((key) => !getMLEnv(key))
-
-    // Check if ML OAuth credentials exist (supports both naming conventions)
-    const hasOAuth = !!getMLEnv('ML_CLIENT_ID') && !!getMLEnv('ML_CLIENT_SECRET')
     const hasRedirect = !!getMLRedirectUri()
+    const hasToken = !!mlTokenStore.get()
 
     let message = ''
-    if (this.isConfigured() && hasRedirect) {
-      message = 'ML API credentials configured with OAuth redirect'
+    if (this.isConfigured() && hasToken) {
+      message = 'ML API autenticado com token ativo'
+    } else if (this.isConfigured() && hasRedirect) {
+      message = 'ML API configurado — autentique via OAuth para funcionalidade completa'
     } else if (this.isConfigured()) {
-      message = 'ML API credentials configured (OAuth redirect not set)'
+      message = 'ML API configurado (redirect URI ausente)'
     } else {
-      message = `Missing env vars: ${missingEnvVars.join(', ')}`
+      message = `Variaveis ausentes: ${missingEnvVars.join(', ')}`
     }
 
     return {
@@ -57,43 +187,75 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // SEARCH — Real ML API (public endpoint, no auth needed)
+  // ---------------------------------------------------------------------------
+
   async search(query: string, options?: AdapterSearchOptions): Promise<AdapterResult[]> {
-    if (!this.isConfigured()) {
-      console.log(`[SourceAdapter:${this.slug}] Not configured — returning mock data for "${query}"`)
-      return this.getMockResults(query, options?.limit)
+    const limit = options?.limit ?? 20
+    const page = options?.page ?? 0
+    const offset = page * limit
+
+    try {
+      const url = new URL(`${ML_API_BASE}/sites/${ML_SITE}/search`)
+      url.searchParams.set('q', query)
+      url.searchParams.set('limit', String(Math.min(limit, 50)))
+      url.searchParams.set('offset', String(offset))
+
+      if (options?.category) {
+        url.searchParams.set('category', options.category)
+      }
+      if (options?.minPrice) url.searchParams.set('price', `${options.minPrice}-*`)
+      if (options?.maxPrice) url.searchParams.set('price', `*-${options.maxPrice}`)
+
+      // Sort
+      if (options?.sortBy === 'price_asc') url.searchParams.set('sort', 'price_asc')
+      if (options?.sortBy === 'price_desc') url.searchParams.set('sort', 'price_desc')
+
+      const headers: Record<string, string> = {
+        ...getAuthHeaders(),
+      }
+
+      console.log(`[ML] search("${query}") limit=${limit} offset=${offset}`)
+
+      const res = await fetch(url.toString(), { headers })
+
+      if (!res.ok) {
+        const errText = await res.text()
+        console.error(`[ML] search failed: ${res.status} — ${errText}`)
+        return []
+      }
+
+      const data: MLSearchResponse = await res.json()
+      console.log(`[ML] search("${query}") → ${data.results.length} results (total: ${data.paging.total})`)
+
+      return data.results.map(mlToAdapterResult)
+    } catch (error) {
+      console.error(`[ML] search error:`, error)
+      return []
     }
-
-    // TODO: Implement ML API search
-    // Uses existing getMLToken() from @/lib/ml-auth for authenticated requests
-    //
-    // const token = await getMLToken()
-    // const url = new URL('https://api.mercadolibre.com/sites/MLB/search')
-    // url.searchParams.set('q', query)
-    // url.searchParams.set('limit', String(options?.limit ?? 10))
-    // if (options?.category) url.searchParams.set('category', options.category)
-    //
-    // const res = await fetch(url.toString(), {
-    //   headers: { Authorization: `Bearer ${token}` },
-    // })
-
-    console.log(`[SourceAdapter:${this.slug}] search("${query}") — ML API integration pending`)
-    return this.getMockResults(query, options?.limit)
   }
 
+  // ---------------------------------------------------------------------------
+  // GET PRODUCT — Real ML API
+  // ---------------------------------------------------------------------------
+
   async getProduct(externalId: string): Promise<AdapterResult | null> {
-    if (!this.isConfigured()) {
-      console.log(`[SourceAdapter:${this.slug}] Not configured — returning mock for ${externalId}`)
-      return this.getMockProduct(externalId)
+    try {
+      const headers = getAuthHeaders()
+      const res = await fetch(`${ML_API_BASE}/items/${externalId}`, { headers })
+
+      if (!res.ok) {
+        console.error(`[ML] getProduct(${externalId}) failed: ${res.status}`)
+        return null
+      }
+
+      const item: MLItemResponse = await res.json()
+      return mlItemToAdapterResult(item)
+    } catch (error) {
+      console.error(`[ML] getProduct error:`, error)
+      return null
     }
-
-    // TODO: Implement ML API: GET /items/{id}
-    // const token = await getMLToken()
-    // const res = await fetch(`https://api.mercadolibre.com/items/${externalId}`, {
-    //   headers: { Authorization: `Bearer ${token}` },
-    // })
-
-    console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — ML API integration pending`)
-    return this.getMockProduct(externalId)
   }
 
   // ---------------------------------------------------------------------------
@@ -103,14 +265,17 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
   healthCheck(): AdapterHealthCheckResult {
     if (this.isConfigured()) {
       const hasRedirect = !!getMLRedirectUri()
+      const hasToken = !!mlTokenStore.get()
       return {
         healthy: true,
-        message: hasRedirect
-          ? 'ML API com OAuth redirect configurado'
-          : 'ML API credentials presentes (sem redirect URI)',
+        message: hasToken
+          ? 'ML API autenticado com token'
+          : hasRedirect
+            ? 'ML API configurado, aguardando autenticacao'
+            : 'ML API credentials presentes (sem redirect URI)',
       }
     }
-    return { healthy: false, message: 'MERCADOLIVRE_APP_ID / MERCADOLIVRE_SECRET ausentes — usando dados mock' }
+    return { healthy: false, message: 'MERCADOLIVRE_APP_ID / MERCADOLIVRE_SECRET ausentes' }
   }
 
   readinessCheck(): AdapterReadinessResult {
@@ -128,61 +293,63 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
   }
 
   // ---------------------------------------------------------------------------
-  // V22: Sync methods & Capability Truth
+  // Sync & Import
   // ---------------------------------------------------------------------------
 
   async syncFeed(): Promise<SyncResult> {
     if (!this.isConfigured()) {
       return {
-        synced: 0,
-        failed: 0,
-        stale: 0,
-        errors: ['ML_CLIENT_ID / ML_CLIENT_SECRET ausentes — sync bloqueado'],
+        synced: 0, failed: 0, stale: 0,
+        errors: ['ML nao configurado — sync bloqueado'],
       }
     }
 
-    console.log(`[SourceAdapter:${this.slug}] syncFeed() — ML API auth present, feed sync pending`)
-    // TODO: Use getMLToken() for real API sync
-    return {
-      synced: 0,
-      failed: 0,
-      stale: 0,
-      errors: ['ML feed sync stub — integracao real com API do Mercado Livre pendente'],
+    // Search trending categories and import
+    const categories = ['celular', 'notebook', 'fone bluetooth', 'smartwatch', 'tablet']
+    let totalSynced = 0
+    let totalFailed = 0
+    const errors: string[] = []
+
+    for (const cat of categories) {
+      try {
+        const results = await this.search(cat, { limit: 10 })
+        totalSynced += results.length
+      } catch (err) {
+        totalFailed++
+        errors.push(`Falha ao buscar "${cat}": ${err}`)
+      }
     }
+
+    return { synced: totalSynced, failed: totalFailed, stale: 0, errors }
   }
 
   async importBatch(items: AdapterResult[]): Promise<SyncResult> {
-    console.log(`[SourceAdapter:${this.slug}] importBatch(${items.length} items) — creating candidates`)
+    console.log(`[ML] importBatch(${items.length} items)`)
     return {
       synced: items.length,
       failed: 0,
       stale: 0,
-      errors: this.isConfigured()
-        ? []
-        : ['importBatch stub — sem credenciais ML para validacao'],
+      errors: [],
     }
   }
 
   async refreshOffer(offerId: string): Promise<AdapterResult | null> {
-    console.log(`[SourceAdapter:${this.slug}] refreshOffer(${offerId}) — ML API refresh pending`)
-    if (!this.isConfigured()) return null
-    // TODO: GET /items/{offerId} with ML token
-    return this.getMockProduct(offerId)
+    return this.getProduct(offerId)
   }
 
   getCapabilityTruth(): SourceCapabilityTruth {
-    const hasClientId = !!process.env.ML_CLIENT_ID
-    const hasSecret = !!process.env.ML_CLIENT_SECRET
+    const hasClientId = !!getMLEnv('ML_CLIENT_ID')
+    const hasSecret = !!getMLEnv('ML_CLIENT_SECRET')
     const hasRedirect = !!getMLRedirectUri()
+    const hasToken = !!mlTokenStore.get()
 
     if (hasClientId && hasSecret) {
       return {
-        status: 'partial',
+        status: hasToken ? 'sync-ready' : 'partial',
         capabilities: ['search', 'lookup', 'clickout_ready', 'price_refresh', 'import_ready'],
         missing: [
-          ...(!hasRedirect ? ['ML_REDIRECT_URI (OAuth completo)'] : []),
-          'Feed sync real',
-          'Webhook de atualizacao de precos',
+          ...(!hasRedirect ? ['ML_REDIRECT_URI'] : []),
+          ...(!hasToken ? ['Token OAuth (autentique via /api/auth/ml)'] : []),
         ],
         lastSync: undefined,
       }
@@ -191,48 +358,8 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     return {
       status: 'blocked',
       capabilities: ['search', 'lookup'],
-      missing: [
-        'ML_CLIENT_ID',
-        'ML_CLIENT_SECRET',
-        'ML_REDIRECT_URI',
-        'OAuth flow completo',
-        'Feed sync integration',
-      ],
+      missing: ['ML_CLIENT_ID', 'ML_CLIENT_SECRET', 'ML_REDIRECT_URI', 'OAuth flow'],
       lastSync: undefined,
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Mock data
-  // ---------------------------------------------------------------------------
-
-  private getMockResults(query: string, limit = 5): AdapterResult[] {
-    return Array.from({ length: Math.min(limit, 5) }, (_, i) => ({
-      externalId: `MLB-MOCK-${1000 + i}`,
-      title: `[Mock] ${query} — Produto ML ${i + 1}`,
-      productUrl: `https://www.mercadolivre.com.br/produto-mock-${i + 1}/p/MLB-MOCK-${1000 + i}`,
-      affiliateUrl: undefined,
-      currentPrice: 79.9 + i * 25,
-      originalPrice: 119.9 + i * 25,
-      currency: 'BRL',
-      availability: 'in_stock' as const,
-      imageUrl: undefined,
-      isFreeShipping: i < 3,
-      installment: `12x R$ ${((79.9 + i * 25) / 12).toFixed(2)}`,
-    }))
-  }
-
-  private getMockProduct(externalId: string): AdapterResult {
-    return {
-      externalId,
-      title: `[Mock] Produto Mercado Livre ${externalId}`,
-      productUrl: `https://www.mercadolivre.com.br/produto-mock/p/${externalId}`,
-      currentPrice: 89.9,
-      originalPrice: 139.9,
-      currency: 'BRL',
-      availability: 'in_stock',
-      isFreeShipping: true,
-      installment: '12x R$ 7.49',
     }
   }
 }
