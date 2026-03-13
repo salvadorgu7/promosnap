@@ -1,7 +1,7 @@
 // Shein Source Adapter (STUB)
 // Ready for real Shein Affiliate API integration.
 
-import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability } from './types'
+import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 
 const REQUIRED_ENV_VARS = ['SHEIN_API_KEY'] as const
 
@@ -91,6 +91,51 @@ export class SheinSourceAdapter implements SourceAdapter {
       caps.push('clickout_ready')
     }
     return caps
+  }
+
+  // ---------------------------------------------------------------------------
+  // V22: Sync methods & Capability Truth
+  // ---------------------------------------------------------------------------
+
+  async syncFeed(): Promise<SyncResult> {
+    console.log(`[SourceAdapter:${this.slug}] syncFeed() — Shein Affiliate API integration pending (mock)`)
+    return {
+      synced: 0,
+      failed: 0,
+      stale: 0,
+      errors: this.isConfigured()
+        ? ['Shein feed sync stub — integracao real pendente']
+        : ['SHEIN_API_KEY ausente — sync bloqueado'],
+    }
+  }
+
+  async importBatch(items: AdapterResult[]): Promise<SyncResult> {
+    console.log(`[SourceAdapter:${this.slug}] importBatch(${items.length} items) — mock`)
+    return {
+      synced: items.length,
+      failed: 0,
+      stale: 0,
+      errors: ['importBatch stub — Shein integration pendente'],
+    }
+  }
+
+  async refreshOffer(offerId: string): Promise<AdapterResult | null> {
+    console.log(`[SourceAdapter:${this.slug}] refreshOffer(${offerId}) — mock`)
+    return this.getMockProduct(offerId)
+  }
+
+  getCapabilityTruth(): SourceCapabilityTruth {
+    return {
+      status: 'provider-needed',
+      capabilities: ['search', 'lookup'],
+      missing: [
+        'SHEIN_API_KEY',
+        'Shein Affiliate API approval',
+        'Feed sync integration',
+        'Price refresh support',
+      ],
+      lastSync: undefined,
+    }
   }
 
   // ---------------------------------------------------------------------------

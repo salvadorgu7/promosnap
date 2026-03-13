@@ -12,12 +12,17 @@ import {
   ChevronRight,
   Shield,
   Zap,
+  RefreshCw,
+  Activity,
+  Lightbulb,
+  Clock,
 } from "lucide-react";
 import { getAdminSources } from "@/lib/db/queries";
 import { timeAgo } from "@/lib/utils";
 import { adapterRegistry } from "@/lib/adapters/registry";
-import type { AdapterStatus } from "@/lib/adapters/types";
+import type { AdapterStatus, CapabilityTruthStatus } from "@/lib/adapters/types";
 import { getSourceReadiness, type SourceReadiness, type ReadinessStatus, type ChecklistItem } from "@/lib/adapters/readiness";
+import { getSyncPipelines, getSyncRecommendations as getArchRecommendations, type SyncPipeline } from "@/lib/adapters/sync-architecture";
 import {
   toSeverity,
   severityBadge,
@@ -65,13 +70,36 @@ const capabilityLabels: Record<string, string> = {
   import_ready: "Import",
 };
 
-function ReadinessCard({ readiness }: { readiness: SourceReadiness }) {
+// V22: Capability truth status config
+const truthStatusConfig: Record<CapabilityTruthStatus, { label: string; color: string; dot: string }> = {
+  "mock": { label: "Mock", color: "bg-blue-100 text-blue-700 border-blue-300", dot: "bg-blue-500" },
+  "partial": { label: "Parcial", color: "bg-amber-100 text-amber-700 border-amber-300", dot: "bg-amber-500" },
+  "feed-ready": { label: "Feed Ready", color: "bg-emerald-100 text-emerald-700 border-emerald-300", dot: "bg-emerald-500" },
+  "sync-ready": { label: "Sync Ready", color: "bg-green-100 text-green-700 border-green-300", dot: "bg-green-500" },
+  "blocked": { label: "Bloqueado", color: "bg-red-100 text-red-700 border-red-300", dot: "bg-red-500" },
+  "provider-needed": { label: "Provider Needed", color: "bg-purple-100 text-purple-700 border-purple-300", dot: "bg-purple-500" },
+};
+
+const pipelineStatusConfig: Record<string, { label: string; color: string }> = {
+  ready: { label: "Pronto", color: "bg-emerald-100 text-emerald-700" },
+  blocked: { label: "Bloqueado", color: "bg-red-100 text-red-700" },
+  partial: { label: "Parcial", color: "bg-amber-100 text-amber-700" },
+};
+
+function ReadinessCard({ readiness, pipeline }: { readiness: SourceReadiness; pipeline?: SyncPipeline }) {
   const rc = readinessConfig[readiness.status];
+  const truth = pipeline?.capabilityTruth;
+  const truthConf = truth ? truthStatusConfig[truth.status] : null;
+  const pipeConf = pipeline ? pipelineStatusConfig[pipeline.status] : null;
 
   return (
     <div className="rounded-xl border border-surface-200 bg-white p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
+          {/* V22: Health indicator dot */}
+          {truthConf && (
+            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${truthConf.dot}`} title={truthConf.label} />
+          )}
           <Shield className="h-4 w-4 text-text-muted" />
           <span className="font-semibold font-display text-sm text-text-primary">{readiness.name}</span>
         </div>
@@ -79,6 +107,35 @@ function ReadinessCard({ readiness }: { readiness: SourceReadiness }) {
           {rc.label}
         </span>
       </div>
+
+      {/* V22: Capability truth status + Sync pipeline status */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {truthConf && (
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${truthConf.color}`}>
+            <Activity className="h-2.5 w-2.5" />
+            {truthConf.label}
+          </span>
+        )}
+        {pipeConf && (
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${pipeConf.color}`}>
+            <RefreshCw className="h-2.5 w-2.5" />
+            Pipeline: {pipeConf.label}
+          </span>
+        )}
+      </div>
+
+      {/* V22: Ultimo Sync timestamp */}
+      {truth?.lastSync ? (
+        <p className="text-[10px] text-text-muted mb-2 flex items-center gap-1">
+          <Clock className="h-2.5 w-2.5" />
+          Ultimo Sync: {timeAgo(truth.lastSync)}
+        </p>
+      ) : (
+        <p className="text-[10px] text-amber-500 mb-2 flex items-center gap-1">
+          <Clock className="h-2.5 w-2.5" />
+          Nunca sincronizado
+        </p>
+      )}
 
       {/* Capability pills */}
       {readiness.capabilities.length > 0 && (
@@ -115,6 +172,19 @@ function ReadinessCard({ readiness }: { readiness: SourceReadiness }) {
           </div>
         ))}
       </div>
+
+      {/* V22: Pipeline blockers */}
+      {pipeline && pipeline.blockers.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-surface-100 space-y-1">
+          <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">Blockers:</p>
+          {pipeline.blockers.map((blocker, idx) => (
+            <div key={idx} className="flex items-start gap-1.5">
+              <XCircle className="h-3 w-3 flex-shrink-0 mt-0.5 text-red-400" />
+              <p className="text-[10px] text-red-600">{blocker}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -166,6 +236,11 @@ export default async function AdminFontesPage() {
   const sources = await getAdminSources();
   const adapterSummary = adapterRegistry.getSummary();
   const sourceReadiness = getSourceReadiness();
+  const syncPipelines = getSyncPipelines();
+  const archRecommendations = getArchRecommendations();
+
+  // Build pipeline lookup by sourceId
+  const pipelineMap = new Map(syncPipelines.map((p) => [p.sourceId, p]));
 
   const allConfigured = adapterSummary.unconfigured === 0;
   const hasMocks = adapterSummary.adapters.some((a) => a.health === "MOCK");
@@ -253,7 +328,7 @@ export default async function AdminFontesPage() {
         </p>
         <div className="grid md:grid-cols-2 gap-3">
           {sourceReadiness.map((r) => (
-            <ReadinessCard key={r.sourceId} readiness={r} />
+            <ReadinessCard key={r.sourceId} readiness={r} pipeline={pipelineMap.get(r.sourceId)} />
           ))}
         </div>
       </div>
@@ -359,6 +434,50 @@ export default async function AdminFontesPage() {
           )}
         </div>
       </div>
+
+      {/* ---- V22: Sync Recommendations ---- */}
+      {archRecommendations.length > 0 && (
+        <div className="rounded-xl border border-surface-200 bg-white p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="h-5 w-5 text-amber-500" />
+            <h2 className="text-lg font-bold font-display text-text-primary">Sync Recommendations</h2>
+          </div>
+          <p className="text-xs text-text-muted mb-4">
+            Sugestoes priorizadas para melhorar a cobertura e atualidade do catalogo.
+          </p>
+          <div className="space-y-2">
+            {archRecommendations.map((rec, idx) => {
+              const typeColors: Record<string, string> = {
+                sync: "bg-blue-100 text-blue-700",
+                reprocess: "bg-amber-100 text-amber-700",
+                stale: "bg-red-100 text-red-700",
+                gap: "bg-purple-100 text-purple-700",
+              };
+              const typeColor = typeColors[rec.type] || "bg-gray-100 text-gray-700";
+
+              return (
+                <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-surface-50">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${typeColor}`}>
+                      {rec.type}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary">{rec.title}</p>
+                    <p className="text-xs text-text-muted mt-0.5">{rec.reason}</p>
+                  </div>
+                  <div className="flex-shrink-0 flex items-center gap-2">
+                    <span className="text-[10px] text-text-muted font-mono">P{rec.priority}</span>
+                    {rec.sourceId && (
+                      <span className="text-[10px] text-text-muted bg-surface-100 px-1.5 py-0.5 rounded">{rec.sourceId}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

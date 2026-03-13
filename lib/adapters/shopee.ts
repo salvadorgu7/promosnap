@@ -1,7 +1,7 @@
 // Shopee Source Adapter (STUB)
 // Ready for real Shopee Open Platform integration.
 
-import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability } from './types'
+import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 
 const REQUIRED_ENV_VARS = ['SHOPEE_APP_ID', 'SHOPEE_APP_SECRET'] as const
 
@@ -83,6 +83,52 @@ export class ShopeeSourceAdapter implements SourceAdapter {
       caps.push('clickout_ready', 'price_refresh')
     }
     return caps
+  }
+
+  // ---------------------------------------------------------------------------
+  // V22: Sync methods & Capability Truth
+  // ---------------------------------------------------------------------------
+
+  async syncFeed(): Promise<SyncResult> {
+    console.log(`[SourceAdapter:${this.slug}] syncFeed() — Shopee Open Platform integration pending (mock)`)
+    return {
+      synced: 0,
+      failed: 0,
+      stale: 0,
+      errors: this.isConfigured()
+        ? ['Shopee feed sync stub — integracao real pendente']
+        : ['SHOPEE_APP_ID / SHOPEE_APP_SECRET ausentes — sync bloqueado'],
+    }
+  }
+
+  async importBatch(items: AdapterResult[]): Promise<SyncResult> {
+    console.log(`[SourceAdapter:${this.slug}] importBatch(${items.length} items) — mock`)
+    return {
+      synced: items.length,
+      failed: 0,
+      stale: 0,
+      errors: ['importBatch stub — Shopee integration pendente'],
+    }
+  }
+
+  async refreshOffer(offerId: string): Promise<AdapterResult | null> {
+    console.log(`[SourceAdapter:${this.slug}] refreshOffer(${offerId}) — mock`)
+    return this.getMockProduct(offerId)
+  }
+
+  getCapabilityTruth(): SourceCapabilityTruth {
+    return {
+      status: 'provider-needed',
+      capabilities: ['search', 'lookup'],
+      missing: [
+        'SHOPEE_APP_ID',
+        'SHOPEE_APP_SECRET',
+        'Shopee Open Platform approval',
+        'Feed sync integration',
+        'Price refresh webhook',
+      ],
+      lastSync: undefined,
+    }
   }
 
   // ---------------------------------------------------------------------------

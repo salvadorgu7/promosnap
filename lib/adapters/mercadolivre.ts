@@ -1,7 +1,7 @@
 // Mercado Livre Source Adapter (STUB)
 // Ready for real ML API integration — uses existing ML OAuth if available.
 
-import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability } from './types'
+import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 
 const REQUIRED_ENV_VARS = ['ML_CLIENT_ID', 'ML_CLIENT_SECRET'] as const
 
@@ -108,6 +108,81 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       caps.push('clickout_ready', 'price_refresh', 'import_ready')
     }
     return caps
+  }
+
+  // ---------------------------------------------------------------------------
+  // V22: Sync methods & Capability Truth
+  // ---------------------------------------------------------------------------
+
+  async syncFeed(): Promise<SyncResult> {
+    if (!this.isConfigured()) {
+      return {
+        synced: 0,
+        failed: 0,
+        stale: 0,
+        errors: ['ML_CLIENT_ID / ML_CLIENT_SECRET ausentes — sync bloqueado'],
+      }
+    }
+
+    console.log(`[SourceAdapter:${this.slug}] syncFeed() — ML API auth present, feed sync pending`)
+    // TODO: Use getMLToken() for real API sync
+    return {
+      synced: 0,
+      failed: 0,
+      stale: 0,
+      errors: ['ML feed sync stub — integracao real com API do Mercado Livre pendente'],
+    }
+  }
+
+  async importBatch(items: AdapterResult[]): Promise<SyncResult> {
+    console.log(`[SourceAdapter:${this.slug}] importBatch(${items.length} items) — creating candidates`)
+    return {
+      synced: items.length,
+      failed: 0,
+      stale: 0,
+      errors: this.isConfigured()
+        ? []
+        : ['importBatch stub — sem credenciais ML para validacao'],
+    }
+  }
+
+  async refreshOffer(offerId: string): Promise<AdapterResult | null> {
+    console.log(`[SourceAdapter:${this.slug}] refreshOffer(${offerId}) — ML API refresh pending`)
+    if (!this.isConfigured()) return null
+    // TODO: GET /items/{offerId} with ML token
+    return this.getMockProduct(offerId)
+  }
+
+  getCapabilityTruth(): SourceCapabilityTruth {
+    const hasClientId = !!process.env.ML_CLIENT_ID
+    const hasSecret = !!process.env.ML_CLIENT_SECRET
+    const hasRedirect = !!process.env.ML_REDIRECT_URI
+
+    if (hasClientId && hasSecret) {
+      return {
+        status: 'partial',
+        capabilities: ['search', 'lookup', 'clickout_ready', 'price_refresh', 'import_ready'],
+        missing: [
+          ...(!hasRedirect ? ['ML_REDIRECT_URI (OAuth completo)'] : []),
+          'Feed sync real',
+          'Webhook de atualizacao de precos',
+        ],
+        lastSync: undefined,
+      }
+    }
+
+    return {
+      status: 'blocked',
+      capabilities: ['search', 'lookup'],
+      missing: [
+        'ML_CLIENT_ID',
+        'ML_CLIENT_SECRET',
+        'ML_REDIRECT_URI',
+        'OAuth flow completo',
+        'Feed sync integration',
+      ],
+      lastSync: undefined,
+    }
   }
 
   // ---------------------------------------------------------------------------

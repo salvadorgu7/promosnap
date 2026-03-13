@@ -1,7 +1,7 @@
 // Amazon PA-API Source Adapter (STUB)
 // Ready for real PA-API 5.0 integration — returns mock data until configured.
 
-import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability } from './types'
+import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 
 const REQUIRED_ENV_VARS = ['AMAZON_ACCESS_KEY', 'AMAZON_SECRET_KEY', 'AMAZON_PARTNER_TAG'] as const
 
@@ -88,6 +88,55 @@ export class AmazonSourceAdapter implements SourceAdapter {
       caps.push('clickout_ready', 'price_refresh')
     }
     return caps
+  }
+
+  // ---------------------------------------------------------------------------
+  // V22: Sync methods & Capability Truth
+  // ---------------------------------------------------------------------------
+
+  async syncFeed(): Promise<SyncResult> {
+    console.log(`[SourceAdapter:${this.slug}] syncFeed() — PA-API integration pending (mock)`)
+    // Mock: simulate a feed sync that returns placeholder data
+    return {
+      synced: 0,
+      failed: 0,
+      stale: 0,
+      errors: this.isConfigured()
+        ? ['PA-API feed sync nao implementado — stub retornando mock']
+        : ['PA-API credentials ausentes — configure AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_PARTNER_TAG'],
+    }
+  }
+
+  async importBatch(items: AdapterResult[]): Promise<SyncResult> {
+    console.log(`[SourceAdapter:${this.slug}] importBatch(${items.length} items) — creating candidates (mock)`)
+    // Mock: mark all items as "synced" candidates (no real DB write in stub)
+    return {
+      synced: items.length,
+      failed: 0,
+      stale: 0,
+      errors: ['importBatch stub — candidatos nao persistidos (PA-API integration pendente)'],
+    }
+  }
+
+  async refreshOffer(offerId: string): Promise<AdapterResult | null> {
+    console.log(`[SourceAdapter:${this.slug}] refreshOffer(${offerId}) — mock refresh`)
+    // Mock: return the mock product as "refreshed"
+    return this.getMockProduct(offerId)
+  }
+
+  getCapabilityTruth(): SourceCapabilityTruth {
+    return {
+      status: 'provider-needed',
+      capabilities: ['search', 'lookup'],
+      missing: [
+        'PA-API 5.0 key (AMAZON_ACCESS_KEY)',
+        'PA-API 5.0 secret (AMAZON_SECRET_KEY)',
+        'Partner tag (AMAZON_PARTNER_TAG)',
+        'Feed sync integration',
+        'Real price refresh',
+      ],
+      lastSync: undefined,
+    }
   }
 
   // ---------------------------------------------------------------------------

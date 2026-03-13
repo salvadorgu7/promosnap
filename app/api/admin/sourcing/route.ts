@@ -19,6 +19,9 @@ import {
   rejectBatch,
   getPublishPreview,
 } from "@/lib/sourcing/publish-pipeline";
+import { adapterRegistry } from "@/lib/adapters/registry";
+import { getSyncPipelines } from "@/lib/adapters/sync-architecture";
+import { getSyncRecommendations } from "@/lib/sourcing/sync-recommendations";
 
 // ─── GET /api/admin/sourcing ────────────────────────────────────────────────
 
@@ -99,6 +102,20 @@ export async function GET(request: NextRequest) {
         }),
       ]);
 
+    // V22: Sync pipelines and history
+    const syncPipelines = getSyncPipelines().map((p) => ({
+      sourceId: p.sourceId,
+      name: p.name,
+      status: p.status,
+      blockers: p.blockers,
+      capabilityTruth: {
+        status: p.capabilityTruth.status,
+        capabilities: p.capabilityTruth.capabilities,
+        missing: p.capabilityTruth.missing,
+        lastSync: p.capabilityTruth.lastSync?.toISOString() ?? null,
+      },
+    }));
+
     return NextResponse.json({
       strategy: strategyInfo,
       pipelines,
@@ -119,6 +136,8 @@ export async function GET(request: NextRequest) {
       newCandidates,
       weakMatchCandidates,
       readyToPublish,
+      syncPipelines,
+      syncHistory: [],
     });
   } catch (err) {
     console.error("[sourcing API] GET error:", err);
@@ -140,6 +159,8 @@ export async function POST(request: NextRequest) {
     content?: string;
     format?: FeedFormat;
     sourceSlug?: string;
+    sourceId?: string;
+    offerId?: string;
     batchId?: string;
     candidateIds?: string[];
     reason?: string;
@@ -298,11 +319,94 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ action: "publish-preview", ...result });
       }
 
+      // ─── V22: Sync a source ───────────────────────────────────────
+      case "sync": {
+        const { sourceId } = body;
+        if (!sourceId) {
+          return NextResponse.json(
+            { error: "sourceId obrigatorio para sync" },
+            { status: 400 }
+          );
+        }
+
+        const adapter = adapterRegistry.get(sourceId);
+        if (!adapter) {
+          return NextResponse.json(
+            { error: `Adapter "${sourceId}" nao encontrado. Adapters disponiveis: ${adapterRegistry.getAll().map(a => a.slug).join(', ')}` },
+            { status: 404 }
+          );
+        }
+
+        if (!adapter.syncFeed) {
+          return NextResponse.json(
+            { error: `Adapter "${sourceId}" nao suporta syncFeed(). Metodo nao implementado.` },
+            { status: 400 }
+          );
+        }
+
+        const syncResult = await adapter.syncFeed();
+        return NextResponse.json({
+          action: "sync",
+          sourceId,
+          ...syncResult,
+        });
+      }
+
+      // ─── V22: Refresh a single offer ──────────────────────────────
+      case "refresh-offer": {
+        const { sourceId, offerId } = body;
+        if (!sourceId || !offerId) {
+          return NextResponse.json(
+            { error: "sourceId e offerId obrigatorios para refresh-offer" },
+            { status: 400 }
+          );
+        }
+
+        const refreshAdapter = adapterRegistry.get(sourceId);
+        if (!refreshAdapter) {
+          return NextResponse.json(
+            { error: `Adapter "${sourceId}" nao encontrado` },
+            { status: 404 }
+          );
+        }
+
+        if (!refreshAdapter.refreshOffer) {
+          return NextResponse.json(
+            { error: `Adapter "${sourceId}" nao suporta refreshOffer()` },
+            { status: 400 }
+          );
+        }
+
+        const refreshed = await refreshAdapter.refreshOffer(offerId);
+        if (!refreshed) {
+          return NextResponse.json(
+            { error: `Oferta "${offerId}" nao encontrada no adapter "${sourceId}"` },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json({
+          action: "refresh-offer",
+          sourceId,
+          offerId,
+          offer: refreshed,
+        });
+      }
+
+      // ─── V22: Sync recommendations ────────────────────────────────
+      case "sync-recommendations": {
+        const recommendations = getSyncRecommendations();
+        return NextResponse.json({
+          action: "sync-recommendations",
+          recommendations,
+        });
+      }
+
       default:
         return NextResponse.json(
           {
             error:
-              "Action invalida. Use: import, dry-run, process, recalculate, publish, publish-batch, enrich-batch, reject-batch, publish-preview",
+              "Action invalida. Use: import, dry-run, process, recalculate, publish, publish-batch, enrich-batch, reject-batch, publish-preview, sync, refresh-offer, sync-recommendations",
           },
           { status: 400 }
         );

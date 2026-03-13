@@ -770,6 +770,35 @@ npm run verify:quick # Testes + smoke (sem build)
 - Checklist item styling
 - Integration card com status indicator
 
+## Source Reality, Feed Sync & Attribution (V22)
+
+### Source Reality
+- Adapter contracts expandidos: syncFeed, importBatch, refreshOffer, getCapabilityTruth
+- SourceCapabilityTruth: mock, partial, feed-ready, sync-ready, blocked, provider-needed
+- Sync architecture: pipelines por source com 5 steps (validate→normalize→enrich→match→publish)
+- Sync recommendations: staleness, gaps, failed batches, missing configs, provider setup
+- Admin /admin/fontes com capability truth badges, sync pipelines, health dots, recommendations
+
+### Feed Sync Engine
+- lib/feed-sync/engine.ts: validateFeedBatch, normalizeFeedBatch, enrichFeedBatch, publishFeedBatch, markStaleItems
+- Full pipeline: runFullSyncPipeline com logs e retry
+- lib/feed-sync/jobs.ts: sourceSyncJob, staleCleanupJob, refreshOfferJob
+- /admin/feed-sync: dashboard com batches, stats, stale items, job history
+- /api/admin/feed-sync: validate-batch, run-sync, mark-stale, retry-batch
+
+### Attribution Truth
+- lib/attribution/engine.ts: enrichClickoutAttribution com contexto (source, page, channel, campaign, banner)
+- Clickout route captura params: ?page=product&campaign=X&channel=telegram&ref=ABC&banner=hero
+- lib/attribution/revenue-attribution.ts: revenue por source/pageType/channel/campaign/banner
+- getChannelROI: distributions vs clickouts vs revenue por canal
+- /admin/attribution: funil de conversao, origem de clickouts, revenue por contexto
+- Execution closed-loop melhorado com attribution data e getExecutionROI
+
+### Ops Improvements
+- Admin sourcing com "Feed Sync" tab, sync per source, sync history
+- Sourcing API: action=sync, refresh-offer, sync-recommendations
+- Sync recommendations engine: staleness, gaps, failed batches, provider needs
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)
@@ -781,7 +810,7 @@ npm run verify:quick # Testes + smoke (sem build)
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
 
-## Proximos Passos (V22)
+## Proximos Passos (V23)
 
 - Adapters reais para Amazon PA-API, Shopee, Shein (conectar providers)
 - Feed sync real com scheduled imports

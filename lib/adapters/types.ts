@@ -93,6 +93,32 @@ export type AdapterCapability =
   | 'import_ready'
 
 // ---------------------------------------------------------------------------
+// Sync Types (V22)
+// ---------------------------------------------------------------------------
+
+export interface SyncResult {
+  synced: number
+  failed: number
+  stale: number
+  errors: string[]
+}
+
+export type CapabilityTruthStatus =
+  | 'mock'
+  | 'partial'
+  | 'feed-ready'
+  | 'sync-ready'
+  | 'blocked'
+  | 'provider-needed'
+
+export interface SourceCapabilityTruth {
+  status: CapabilityTruthStatus
+  capabilities: string[]
+  missing: string[]
+  lastSync?: Date
+}
+
+// ---------------------------------------------------------------------------
 // Source Adapter Interface
 // ---------------------------------------------------------------------------
 
@@ -140,4 +166,29 @@ export interface SourceAdapter {
    * Optional for backward compatibility.
    */
   capabilityMap?(): AdapterCapability[]
+
+  /**
+   * Sync a full feed from this source.
+   * Optional — only for adapters with feed sync support.
+   */
+  syncFeed?(): Promise<SyncResult>
+
+  /**
+   * Import a batch of items into candidates.
+   * Optional — only for adapters with batch import support.
+   */
+  importBatch?(items: AdapterResult[]): Promise<SyncResult>
+
+  /**
+   * Refresh a single offer by its external ID.
+   * Optional — only for adapters with offer refresh support.
+   */
+  refreshOffer?(offerId: string): Promise<AdapterResult | null>
+
+  /**
+   * Returns the ground-truth capability status for this adapter.
+   * Indicates whether the adapter is mock, partially configured, or truly ready.
+   * Optional for backward compatibility.
+   */
+  getCapabilityTruth?(): SourceCapabilityTruth
 }

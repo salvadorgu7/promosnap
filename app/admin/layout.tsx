@@ -36,6 +36,7 @@ import {
   Gem,
   ShoppingBag,
   Play,
+  RefreshCw,
 } from "lucide-react";
 
 interface NavItem {
@@ -97,6 +98,7 @@ const navGroups: NavGroup[] = [
     title: "Monetizacao",
     items: [
       { href: "/admin/monetizacao", label: "Monetizacao", icon: DollarSign },
+      { href: "/admin/attribution", label: "Attribution", icon: Target },
     ],
   },
   {
@@ -121,6 +123,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Operacao",
     items: [
+      { href: "/admin/feed-sync", label: "Feed Sync", icon: RefreshCw },
       { href: "/admin/executions", label: "Execucoes", icon: Play },
       { href: "/admin/jobs", label: "Jobs", icon: Clock },
       { href: "/admin/ingestao", label: "Ingestao", icon: Upload },

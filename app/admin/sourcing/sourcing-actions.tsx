@@ -23,6 +23,9 @@ import {
   Eye,
   Sparkles,
   AlertTriangle,
+  Activity,
+  Radio,
+  History,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -65,6 +68,29 @@ interface PipelineInfo {
   lastRunAt: string | null;
 }
 
+// V22: Sync pipeline types
+interface SyncPipelineStatus {
+  sourceId: string;
+  name: string;
+  status: "ready" | "blocked" | "partial";
+  blockers: string[];
+  capabilityTruth: {
+    status: string;
+    capabilities: string[];
+    missing: string[];
+    lastSync?: string;
+  };
+}
+
+interface SyncHistoryEntry {
+  sourceId: string;
+  timestamp: string;
+  synced: number;
+  failed: number;
+  stale: number;
+  errors: string[];
+}
+
 interface SourcingData {
   strategy: { strategy: string; label: string; description: string };
   pipelines: PipelineInfo[];
@@ -73,6 +99,8 @@ interface SourcingData {
   newCandidates: CandidateItem[];
   weakMatchCandidates: CandidateItem[];
   readyToPublish: CandidateItem[];
+  syncPipelines?: SyncPipelineStatus[];
+  syncHistory?: SyncHistoryEntry[];
 }
 
 // ─── Status Config ──────────────────────────────────────────────────────────
@@ -152,6 +180,11 @@ export default function SourcingActions() {
   // Candidate filter
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // V22: Feed sync state
+  const [syncingSource, setSyncingSource] = useState<string | null>(null);
+  const [syncResult, setSyncResult] = useState<{ sourceId: string; message: string; success: boolean } | null>(null);
+  const [expandedSyncErrors, setExpandedSyncErrors] = useState<string | null>(null);
 
   // Sections expanded
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
@@ -259,6 +292,42 @@ export default function SourcingActions() {
       setError("Erro de rede");
     } finally {
       setIsDryRunning(false);
+    }
+  }
+
+  // ── V22: Feed Sync Handler ──
+
+  async function handleSyncSource(sourceId: string) {
+    setSyncingSource(sourceId);
+    setSyncResult(null);
+
+    try {
+      const res = await fetch("/api/admin/sourcing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync", sourceId }),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        setSyncResult({
+          sourceId,
+          message: `Sync concluido: ${result.synced} sincronizados, ${result.failed} falhas, ${result.stale} stale`,
+          success: true,
+        });
+        loadData();
+      } else {
+        setSyncResult({
+          sourceId,
+          message: result.error || "Erro ao sincronizar",
+          success: false,
+        });
+      }
+    } catch {
+      setSyncResult({ sourceId, message: "Erro de rede", success: false });
+    } finally {
+      setSyncingSource(null);
     }
   }
 
@@ -612,6 +681,194 @@ export default function SourcingActions() {
           </div>
         </div>
       )}
+
+      {/* V22: Feed Sync section */}
+      <div className="card overflow-hidden">
+        <button
+          onClick={() => toggleSection("feedsync")}
+          className="w-full flex items-center justify-between p-5 hover:bg-surface-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Radio className="h-5 w-5 text-brand-500" />
+            <h3 className="text-lg font-semibold font-display text-text-primary">
+              Feed Sync
+            </h3>
+            {data.syncPipelines && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-surface-100 text-text-muted">
+                {data.syncPipelines.length} fontes
+              </span>
+            )}
+          </div>
+          {expandedSections.has("feedsync") ? (
+            <ChevronUp className="h-4 w-4 text-text-muted" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-text-muted" />
+          )}
+        </button>
+
+        {expandedSections.has("feedsync") && (
+          <div className="border-t border-surface-200 p-5 space-y-4">
+            {/* Sync result banner */}
+            {syncResult && (
+              <div className={`p-3 rounded-lg flex items-center justify-between ${syncResult.success ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+                <div className="flex items-center gap-2">
+                  {syncResult.success ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-red-600" />
+                  )}
+                  <p className={`text-sm ${syncResult.success ? "text-green-700" : "text-red-700"}`}>
+                    [{syncResult.sourceId}] {syncResult.message}
+                  </p>
+                </div>
+                <button onClick={() => setSyncResult(null)} className="text-xs text-text-muted hover:text-text-primary">
+                  Fechar
+                </button>
+              </div>
+            )}
+
+            {/* Sync pipeline status per source */}
+            {data.syncPipelines && data.syncPipelines.length > 0 ? (
+              <div className="space-y-3">
+                {data.syncPipelines.map((pipe) => {
+                  const statusColors: Record<string, string> = {
+                    ready: "border-l-emerald-500",
+                    blocked: "border-l-red-500",
+                    partial: "border-l-amber-500",
+                  };
+                  const truthColors: Record<string, string> = {
+                    mock: "bg-blue-100 text-blue-700",
+                    partial: "bg-amber-100 text-amber-700",
+                    "feed-ready": "bg-emerald-100 text-emerald-700",
+                    "sync-ready": "bg-green-100 text-green-700",
+                    blocked: "bg-red-100 text-red-700",
+                    "provider-needed": "bg-purple-100 text-purple-700",
+                  };
+                  const borderColor = statusColors[pipe.status] || "border-l-gray-300";
+                  const truthColor = truthColors[pipe.capabilityTruth.status] || "bg-gray-100 text-gray-700";
+                  const isSyncing = syncingSource === pipe.sourceId;
+
+                  // Find sync history for this source
+                  const sourceHistory = (data.syncHistory || [])
+                    .filter((h) => h.sourceId === pipe.sourceId)
+                    .slice(0, 5);
+
+                  return (
+                    <div key={pipe.sourceId} className={`rounded-lg border border-surface-200 bg-white p-4 border-l-4 ${borderColor}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-4 w-4 text-text-muted" />
+                          <span className="font-semibold text-sm text-text-primary">{pipe.name}</span>
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${truthColor}`}>
+                            {pipe.capabilityTruth.status}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleSyncSource(pipe.sourceId)}
+                          disabled={isSyncing || pipe.status === "blocked"}
+                          className="btn-primary text-xs px-3 py-1.5 inline-flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          {isSyncing ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Sincronizando...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-3.5 w-3.5" />
+                              Sync Now
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Capabilities */}
+                      {pipe.capabilityTruth.capabilities.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {pipe.capabilityTruth.capabilities.map((cap) => (
+                            <span key={cap} className="text-[10px] px-1.5 py-0.5 rounded bg-surface-50 text-text-muted border border-surface-200">
+                              {cap}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Blockers */}
+                      {pipe.blockers.length > 0 && (
+                        <div className="mb-2">
+                          <button
+                            onClick={() => setExpandedSyncErrors(expandedSyncErrors === pipe.sourceId ? null : pipe.sourceId)}
+                            className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            {pipe.blockers.length} bloqueio(s)
+                            {expandedSyncErrors === pipe.sourceId ? (
+                              <ChevronUp className="h-3 w-3" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3" />
+                            )}
+                          </button>
+                          {expandedSyncErrors === pipe.sourceId && (
+                            <div className="mt-1 space-y-1 pl-4">
+                              {pipe.blockers.map((b, i) => (
+                                <p key={i} className="text-[10px] text-red-600">{b}</p>
+                              ))}
+                              {pipe.capabilityTruth.missing.length > 0 && (
+                                <div className="mt-1">
+                                  <p className="text-[10px] text-text-muted font-medium">Requisitos faltantes:</p>
+                                  {pipe.capabilityTruth.missing.map((m, i) => (
+                                    <p key={i} className="text-[10px] text-amber-600 pl-2">- {m}</p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Last sync */}
+                      <p className="text-[10px] text-text-muted">
+                        {pipe.capabilityTruth.lastSync
+                          ? `Ultimo sync: ${timeAgo(pipe.capabilityTruth.lastSync)}`
+                          : "Nunca sincronizado"}
+                      </p>
+
+                      {/* V22: Sync history (last 5) */}
+                      {sourceHistory.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-surface-100">
+                          <div className="flex items-center gap-1 mb-1">
+                            <History className="h-3 w-3 text-text-muted" />
+                            <p className="text-[10px] text-text-muted font-medium">Historico recente:</p>
+                          </div>
+                          <div className="space-y-1">
+                            {sourceHistory.map((h, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-[10px]">
+                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${h.failed > 0 ? "bg-red-500" : "bg-green-500"}`} />
+                                <span className="text-text-muted">{timeAgo(h.timestamp)}</span>
+                                <span className="text-green-600">{h.synced} sync</span>
+                                {h.failed > 0 && <span className="text-red-500">{h.failed} falhas</span>}
+                                {h.errors.length > 0 && (
+                                  <span className="text-amber-500 truncate max-w-[200px]" title={h.errors[0]}>
+                                    {h.errors[0]}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-text-muted text-center py-4">
+                Nenhum pipeline de sync configurado. Configure credenciais dos adapters em /admin/fontes.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Lotes Recentes */}
       <div className="card overflow-hidden">
