@@ -19,30 +19,30 @@
     "verify:quick": "npx tsx scripts/verify.ts"
   },
   "dependencies": {
+    "@prisma/client": "6.2.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "ioredis": "^5.4.0",
+    "lucide-react": "^0.469.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@prisma/client": "^6.2.0",
     "recharts": "^2.15.0",
-    "lucide-react": "^0.469.0",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^2.6.0",
     "slugify": "^1.6.6",
-    "date-fns": "^4.1.0",
-    "ioredis": "^5.4.0"
+    "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
+    "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "tailwindcss": "^3.4.17",
-    "postcss": "^8.4.49",
     "autoprefixer": "^10.4.20",
-    "prisma": "^6.2.0",
-    "tsx": "^4.19.0",
-    "@tailwindcss/typography": "^0.5.15",
     "eslint": "^9.17.0",
-    "eslint-config-next": "^15.1.0"
+    "eslint-config-next": "^15.1.0",
+    "postcss": "^8.4.49",
+    "prisma": "6.2.1",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
   }
 }

@@ -60,7 +60,7 @@ export function checkMlReadiness(): IntegrationReadiness {
   // Accept both naming conventions
   const hasClientId = envPresent('ML_CLIENT_ID') || envPresent('MERCADOLIVRE_APP_ID')
   const hasClientSecret = envPresent('ML_CLIENT_SECRET') || envPresent('MERCADOLIVRE_SECRET')
-  const hasRedirectUri = envPresent('ML_REDIRECT_URI')
+  const hasRedirectUri = envPresent('ML_REDIRECT_URI') || envPresent('MERCADOLIVRE_REDIRECT_URI')
 
   if (!hasClientId) missing.push('ML_CLIENT_ID (ou MERCADOLIVRE_APP_ID)')
   if (!hasClientSecret) missing.push('ML_CLIENT_SECRET (ou MERCADOLIVRE_SECRET)')

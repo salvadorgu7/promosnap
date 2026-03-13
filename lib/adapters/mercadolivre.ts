@@ -3,22 +3,39 @@
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 
-const REQUIRED_ENV_VARS = ['ML_CLIENT_ID', 'ML_CLIENT_SECRET'] as const
+// Accept both naming conventions for ML env vars
+function getMLEnv(key: string): string | undefined {
+  const aliases: Record<string, string[]> = {
+    'ML_CLIENT_ID': ['ML_CLIENT_ID', 'MERCADOLIVRE_APP_ID'],
+    'ML_CLIENT_SECRET': ['ML_CLIENT_SECRET', 'MERCADOLIVRE_SECRET'],
+  }
+  const names = aliases[key] || [key]
+  for (const name of names) {
+    if (process.env[name]) return process.env[name]
+  }
+  return undefined
+}
+
+function getMLRedirectUri(): string | undefined {
+  return process.env.ML_REDIRECT_URI || process.env.MERCADOLIVRE_REDIRECT_URI || undefined
+}
+
+const REQUIRED_ENV_KEYS = ['ML_CLIENT_ID', 'ML_CLIENT_SECRET'] as const
 
 export class MercadoLivreSourceAdapter implements SourceAdapter {
   name = 'Mercado Livre'
   slug = 'mercadolivre'
 
   isConfigured(): boolean {
-    return REQUIRED_ENV_VARS.every((key) => !!process.env[key])
+    return REQUIRED_ENV_KEYS.every((key) => !!getMLEnv(key))
   }
 
   getStatus(): AdapterStatus {
-    const missingEnvVars = REQUIRED_ENV_VARS.filter((key) => !process.env[key])
+    const missingEnvVars = REQUIRED_ENV_KEYS.filter((key) => !getMLEnv(key))
 
-    // Check if ML OAuth token exists (from existing ml-auth.ts)
-    const hasOAuth = !!process.env.ML_CLIENT_ID && !!process.env.ML_CLIENT_SECRET
-    const hasRedirect = !!process.env.ML_REDIRECT_URI
+    // Check if ML OAuth credentials exist (supports both naming conventions)
+    const hasOAuth = !!getMLEnv('ML_CLIENT_ID') && !!getMLEnv('ML_CLIENT_SECRET')
+    const hasRedirect = !!getMLRedirectUri()
 
     let message = ''
     if (this.isConfigured() && hasRedirect) {
@@ -85,7 +102,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
 
   healthCheck(): AdapterHealthCheckResult {
     if (this.isConfigured()) {
-      const hasRedirect = !!process.env.ML_REDIRECT_URI
+      const hasRedirect = !!getMLRedirectUri()
       return {
         healthy: true,
         message: hasRedirect
@@ -93,13 +110,13 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
           : 'ML API credentials presentes (sem redirect URI)',
       }
     }
-    return { healthy: false, message: 'ML_CLIENT_ID / ML_CLIENT_SECRET ausentes — usando dados mock' }
+    return { healthy: false, message: 'MERCADOLIVRE_APP_ID / MERCADOLIVRE_SECRET ausentes — usando dados mock' }
   }
 
   readinessCheck(): AdapterReadinessResult {
-    const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]) as unknown as string[]
-    if (!process.env.ML_REDIRECT_URI) missing.push('ML_REDIRECT_URI (recomendado)')
-    return { ready: REQUIRED_ENV_VARS.every((k) => !!process.env[k]), missing }
+    const missing = REQUIRED_ENV_KEYS.filter((key) => !getMLEnv(key)) as unknown as string[]
+    if (!getMLRedirectUri()) missing.push('ML_REDIRECT_URI (recomendado)')
+    return { ready: REQUIRED_ENV_KEYS.every((k) => !!getMLEnv(k)), missing }
   }
 
   capabilityMap(): AdapterCapability[] {
@@ -156,7 +173,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
   getCapabilityTruth(): SourceCapabilityTruth {
     const hasClientId = !!process.env.ML_CLIENT_ID
     const hasSecret = !!process.env.ML_CLIENT_SECRET
-    const hasRedirect = !!process.env.ML_REDIRECT_URI
+    const hasRedirect = !!getMLRedirectUri()
 
     if (hasClientId && hasSecret) {
       return {

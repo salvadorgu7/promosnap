@@ -87,7 +87,7 @@ export default async function CategoriasPage() {
 
       {/* Category grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {categories.map((cat) => {
+        {categories.map((cat: { id: string; name: string; slug: string; _count?: { products: number } }) => {
           const Icon = getCategoryIcon(cat.slug);
           const count = cat._count?.products ?? 0;
 

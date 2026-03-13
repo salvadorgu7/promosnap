@@ -19,7 +19,7 @@ export function generateMetadata() {
 export default async function CuponsPage() {
   const coupons = await getActiveCoupons();
 
-  const serialized = coupons.map((c) => ({
+  const serialized = coupons.map((c: any) => ({
     id: c.id,
     code: c.code,
     description: c.description,

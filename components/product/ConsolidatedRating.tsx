@@ -1,3 +1,4 @@
+import React from "react";
 import { Star, Info } from "lucide-react";
 import type { ConsolidatedRating as ConsolidatedRatingType } from "@/lib/reviews/types";
 
@@ -6,7 +7,7 @@ interface Props {
 }
 
 function StarRating({ value }: { value: number }) {
-  const stars = [];
+  const stars: React.ReactNode[] = [];
   for (let i = 1; i <= 5; i++) {
     const fill = value >= i ? "fill-current" : value >= i - 0.5 ? "fill-current opacity-50" : "";
     stars.push(

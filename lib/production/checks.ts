@@ -29,8 +29,8 @@ const REQUIRED_ENV_VARS = [
 ]
 
 const OPTIONAL_ENV_VARS = [
-  { key: 'ML_CLIENT_ID', label: 'Mercado Livre API', group: 'integrations' as CheckGroup },
-  { key: 'ML_CLIENT_SECRET', label: 'Mercado Livre Secret', group: 'integrations' as CheckGroup },
+  { key: 'MERCADOLIVRE_APP_ID', label: 'Mercado Livre API', group: 'integrations' as CheckGroup },
+  { key: 'MERCADOLIVRE_SECRET', label: 'Mercado Livre Secret', group: 'integrations' as CheckGroup },
   { key: 'RESEND_API_KEY', label: 'Resend (email)', group: 'integrations' as CheckGroup },
   { key: 'AMAZON_TAG', label: 'Amazon Associates', group: 'integrations' as CheckGroup },
   { key: 'GOOGLE_ANALYTICS_ID', label: 'Google Analytics', group: 'seo' as CheckGroup },
