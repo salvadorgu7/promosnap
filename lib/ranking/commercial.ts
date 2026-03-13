@@ -43,6 +43,9 @@ export interface CommercialSignals {
   isFreeShipping?: boolean
   hasCoupon?: boolean
 
+  // Origin signals
+  originType?: 'imported' | 'seed' | string
+
   // Commercial potential
   commissionRate?: number   // 0-1
   estimatedRevenue?: number
@@ -60,6 +63,7 @@ export interface CommercialScore {
     trust: number       // 0-15
     commercial: number  // 0-15
   }
+  boosts: string[]      // applied boost labels for debug
 }
 
 // ── Weight presets by context ─────────────────────────────────────────────
@@ -258,13 +262,24 @@ export function calculateCommercialScore(
   }
 
   // Apply weights and normalize to 0-100
-  const total = Math.round(
+  let total = Math.round(
     (raw.relevance * weights.relevance / 100) +
     (raw.dealQuality * weights.dealQuality / 100) +
     (raw.demand * weights.demand / 100) +
     (raw.trust * weights.trust / 100) +
     (raw.commercial * weights.commercial / 100)
   )
+
+  // ── Origin boost: favor real imported products over seed data ──────────
+  // Defensive: only boost when originType field exists and equals 'imported'
+  const boosts: string[] = []
+  const isRealProduct = (signals as any).originType === 'imported'
+  if (isRealProduct) {
+    total = Math.round(total * 1.15) // +15% multiplier for imported products
+    boosts.push('originType_imported')
+  }
+  if (signals.isFreeShipping) boosts.push('free_shipping')
+  if (signals.hasCoupon) boosts.push('coupon')
 
   return {
     total: Math.min(Math.max(total, 0), 100),
@@ -275,6 +290,7 @@ export function calculateCommercialScore(
       trust: Math.round(raw.trust * weights.trust / 100),
       commercial: Math.round(raw.commercial * weights.commercial / 100),
     },
+    boosts,
   }
 }
 

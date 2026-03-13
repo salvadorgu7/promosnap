@@ -23,11 +23,30 @@ interface SearchParams {
   maxPrice?: number
   freeShipping?: boolean
   sortBy?: 'relevance' | 'price_asc' | 'price_desc' | 'popularity' | 'score'
+  isAdmin?: boolean
 }
 
 export interface EnhancedSearchResult extends SearchResult {
   understanding?: QueryUnderstanding
   metrics?: SearchMetrics
+  didYouMean?: string
+  relatedCategories?: string[]
+  bestSellersFallback?: string
+  debug?: SearchDebugInfo
+}
+
+export interface SearchDebugInfo {
+  queryUnderstanding: {
+    intent: string
+    commercialIntent: string | null
+    entities: any[]
+    synonyms: string[]
+    corrections?: string[]
+  }
+  searchStrategy: 'primary' | 'fallback' | 'zero_result'
+  candidateCount: number
+  rankedCount: number
+  boostsApplied: string[]
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -176,7 +195,7 @@ function toProductCard(p: any): ProductCard | null {
 }
 
 /** Build signals for commercial ranking from a ProductCard */
-function cardToSignals(card: ProductCard): CommercialSignals {
+function cardToSignals(card: ProductCard, rawProduct?: any): CommercialSignals {
   return {
     currentPrice: card.bestOffer.price,
     originalPrice: card.bestOffer.originalPrice,
@@ -184,6 +203,8 @@ function cardToSignals(card: ProductCard): CommercialSignals {
     isFreeShipping: card.bestOffer.isFreeShipping,
     hasImage: !!card.imageUrl,
     hasAffiliate: card.bestOffer.affiliateUrl !== '#',
+    // Defensive: originType may not exist yet (migration pending)
+    originType: rawProduct?.originType,
   }
 }
 
@@ -391,24 +412,46 @@ export async function searchProducts(params: SearchParams): Promise<EnhancedSear
     }
   }
 
-  // ── Build ProductCards ─────────────────────────────────────────────────
-  let productCards: ProductCard[] = products
-    .map(toProductCard)
-    .filter(Boolean) as ProductCard[]
+  // ── Build ProductCards (keep raw product ref for signals) ─────────────
+  const cardPairs = products
+    .map(p => ({ card: toProductCard(p), raw: p }))
+    .filter((pair): pair is { card: ProductCard; raw: any } => pair.card !== null)
+
+  let productCards: ProductCard[] = cardPairs.map(p => p.card)
+  const rawByCardId = new Map(cardPairs.map(p => [p.card.id, p.raw]))
+
+  // ── Determine effective sort based on commercial intent ─────────────
+  let effectiveSort = sortBy
+  if (sortBy === 'relevance' && understanding.commercialIntent) {
+    // Commercial intent hints: override sort when user expresses intent
+    if (understanding.commercialIntent === 'price') {
+      effectiveSort = 'price_asc'
+    } else if (understanding.commercialIntent === 'popularity') {
+      effectiveSort = 'popularity'
+    }
+    // 'quality' stays as relevance but uses 'deal' preset for higher score weight
+  }
 
   // ── Apply commercial ranking (when sorting by relevance or score) ──────
-  if (sortBy === 'relevance' || sortBy === 'score') {
-    const preset = presetForIntent(understanding.intent)
+  let boostsApplied: string[] = []
+  if (effectiveSort === 'relevance' || effectiveSort === 'score') {
+    const preset = understanding.commercialIntent === 'quality'
+      ? 'search'  // quality intent: heavier relevance weight
+      : presetForIntent(understanding.intent)
     const scored = productCards.map(card => ({
       card,
-      score: calculateCommercialScore(cardToSignals(card), preset),
+      score: calculateCommercialScore(cardToSignals(card, rawByCardId.get(card.id)), preset),
     }))
     scored.sort((a, b) => b.score.total - a.score.total)
+    // Collect all unique boosts applied
+    boostsApplied = [...new Set(scored.flatMap(s => s.score.boosts))]
     productCards = scored.map(s => s.card)
-  } else if (sortBy === 'price_asc') {
+  } else if (effectiveSort === 'price_asc') {
     productCards.sort((a, b) => a.bestOffer.price - b.bestOffer.price)
-  } else if (sortBy === 'price_desc') {
+  } else if (effectiveSort === 'price_desc') {
     productCards.sort((a, b) => b.bestOffer.price - a.bestOffer.price)
+  } else if (effectiveSort === 'popularity') {
+    productCards.sort((a, b) => b.popularityScore - a.popularityScore)
   }
 
   // ── Build filters from results ─────────────────────────────────────────
@@ -416,15 +459,55 @@ export async function searchProducts(params: SearchParams): Promise<EnhancedSear
 
   // ── Suggestions ────────────────────────────────────────────────────────
   const suggestions: string[] = [...understanding.suggestions]
+  let searchStrategy: 'primary' | 'fallback' | 'zero_result' = 'primary'
+  let didYouMean: string | undefined
+  let relatedCategories: string[] = []
+  let bestSellersFallback: string | undefined
+
   if (fallbackUsed && fallbackLevel) {
+    searchStrategy = 'fallback'
     // Suggest the original query with a note
     if (fallbackLevel === 'word_split') {
       suggestions.unshift(query) // keep original as first suggestion
     }
   }
-  // If zero results even after fallback, suggest expansions
-  if (totalCount === 0 && understanding.expansions.length > 0) {
-    suggestions.push(...understanding.expansions.slice(0, 2))
+
+  // ── Zero-result handling ──────────────────────────────────────────────
+  if (totalCount === 0) {
+    searchStrategy = 'zero_result'
+
+    // "Voce quis dizer" from typo corrections
+    if (understanding.corrections && understanding.corrections.length > 0) {
+      didYouMean = understanding.normalized
+    }
+
+    // Suggest expansions
+    if (understanding.expansions.length > 0) {
+      suggestions.push(...understanding.expansions.slice(0, 3))
+    }
+
+    // Detect closest category for "Mais vendidos em X" fallback
+    const categoryWords: Record<string, string> = {
+      celular: 'Celulares', smartphone: 'Celulares', notebook: 'Notebooks',
+      laptop: 'Notebooks', tablet: 'Tablets', fone: 'Fones de Ouvido',
+      headphone: 'Fones de Ouvido', tv: 'TVs', televisao: 'TVs',
+      monitor: 'Monitores', camera: 'Cameras', console: 'Consoles',
+      teclado: 'Teclados', mouse: 'Mouses', ssd: 'Armazenamento',
+      geladeira: 'Eletrodomesticos', perfume: 'Perfumes', tenis: 'Tenis',
+      smartwatch: 'Smartwatches', 'air fryer': 'Cozinha',
+    }
+    const queryWords = understanding.normalized.split(/\s+/)
+    for (const word of queryWords) {
+      if (categoryWords[word]) {
+        relatedCategories.push(categoryWords[word])
+        if (!bestSellersFallback) {
+          bestSellersFallback = categoryWords[word]
+        }
+      }
+    }
+
+    // Deduplicate
+    relatedCategories = [...new Set(relatedCategories)]
   }
 
   // ── Build metrics ──────────────────────────────────────────────────────
@@ -451,6 +534,21 @@ export async function searchProducts(params: SearchParams): Promise<EnhancedSear
     },
   }).catch(() => {})
 
+  // ── Build debug info (only populated when isAdmin) ──────────────────
+  const debugInfo: SearchDebugInfo | undefined = params.isAdmin ? {
+    queryUnderstanding: {
+      intent: understanding.intent,
+      commercialIntent: understanding.commercialIntent ?? null,
+      entities: understanding.entities,
+      synonyms: understanding.expansions,
+      corrections: understanding.corrections,
+    },
+    searchStrategy,
+    candidateCount: totalCount,
+    rankedCount: productCards.length,
+    boostsApplied,
+  } : undefined
+
   // ── Result ─────────────────────────────────────────────────────────────
   const result: EnhancedSearchResult = {
     products: productCards,
@@ -460,6 +558,12 @@ export async function searchProducts(params: SearchParams): Promise<EnhancedSear
     suggestions: suggestions.slice(0, 5),
     understanding,
     metrics,
+    // Zero-result helpers
+    ...(didYouMean ? { didYouMean } : {}),
+    ...(relatedCategories.length > 0 ? { relatedCategories } : {}),
+    ...(bestSellersFallback ? { bestSellersFallback } : {}),
+    // Admin debug
+    ...(debugInfo ? { debug: debugInfo } : {}),
   }
 
   await cacheSet(cacheKey, result, 180) // 3 min cache (shorter for freshness)

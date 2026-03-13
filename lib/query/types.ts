@@ -23,6 +23,9 @@ export interface QueryEntity {
   confidence: ConfidenceLevel
 }
 
+/** Commercial intent for sorting hints */
+export type CommercialIntentType = 'price' | 'quality' | 'popularity' | null
+
 /** The full result of query understanding */
 export interface QueryUnderstanding {
   /** The original raw query */
@@ -43,6 +46,10 @@ export interface QueryUnderstanding {
   fallbackUsed: boolean
   /** Processing time in ms */
   processingMs: number
+  /** Commercial intent for sort hints */
+  commercialIntent?: CommercialIntentType
+  /** Typo corrections applied */
+  corrections?: string[]
 }
 
 /** Pipeline stage for query processing */

@@ -67,6 +67,7 @@ export async function discoverAndImport(): Promise<JobResult> {
       soldQuantity: p.soldQuantity,
       condition: p.condition,
       sourceSlug: 'mercadolivre',
+      discoverySource: 'ml_discovery',
     }))
 
     let importResult

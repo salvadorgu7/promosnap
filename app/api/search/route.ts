@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/security/rate-limit";
 import { searchProducts } from "@/lib/search/engine";
 
+/** Check if request has valid admin secret */
+function isAdminRequest(request: NextRequest): boolean {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) return false;
+  return request.headers.get("x-admin-secret") === secret;
+}
+
 export async function GET(request: NextRequest) {
   // Rate limit: 30 req/min for search
   const rl = rateLimit(request, "search");
@@ -26,7 +33,8 @@ export async function GET(request: NextRequest) {
     const rawMax = searchParams.get("maxPrice") ? parseFloat(searchParams.get("maxPrice")!) : undefined;
     const minPrice = rawMin !== undefined && isFinite(rawMin) && rawMin >= 0 ? rawMin : undefined;
     const maxPrice = rawMax !== undefined && isFinite(rawMax) && rawMax >= 0 ? rawMax : undefined;
-    const debug = searchParams.get("debug") === "1";
+
+    const isAdmin = isAdminRequest(request);
 
     if (!q.trim()) {
       return withRateLimitHeaders(
@@ -45,6 +53,7 @@ export async function GET(request: NextRequest) {
       source,
       minPrice,
       maxPrice,
+      isAdmin,
     });
 
     const response = NextResponse.json({
@@ -55,18 +64,26 @@ export async function GET(request: NextRequest) {
       query: q,
       filters: result.filters,
       suggestions: result.suggestions,
-      // Include intelligence metadata only in debug mode
-      ...(debug && result.understanding ? {
+      // Zero-result helpers (always included when applicable)
+      ...(result.didYouMean ? { didYouMean: result.didYouMean } : {}),
+      ...(result.relatedCategories ? { relatedCategories: result.relatedCategories } : {}),
+      ...(result.bestSellersFallback ? { bestSellersFallback: result.bestSellersFallback } : {}),
+      // Admin-only debug info — hidden from public responses
+      ...(isAdmin && result.debug ? { debug: result.debug } : {}),
+      // Legacy debug fields for backward compat (admin-only)
+      ...(isAdmin && result.understanding ? {
         _intelligence: {
           intent: result.understanding.intent,
           confidence: result.understanding.confidence,
+          commercialIntent: result.understanding.commercialIntent ?? null,
           entities: result.understanding.entities,
           expansions: result.understanding.expansions,
+          corrections: result.understanding.corrections,
           fallbackUsed: result.understanding.fallbackUsed,
           processingMs: result.understanding.processingMs,
         },
       } : {}),
-      ...(debug && result.metrics ? {
+      ...(isAdmin && result.metrics ? {
         _metrics: result.metrics,
       } : {}),
     });

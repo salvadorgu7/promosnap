@@ -3,9 +3,9 @@
 // ============================================================================
 
 export { understandQuery } from './engine'
-export { expandWithSynonyms, resolveBrand, KNOWN_BRANDS, SYNONYMS } from './synonyms'
+export { expandWithSynonyms, correctTypos, resolveBrand, KNOWN_BRANDS, SYNONYMS, TYPO_CORRECTIONS, ABBREVIATION_EXPANSIONS } from './synonyms'
 export type {
   QueryIntent, ConfidenceLevel, QueryEntity,
   QueryUnderstanding, QueryPipelineStage, QueryPipelineResult,
-  SearchMetrics,
+  SearchMetrics, CommercialIntentType,
 } from './types'

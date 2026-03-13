@@ -106,6 +106,9 @@ model Product {
   hidden          Boolean         @default(false)
   needsReview     Boolean         @default(false)
   editorialScore  Int?
+  originType      String          @default("seed")   // "seed" | "imported" | "manual" | "curated"
+  discoverySource String?         // "ml_discovery" | "ml_highlights" | "manual_import" | "csv_upload" | "admin"
+  importedAt      DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -118,6 +121,7 @@ model Product {
   @@index([categoryId])
   @@index([brandId])
   @@index([popularityScore(sort: Desc)])
+  @@index([originType])
   @@map("products")
 }
 

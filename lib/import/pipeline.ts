@@ -20,6 +20,7 @@ export interface ImportItem {
   brand?: string           // Pre-detected brand name
   categorySlug?: string    // Resolved category slug
   sourceSlug: string       // e.g. 'mercadolivre', 'amazon'
+  discoverySource?: string // "ml_discovery" | "ml_highlights" | "manual_import" | "csv_upload" | "admin"
 }
 
 export interface ImportItemResult {
@@ -147,6 +148,13 @@ export async function runImportPipeline(
               originalPrice: item.originalPrice ?? null,
             },
           })
+          // Update importedAt on re-import
+          if (existing.productId) {
+            await prisma.product.update({
+              where: { id: existing.productId },
+              data: { importedAt: new Date() },
+            })
+          }
           results.push({ externalId: item.externalId, action: 'updated', productId: existing.productId ?? undefined })
           updated++
         } else {
@@ -200,6 +208,9 @@ export async function runImportPipeline(
             brandId,
             categoryId,
             status: 'ACTIVE',
+            originType: 'imported',
+            discoverySource: item.discoverySource ?? 'ml_discovery',
+            importedAt: new Date(),
           },
         })
       }

@@ -9,7 +9,7 @@ import type {
 import {
   KNOWN_BRANDS, DEAL_MODIFIERS, EXPLORATORY_MODIFIERS,
   COMPARISON_MODIFIERS, ATTRIBUTE_TERMS, BRAND_ALIASES,
-  expandWithSynonyms, resolveBrand,
+  expandWithSynonyms, resolveBrand, correctTypos, detectCommercialIntent,
 } from './synonyms'
 
 // ── Normalization ───────────────────────────────────────────────────────────
@@ -230,8 +230,16 @@ export function understandQuery(raw: string): QueryPipelineResult {
 
   // ── Stage 1: Normalize ────────────────────────────────────────────────
   const normStart = Date.now()
-  const normalized = normalize(raw)
-  stages.push({ stage: 'normalize', status: 'success', durationMs: Date.now() - normStart })
+  const rawNormalized = normalize(raw)
+  // Apply typo corrections on top of normalization
+  const { corrected, corrections } = correctTypos(rawNormalized)
+  const normalized = corrected
+  stages.push({
+    stage: 'normalize',
+    status: 'success',
+    durationMs: Date.now() - normStart,
+    detail: corrections.length > 0 ? `typos: ${corrections.join(', ')}` : undefined,
+  })
 
   // ── Stage 2: Extract entities ─────────────────────────────────────────
   const extractStart = Date.now()
@@ -263,7 +271,10 @@ export function understandQuery(raw: string): QueryPipelineResult {
     detail: `${expansions.length} expansions`,
   })
 
-  // ── Stage 5: Resolve suggestions ──────────────────────────────────────
+  // ── Stage 5: Commercial intent detection ─────────────────────────────
+  const commercialIntent = detectCommercialIntent(normalized)
+
+  // ── Stage 6: Resolve suggestions ──────────────────────────────────────
   const resolveStart = Date.now()
   const suggestions = generateSuggestions(normalized, entities, intent)
   stages.push({
@@ -285,6 +296,8 @@ export function understandQuery(raw: string): QueryPipelineResult {
     suggestions,
     fallbackUsed: confidence === 'low',
     processingMs: totalMs,
+    commercialIntent,
+    corrections: corrections.length > 0 ? corrections : undefined,
   }
 
   return { understanding, stages, totalMs }

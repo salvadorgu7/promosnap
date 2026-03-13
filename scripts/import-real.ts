@@ -102,6 +102,7 @@ async function main() {
     soldQuantity: p.soldQuantity,
     condition: p.condition,
     sourceSlug: 'mercadolivre',
+    discoverySource: 'ml_discovery',
   }))
 
   let importResult
