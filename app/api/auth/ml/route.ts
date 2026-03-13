@@ -1,22 +1,5 @@
 import { NextResponse } from 'next/server'
-import crypto from 'crypto'
-
-// Generate PKCE code_verifier and code_challenge
-function generatePKCE() {
-  const verifier = crypto.randomBytes(32).toString('base64url')
-  const challenge = crypto
-    .createHash('sha256')
-    .update(verifier)
-    .digest('base64url')
-  return { verifier, challenge }
-}
-
-// Store verifier in a global map (keyed by state) — survives within serverless instance
-const globalForPKCE = globalThis as unknown as { __pkceStore?: Map<string, string> }
-const pkceStore = globalForPKCE.__pkceStore ?? new Map<string, string>()
-globalForPKCE.__pkceStore = pkceStore
-
-export { pkceStore }
+import { pkceStore, generatePKCE, generateState } from '@/lib/ml-pkce'
 
 export async function GET() {
   const clientId = process.env.MERCADOLIVRE_APP_ID
@@ -27,7 +10,7 @@ export async function GET() {
   }
 
   const { verifier, challenge } = generatePKCE()
-  const state = crypto.randomBytes(16).toString('hex')
+  const state = generateState()
 
   // Store verifier keyed by state
   pkceStore.set(state, verifier)

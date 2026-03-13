@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { mlTokenStore } from '@/lib/ml-auth'
-import { pkceStore } from '../route'
+import { pkceStore } from '@/lib/ml-pkce'
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
