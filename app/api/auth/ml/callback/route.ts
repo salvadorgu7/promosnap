@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
-import { ML_TOKEN_PATH } from '@/lib/constants/ml-token-path'
+import { mlTokenStore } from '@/lib/ml-auth'
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
@@ -9,11 +8,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing code' }, { status: 400 })
   }
 
-  try {
-    const clientId = process.env.MERCADOLIVRE_APP_ID!
-    const clientSecret = process.env.MERCADOLIVRE_SECRET!
-    const redirectUri = process.env.MERCADOLIVRE_REDIRECT_URI || process.env.ML_REDIRECT_URI || (process.env.NEXT_PUBLIC_APP_URL + '/api/auth/ml/callback')
+  const clientId = process.env.MERCADOLIVRE_APP_ID
+  const clientSecret = process.env.MERCADOLIVRE_SECRET
+  const redirectUri = process.env.MERCADOLIVRE_REDIRECT_URI || process.env.ML_REDIRECT_URI || (process.env.NEXT_PUBLIC_APP_URL + '/api/auth/ml/callback')
 
+  if (!clientId || !clientSecret) {
+    return NextResponse.json(
+      { error: 'MERCADOLIVRE_APP_ID ou MERCADOLIVRE_SECRET nao configurados' },
+      { status: 500 }
+    )
+  }
+
+  try {
     const res = await fetch('https://api.mercadolibre.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -26,21 +32,37 @@ export async function GET(req: NextRequest) {
       }),
     })
 
+    const body = await res.json()
+
     if (!res.ok) {
-      const err = await res.text()
-      console.error('[ml-auth] Token exchange failed:', err)
-      return NextResponse.json({ error: 'Token exchange failed' }, { status: 500 })
+      console.error('[ml-auth] Token exchange failed:', JSON.stringify(body))
+      return NextResponse.json(
+        {
+          error: 'Token exchange failed',
+          ml_error: body.error || body.message || 'unknown',
+          ml_status: res.status,
+          redirect_uri_used: redirectUri,
+        },
+        { status: 500 }
+      )
     }
 
-    const token = await res.json()
-    token.obtained_at = Date.now()
+    // Save token in memory store
+    body.obtained_at = Date.now()
+    mlTokenStore.set(body)
 
-    console.log('[ml-auth] saving ML token to:', ML_TOKEN_PATH)
-    await writeFile(ML_TOKEN_PATH, JSON.stringify(token, null, 2), 'utf-8')
+    console.log('[ml-auth] Token obtained successfully, expires_in:', body.expires_in)
 
-    return NextResponse.json({ ok: true, expires_in: token.expires_in })
+    return NextResponse.json({
+      ok: true,
+      expires_in: body.expires_in,
+      user_id: body.user_id,
+    })
   } catch (error) {
     console.error('[ml-auth] Callback error:', error)
-    return NextResponse.json({ error: 'Falha na autenticacao ML' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Falha na autenticacao ML', detail: String(error) },
+      { status: 500 }
+    )
   }
 }
