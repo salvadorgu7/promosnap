@@ -2,7 +2,7 @@
 // Uses ML OAuth token for authenticated requests + public API for search
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
-import { mlTokenStore } from '@/lib/ml-auth'
+import { getMLToken } from '@/lib/ml-auth'
 
 // Accept both naming conventions for ML env vars
 function getMLEnv(key: string): string | undefined {
@@ -74,15 +74,16 @@ interface MLItemResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: get auth headers (optional — public endpoints work without token)
+// Helper: get auth headers (uses unified token getter: user → app token)
 // ---------------------------------------------------------------------------
 
-function getAuthHeaders(): Record<string, string> {
-  const token = mlTokenStore.getCached()
-  if (token) {
-    return { Authorization: `Bearer ${token.access_token}` }
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  try {
+    const token = await getMLToken()
+    return { Authorization: `Bearer ${token}` }
+  } catch {
+    return {}
   }
-  return {}
 }
 
 // ---------------------------------------------------------------------------
@@ -162,16 +163,10 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
 
   getStatus(): AdapterStatus {
     const missingEnvVars = REQUIRED_ENV_KEYS.filter((key) => !getMLEnv(key))
-    const hasRedirect = !!getMLRedirectUri()
-    const hasToken = !!mlTokenStore.getCached()
 
     let message = ''
-    if (this.isConfigured() && hasToken) {
-      message = 'ML API autenticado com token ativo'
-    } else if (this.isConfigured() && hasRedirect) {
-      message = 'ML API configurado — autentique via OAuth para funcionalidade completa'
-    } else if (this.isConfigured()) {
-      message = 'ML API configurado (redirect URI ausente)'
+    if (this.isConfigured()) {
+      message = 'ML API configurado — client_credentials ativo para busca e importacao'
     } else {
       message = `Variaveis ausentes: ${missingEnvVars.join(', ')}`
     }
@@ -213,7 +208,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       if (options?.sortBy === 'price_desc') url.searchParams.set('sort', 'price_desc')
 
       const headers: Record<string, string> = {
-        ...getAuthHeaders(),
+        ...(await getAuthHeaders()),
       }
 
       console.log(`[ML] search("${query}") limit=${limit} offset=${offset}`)
@@ -245,7 +240,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
 
   async getProduct(externalId: string): Promise<AdapterResult | null> {
     try {
-      const headers = getAuthHeaders()
+      const headers = await getAuthHeaders()
       const res = await fetch(`${ML_API_BASE}/items/${externalId}`, { headers })
 
       if (!res.ok) {
@@ -267,15 +262,9 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
 
   healthCheck(): AdapterHealthCheckResult {
     if (this.isConfigured()) {
-      const hasRedirect = !!getMLRedirectUri()
-      const hasToken = !!mlTokenStore.getCached()
       return {
         healthy: true,
-        message: hasToken
-          ? 'ML API autenticado com token'
-          : hasRedirect
-            ? 'ML API configurado, aguardando autenticacao'
-            : 'ML API credentials presentes (sem redirect URI)',
+        message: 'ML API configurado — client_credentials disponivel',
       }
     }
     return { healthy: false, message: 'MERCADOLIVRE_APP_ID / MERCADOLIVRE_SECRET ausentes' }
@@ -344,15 +333,12 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     const hasClientId = !!getMLEnv('ML_CLIENT_ID')
     const hasSecret = !!getMLEnv('ML_CLIENT_SECRET')
     const hasRedirect = !!getMLRedirectUri()
-    const hasToken = !!mlTokenStore.getCached()
-
     if (hasClientId && hasSecret) {
       return {
-        status: hasToken ? 'sync-ready' : 'partial',
+        status: 'sync-ready',
         capabilities: ['search', 'lookup', 'clickout_ready', 'price_refresh', 'import_ready'],
         missing: [
-          ...(!hasRedirect ? ['ML_REDIRECT_URI'] : []),
-          ...(!hasToken ? ['Token OAuth (autentique via /api/auth/ml)'] : []),
+          ...(!hasRedirect ? ['ML_REDIRECT_URI (opcional)'] : []),
         ],
         lastSync: undefined,
       }
