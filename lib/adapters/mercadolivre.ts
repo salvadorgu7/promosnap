@@ -78,7 +78,7 @@ interface MLItemResponse {
 // ---------------------------------------------------------------------------
 
 function getAuthHeaders(): Record<string, string> {
-  const token = mlTokenStore.get()
+  const token = mlTokenStore.getCached()
   if (token) {
     return { Authorization: `Bearer ${token.access_token}` }
   }
@@ -163,7 +163,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
   getStatus(): AdapterStatus {
     const missingEnvVars = REQUIRED_ENV_KEYS.filter((key) => !getMLEnv(key))
     const hasRedirect = !!getMLRedirectUri()
-    const hasToken = !!mlTokenStore.get()
+    const hasToken = !!mlTokenStore.getCached()
 
     let message = ''
     if (this.isConfigured() && hasToken) {
@@ -268,7 +268,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
   healthCheck(): AdapterHealthCheckResult {
     if (this.isConfigured()) {
       const hasRedirect = !!getMLRedirectUri()
-      const hasToken = !!mlTokenStore.get()
+      const hasToken = !!mlTokenStore.getCached()
       return {
         healthy: true,
         message: hasToken
@@ -344,7 +344,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     const hasClientId = !!getMLEnv('ML_CLIENT_ID')
     const hasSecret = !!getMLEnv('ML_CLIENT_SECRET')
     const hasRedirect = !!getMLRedirectUri()
-    const hasToken = !!mlTokenStore.get()
+    const hasToken = !!mlTokenStore.getCached()
 
     if (hasClientId && hasSecret) {
       return {

@@ -55,9 +55,9 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Save token in memory store
+    // Save token to database + memory cache
     body.obtained_at = Date.now()
-    mlTokenStore.set(body)
+    await mlTokenStore.set(body)
 
     console.log('[ml-auth] Token obtained successfully, expires_in:', body.expires_in)
 

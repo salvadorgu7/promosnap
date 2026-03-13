@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
 
       if (res.status === 401 || res.status === 403) {
         // Token expired or invalid — clear it
-        mlTokenStore.clear()
+        await mlTokenStore.clear()
         return NextResponse.json({
           error: 'Token ML expirado. Clique em "Iniciar OAuth" para re-autenticar.',
           needsAuth: true,

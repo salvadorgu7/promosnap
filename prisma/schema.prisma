@@ -592,3 +592,15 @@ enum CandidateStatus {
   REJECTED
   IMPORTED
 }
+
+// ============================================
+// SYSTEM SETTINGS (key-value store)
+// ============================================
+
+model SystemSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
