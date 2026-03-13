@@ -3,112 +3,14 @@
  *
  * Run: npx tsx scripts/import-real.ts
  *
- * What it does:
- * 1. Checks ML API access (token type + endpoint availability)
- * 2. Fetches products via ML Search API (requires user token)
- * 3. Imports into PromoSnap DB via unified import pipeline
- *
- * If search fails (403), guides you through ML OAuth setup.
+ * Uses the discovery pipeline (highlights + hydrate) which works
+ * without /search API access. No OAuth user token required.
  *
  * Requires: MERCADOLIVRE_APP_ID + MERCADOLIVRE_SECRET in .env
- * For full access: ML_REDIRECT_URI + OAuth user token (see guide below)
  */
 
-import { getMLToken, mlTokenStore } from '@/lib/ml-auth'
+import { runDiscovery } from '@/lib/ml-discovery'
 import { runImportPipeline, type ImportItem } from '@/lib/import'
-import type { MLProduct } from '@/lib/ml-discovery/types'
-
-const ML_API = 'https://api.mercadolibre.com'
-
-// Categories to search with keywords
-const SEARCH_TARGETS = [
-  { catId: 'MLB1055', keyword: 'celular', label: 'Celulares' },
-  { catId: 'MLB1652', keyword: 'notebook', label: 'Notebooks' },
-  { catId: 'MLB1676', keyword: 'fone bluetooth', label: 'Fones' },
-  { catId: 'MLB1002', keyword: 'smart tv', label: 'TVs' },
-  { catId: 'MLB186456', keyword: 'playstation', label: 'Consoles' },
-  { catId: 'MLB352679', keyword: 'smartwatch', label: 'Smartwatches' },
-  { catId: 'MLB1670', keyword: 'monitor gamer', label: 'Monitores' },
-  { catId: 'MLB1659', keyword: 'tablet', label: 'Tablets' },
-]
-
-async function testMLAccess(token: string): Promise<{
-  search: boolean
-  items: boolean
-  trends: boolean
-  tokenType: 'user' | 'app'
-}> {
-  let tokenType: 'user' | 'app' = 'app'
-
-  // Check if we have a user token
-  const userToken = await mlTokenStore.get()
-  if (userToken?.user_id) {
-    tokenType = 'user'
-  }
-
-  const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' }
-
-  // Test search
-  let search = false
-  try {
-    const res = await fetch(`${ML_API}/sites/MLB/search?q=celular&limit=1`, { headers })
-    search = res.ok
-  } catch { /* */ }
-
-  // Test items
-  let items = false
-  try {
-    const res = await fetch(`${ML_API}/items/MLB3467817498`, { headers })
-    items = res.ok || res.status === 404 // 404 = endpoint works, item doesn't exist
-  } catch { /* */ }
-
-  // Test trends
-  let trends = false
-  try {
-    const res = await fetch(`${ML_API}/trends/MLB`, { headers })
-    trends = res.ok
-  } catch { /* */ }
-
-  return { search, items, trends, tokenType }
-}
-
-async function searchCategory(token: string, catId: string, keyword: string, limit = 10): Promise<MLProduct[]> {
-  const url = new URL(`${ML_API}/sites/MLB/search`)
-  url.searchParams.set('category', catId)
-  url.searchParams.set('q', keyword)
-  url.searchParams.set('limit', String(limit))
-  url.searchParams.set('sort', 'relevance')
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-  })
-
-  if (!res.ok) {
-    throw new Error(`Search ${catId} failed: ${res.status}`)
-  }
-
-  const data = await res.json()
-  return (data.results || []).map((item: any): MLProduct => {
-    const thumbnail = item.thumbnail || ''
-    return {
-      externalId: item.id || '',
-      catalogProductId: item.catalog_product_id ?? undefined,
-      title: item.title || '',
-      currentPrice: item.price || 0,
-      originalPrice: item.original_price ?? undefined,
-      currency: item.currency_id || 'BRL',
-      productUrl: item.permalink || '',
-      imageUrl: thumbnail.replace(/-I\.jpg$/, '-O.jpg') || undefined,
-      isFreeShipping: item.shipping?.free_shipping ?? false,
-      availability: (item.available_quantity ?? 0) > 0 ? 'in_stock' : 'out_of_stock',
-      availableQuantity: item.available_quantity,
-      soldQuantity: item.sold_quantity,
-      condition: item.condition,
-      categoryId: item.category_id,
-      officialStoreName: item.official_store_name ?? undefined,
-    }
-  })
-}
 
 async function main() {
   console.log('╔══════════════════════════════════════════════════════════╗')
@@ -130,104 +32,65 @@ async function main() {
 
   console.log('✓ ML credentials found')
 
-  // Get token
-  let token: string
-  try {
-    token = await getMLToken()
-    console.log('✓ ML token obtained')
-  } catch (err) {
-    console.error('❌ Failed to get ML token:', err instanceof Error ? err.message : err)
-    process.exit(1)
-  }
-
-  // Test API access
+  // Run discovery pipeline (highlights → hydrate, no search needed)
   console.log()
-  console.log('── Diagnostics ─────────────────────────────────────────')
-  const access = await testMLAccess(token)
-  console.log(`  Token type: ${access.tokenType}`)
-  console.log(`  /trends:    ${access.trends ? '✓' : '✗'}`)
-  console.log(`  /search:    ${access.search ? '✓' : '✗'}`)
-  console.log(`  /items:     ${access.items ? '✓' : '✗'}`)
-
-  if (!access.search) {
-    console.log()
-    console.log('╔══════════════════════════════════════════════════════════╗')
-    console.log('║  ❌ Search API blocked (403)                            ║')
-    console.log('║                                                         ║')
-    console.log('║  O token de app (client_credentials) nao tem acesso     ║')
-    console.log('║  ao /search e /items. Voce precisa de um USER TOKEN.    ║')
-    console.log('║                                                         ║')
-    console.log('║  COMO RESOLVER:                                         ║')
-    console.log('║                                                         ║')
-    console.log('║  1. Configure ML_REDIRECT_URI no .env:                  ║')
-    console.log('║     ML_REDIRECT_URI=http://localhost:3000/api/admin/ml/callback')
-    console.log('║                                                         ║')
-    console.log('║  2. No ML Dev Center, adicione o redirect URI:          ║')
-    console.log('║     https://developers.mercadolivre.com.br/devcenter    ║')
-    console.log('║     → Abra seu app → Redirect URIs → adicione:         ║')
-    console.log('║     http://localhost:3000/api/admin/ml/callback         ║')
-    console.log('║                                                         ║')
-    console.log('║  3. Rode: npm run dev                                   ║')
-    console.log('║                                                         ║')
-    console.log('║  4. Abra no navegador:                                  ║')
-    console.log('║     http://localhost:3000/api/admin/ml/auth             ║')
-    console.log('║     (loga com sua conta ML, autoriza o app)             ║')
-    console.log('║                                                         ║')
-    console.log('║  5. Depois do OAuth, rode de novo:                      ║')
-    console.log('║     npm run import:real                                 ║')
-    console.log('╚══════════════════════════════════════════════════════════╝')
-    process.exit(1)
-  }
-
-  // Search API works! Import products
-  console.log()
-  console.log('── Searching ML categories ─────────────────────────────')
+  console.log('── Stage 1: Discovery ──────────────────────────────────')
+  console.log('  Strategy: highlights → multi-get/products → import')
+  console.log('  (sem depender de /search)')
 
   const start = Date.now()
-  const allProducts: MLProduct[] = []
-  const seen = new Set<string>()
 
-  for (const target of SEARCH_TARGETS) {
-    try {
-      const products = await searchCategory(token, target.catId, target.keyword, 10)
-      let added = 0
-      for (const p of products) {
-        if (!seen.has(p.externalId) && p.currentPrice > 0) {
-          allProducts.push(p)
-          seen.add(p.externalId)
-          added++
-        }
-      }
-      console.log(`  ✓ ${target.label}: ${added} products`)
-    } catch (err) {
-      console.log(`  ✗ ${target.label}: ${err instanceof Error ? err.message : err}`)
-    }
+  const { products, meta } = await runDiscovery({
+    mode: 'scheduled-auto-import',
+    includeTrends: true,
+    limit: 80,
+  })
+
+  // Show pipeline stages
+  const cats = meta.resolvedCategories.map(c => c.name).join(', ')
+  const trends = meta.trendsUsed.slice(0, 5).join(', ')
+  console.log(`  Categories: ${cats}`)
+  if (trends) console.log(`  Trends: ${trends}`)
+  console.log(`  Discovery: ${meta.timing.totalMs}ms`)
+  console.log()
+  console.log('  Pipeline:')
+  for (const stage of meta.pipeline) {
+    const icon = stage.status === 'success' ? '✓' : stage.status === 'partial' ? '⚠' : stage.status === 'skipped' ? '–' : '✗'
+    console.log(`    ${icon} ${stage.stage}: ${stage.itemsIn} → ${stage.itemsOut} (${stage.durationMs}ms)`)
   }
 
-  console.log()
-  console.log(`  Total discovered: ${allProducts.length} products`)
-
-  if (allProducts.length === 0) {
-    console.log('⚠ No products found. Try again in a few minutes.')
+  if (products.length === 0) {
+    console.log()
+    console.log('⚠ Nenhum produto descoberto.')
+    console.log()
+    console.log('  Possíveis causas:')
+    console.log('  - ML API rate-limiting')
+    console.log('  - /products/ e /items/ bloqueados (verifique com debug-ml.ts)')
+    console.log('  - Token expirado')
+    console.log()
+    console.log('  Tente: npx tsx scripts/debug-ml.ts')
     process.exit(0)
   }
 
   // Show samples
   console.log()
-  console.log('── Sample products ─────────────────────────────────────')
-  for (const p of allProducts.slice(0, 6)) {
+  console.log(`── ${products.length} produtos descobertos ──────────────────────`)
+  for (const p of products.slice(0, 8)) {
     const price = `R$ ${p.currentPrice.toFixed(2)}`
     const discount = p.originalPrice ? ` (era R$ ${p.originalPrice.toFixed(2)})` : ''
     const shipping = p.isFreeShipping ? ' [frete gratis]' : ''
     console.log(`  ${p.title.slice(0, 65)}`)
     console.log(`    ${price}${discount}${shipping}`)
   }
+  if (products.length > 8) {
+    console.log(`  ... e mais ${products.length - 8} produtos`)
+  }
 
   // Import
   console.log()
-  console.log('── Importing to DB ─────────────────────────────────────')
+  console.log('── Stage 2: Import to DB ───────────────────────────────')
 
-  const importItems: ImportItem[] = allProducts.map(p => ({
+  const importItems: ImportItem[] = products.map(p => ({
     externalId: p.externalId,
     title: p.title,
     currentPrice: p.currentPrice,
@@ -270,12 +133,12 @@ async function main() {
   const totalMs = Date.now() - start
   console.log()
   console.log('╔══════════════════════════════════════════════════════════╗')
-  console.log(`║  ✅ ${importResult.created} real products imported in ${(totalMs / 1000).toFixed(1)}s`)
+  console.log(`║  ✅ ${importResult.created} produtos reais importados em ${(totalMs / 1000).toFixed(1)}s`)
   console.log('║')
-  console.log('║  Next steps:')
-  console.log('║  • npm run dev → check homepage')
-  console.log('║  • /api/admin/status → verify catalog stats')
-  console.log('║  • Re-run daily or let cron handle it')
+  console.log('║  Próximos passos:')
+  console.log('║  • Abre https://www.promosnap.com.br → produtos reais')
+  console.log('║  • /api/admin/status → verificar catálogo')
+  console.log('║  • Cron diário importa automaticamente')
   console.log('╚══════════════════════════════════════════════════════════╝')
 
   process.exit(0)

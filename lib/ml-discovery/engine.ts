@@ -6,7 +6,7 @@ import type { DiscoveryMode, DiscoveryResult, DiscoveryMeta, PipelineStage, MLPr
 import { resolveIntentToCategories, getCronCategories, getAllCategories } from './categories'
 import { fetchTrendingSignals, getTrendCategories } from './trends'
 import { fetchHighlightsForCategories } from './highlights'
-import { batchHydrateItems, normalizeItem } from './items'
+import { batchHydrateItems, normalizeItem, type HydrateEntry } from './items'
 import { rankDiscoveryResults, deduplicateProducts } from './ranking'
 
 function log(stage: string, msg: string, extra?: Record<string, unknown>) {
@@ -110,16 +110,19 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
 
   // ── Stage 3: Highlights ─────────────────────────────────────────────────
   const hlStart = Date.now()
-  let productIds: string[] = []
+  let hydrateEntries: HydrateEntry[] = []
 
   if (categoryIds.length > 0) {
     try {
       const highlights = await fetchHighlightsForCategories(categoryIds)
       const allEntries = highlights.flatMap((h) => h.entries)
-      productIds = allEntries.map((e) => e.id)
+      hydrateEntries = allEntries.map((e) => ({
+        id: e.id,
+        type: (e.type === 'PRODUCT' || e.type === 'ITEM') ? e.type : undefined,
+      }))
 
-      log('highlights', `${categoryIds.length} categories → ${productIds.length} product IDs`)
-      stages.push({ stage: 'highlights', status: 'success', itemsIn: categoryIds.length, itemsOut: productIds.length, durationMs: Date.now() - hlStart })
+      log('highlights', `${categoryIds.length} categories → ${hydrateEntries.length} product IDs (${allEntries.filter(e => e.type === 'PRODUCT').length} PRODUCT, ${allEntries.filter(e => e.type === 'ITEM').length} ITEM)`)
+      stages.push({ stage: 'highlights', status: 'success', itemsIn: categoryIds.length, itemsOut: hydrateEntries.length, durationMs: Date.now() - hlStart })
     } catch (err) {
       log('highlights', 'failed', { error: String(err) })
       stages.push({ stage: 'highlights', status: 'failure', itemsIn: categoryIds.length, itemsOut: 0, durationMs: Date.now() - hlStart, error: String(err) })
@@ -134,26 +137,26 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
   let products: MLProduct[] = []
   let failedCount = 0
 
-  if (productIds.length > 0) {
+  if (hydrateEntries.length > 0) {
     // Limit how many we hydrate to avoid excessive API calls
-    const idsToHydrate = productIds.slice(0, Math.min(limit * 2, 40))
+    const entriesToHydrate = hydrateEntries.slice(0, Math.min(limit * 2, 40))
 
     try {
-      const { products: hydrated, failed } = await batchHydrateItems(idsToHydrate)
+      const { products: hydrated, failed } = await batchHydrateItems(entriesToHydrate)
       products = hydrated
       failedCount = failed.length
 
-      log('hydrate', `${idsToHydrate.length} IDs → ${products.length} products (${failed.length} failed)`)
+      log('hydrate', `${entriesToHydrate.length} IDs → ${products.length} products (${failed.length} failed)`)
       stages.push({
         stage: 'hydrate',
         status: failed.length === 0 ? 'success' : 'partial',
-        itemsIn: idsToHydrate.length,
+        itemsIn: entriesToHydrate.length,
         itemsOut: products.length,
         durationMs: Date.now() - hydrateStart,
       })
     } catch (err) {
       log('hydrate', 'failed', { error: String(err) })
-      stages.push({ stage: 'hydrate', status: 'failure', itemsIn: idsToHydrate.length, itemsOut: 0, durationMs: Date.now() - hydrateStart, error: String(err) })
+      stages.push({ stage: 'hydrate', status: 'failure', itemsIn: entriesToHydrate.length, itemsOut: 0, durationMs: Date.now() - hydrateStart, error: String(err) })
     }
   } else {
     stages.push({ stage: 'hydrate', status: 'skipped', itemsIn: 0, itemsOut: 0, durationMs: 0 })
@@ -257,7 +260,7 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
     pipeline: stages,
     timing: { totalMs: Date.now() - start, stageTimings },
     stats: {
-      highlightsFetched: productIds.length,
+      highlightsFetched: hydrateEntries.length,
       itemsHydrated: products.length,
       itemsFailed: failedCount,
       duplicatesSkipped: dupsSkipped,

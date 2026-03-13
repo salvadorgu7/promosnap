@@ -25,29 +25,90 @@ export async function mlFetch(url: string, init?: RequestInit): Promise<Response
 }
 
 // ============================================================================
-// Hydrate a single product/item by ID
+// Hydrate via multi-get /items?ids= (batch endpoint, different from /items/{id})
+// ============================================================================
+
+const MULTI_GET_BATCH = 20 // ML allows up to 20 IDs per multi-get
+
+/**
+ * Fetch multiple items in a single API call using the multi-get endpoint.
+ * This is different from /items/{id} and may have different access rules.
+ */
+async function multiGetItems(ids: string[]): Promise<MLProduct[]> {
+  const products: MLProduct[] = []
+
+  for (let i = 0; i < ids.length; i += MULTI_GET_BATCH) {
+    const batch = ids.slice(i, i + MULTI_GET_BATCH)
+    const idsParam = batch.join(',')
+    const attrs = 'id,title,price,permalink,thumbnail,shipping,pictures,available_quantity,sold_quantity,condition,category_id,official_store_name,original_price,currency_id,catalog_product_id,status'
+
+    const res = await mlFetch(`${ML_API}/items?ids=${idsParam}&attributes=${attrs}`)
+
+    if (!res.ok) {
+      console.error(`[ml-discovery] multi-get failed: ${res.status}`)
+      continue
+    }
+
+    const data = await res.json()
+    if (!Array.isArray(data)) continue
+
+    for (const entry of data) {
+      if (entry.code === 200 && entry.body) {
+        const product = normalizeItem(entry.body)
+        if (product.currentPrice > 0) {
+          products.push(product)
+        }
+      }
+    }
+  }
+
+  return products
+}
+
+// ============================================================================
+// Hydrate catalog products via /products/{id}
+// ============================================================================
+
+async function hydrateCatalogProduct(id: string): Promise<MLProduct | null> {
+  const res = await mlFetch(`${ML_API}/products/${id}`)
+  if (!res.ok) return null
+
+  const data = await res.json()
+  return normalizeCatalogProduct(data, id)
+}
+
+// ============================================================================
+// Hydrate a single product/item by ID (with type hint)
 // ============================================================================
 
 /**
- * Fetch product details. Tries /items/{id} first (most common from highlights),
- * falls back to /products/{id} (catalog product).
- * Also tries without auth if authenticated request fails (some endpoints are public).
+ * Fetch product details. Uses type hint from highlights to pick the right endpoint.
+ * - type "PRODUCT" → /products/{id} first (catalog product ID)
+ * - type "ITEM" → /items/{id} first (listing item ID)
  */
-export async function hydrateItem(id: string): Promise<MLProduct | null> {
-  // Try item endpoint first (most highlight IDs are item IDs)
-  const itemRes = await mlFetch(`${ML_API}/items/${id}`)
+export async function hydrateItem(id: string, typeHint?: 'PRODUCT' | 'ITEM'): Promise<MLProduct | null> {
+  if (typeHint === 'PRODUCT') {
+    // Try /products/ first for catalog product IDs
+    const prod = await hydrateCatalogProduct(id)
+    if (prod) return prod
 
-  if (itemRes.ok) {
-    const data = await itemRes.json()
-    return normalizeItem(data)
-  }
+    // Fallback: maybe it's actually an item ID
+    const itemRes = await mlFetch(`${ML_API}/items/${id}`)
+    if (itemRes.ok) {
+      const data = await itemRes.json()
+      return normalizeItem(data)
+    }
+  } else {
+    // Try /items/ first for item IDs
+    const itemRes = await mlFetch(`${ML_API}/items/${id}`)
+    if (itemRes.ok) {
+      const data = await itemRes.json()
+      return normalizeItem(data)
+    }
 
-  // Try catalog product endpoint
-  const prodRes = await mlFetch(`${ML_API}/products/${id}`)
-
-  if (prodRes.ok) {
-    const data = await prodRes.json()
-    return normalizeCatalogProduct(data, id)
+    // Fallback to /products/
+    const prod = await hydrateCatalogProduct(id)
+    if (prod) return prod
   }
 
   // Last resort: try item without auth (public endpoint)
@@ -61,35 +122,116 @@ export async function hydrateItem(id: string): Promise<MLProduct | null> {
     }
   } catch { /* ignore */ }
 
-  console.error(`[ml-discovery] hydrate ${id}: items=${itemRes.status} products=${prodRes.status}`)
   return null
 }
 
 // ============================================================================
-// Batch hydrate — parallel with concurrency control
+// Batch hydrate — tries multi-get first, falls back to individual
 // ============================================================================
 
 const MAX_CONCURRENT = 5
 
+export interface HydrateEntry {
+  id: string
+  type?: 'PRODUCT' | 'ITEM'
+}
+
 /**
- * Hydrate multiple product/item IDs in parallel batches.
- * Returns only successfully hydrated products with price > 0.
+ * Hydrate multiple product/item IDs.
+ * Strategy:
+ * 1. Separate PRODUCT vs ITEM IDs
+ * 2. Try multi-get for ITEM IDs (most efficient)
+ * 3. Batch /products/{id} for PRODUCT IDs
+ * 4. Fall back to individual calls for any failures
  */
-export async function batchHydrateItems(ids: string[]): Promise<{ products: MLProduct[]; failed: string[] }> {
+export async function batchHydrateItems(
+  entries: HydrateEntry[] | string[]
+): Promise<{ products: MLProduct[]; failed: string[] }> {
   const products: MLProduct[] = []
   const failed: string[] = []
+  const seen = new Set<string>()
 
-  // Process in batches to avoid overwhelming the API
-  for (let i = 0; i < ids.length; i += MAX_CONCURRENT) {
-    const batch = ids.slice(i, i + MAX_CONCURRENT)
-    const results = await Promise.allSettled(batch.map(hydrateItem))
+  // Normalize input
+  const normalized: HydrateEntry[] = entries.map(e =>
+    typeof e === 'string' ? { id: e, type: undefined } : e
+  )
 
-    for (let j = 0; j < results.length; j++) {
-      const result = results[j]
-      if (result.status === 'fulfilled' && result.value && result.value.currentPrice > 0) {
-        products.push(result.value)
-      } else {
-        failed.push(batch[j])
+  const productIds = normalized.filter(e => e.type === 'PRODUCT').map(e => e.id)
+  const itemIds = normalized.filter(e => e.type !== 'PRODUCT').map(e => e.id)
+
+  // ── Strategy 1: Multi-get for item IDs ──
+  if (itemIds.length > 0) {
+    try {
+      const multiProducts = await multiGetItems(itemIds)
+      for (const p of multiProducts) {
+        if (!seen.has(p.externalId)) {
+          products.push(p)
+          seen.add(p.externalId)
+        }
+      }
+      // Track failures
+      const gotIds = new Set(multiProducts.map(p => p.externalId))
+      for (const id of itemIds) {
+        if (!gotIds.has(id)) failed.push(id)
+      }
+    } catch (err) {
+      console.error('[ml-discovery] multi-get error:', err)
+      // Fall back to individual
+      for (const id of itemIds) failed.push(id)
+    }
+  }
+
+  // ── Strategy 2: /products/ for catalog product IDs ──
+  if (productIds.length > 0) {
+    // Also try multi-get first (some catalog IDs work with /items too)
+    try {
+      const multiProducts = await multiGetItems(productIds)
+      for (const p of multiProducts) {
+        if (!seen.has(p.externalId)) {
+          products.push(p)
+          seen.add(p.externalId)
+        }
+      }
+      const gotIds = new Set(multiProducts.map(p => p.externalId))
+      // Individual /products/ for remaining
+      const remaining = productIds.filter(id => !gotIds.has(id))
+      if (remaining.length > 0) {
+        for (let i = 0; i < remaining.length; i += MAX_CONCURRENT) {
+          const batch = remaining.slice(i, i + MAX_CONCURRENT)
+          const results = await Promise.allSettled(
+            batch.map(id => hydrateCatalogProduct(id))
+          )
+          for (let j = 0; j < results.length; j++) {
+            const result = results[j]
+            if (result.status === 'fulfilled' && result.value && result.value.currentPrice > 0) {
+              if (!seen.has(result.value.externalId)) {
+                products.push(result.value)
+                seen.add(result.value.externalId)
+              }
+            } else {
+              failed.push(batch[j])
+            }
+          }
+        }
+      }
+    } catch {
+      // Individual fallback
+      for (let i = 0; i < productIds.length; i += MAX_CONCURRENT) {
+        const batch = productIds.slice(i, i + MAX_CONCURRENT)
+        const results = await Promise.allSettled(
+          batch.map(id => hydrateCatalogProduct(id))
+        )
+        for (let j = 0; j < results.length; j++) {
+          const result = results[j]
+          if (result.status === 'fulfilled' && result.value && result.value.currentPrice > 0) {
+            if (!seen.has(result.value.externalId)) {
+              products.push(result.value)
+              seen.add(result.value.externalId)
+            }
+          } else {
+            failed.push(batch[j])
+          }
+        }
       }
     }
   }
