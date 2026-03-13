@@ -1,13 +1,50 @@
-import { redirect } from 'next/navigation'
+import { NextResponse } from 'next/server'
+import crypto from 'crypto'
+
+// Generate PKCE code_verifier and code_challenge
+function generatePKCE() {
+  const verifier = crypto.randomBytes(32).toString('base64url')
+  const challenge = crypto
+    .createHash('sha256')
+    .update(verifier)
+    .digest('base64url')
+  return { verifier, challenge }
+}
+
+// Store verifier in a global map (keyed by state) — survives within serverless instance
+const globalForPKCE = globalThis as unknown as { __pkceStore?: Map<string, string> }
+const pkceStore = globalForPKCE.__pkceStore ?? new Map<string, string>()
+globalForPKCE.__pkceStore = pkceStore
+
+export { pkceStore }
 
 export async function GET() {
   const clientId = process.env.MERCADOLIVRE_APP_ID
   const redirectUri = process.env.MERCADOLIVRE_REDIRECT_URI || process.env.ML_REDIRECT_URI || (process.env.NEXT_PUBLIC_APP_URL + '/api/auth/ml/callback')
 
+  if (!clientId) {
+    return NextResponse.json({ error: 'MERCADOLIVRE_APP_ID nao configurado' }, { status: 500 })
+  }
+
+  const { verifier, challenge } = generatePKCE()
+  const state = crypto.randomBytes(16).toString('hex')
+
+  // Store verifier keyed by state
+  pkceStore.set(state, verifier)
+
+  // Clean old entries (keep max 20)
+  if (pkceStore.size > 20) {
+    const firstKey = pkceStore.keys().next().value
+    if (firstKey) pkceStore.delete(firstKey)
+  }
+
   const url = new URL('https://auth.mercadolivre.com.br/authorization')
   url.searchParams.set('response_type', 'code')
-  url.searchParams.set('client_id', clientId!)
+  url.searchParams.set('client_id', clientId)
   url.searchParams.set('redirect_uri', redirectUri)
+  url.searchParams.set('code_challenge', challenge)
+  url.searchParams.set('code_challenge_method', 'S256')
+  url.searchParams.set('state', state)
 
-  redirect(url.toString())
+  return NextResponse.redirect(url.toString())
 }
