@@ -39,9 +39,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           error: 'Token exchange failed',
-          ml_error: body.error || body.message || 'unknown',
+          ml_response: body,
           ml_status: res.status,
-          redirect_uri_used: redirectUri,
+          params_sent: {
+            grant_type: 'authorization_code',
+            client_id: clientId,
+            client_secret: '***' + clientSecret.slice(-4),
+            code: code.slice(0, 10) + '...',
+            redirect_uri: redirectUri,
+          },
         },
         { status: 500 }
       )
