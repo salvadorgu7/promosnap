@@ -12,7 +12,28 @@ import {
   Shield,
   Play,
   Loader2,
+  Search,
+  Download,
+  Package,
 } from 'lucide-react'
+
+interface SearchResult {
+  externalId: string
+  title: string
+  currentPrice: number
+  originalPrice?: number
+  imageUrl?: string
+  isFreeShipping: boolean
+  availability: string
+}
+
+interface ImportResult {
+  imported: number
+  skipped: number
+  total: number
+  errors?: string[]
+  message: string
+}
 
 export default function MlIntegrationPage() {
   const [testResult, setTestResult] = useState<{
@@ -20,6 +41,16 @@ export default function MlIntegrationPage() {
     message: string
   } | null>(null)
   const [testing, setTesting] = useState(false)
+
+  // Import state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchLimit, setSearchLimit] = useState(20)
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<ImportResult | null>(null)
+
+  const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? ''
 
   async function handleTest() {
     setTesting(true)
@@ -29,7 +60,7 @@ export default function MlIntegrationPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '',
+          'x-admin-secret': adminSecret,
         },
         body: JSON.stringify({ key: 'ml' }),
       })
@@ -42,6 +73,49 @@ export default function MlIntegrationPage() {
     }
   }
 
+  async function handleSearch() {
+    if (!searchQuery.trim()) return
+    setSearching(true)
+    setSearchResults([])
+    setImportResult(null)
+    try {
+      const res = await fetch(
+        `/api/admin/ml/search?q=${encodeURIComponent(searchQuery)}&limit=${searchLimit}`,
+        { headers: { 'x-admin-secret': adminSecret } }
+      )
+      const data = await res.json()
+      if (data.results) {
+        setSearchResults(data.results)
+      }
+    } catch {
+      setSearchResults([])
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  async function handleImport() {
+    if (!searchQuery.trim()) return
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const res = await fetch('/api/admin/ml/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': adminSecret,
+        },
+        body: JSON.stringify({ query: searchQuery, limit: searchLimit }),
+      })
+      const data: ImportResult = await res.json()
+      setImportResult(data)
+    } catch {
+      setImportResult({ imported: 0, skipped: 0, total: 0, message: 'Erro de rede' })
+    } finally {
+      setImporting(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-8 p-6">
       {/* Header */}
@@ -51,7 +125,7 @@ export default function MlIntegrationPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Mercado Livre</h1>
-          <p className="text-sm text-gray-500">Integracao OAuth 2.0</p>
+          <p className="text-sm text-gray-500">Integracao OAuth 2.0 + Importacao</p>
         </div>
       </div>
 
@@ -174,6 +248,128 @@ export default function MlIntegrationPage() {
             {testResult.message}
           </div>
         )}
+      </section>
+
+      {/* ================================================================= */}
+      {/* IMPORTAR PRODUTOS */}
+      {/* ================================================================= */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Package className="h-5 w-5 text-yellow-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Importar Produtos do ML</h2>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 p-4 space-y-4">
+          {/* Search input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Ex: iphone, notebook, fone bluetooth..."
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            />
+            <select
+              value={searchLimit}
+              onChange={(e) => setSearchLimit(Number(e.target.value))}
+              className="rounded-lg border border-gray-300 px-2 py-2 text-sm bg-white"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleSearch}
+              disabled={searching || !searchQuery.trim()}
+              className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+            >
+              {searching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+              Buscar (preview)
+            </button>
+            <button
+              onClick={handleImport}
+              disabled={importing || !searchQuery.trim()}
+              className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50 transition-colors"
+            >
+              {importing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Importar pro Catalogo
+            </button>
+          </div>
+
+          {/* Import result */}
+          {importResult && (
+            <div
+              className={`rounded-lg border p-3 text-sm ${
+                importResult.imported > 0
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-amber-200 bg-amber-50 text-amber-700'
+              }`}
+            >
+              <CheckCircle2 className="inline h-4 w-4 mr-1" />
+              {importResult.message}
+              {importResult.errors && importResult.errors.length > 0 && (
+                <ul className="mt-2 space-y-1 text-xs">
+                  {importResult.errors.map((err, i) => (
+                    <li key={i} className="text-red-600">• {err}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* Search results preview */}
+          {searchResults.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500 font-medium">
+                {searchResults.length} resultados encontrados:
+              </p>
+              <div className="max-h-96 overflow-y-auto divide-y divide-gray-100 rounded-lg border border-gray-200">
+                {searchResults.map((item) => (
+                  <div key={item.externalId} className="flex items-center gap-3 p-3">
+                    {item.imageUrl && (
+                      <img
+                        src={item.imageUrl}
+                        alt=""
+                        className="h-12 w-12 rounded-lg object-cover bg-gray-100"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-900 truncate">{item.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-sm font-semibold text-emerald-600">
+                          R$ {item.currentPrice.toFixed(2)}
+                        </span>
+                        {item.originalPrice && item.originalPrice > item.currentPrice && (
+                          <span className="text-xs text-gray-400 line-through">
+                            R$ {item.originalPrice.toFixed(2)}
+                          </span>
+                        )}
+                        {item.isFreeShipping && (
+                          <span className="text-xs text-emerald-500 font-medium">Frete gratis</span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-400 font-mono">{item.externalId}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   )
