@@ -61,6 +61,9 @@ export default function MlIntegrationPage() {
   const [searching, setSearching] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  const [diagnosing, setDiagnosing] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [diagResult, setDiagResult] = useState<Record<string, any> | null>(null)
 
   const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? ''
 
@@ -86,6 +89,22 @@ export default function MlIntegrationPage() {
   }
 
   const [searchError, setSearchError] = useState<string | null>(null)
+
+  async function handleDiagnose() {
+    setDiagnosing(true)
+    setDiagResult(null)
+    try {
+      const res = await fetch('/api/admin/ml/token-check', {
+        headers: { 'x-admin-secret': adminSecret },
+      })
+      const data = await res.json()
+      setDiagResult(data)
+    } catch (err) {
+      setDiagResult({ error: String(err) })
+    } finally {
+      setDiagnosing(false)
+    }
+  }
 
   async function handleSearch() {
     if (!searchQuery.trim()) return
@@ -270,6 +289,14 @@ export default function MlIntegrationPage() {
             <ExternalLink className="h-4 w-4" />
             Iniciar OAuth
           </a>
+          <button
+            onClick={handleDiagnose}
+            disabled={diagnosing}
+            className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50 transition-colors"
+          >
+            {diagnosing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
+            Diagnosticar Token
+          </button>
         </div>
 
         {testResult && (
@@ -286,6 +313,13 @@ export default function MlIntegrationPage() {
               <XCircle className="inline h-4 w-4 mr-1" />
             )}
             {testResult.message}
+          </div>
+        )}
+
+        {diagResult && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs font-mono text-gray-800 overflow-auto max-h-80">
+            <p className="text-sm font-semibold text-amber-700 mb-2">Diagnostico do Token ML</p>
+            <pre className="whitespace-pre-wrap">{JSON.stringify(diagResult, null, 2)}</pre>
           </div>
         )}
       </section>

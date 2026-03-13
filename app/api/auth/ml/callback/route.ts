@@ -53,11 +53,31 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${adminPage}?auth=error&reason=exchange_failed`)
     }
 
+    // Validate token structure
+    if (!body.access_token) {
+      console.error('[ml-auth] Token exchange returned 200 but no access_token:', JSON.stringify(body))
+      return NextResponse.redirect(`${adminPage}?auth=error&reason=no_access_token`)
+    }
+
     // Save token to database + memory cache
     body.obtained_at = Date.now()
     await mlTokenStore.set(body)
 
-    console.log('[ml-auth] Token obtained successfully, user_id:', body.user_id, 'expires_in:', body.expires_in)
+    console.log('[ml-auth] Token obtained successfully, user_id:', body.user_id, 'expires_in:', body.expires_in, 'token_type:', body.token_type, 'scope:', body.scope)
+
+    // Quick validation: test token against ML API
+    try {
+      const testRes = await fetch('https://api.mercadolibre.com/users/me', {
+        headers: { Authorization: `Bearer ${body.access_token}` },
+      })
+      console.log('[ml-auth] Token validation /users/me:', testRes.status)
+      if (!testRes.ok) {
+        const testBody = await testRes.text()
+        console.error('[ml-auth] Token validation failed:', testBody)
+      }
+    } catch (testErr) {
+      console.error('[ml-auth] Token validation exception:', testErr)
+    }
 
     // Clear the state cookie and redirect back to admin
     const response = NextResponse.redirect(`${adminPage}?auth=ok`)
