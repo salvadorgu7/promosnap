@@ -51,6 +51,10 @@ export async function GET(
     const bannerParam = request.nextUrl.searchParams.get("banner") || null;
     const productParam = request.nextUrl.searchParams.get("product") || null;
 
+    // Monetization tracking params
+    const originTypeParam = request.nextUrl.searchParams.get("origin") || null;
+    const railSourceParam = request.nextUrl.searchParams.get("rail") || null;
+
     // Fire-and-forget: don't await so redirect is instant
     prisma.clickout
       .create({
@@ -62,6 +66,8 @@ export async function GET(
           sessionId,
           query,
           categorySlug,
+          originType: originTypeParam,
+          railSource: railSourceParam,
         },
       })
       .then((clickout) => {

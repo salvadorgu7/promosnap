@@ -1,4 +1,4 @@
-import { Flame, TrendingDown, Trophy, Sparkles, Tag, ShieldCheck, Store, Bell, Truck, Star, Search, Users, Send, MessageCircle, ArrowRight } from "lucide-react";
+import { Flame, TrendingDown, Trophy, Sparkles, Tag, ShieldCheck, Store, Bell, Truck, Star, Search, Users, Send, MessageCircle, ArrowRight, Package, Percent } from "lucide-react";
 import DailyOpportunities from "@/components/home/DailyOpportunities";
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";
@@ -17,7 +17,7 @@ import PersonalizedNews from "@/components/home/PersonalizedNews";
 import PersonalizedRails from "@/components/home/PersonalizedRails";
 import SocialProof from "@/components/home/SocialProof";
 import WhatChanged from "@/components/home/WhatChanged";
-import { getHotOffers, getBestSellers, getLowestPrices, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
+import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";
@@ -72,10 +72,12 @@ function SectionSeparator() {
 }
 
 export default async function HomePage() {
-  const [hotOffers, bestSellers, lowestPrices, categories, stats, coupons, trendingKeywords] = await Promise.all([
+  const [hotOffers, bestSellers, lowestPrices, recentlyImported, bestValue, categories, stats, coupons, trendingKeywords] = await Promise.all([
     getHotOffers(16).catch(() => []),
     getBestSellers(16).catch(() => []),
     getLowestPrices(16).catch(() => []),
+    getRecentlyImported(16).catch(() => []),
+    getBestValue(16).catch(() => []),
     getCategories().catch(() => []),
     getSiteStats().catch(() => ({ listings: 0, activeOffers: 0, sources: 4, clickoutsToday: 0, clickoutsWeek: 0, categories: 0, brands: 0 })),
     getActiveCoupons().catch(() => []),
@@ -336,6 +338,32 @@ export default async function HomePage() {
         <div id="best-sellers" className="section-alt py-2">
           <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
             {bestSellers.map((p) => (
+              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+                <OfferCard product={p} />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 14.1. IMPORTADOS RECENTEMENTE ===== */}
+      {recentlyImported.length > 0 && (
+        <div id="recently-imported" className="section-highlight py-2">
+          <RailSection title="Importados Recentemente" subtitle="Produtos reais adicionados nos ultimos 7 dias" icon={Package} iconColor="text-accent-green">
+            {recentlyImported.map((p) => (
+              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+                <OfferCard product={p} />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 14.2. MELHOR CUSTO-BENEFICIO ===== */}
+      {bestValue.length > 0 && (
+        <div id="best-value" className="section-cool py-2">
+          <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" icon={Percent} iconColor="text-accent-purple">
+            {bestValue.map((p) => (
               <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
                 <OfferCard product={p} />
               </div>

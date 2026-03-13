@@ -4,7 +4,7 @@
 
 export { runDiscovery } from './engine'
 export type { DiscoveryOptions } from './engine'
-export { resolveIntentToCategories, getAllCategories, getCronCategories } from './categories'
+export { resolveIntentToCategories, getAllCategories, getCronCategories, FALLBACK_CATEGORIES } from './categories'
 export { fetchTrendingSignals, getTrendCategories } from './trends'
 export { fetchHighlightsForCategory, fetchHighlightsForCategories } from './highlights'
 export { hydrateItem, batchHydrateItems, mlFetch } from './items'

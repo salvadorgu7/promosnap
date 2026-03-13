@@ -39,6 +39,9 @@ export interface ImportPipelineResult {
   items: ImportItemResult[]
   durationMs: number
   sourceSlug: string
+  brandStats: { detected: number; unknown: number }
+  categoryStats: { resolved: number; unresolved: number }
+  priceStats: { min: number; max: number; avg: number }
 }
 
 // ── Normalization ──────────────────────────────────────────────────────────
@@ -90,9 +93,17 @@ export async function runImportPipeline(
   const start = Date.now()
   const results: ImportItemResult[] = []
   let created = 0, updated = 0, skipped = 0, failed = 0
+  let brandsDetected = 0, brandsUnknown = 0
+  let catsResolved = 0, catsUnresolved = 0
+  const prices: number[] = []
+  const brandCounts: Record<string, number> = {}
+  const categoryCounts: Record<string, number> = {}
+
+  const emptyStats = { detected: 0, unknown: 0 }
+  const emptyPriceStats = { min: 0, max: 0, avg: 0 }
 
   if (items.length === 0) {
-    return { created, updated, skipped, failed, total: 0, items: results, durationMs: 0, sourceSlug: '' }
+    return { created, updated, skipped, failed, total: 0, items: results, durationMs: 0, sourceSlug: '', brandStats: emptyStats, categoryStats: { resolved: 0, unresolved: 0 }, priceStats: emptyPriceStats }
   }
 
   const sourceSlug = items[0].sourceSlug
@@ -111,10 +122,14 @@ export async function runImportPipeline(
       // Validate
       const validationError = validateItem(item)
       if (validationError) {
+        console.warn(`[import-pipeline] validation failed: ${item.externalId || 'unknown'} — ${validationError}`)
         results.push({ externalId: item.externalId || 'unknown', action: 'skipped', reason: validationError })
         skipped++
         continue
       }
+
+      // Track price stats
+      if (item.currentPrice > 0) prices.push(item.currentPrice)
 
       if (options?.dryRun) {
         results.push({ externalId: item.externalId, action: 'skipped', reason: 'dry-run' })
@@ -175,20 +190,33 @@ export async function runImportPipeline(
       const brandName = item.brand || detectBrand(item.title)
       let brandId: string | null = null
       if (brandName) {
+        brandsDetected++
+        const normalizedBrand = brandName.charAt(0).toUpperCase() + brandName.slice(1)
+        brandCounts[normalizedBrand] = (brandCounts[normalizedBrand] || 0) + 1
         const brandSlug = brandName.toLowerCase().replace(/\s+/g, '-')
         const brand = await prisma.brand.upsert({
           where: { slug: brandSlug },
-          create: { name: brandName.charAt(0).toUpperCase() + brandName.slice(1), slug: brandSlug },
+          create: { name: normalizedBrand, slug: brandSlug },
           update: {},
         })
         brandId = brand.id
+      } else {
+        brandsUnknown++
       }
 
       // Resolve category
       let categoryId: string | null = null
       if (item.categorySlug) {
         const cat = await prisma.category.findUnique({ where: { slug: item.categorySlug } })
-        if (cat) categoryId = cat.id
+        if (cat) {
+          categoryId = cat.id
+          catsResolved++
+          categoryCounts[cat.name || item.categorySlug] = (categoryCounts[cat.name || item.categorySlug] || 0) + 1
+        } else {
+          catsUnresolved++
+        }
+      } else {
+        catsUnresolved++
       }
 
       // Slug
@@ -230,12 +258,15 @@ export async function runImportPipeline(
       })
 
       // Create offer + snapshot
+      // Use productUrl as affiliateUrl for imported products (ML permalink etc.)
+      const affiliateUrl = item.productUrl || null
       const offer = await prisma.offer.create({
         data: {
           listingId: listing.id,
           currentPrice: item.currentPrice,
           originalPrice: item.originalPrice ?? null,
           isFreeShipping: item.isFreeShipping ?? false,
+          affiliateUrl,
           isActive: true,
         },
       })
@@ -258,7 +289,28 @@ export async function runImportPipeline(
   }
 
   const durationMs = Date.now() - start
-  console.log(`[import-pipeline] source=${sourceSlug} created=${created} updated=${updated} skipped=${skipped} failed=${failed} total=${items.length} ${durationMs}ms`)
 
-  return { created, updated, skipped, failed, total: items.length, items: results, durationMs, sourceSlug }
+  // Compute stats
+  const brandStats = { detected: brandsDetected, unknown: brandsUnknown }
+  const categoryStats = { resolved: catsResolved, unresolved: catsUnresolved }
+  const priceStats = prices.length > 0
+    ? { min: Math.min(...prices), max: Math.max(...prices), avg: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) }
+    : emptyPriceStats
+
+  // Dedup stats
+  const existingCount = results.filter(r => r.action === 'updated' || (r.action === 'skipped' && r.reason === 'price unchanged')).length
+  const newCount = results.filter(r => r.action === 'created').length
+  console.log(`[import-pipeline] dedup: ${existingCount} existing, ${newCount} new`)
+  console.log(`[import-pipeline] brands: ${brandsDetected} detected, ${brandsUnknown} unknown`)
+  console.log(`[import-pipeline] categories: ${catsResolved} resolved, ${catsUnresolved} unresolved`)
+  if (prices.length > 0) {
+    console.log(`[import-pipeline] prices: R$${priceStats.min.toFixed(0)}-R$${priceStats.max.toFixed(0)} avg=R$${priceStats.avg.toFixed(0)}`)
+  }
+
+  // Batch summary
+  const topBrands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k}:${v}`).join(', ')
+  const topCats = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k}:${v}`).join(', ')
+  console.log(`[import-pipeline] batch complete: source=${sourceSlug} created=${created} updated=${updated} skipped=${skipped} failed=${failed} brands=[${topBrands}] categories=[${topCats}] priceRange=R$${priceStats.min.toFixed(0)}-R$${priceStats.max.toFixed(0)}`)
+
+  return { created, updated, skipped, failed, total: items.length, items: results, durationMs, sourceSlug, brandStats, categoryStats, priceStats }
 }

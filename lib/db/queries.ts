@@ -155,6 +155,102 @@ export async function getLowestPrices(limit = 16): Promise<ProductCard[]> {
 }
 
 // ============================================
+// RECENTLY IMPORTED (last 7 days)
+// ============================================
+
+export async function getRecentlyImported(limit = 16): Promise<ProductCard[]> {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const products = await prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        importedAt: { not: null, gte: sevenDaysAgo },
+        listings: { some: { offers: { some: { isActive: true } } } },
+      },
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+      orderBy: { importedAt: 'desc' },
+      take: limit,
+    })
+    return products.map(buildProductCard).filter(Boolean) as ProductCard[]
+  } catch {
+    // Defensive: importedAt column may not exist yet
+    return []
+  }
+}
+
+// ============================================
+// BEST VALUE (highest discount + free shipping)
+// ============================================
+
+export async function getBestValue(limit = 16): Promise<ProductCard[]> {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        listings: {
+          some: {
+            offers: {
+              some: {
+                isActive: true,
+                isFreeShipping: true,
+                originalPrice: { not: null },
+              },
+            },
+          },
+        },
+      },
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+      take: limit * 3,
+    })
+    return products
+      .map(buildProductCard)
+      .filter(Boolean)
+      .filter((p) => p!.bestOffer.discount && p!.bestOffer.discount > 10 && p!.bestOffer.isFreeShipping)
+      .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
+      .slice(0, limit) as ProductCard[]
+  } catch {
+    return []
+  }
+}
+
+// ============================================
+// NEWSLETTER PRODUCTS (imported, >15% discount, free shipping)
+// ============================================
+
+export async function getNewsletterProducts(limit = 10): Promise<ProductCard[]> {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        originType: 'imported',
+        listings: {
+          some: {
+            offers: {
+              some: {
+                isActive: true,
+                isFreeShipping: true,
+                originalPrice: { not: null },
+              },
+            },
+          },
+        },
+      },
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+      take: limit * 3,
+    })
+    return products
+      .map(buildProductCard)
+      .filter(Boolean)
+      .filter((p) => p!.bestOffer.discount && p!.bestOffer.discount > 15 && p!.bestOffer.isFreeShipping)
+      .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
+      .slice(0, limit) as ProductCard[]
+  } catch {
+    // Defensive: originType column may not exist yet
+    return []
+  }
+}
+
+// ============================================
 // CATEGORY/BRAND QUERIES
 // ============================================
 

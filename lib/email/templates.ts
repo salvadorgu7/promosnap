@@ -148,6 +148,8 @@ export function alertTriggeredEmail(product: {
   price: number;
   targetPrice: number;
   url: string;
+  imageUrl?: string;
+  promoSnapUrl?: string;
 }): string {
   const savings = product.targetPrice - product.price;
   const savingsStr =
@@ -155,11 +157,24 @@ export function alertTriggeredEmail(product: {
       ? `Voce economizara R$ ${savings.toFixed(2).replace(".", ",")} em relacao ao preco alvo!`
       : "";
 
+  const imageBlock = product.imageUrl
+    ? `<div style="text-align:center;margin-bottom:16px;">
+        <img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}" style="max-width:200px;max-height:200px;border-radius:8px;border:1px solid #e4e4e7;" />
+      </div>`
+    : "";
+
+  const promoSnapLink = product.promoSnapUrl
+    ? `<p style="text-align:center;margin:8px 0 0;">
+        <a href="${escapeHtml(product.promoSnapUrl)}" style="color:${BRAND_COLOR};font-size:13px;text-decoration:underline;">Ver no ${APP_NAME} &rarr;</a>
+      </p>`
+    : "";
+
   const content = `
     <div class="alert-box">
       <p style="font-size:13px;color:#16a34a;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">
         Alerta de Preco Ativado!
       </p>
+      ${imageBlock}
       <p style="color:#18181b;font-size:16px;font-weight:600;margin:0 0 12px;">
         ${escapeHtml(product.name)}
       </p>
@@ -173,6 +188,7 @@ export function alertTriggeredEmail(product: {
     <p style="text-align:center;margin:24px 0;">
       <a href="${escapeHtml(product.url)}" class="btn">Comprar Agora &rarr;</a>
     </p>
+    ${promoSnapLink}
     <hr class="divider">
     <p style="font-size:13px;color:#71717a;">
       Este alerta foi criado por voce no ${APP_NAME}. Caso nao reconheca, pode ignorar este e-mail.

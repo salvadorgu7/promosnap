@@ -23,6 +23,8 @@ export async function GET(req: NextRequest) {
         ? 'configured' : 'weak',
     }
 
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
     // Catalog stats
     const [
       productCount,
@@ -51,6 +53,33 @@ export async function GET(req: NextRequest) {
       prisma.category.count(),
       prisma.coupon.count({ where: { status: 'ACTIVE' } }),
     ])
+
+    // ── Catalog origin stats (defensive) ─────────────────────────────────
+    let realImported = 0
+    let seedProducts = productCount
+    let importedLast7d = 0
+    try {
+      const [imp, imp7d] = await Promise.all([
+        prisma.product.count({ where: { status: 'ACTIVE', originType: 'imported' } }),
+        prisma.product.count({ where: { status: 'ACTIVE', originType: 'imported', importedAt: { gte: sevenDaysAgo } } }),
+      ])
+      realImported = imp
+      seedProducts = productCount - realImported
+      importedLast7d = imp7d
+    } catch {
+      // originType column doesn't exist
+    }
+
+    // ── Top brands by product count ──────────────────────────────────────
+    let topBrands: { name: string; count: number }[] = []
+    try {
+      const brands = await prisma.brand.findMany({
+        select: { name: true, _count: { select: { products: true } } },
+        orderBy: { products: { _count: 'desc' } },
+        take: 5,
+      })
+      topBrands = brands.map(b => ({ name: b.name, count: b._count.products }))
+    } catch { /* non-critical */ }
 
     // Last job runs
     const recentJobs = await prisma.jobRun.findMany({
@@ -100,7 +129,6 @@ export async function GET(req: NextRequest) {
     }).catch(() => null)
 
     // Search intelligence
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const [searchTotal7d, searchZero7d] = await Promise.all([
       prisma.searchLog.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
       prisma.searchLog.count({ where: { createdAt: { gte: sevenDaysAgo }, resultsCount: 0 } }),
@@ -137,6 +165,14 @@ export async function GET(req: NextRequest) {
       recommendations.push('Taxa de falha de email superior a enviados — verificar RESEND_API_KEY')
     }
 
+    // ── New catalog-health recommendations ───────────────────────────────
+    if (realImported === 0) {
+      recommendations.push("Nenhum produto real importado. Rode 'npm run import:real' ou o job discover-import.")
+    }
+    if (importedLast7d === 0 && realImported > 0) {
+      recommendations.push('Nenhum produto novo importado nos ultimos 7 dias.')
+    }
+
     return NextResponse.json({
       services,
       catalog: {
@@ -152,6 +188,10 @@ export async function GET(req: NextRequest) {
         subscribers: subscriberCount,
         clickouts: clickoutCount,
         searchLogs: searchLogCount,
+        realImported,
+        seedProducts,
+        importedLast7d,
+        topBrands,
       },
       trending: {
         keywords: trendingCount,

@@ -23,8 +23,9 @@ export async function checkAlerts(): Promise<JobResult> {
             id: true,
             rawTitle: true,
             productUrl: true,
+            imageUrl: true,
             product: {
-              select: { slug: true },
+              select: { slug: true, imageUrl: true, originType: true },
             },
             offers: {
               where: { isActive: true },
@@ -67,17 +68,29 @@ export async function checkAlerts(): Promise<JobResult> {
         // Send email notification (never let email failure block alert processing)
         if (emailEnabled && alert.email) {
           try {
-            const productUrl = bestOffer.affiliateUrl
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.promosnap.com.br';
+            // CTA links to affiliateUrl (ML permalink) for real products
+            const buyUrl = bestOffer.affiliateUrl
               || alert.listing.productUrl
               || (alert.listing.product?.slug
-                ? `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.promosnap.com.br'}/produto/${alert.listing.product.slug}`
+                ? `${appUrl}/produto/${alert.listing.product.slug}`
                 : '#');
+            // PromoSnap product page link
+            const promoSnapUrl = alert.listing.product?.slug
+              ? `${appUrl}/produto/${alert.listing.product.slug}`
+              : undefined;
+            // Product image
+            const imageUrl = alert.listing.imageUrl
+              || alert.listing.product?.imageUrl
+              || undefined;
 
             const html = alertTriggeredEmail({
               name: alert.listing.rawTitle,
               price: Number(bestOffer.currentPrice),
               targetPrice: Number(alert.targetPrice),
-              url: productUrl,
+              url: buyUrl,
+              imageUrl,
+              promoSnapUrl,
             });
 
             const ok = await sendEmail({

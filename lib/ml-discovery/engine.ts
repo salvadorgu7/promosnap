@@ -111,18 +111,28 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
   // ── Stage 3: Highlights ─────────────────────────────────────────────────
   const hlStart = Date.now()
   let hydrateEntries: HydrateEntry[] = []
+  let categoryFetchStats: import('./highlights').CategoryFetchStats[] = []
 
   if (categoryIds.length > 0) {
     try {
-      const highlights = await fetchHighlightsForCategories(categoryIds)
+      const { results: highlights, categoryStats } = await fetchHighlightsForCategories(categoryIds, { withStats: true })
+      categoryFetchStats = categoryStats
       const allEntries = highlights.flatMap((h) => h.entries)
       hydrateEntries = allEntries.map((e) => ({
         id: e.id,
         type: (e.type === 'PRODUCT' || e.type === 'ITEM') ? e.type : undefined,
       }))
 
-      log('highlights', `${categoryIds.length} categories → ${hydrateEntries.length} product IDs (${allEntries.filter(e => e.type === 'PRODUCT').length} PRODUCT, ${allEntries.filter(e => e.type === 'ITEM').length} ITEM)`)
-      stages.push({ stage: 'highlights', status: 'success', itemsIn: categoryIds.length, itemsOut: hydrateEntries.length, durationMs: Date.now() - hlStart })
+      const succeeded = categoryStats.filter(s => s.status === 'success').length
+      const fallbacks = categoryStats.filter(s => s.status === 'fallback').length
+      const failed = categoryStats.filter(s => s.status === 'failed').length
+      log('highlights', `${categoryIds.length} categories → ${hydrateEntries.length} product IDs (ok:${succeeded} fallback:${fallbacks} failed:${failed})`)
+      for (const s of categoryStats) {
+        if (s.status === 'failed') log('highlights', `  category ${s.categoryId} failed (HTTP ${s.httpStatus})`)
+        else if (s.status === 'fallback') log('highlights', `  category ${s.categoryId} used fallback ${s.fallbackUsed} (${s.highlightCount} entries)`)
+      }
+
+      stages.push({ stage: 'highlights', status: failed === categoryIds.length ? 'failure' : failed > 0 ? 'partial' : 'success', itemsIn: categoryIds.length, itemsOut: hydrateEntries.length, durationMs: Date.now() - hlStart })
     } catch (err) {
       log('highlights', 'failed', { error: String(err) })
       stages.push({ stage: 'highlights', status: 'failure', itemsIn: categoryIds.length, itemsOut: 0, durationMs: Date.now() - hlStart, error: String(err) })
@@ -264,6 +274,7 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
       itemsHydrated: products.length,
       itemsFailed: failedCount,
       duplicatesSkipped: dupsSkipped,
+      categoryFetchStats,
     },
   }
 

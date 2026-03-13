@@ -69,6 +69,13 @@ export interface DiscoveryMeta {
     itemsHydrated: number
     itemsFailed: number
     duplicatesSkipped: number
+    categoryFetchStats?: {
+      categoryId: string
+      status: 'success' | 'fallback' | 'failed'
+      highlightCount: number
+      fallbackUsed?: string
+      httpStatus?: number
+    }[]
   }
 }
 

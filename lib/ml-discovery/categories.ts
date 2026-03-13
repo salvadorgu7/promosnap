@@ -47,6 +47,14 @@ const CATEGORY_REGISTRY: (MLCategory & { keywords: string[] })[] = [
   { id: 'MLB1132',   name: 'Jogos de Video Game',      priority: 3, keywords: ['jogo', 'game', 'jogo ps5', 'jogo xbox', 'jogo switch'] },
 ]
 
+/** Fallback categories for IDs that commonly return 404 on highlights */
+export const FALLBACK_CATEGORIES: Record<string, string[]> = {
+  'MLB1596':   ['MLB181294', 'MLB1645'],  // Ar condicionado → Climatizacao subcats
+  'MLB352679': ['MLB1055'],               // Smartwatch → Celulares (parent)
+  'MLB1039':   ['MLB271599'],             // Cameras → Cameras Digitais subcat
+  'MLB1672':   ['MLB4882'],               // Impressoras → Impressoras subcat
+}
+
 /** Get all categories sorted by priority */
 export function getAllCategories(): MLCategory[] {
   return CATEGORY_REGISTRY.map(({ keywords: _k, ...cat }) => cat)

@@ -3,6 +3,42 @@ import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/securi
 import prisma from "@/lib/db/prisma";
 import { getHotOffers, getBestSellers } from "@/lib/db/queries";
 
+// ── Noise filters ────────────────────────────────────────────────────────
+
+const SPAM_PATTERNS = [
+  /^[\d\s.,]+$/,          // purely numeric / punctuation
+  /^.{0,2}$/,             // < 3 chars
+  /^https?:\/\//i,        // raw URLs
+  /^\W+$/,                // only symbols
+  /teste|asdf|qwer/i,     // obvious test/spam
+];
+
+function isNoisyKeyword(kw: string): boolean {
+  return SPAM_PATTERNS.some(p => p.test(kw.trim()));
+}
+
+// ── Category inference ───────────────────────────────────────────────────
+
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  "Celulares e Smartphones": ["iphone", "samsung", "galaxy", "celular", "smartphone", "xiaomi", "motorola", "redmi"],
+  "Computadores": ["notebook", "laptop", "pc", "computador", "desktop", "macbook", "chromebook"],
+  "Audio e Video": ["fone", "headset", "caixa de som", "tv", "televisao", "soundbar", "airpods", "jbl"],
+  "Games": ["ps5", "playstation", "xbox", "nintendo", "switch", "controle", "jogo", "game"],
+  "Eletrodomesticos": ["air fryer", "airfryer", "geladeira", "microondas", "aspirador", "lavadora", "maquina de lavar"],
+  "Casa e Decoracao": ["sofa", "colchao", "mesa", "cadeira", "luminaria", "cortina"],
+  "Beleza e Saude": ["perfume", "maquiagem", "creme", "shampoo", "protetor solar", "skincare"],
+  "Moda": ["tenis", "sapato", "roupa", "camisa", "jaqueta", "vestido", "calca"],
+  "Esportes": ["bicicleta", "esteira", "halter", "academia", "corrida", "futebol"],
+};
+
+function inferCategory(keyword: string): string | null {
+  const kw = keyword.toLowerCase();
+  for (const [cat, terms] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (terms.some(t => kw.includes(t))) return cat;
+  }
+  return null;
+}
+
 export async function GET(request: NextRequest) {
   // Rate limit: 60 req/min (public)
   const rl = rateLimit(request, "public");
@@ -12,11 +48,77 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(new URL(request.url).searchParams.get("limit") || "20"), 50);
 
     // Fetch trending keywords from DB
-    const keywords = await prisma.trendingKeyword.findMany({
+    const rawKeywords = await prisma.trendingKeyword.findMany({
       orderBy: [{ fetchedAt: "desc" }, { position: "asc" }],
-      take: 15,
+      take: 30, // fetch more to filter
       select: { keyword: true, position: true, url: true, fetchedAt: true },
     }).catch(() => []);
+
+    // Filter noise
+    const cleanKeywords = rawKeywords.filter(k => !isNoisyKeyword(k.keyword));
+
+    // Check catalog coverage for each keyword (batch)
+    const keywordNames = cleanKeywords.map(k => k.keyword);
+    const coverageCounts = await Promise.all(
+      keywordNames.map(kw =>
+        prisma.product.count({
+          where: {
+            status: "ACTIVE",
+            OR: [
+              { name: { contains: kw, mode: "insensitive" } },
+              { listings: { some: { rawTitle: { contains: kw, mode: "insensitive" } } } },
+            ],
+          },
+        }).catch(() => 0)
+      )
+    );
+
+    // Check if trend matches categories with imported products (defensive)
+    let importedCategories: Set<string> = new Set();
+    try {
+      const catResults = await prisma.$queryRaw<{ name: string }[]>`
+        SELECT DISTINCT c.name FROM categories c
+        JOIN products p ON p."categoryId" = c.id
+        WHERE p."originType" = 'imported' AND p.status = 'ACTIVE'
+      `;
+      importedCategories = new Set((catResults as any[]).map(r => r.name?.toLowerCase()).filter(Boolean));
+    } catch {
+      // originType column may not exist — skip
+    }
+
+    // Build enriched keywords
+    const enrichedKeywords = cleanKeywords.slice(0, 15).map((k, i) => {
+      const category = inferCategory(k.keyword);
+      const catalogCount = coverageCounts[i] || 0;
+      const catalogCoverage = catalogCount > 0;
+
+      // Monetization potential: higher if matching imported categories or existing products
+      let monetizationPotential = 0;
+      if (catalogCoverage) monetizationPotential += 40;
+      if (catalogCount >= 3) monetizationPotential += 20;
+      if (catalogCount >= 10) monetizationPotential += 15;
+      if (category && importedCategories.has(category.toLowerCase())) monetizationPotential += 25;
+      // Position bonus: top trends get a boost
+      if (k.position <= 3) monetizationPotential = Math.min(monetizationPotential + 10, 100);
+
+      return {
+        keyword: k.keyword,
+        position: k.position,
+        url: k.url,
+        category,
+        catalogCoverage,
+        catalogCount,
+        monetizationPotential: Math.min(monetizationPotential, 100),
+      };
+    });
+
+    // Group by category
+    const grouped: Record<string, typeof enrichedKeywords> = {};
+    for (const kw of enrichedKeywords) {
+      const cat = kw.category || "Outros";
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(kw);
+    }
 
     // Fetch trending products (hot offers + best sellers combined)
     const [hotOffers, bestSellers] = await Promise.all([
@@ -33,7 +135,8 @@ export async function GET(request: NextRequest) {
     }).slice(0, limit);
 
     const response = NextResponse.json({
-      keywords: keywords.map(k => ({ keyword: k.keyword, position: k.position, url: k.url })),
+      keywords: enrichedKeywords,
+      keywordsByCategory: grouped,
       products,
       count: products.length,
       source: products.length > 0 ? "database" : "empty",

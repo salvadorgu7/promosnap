@@ -291,6 +291,8 @@ model Clickout {
   query         String?
   categorySlug  String?
   userAgent     String?
+  originType    String?  // "seed" | "imported" | "manual" | "curated"
+  railSource    String?  // "hot_offers" | "best_sellers" | "recently_imported" | "best_value" | "lowest_prices" | "deal_of_day" | "category" | "search" | "product"
 
   offer         Offer    @relation(fields: [offerId], references: [id])
 
