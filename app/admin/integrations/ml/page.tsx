@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ShoppingBag,
   CheckCircle2,
@@ -36,6 +36,18 @@ interface ImportResult {
 }
 
 export default function MlIntegrationPage() {
+  const [authStatus, setAuthStatus] = useState<'ok' | 'error' | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const auth = params.get('auth')
+    if (auth === 'ok' || auth === 'error') {
+      setAuthStatus(auth)
+      // Clean URL without reload
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
+
   const [testResult, setTestResult] = useState<{
     success: boolean
     message: string
@@ -220,6 +232,20 @@ export default function MlIntegrationPage() {
           </div>
         </div>
       </section>
+
+      {/* OAuth result banner */}
+      {authStatus === 'ok' && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 flex items-center gap-2">
+          <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+          <span>OAuth concluido com sucesso! Token salvo no banco de dados. Agora voce pode buscar e importar produtos.</span>
+        </div>
+      )}
+      {authStatus === 'error' && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2">
+          <XCircle className="h-5 w-5 flex-shrink-0" />
+          <span>Falha no OAuth. Verifique os logs do Vercel e tente novamente.</span>
+        </div>
+      )}
 
       {/* Actions */}
       <section className="space-y-4">
