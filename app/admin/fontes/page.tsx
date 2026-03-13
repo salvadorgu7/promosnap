@@ -8,11 +8,16 @@ import {
   Plug,
   PlugZap,
   Info,
+  ChevronDown,
+  ChevronRight,
+  Shield,
+  Zap,
 } from "lucide-react";
 import { getAdminSources } from "@/lib/db/queries";
 import { timeAgo } from "@/lib/utils";
 import { adapterRegistry } from "@/lib/adapters/registry";
 import type { AdapterStatus } from "@/lib/adapters/types";
+import { getSourceReadiness, type SourceReadiness, type ReadinessStatus, type ChecklistItem } from "@/lib/adapters/readiness";
 import {
   toSeverity,
   severityBadge,
@@ -36,6 +41,83 @@ const healthConfig: Record<string, { severity: Severity; label: string; guidance
   MOCK: { severity: "info", label: "Mock", guidance: "Usando dados simulados. Configure as credenciais reais para dados de producao." },
   BLOCKED: { severity: "critical", label: "Bloqueado", guidance: "Adapter nao funcional. Credenciais ou configuracao critica ausente." },
 };
+
+const readinessConfig: Record<ReadinessStatus, { severity: Severity; label: string; color: string }> = {
+  ready: { severity: "ok", label: "Pronto", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+  partial: { severity: "warning", label: "Parcial", color: "bg-amber-100 text-amber-700 border-amber-300" },
+  mock: { severity: "info", label: "Mock", color: "bg-blue-100 text-blue-700 border-blue-300" },
+  blocked: { severity: "critical", label: "Bloqueado", color: "bg-red-100 text-red-700 border-red-300" },
+  not_configured: { severity: "warning", label: "Nao Configurado", color: "bg-gray-100 text-gray-600 border-gray-300" },
+};
+
+const checklistStatusIcon: Record<string, string> = {
+  ok: "text-emerald-500",
+  missing: "text-red-500",
+  partial: "text-amber-500",
+};
+
+const capabilityLabels: Record<string, string> = {
+  search: "Busca",
+  lookup: "Lookup",
+  feed_sync: "Feed Sync",
+  clickout_ready: "Clickout",
+  price_refresh: "Preco",
+  import_ready: "Import",
+};
+
+function ReadinessCard({ readiness }: { readiness: SourceReadiness }) {
+  const rc = readinessConfig[readiness.status];
+
+  return (
+    <div className="rounded-xl border border-surface-200 bg-white p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-text-muted" />
+          <span className="font-semibold font-display text-sm text-text-primary">{readiness.name}</span>
+        </div>
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${rc.color}`}>
+          {rc.label}
+        </span>
+      </div>
+
+      {/* Capability pills */}
+      {readiness.capabilities.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {readiness.capabilities.map((cap) => (
+            <span
+              key={cap}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface-50 text-text-secondary border border-surface-200"
+            >
+              <Zap className="h-2.5 w-2.5" />
+              {capabilityLabels[cap] || cap}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Checklist */}
+      <div className="space-y-1.5">
+        {readiness.checklist.map((item, idx) => (
+          <div key={idx} className="flex items-start gap-2">
+            <span className={`mt-0.5 ${checklistStatusIcon[item.status] || "text-gray-400"}`}>
+              {item.status === "ok" ? (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              ) : item.status === "partial" ? (
+                <AlertTriangle className="h-3.5 w-3.5" />
+              ) : (
+                <XCircle className="h-3.5 w-3.5" />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-text-primary leading-tight">{item.label}</p>
+              <p className="text-[10px] text-text-muted leading-relaxed">{item.detail}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function AdapterStatusCard({ adapter }: { adapter: AdapterStatus }) {
   const hc = healthConfig[adapter.health] || healthConfig.MOCK;
@@ -83,6 +165,7 @@ function AdapterStatusCard({ adapter }: { adapter: AdapterStatus }) {
 export default async function AdminFontesPage() {
   const sources = await getAdminSources();
   const adapterSummary = adapterRegistry.getSummary();
+  const sourceReadiness = getSourceReadiness();
 
   const allConfigured = adapterSummary.unconfigured === 0;
   const hasMocks = adapterSummary.adapters.some((a) => a.health === "MOCK");
@@ -155,6 +238,22 @@ export default async function AdminFontesPage() {
         <div className="grid md:grid-cols-2 gap-3">
           {adapterSummary.adapters.map((adapter) => (
             <AdapterStatusCard key={adapter.slug} adapter={adapter} />
+          ))}
+        </div>
+      </div>
+
+      {/* ---- Source Readiness ---- */}
+      <div className="rounded-xl border border-surface-200 bg-white p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Shield className="h-5 w-5 text-text-muted" />
+          <h2 className="text-lg font-bold font-display text-text-primary">Readiness por Fonte</h2>
+        </div>
+        <p className="text-xs text-text-muted mb-4">
+          Status de prontidao, checklist de requisitos e capabilities disponiveis por adapter.
+        </p>
+        <div className="grid md:grid-cols-2 gap-3">
+          {sourceReadiness.map((r) => (
+            <ReadinessCard key={r.sourceId} readiness={r} />
           ))}
         </div>
       </div>

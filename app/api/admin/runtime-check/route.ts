@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       {
         overall: "fail",
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "Falha no runtime check",
       },
       { status: 500 }
     );

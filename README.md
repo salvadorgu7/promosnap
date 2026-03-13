@@ -700,6 +700,76 @@ npm run verify:quick # Testes + smoke (sem build)
 - CSS: pulse-dot, card-live, opportunity-card, section-live-indicator, btn-offer melhorado
 - EmptyState: action prop para CTA estruturado
 
+## Real Integrations & Execution Layer (V21)
+
+### Execution Layer
+- lib/execution/engine.ts: motor de execucao central com 9 tipos de acao
+- Tipos: create_banner, feature_product, publish_distribution, trigger_job, create_review_task, create_import_batch, trigger_email, trigger_webhook, create_campaign
+- Execucao real via Prisma: cria banners, destaca produtos, dispara distribuicao, cria tasks
+- In-memory store (FIFO 1000 entries) com status, payload, resultado, retries
+- /admin/executions: dashboard de execucoes com filtros, detalhes expandiveis
+- /api/admin/executions: GET (listar) + POST (executar/retry)
+
+### Closed-Loop Operations
+- Cockpit com "Executar" button em cada oportunidade
+- Execucoes recentes no cockpit com status inline
+- Closed-loop view: oportunidade → acao → resultado mensuravel
+- getExecutionEffectiveness: success rate, measurable outcome rate
+
+### Real Integrations
+- lib/integrations/webhooks.ts: webhook generico com timeout, retry, Slack/Discord style
+- lib/integrations/slack.ts: notificacoes via SLACK_WEBHOOK_URL, Block Kit formatting
+- lib/integrations/discord.ts: notificacoes via DISCORD_WEBHOOK_URL, embed formatting
+- Telegram melhorado: configValidation, sendTestMessage, execution log
+- WhatsApp melhorado: provider-agnostic interface, API readiness, preview fallback
+- lib/integrations/email-execution.ts: tracking de envios, stats por tipo
+
+### Source Readiness
+- lib/adapters/readiness.ts: status por source (ready/partial/mock/blocked/not_configured)
+- Capability map: search, lookup, feed_sync, clickout_ready, price_refresh, import_ready
+- Checklist por source com status ok/missing/partial
+- Todos os adapters com healthCheck, readinessCheck, capabilityMap
+- Admin /admin/fontes com readiness badges, capability pills, checklist expandivel
+
+### Feed Sync Architecture
+- lib/sourcing/feed-sync.ts: estrutura para importacao recorrente por feed
+- FeedSyncConfig: source, format, URL, schedule, status
+- runFeedSync placeholder com validacao e logging
+- Pronto para conectar providers reais
+
+### Security Hardening
+- 17 API routes corrigidas: removido vazamento de error.message/String(err)
+- lib/env/validate.ts: validacao de envs obrigatorias e opcionais
+- Error handling melhorado em search, newsletter, price-history
+- 15 arquivos com imports nao utilizados limpos
+
+### Measurement
+- lib/measurement/tracking.ts: tracking de execucoes e clickout conversion
+- Conversion funnel: impressions → clicks → clickouts → revenue por categoria/source
+- Measurement gaps identificados: 7 areas com tracking incompleto
+
+### Pending Audit
+- lib/project/pending-audit.ts: classificacao em 3 grupos (critico/importante/futuro)
+- 8 pendencias criticas, 7 importantes, 7 futuras — todas documentadas
+- 9 bottlenecks do sistema identificados com severidade e recomendacao
+- Admin dashboard com "Pendencias Criticas" e score de integridade
+
+### Admin Usability
+- lib/admin/usability.ts: health summary e quick access items
+- Admin dashboard com pendencias criticas, sistema status, quick access
+- Stat cards consistentes com CSS stat-card
+
+### Future Readiness
+- lib/readiness/future-prep.ts: readiness para auth, push, CDN, E2E, RBAC
+- lib/readiness/smoke-surface.ts: 7 caminhos criticos para smoke test
+- runQuickSmoke: verificacao automatica de saude das rotas
+
+### CSS System Expanded
+- Execution status classes (success/failed/pending/running)
+- Readiness badges (ready/partial/mock/blocked)
+- Checklist item styling
+- Integration card com status indicator
+
 ## Limitacoes Atuais
 
 - Adapters ML/Amazon/Shopee/Shein em modo STUB (interface pronta, dados mock)
@@ -711,22 +781,20 @@ npm run verify:quick # Testes + smoke (sem build)
 - Imagens ML podem ter CORS
 - Vercel Hobby: cron limitado a 1x/dia
 
-## Proximos Passos (V21)
+## Proximos Passos (V22)
 
-- Adapters reais para Amazon PA-API, Shopee, Shein
+- Adapters reais para Amazon PA-API, Shopee, Shein (conectar providers)
+- Feed sync real com scheduled imports
 - Push notifications via PWA
-- Testes e2e com Playwright
-- CDN real para imagens (Cloudflare/Imgix)
+- Testes e2e com Playwright (smoke surface pronta)
+- CDN real para imagens (abstracacao pronta)
+- User accounts (auth real, login/signup)
+- WhatsApp Business API real (provider interface pronta)
+- Telegram bot commands interativos
+- Canonical match ML-assisted (embedding similarity)
+- Price prediction (historico + tendencia)
 - A/B testing com tracking real
 - Export CSV no admin
-- WhatsApp Business API real
-- Telegram bot commands interativos
-- User accounts (auth real, login/signup)
-- Gamificacao e badges de usuario
-- Canonical match ML-assisted (embedding similarity)
-- Affiliate feed auto-sync (scheduled imports)
-- Price prediction (historico + tendencia)
-- Dashboard de ROI por canal de distribuicao
-- Webhook integrations (Slack, Discord)
 - Multi-currency support
-- Admin role-based access control
+- Admin role-based access control (RBAC readiness pronta)
+- Gamificacao e badges de usuario

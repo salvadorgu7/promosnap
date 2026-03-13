@@ -1,7 +1,7 @@
 // Amazon PA-API Source Adapter (STUB)
 // Ready for real PA-API 5.0 integration — returns mock data until configured.
 
-import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus } from './types'
+import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability } from './types'
 
 const REQUIRED_ENV_VARS = ['AMAZON_ACCESS_KEY', 'AMAZON_SECRET_KEY', 'AMAZON_PARTNER_TAG'] as const
 
@@ -64,6 +64,30 @@ export class AmazonSourceAdapter implements SourceAdapter {
     // TODO: Implement PA-API 5.0 GetItems
     console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — PA-API integration pending`)
     return this.getMockProduct(externalId)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Health, Readiness & Capabilities
+  // ---------------------------------------------------------------------------
+
+  healthCheck(): AdapterHealthCheckResult {
+    if (this.isConfigured()) {
+      return { healthy: true, message: 'PA-API 5.0 credentials present — adapter operacional' }
+    }
+    return { healthy: false, message: 'Credenciais PA-API ausentes — usando dados mock' }
+  }
+
+  readinessCheck(): AdapterReadinessResult {
+    const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]) as unknown as string[]
+    return { ready: missing.length === 0, missing }
+  }
+
+  capabilityMap(): AdapterCapability[] {
+    const caps: AdapterCapability[] = ['search', 'lookup']
+    if (this.isConfigured()) {
+      caps.push('clickout_ready', 'price_refresh')
+    }
+    return caps
   }
 
   // ---------------------------------------------------------------------------

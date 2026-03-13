@@ -20,11 +20,16 @@ import {
   Eye,
   CheckCircle2,
   ExternalLink,
+  Play,
+  Activity,
 } from "lucide-react";
 import Link from "next/link";
 import prisma from "@/lib/db/prisma";
 import { getTopOpportunities, summarizeOpportunities } from "@/lib/opportunity/engine";
+import { getExecutions } from "@/lib/execution/engine";
+import type { ExecutionRecord, ExecutionStatus } from "@/lib/execution/types";
 import type { Opportunity, OpportunityPriority, OpportunityType } from "@/lib/opportunity/types";
+import { ExecuteButton } from "./ExecuteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -221,9 +226,61 @@ function StatCard({
   );
 }
 
+function getExecutionTypeForOpportunity(opp: Opportunity): { type: string; payload: Record<string, unknown> } | null {
+  switch (opp.type) {
+    case "highlight-candidate":
+    case "high-potential-product":
+      return opp.meta?.productId
+        ? { type: "feature_product", payload: { productId: opp.meta.productId } }
+        : null;
+    case "campaign-recommended":
+      return {
+        type: "create_campaign",
+        payload: {
+          title: `Campanha: ${opp.title}`,
+          ...(opp.meta?.offerId ? { offerId: opp.meta.offerId } : {}),
+        },
+      };
+    case "distribution-recommended":
+      return {
+        type: "publish_distribution",
+        payload: { segment: "geral", channel: "homepage" },
+      };
+    case "needs-review":
+      return opp.meta?.productId
+        ? { type: "create_review_task", payload: { productId: opp.meta.productId } }
+        : null;
+    case "content-missing":
+      return {
+        type: "create_banner",
+        payload: { title: `Conteudo: ${opp.meta?.categoryName || "Categoria"}`, autoMode: "top-offers" },
+      };
+    default:
+      return null;
+  }
+}
+
+const execStatusConfig: Record<ExecutionStatus, { label: string; bg: string; text: string }> = {
+  pending: { label: "Pendente", bg: "bg-gray-100", text: "text-gray-600" },
+  running: { label: "Executando", bg: "bg-blue-100", text: "text-blue-700" },
+  success: { label: "OK", bg: "bg-emerald-100", text: "text-emerald-700" },
+  failed: { label: "Falhou", bg: "bg-red-100", text: "text-red-700" },
+  skipped: { label: "Ignorado", bg: "bg-yellow-100", text: "text-yellow-700" },
+};
+
+function MiniStatusBadge({ status }: { status: ExecutionStatus }) {
+  const c = execStatusConfig[status];
+  return (
+    <span className={`inline-flex items-center text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full ${c.bg} ${c.text}`}>
+      {c.label}
+    </span>
+  );
+}
+
 function OpportunityCard({ opp }: { opp: Opportunity }) {
   const Icon = typeIcon(opp.type);
   const pc = priorityConfig[opp.priority];
+  const execInfo = getExecutionTypeForOpportunity(opp);
 
   return (
     <div className={`bg-white rounded-xl border ${pc.border} p-4 hover:shadow-sm transition-shadow`}>
@@ -248,14 +305,23 @@ function OpportunityCard({ opp }: { opp: Opportunity }) {
                 <ImpactBar score={opp.confidenceScore} />
               </div>
             </div>
-            {opp.adminUrl && (
-              <Link
-                href={opp.adminUrl}
-                className="inline-flex items-center gap-1 text-xs font-medium text-accent-blue hover:underline"
-              >
-                Agir <ExternalLink className="h-3 w-3" />
-              </Link>
-            )}
+            <div className="flex items-center gap-2">
+              {execInfo && (
+                <ExecuteButton
+                  type={execInfo.type}
+                  payload={execInfo.payload}
+                  label="Executar"
+                />
+              )}
+              {opp.adminUrl && (
+                <Link
+                  href={opp.adminUrl}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-accent-blue hover:underline"
+                >
+                  Agir <ExternalLink className="h-3 w-3" />
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -291,6 +357,73 @@ function RiskItem({
       </div>
       <span className="text-lg font-bold text-red-600">{count}</span>
     </Link>
+  );
+}
+
+// ============================================
+// Recent Executions Section
+// ============================================
+
+const execTypeLabels: Record<string, string> = {
+  create_banner: "Banner",
+  publish_distribution: "Distribuicao",
+  feature_product: "Destaque",
+  create_campaign: "Campanha",
+  create_import_batch: "Importacao",
+  create_review_task: "Revisao",
+  trigger_job: "Job",
+  trigger_email: "Email",
+  trigger_webhook: "Webhook",
+};
+
+function RecentExecutionsSection() {
+  const recentExecs = getExecutions({ limit: 5 });
+
+  if (recentExecs.length === 0) return null;
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Activity className="h-5 w-5 text-indigo-500" />
+          <h2 className="text-lg font-bold font-display text-text-primary">Execucoes Recentes</h2>
+          <span className="text-xs text-text-muted bg-surface-100 px-2 py-0.5 rounded-full">
+            {recentExecs.length}
+          </span>
+        </div>
+        <Link
+          href="/admin/executions"
+          className="text-xs font-medium text-accent-blue hover:underline inline-flex items-center gap-1"
+        >
+          Ver todas <ExternalLink className="h-3 w-3" />
+        </Link>
+      </div>
+
+      <div className="bg-white rounded-xl border border-surface-200 divide-y divide-surface-100">
+        {recentExecs.map((exec) => (
+          <div key={exec.id} className="flex items-center gap-3 p-3">
+            <Play className="h-3.5 w-3.5 text-text-muted flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium text-text-primary">
+                {execTypeLabels[exec.type] || exec.type}
+              </span>
+              <span className="text-xs text-text-muted ml-2">
+                {exec.origin}
+              </span>
+            </div>
+            <MiniStatusBadge status={exec.status} />
+            <span className="text-[11px] text-text-muted flex-shrink-0">
+              {new Date(exec.createdAt).toLocaleString("pt-BR", {
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -406,7 +539,10 @@ export default async function CockpitPage() {
         )}
       </section>
 
-      {/* Section 3: Riscos e Alertas */}
+      {/* Section 3: Execucoes Recentes */}
+      <RecentExecutionsSection />
+
+      {/* Section 4: Riscos e Alertas */}
       <section>
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="h-5 w-5 text-red-500" />

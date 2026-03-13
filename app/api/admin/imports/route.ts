@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { Prisma } from "@prisma/client";
 import { validateAdmin } from "@/lib/auth/admin";
 import { parseCSVImport, parseJSONImport, validateCandidate } from "@/lib/ingest/import";
 import type { ImportCandidate } from "@/lib/ingest/types";

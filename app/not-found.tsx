@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, Home, Flame, Tag, Ticket } from "lucide-react";
+import { Search, Home, Flame, Ticket } from "lucide-react";
 import SearchBar from "@/components/search/SearchBar";
 
 const QUICK_LINKS = [

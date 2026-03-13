@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(report);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to get monitoring data" },
+      { error: "Falha ao obter dados de monitoramento" },
       { status: 500 }
     );
   }

@@ -9,32 +9,38 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing code' }, { status: 400 })
   }
 
-  const clientId = process.env.MERCADOLIVRE_APP_ID!
-  const clientSecret = process.env.MERCADOLIVRE_SECRET!
-  const redirectUri = process.env.NEXT_PUBLIC_APP_URL + '/api/auth/ml/callback'
+  try {
+    const clientId = process.env.MERCADOLIVRE_APP_ID!
+    const clientSecret = process.env.MERCADOLIVRE_SECRET!
+    const redirectUri = process.env.NEXT_PUBLIC_APP_URL + '/api/auth/ml/callback'
 
-  const res = await fetch('https://api.mercadolibre.com/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      client_id: clientId,
-      client_secret: clientSecret,
-      code,
-      redirect_uri: redirectUri,
-    }),
-  })
+    const res = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUri,
+      }),
+    })
 
-  if (!res.ok) {
-    const err = await res.text()
-    return NextResponse.json({ error: 'Token exchange failed', detail: err }, { status: 500 })
+    if (!res.ok) {
+      const err = await res.text()
+      console.error('[ml-auth] Token exchange failed:', err)
+      return NextResponse.json({ error: 'Token exchange failed' }, { status: 500 })
+    }
+
+    const token = await res.json()
+    token.obtained_at = Date.now()
+
+    console.log('[ml-auth] saving ML token to:', ML_TOKEN_PATH)
+    await writeFile(ML_TOKEN_PATH, JSON.stringify(token, null, 2), 'utf-8')
+
+    return NextResponse.json({ ok: true, expires_in: token.expires_in })
+  } catch (error) {
+    console.error('[ml-auth] Callback error:', error)
+    return NextResponse.json({ error: 'Falha na autenticacao ML' }, { status: 500 })
   }
-
-  const token = await res.json()
-  token.obtained_at = Date.now()
-
-  console.log('[ml-auth] saving ML token to:', ML_TOKEN_PATH)
-  await writeFile(ML_TOKEN_PATH, JSON.stringify(token, null, 2), 'utf-8')
-
-  return NextResponse.json({ ok: true, expires_in: token.expires_in })
 }

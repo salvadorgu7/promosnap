@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
         published++;
       } catch (err) {
         skipped++;
-        errors.push(`${candidate.title}: ${String(err)}`);
+        errors.push(`${candidate.title}: falha ao publicar`);
       }
     }
 
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     return NextResponse.json(
-      { error: `Erro na operacao em lote: ${String(err)}` },
+      { error: 'Erro na operacao em lote' },
       { status: 500 },
     );
   }

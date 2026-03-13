@@ -8,7 +8,6 @@ import prisma from "@/lib/db/prisma";
 import { Prisma } from "@prisma/client";
 import { enrichCandidate, determineSubStatus } from "@/lib/ingest/enrich";
 import { findCanonicalCandidates } from "@/lib/catalog/canonical-match";
-import { extractAndStoreAttributes } from "@/lib/catalog/product-attributes";
 import type { ImportCandidate } from "@/lib/ingest/types";
 
 // ─── Types ──────────────────────────────────────────────────────────────────

@@ -22,7 +22,7 @@ export async function POST(
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json(
-      { error: `Erro ao processar batch: ${String(err)}` },
+      { error: 'Erro ao processar batch' },
       { status: 500 },
     );
   }

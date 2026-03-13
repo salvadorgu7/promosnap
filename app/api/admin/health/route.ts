@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       {
         status: 'critical',
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Falha ao executar health checks',
       },
       { status: 500 }
     )

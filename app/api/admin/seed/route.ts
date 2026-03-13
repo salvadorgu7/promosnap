@@ -253,12 +253,13 @@ export async function POST(req: NextRequest) {
 
         upserted++
       } catch (err) {
-        errors.push(`${p.externalId}: ${String(err)}`)
+        errors.push(`${p.externalId}: falha ao processar`)
       }
     }
 
     return Response.json({ ok: true, upserted, total: ML_PRODUCTS.length, errors })
   } catch (err) {
-    return Response.json({ error: String(err) }, { status: 500 })
+    console.error("[seed] Error:", err)
+    return Response.json({ error: 'Erro interno ao executar seed' }, { status: 500 })
   }
 }

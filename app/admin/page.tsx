@@ -3,12 +3,14 @@ import {
   Layers, Clock, CheckCircle, XCircle, AlertTriangle, Loader2,
   Bell, TrendingUp, Heart, ArrowRight, DollarSign, Image,
   Upload, Zap, Activity, Shield, FileText, Users, Rocket,
-  Radio, Target, Flame
+  Radio, Target, Flame, Gauge
 } from "lucide-react";
 import Link from "next/link";
 import { getAdminDashboardData } from "@/lib/db/queries";
 import { formatNumber, formatPrice, timeAgo } from "@/lib/utils";
 import prisma from "@/lib/db/prisma";
+import { classifyCriticalPending } from "@/lib/project/pending-audit";
+import { getIntegritySummary } from "@/lib/project/integrity";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +89,11 @@ export default async function AdminDashboard() {
   const activeSources = sourcesHealth.filter((s) => s.status === "ACTIVE").length;
   const errorSources = sourcesHealth.filter((s) => s.status === "ERROR").length;
 
+  // Pending audit and integrity
+  const pendingAudit = classifyCriticalPending();
+  const criticalOpen = pendingAudit.critical_for_execution.filter((i) => i.status !== "closed");
+  const integritySummary = getIntegritySummary();
+
   const statCards = [
     { label: "Produtos", value: formatNumber(productsTotal), icon: Package, color: "text-accent-blue" },
     { label: "Ofertas Ativas", value: formatNumber(stats.activeOffers), icon: Tag, color: "text-accent-green" },
@@ -130,6 +137,58 @@ export default async function AdminDashboard() {
               {timeAgo(new Date(lastJob.startedAt))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Pendencias Criticas + Sistema */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Pendencias Criticas */}
+        {criticalOpen.length > 0 && (
+          <div className="stat-card stat-card-red lg:col-span-2">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Pendencias Criticas</span>
+              <span className="ml-auto text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                {criticalOpen.length}
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {criticalOpen.slice(0, 4).map((item) => (
+                <div key={item.id} className="flex items-center gap-2 text-sm">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.status === "open" ? "bg-red-400" : "bg-amber-400"}`} />
+                  <span className="text-text-primary truncate">{item.title}</span>
+                  <span className="text-[10px] text-text-muted ml-auto flex-shrink-0">{item.estimatedEffort}</span>
+                </div>
+              ))}
+              {criticalOpen.length > 4 && (
+                <p className="text-[10px] text-text-muted">+{criticalOpen.length - 4} mais</p>
+              )}
+            </div>
+            <div className="mt-2 pt-2 border-t border-surface-200 flex items-center gap-4 text-[10px] text-text-muted">
+              <span>{pendingAudit.totalOpen} abertas</span>
+              <span>{pendingAudit.totalPartial} parciais</span>
+              <span>{pendingAudit.totalClosed} concluidas</span>
+            </div>
+          </div>
+        )}
+
+        {/* Sistema - Integrity Score */}
+        <div className={`stat-card ${integritySummary.score >= 75 ? "stat-card-green" : integritySummary.score >= 50 ? "stat-card-orange" : "stat-card-red"}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <Gauge className="h-4 w-4 text-accent-blue" />
+            <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Sistema</span>
+          </div>
+          <p className="text-3xl font-bold font-display text-text-primary">{integritySummary.score}<span className="text-sm font-normal text-text-muted">/100</span></p>
+          <p className="text-xs text-text-muted mt-1">{integritySummary.status}</p>
+          <div className="mt-2 pt-2 border-t border-surface-200 flex items-center gap-3 text-[10px] text-text-muted">
+            {integritySummary.criticalCount > 0 && (
+              <span className="text-red-500 font-medium">{integritySummary.criticalCount} criticos</span>
+            )}
+            {integritySummary.warningCount > 0 && (
+              <span className="text-amber-500 font-medium">{integritySummary.warningCount} avisos</span>
+            )}
+            <span>{integritySummary.totalChecks} checks</span>
+          </div>
         </div>
       </div>
 
@@ -247,7 +306,7 @@ export default async function AdminDashboard() {
       {/* Catalog & platform stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((s) => (
-          <div key={s.label} className="admin-card">
+          <div key={s.label} className="stat-card">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-7 h-7 rounded-lg bg-surface-50 flex items-center justify-center">
                 <s.icon className={`h-3.5 w-3.5 ${s.color}`} />

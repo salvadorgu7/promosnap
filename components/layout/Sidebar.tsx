@@ -17,6 +17,7 @@ import {
   Users,
   Radio,
   Gauge,
+  PlayCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -33,13 +34,14 @@ interface NavGroup {
 }
 
 // Nav items that show a notification dot (static heuristics)
-const NOTIFICATION_PATHS = new Set(["/admin/imports", "/admin/cockpit"]);
+const NOTIFICATION_PATHS = new Set(["/admin/imports", "/admin/cockpit", "/admin/executions"]);
 
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Principal",
     items: [
       { href: "/admin/cockpit", label: "Cockpit", icon: Gauge },
+      { href: "/admin/executions", label: "Execucoes", icon: PlayCircle },
       { href: "/", label: "Home", icon: Home },
       { href: "/ofertas", label: "Ofertas", icon: Flame },
       { href: "/mais-vendidos", label: "Trending", icon: TrendingUp },
@@ -73,6 +75,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
   const [favCount, setFavCount] = useState<number>(0);
+  const [hasFailedExecutions, setHasFailedExecutions] = useState(false);
 
   useEffect(() => {
     try {
@@ -103,6 +106,24 @@ export default function Sidebar() {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
+  // Check for failed executions to show notification dot
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/admin/executions?status=failed&limit=1", {
+      signal: controller.signal,
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.executions) && data.executions.length > 0) {
+          setHasFailedExecutions(true);
+        }
+      })
+      .catch(() => {
+        // Silently ignore — sidebar should never break the page
+      });
+    return () => controller.abort();
+  }, []);
+
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
@@ -116,7 +137,11 @@ export default function Sidebar() {
 
   // Notification dot for items with pending actions
   const hasNotification = (href: string): boolean => {
-    return NOTIFICATION_PATHS.has(href);
+    // Dynamic: show dot on executions when there are failures
+    if (href === "/admin/executions" && hasFailedExecutions) return true;
+    // Static heuristics for other admin paths
+    if (href === "/admin/imports" || href === "/admin/cockpit") return true;
+    return false;
   };
 
   return (

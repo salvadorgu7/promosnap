@@ -1,7 +1,7 @@
 // Mercado Livre Source Adapter (STUB)
 // Ready for real ML API integration — uses existing ML OAuth if available.
 
-import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus } from './types'
+import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability } from './types'
 
 const REQUIRED_ENV_VARS = ['ML_CLIENT_ID', 'ML_CLIENT_SECRET'] as const
 
@@ -77,6 +77,37 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
 
     console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — ML API integration pending`)
     return this.getMockProduct(externalId)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Health, Readiness & Capabilities
+  // ---------------------------------------------------------------------------
+
+  healthCheck(): AdapterHealthCheckResult {
+    if (this.isConfigured()) {
+      const hasRedirect = !!process.env.ML_REDIRECT_URI
+      return {
+        healthy: true,
+        message: hasRedirect
+          ? 'ML API com OAuth redirect configurado'
+          : 'ML API credentials presentes (sem redirect URI)',
+      }
+    }
+    return { healthy: false, message: 'ML_CLIENT_ID / ML_CLIENT_SECRET ausentes — usando dados mock' }
+  }
+
+  readinessCheck(): AdapterReadinessResult {
+    const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]) as unknown as string[]
+    if (!process.env.ML_REDIRECT_URI) missing.push('ML_REDIRECT_URI (recomendado)')
+    return { ready: REQUIRED_ENV_VARS.every((k) => !!process.env[k]), missing }
+  }
+
+  capabilityMap(): AdapterCapability[] {
+    const caps: AdapterCapability[] = ['search', 'lookup']
+    if (this.isConfigured()) {
+      caps.push('clickout_ready', 'price_refresh', 'import_ready')
+    }
+    return caps
   }
 
   // ---------------------------------------------------------------------------

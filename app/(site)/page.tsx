@@ -1,4 +1,4 @@
-import { Flame, TrendingDown, Trophy, Sparkles, Tag, Shield, TrendingUp, BarChart3, ShieldCheck, Store, Bell, Truck, Star, Search, Users, Send, MessageCircle, ArrowRight, Zap, Eye, Activity } from "lucide-react";
+import { Flame, TrendingDown, Trophy, Sparkles, Tag, ShieldCheck, Store, Bell, Truck, Star, Search, Users, Send, MessageCircle, ArrowRight } from "lucide-react";
 import DailyOpportunities from "@/components/home/DailyOpportunities";
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";
@@ -17,7 +17,7 @@ import PersonalizedNews from "@/components/home/PersonalizedNews";
 import PersonalizedRails from "@/components/home/PersonalizedRails";
 import SocialProof from "@/components/home/SocialProof";
 import WhatChanged from "@/components/home/WhatChanged";
-import { getHotOffers, getBestSellers, getLowestPrices, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory, buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
+import { getHotOffers, getBestSellers, getLowestPrices, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";

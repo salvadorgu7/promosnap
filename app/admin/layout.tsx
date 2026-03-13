@@ -35,6 +35,7 @@ import {
   Pencil,
   Gem,
   ShoppingBag,
+  Play,
 } from "lucide-react";
 
 interface NavItem {
@@ -120,6 +121,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Operacao",
     items: [
+      { href: "/admin/executions", label: "Execucoes", icon: Play },
       { href: "/admin/jobs", label: "Jobs", icon: Clock },
       { href: "/admin/ingestao", label: "Ingestao", icon: Upload },
       { href: "/admin/imports", label: "Import CSV/JSON", icon: Upload },

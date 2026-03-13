@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import prisma from "@/lib/db/prisma";
 import { scoreProduto, decideEditorialBlock } from "@/lib/decision/engine";
-import { SOURCE_QUALITY, REVENUE_RATES, getAllSourceProfiles } from "@/lib/source/routing";
+import { getAllSourceProfiles } from "@/lib/source/routing";
 import type { ProductScoringInput } from "@/lib/decision/types";
 
 export const dynamic = "force-dynamic";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Search, Play, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2 } from "lucide-react";
+import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2 } from "lucide-react";
 
 interface IngestResult {
   fetched: number;

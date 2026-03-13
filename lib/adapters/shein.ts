@@ -1,7 +1,7 @@
 // Shein Source Adapter (STUB)
 // Ready for real Shein Affiliate API integration.
 
-import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus } from './types'
+import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability } from './types'
 
 const REQUIRED_ENV_VARS = ['SHEIN_API_KEY'] as const
 
@@ -67,6 +67,30 @@ export class SheinSourceAdapter implements SourceAdapter {
     // TODO: Implement Shein Affiliate API product detail
     console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — Shein API integration pending`)
     return this.getMockProduct(externalId)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Health, Readiness & Capabilities
+  // ---------------------------------------------------------------------------
+
+  healthCheck(): AdapterHealthCheckResult {
+    if (this.isConfigured()) {
+      return { healthy: true, message: 'Shein Affiliate API key presente' }
+    }
+    return { healthy: false, message: 'SHEIN_API_KEY ausente — usando dados mock' }
+  }
+
+  readinessCheck(): AdapterReadinessResult {
+    const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]) as unknown as string[]
+    return { ready: missing.length === 0, missing }
+  }
+
+  capabilityMap(): AdapterCapability[] {
+    const caps: AdapterCapability[] = ['search', 'lookup']
+    if (this.isConfigured()) {
+      caps.push('clickout_ready')
+    }
+    return caps
   }
 
   // ---------------------------------------------------------------------------

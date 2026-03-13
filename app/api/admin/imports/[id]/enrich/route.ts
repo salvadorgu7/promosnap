@@ -81,7 +81,7 @@ export async function POST(
     });
   } catch (err) {
     return NextResponse.json(
-      { error: `Erro ao enriquecer batch: ${String(err)}` },
+      { error: 'Erro ao enriquecer batch' },
       { status: 500 },
     );
   }

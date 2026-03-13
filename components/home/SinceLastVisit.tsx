@@ -14,7 +14,6 @@ import {
 } from "lucide-react"
 import RailSection from "@/components/home/RailSection"
 import OfferCard from "@/components/cards/OfferCard"
-import { formatPrice } from "@/lib/utils"
 import type { ProductCard } from "@/types"
 
 const LAST_VISIT_KEY = "promosnap_last_visit"

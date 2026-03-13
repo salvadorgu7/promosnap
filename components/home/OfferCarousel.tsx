@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ExternalLink, Truck, Zap, ShieldCheck, BadgeCheck, Percent } from "lucide-react";
 import { formatPrice } from "@/lib/utils";

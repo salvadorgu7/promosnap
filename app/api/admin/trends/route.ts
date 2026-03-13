@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
       hint: 'Pesquise essas keywords no mercadolivre.com.br, copie as URLs dos produtos desejados e use POST /api/admin/ingest com os IDs MLB extraídos.',
     })
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    console.error("[trends] Error:", err)
+    return NextResponse.json({ error: 'Erro ao buscar tendencias' }, { status: 500 })
   }
 }

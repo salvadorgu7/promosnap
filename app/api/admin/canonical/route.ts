@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { validateAdmin } from "@/lib/auth/admin";
 import { getCanonicalStats, mergeIntoCanonical } from "@/lib/catalog/canonical-graph";
-import { canonicalMatch, findCanonicalCandidates } from "@/lib/catalog/canonical-match";
+import { canonicalMatch } from "@/lib/catalog/canonical-match";
 import { extractAndStoreAttributes } from "@/lib/catalog/product-attributes";
 import prisma from "@/lib/db/prisma";
 

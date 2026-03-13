@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error: "Erro ao buscar regras",
-        details: err instanceof Error ? err.message : "Erro desconhecido",
+        details: "Verifique os logs do servidor para mais informacoes",
       },
       { status: 500 }
     );
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: "Erro interno",
-        details: err instanceof Error ? err.message : "Erro desconhecido",
+        details: "Verifique os logs do servidor para mais informacoes",
       },
       { status: 500 }
     );

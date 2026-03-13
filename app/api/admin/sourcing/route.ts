@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error("[sourcing API] GET error:", err);
     return NextResponse.json(
-      { error: `Erro ao carregar dados de sourcing: ${String(err)}` },
+      { error: 'Erro ao carregar dados de sourcing' },
       { status: 500 }
     );
   }
@@ -310,7 +310,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[sourcing API] POST error:", err);
     return NextResponse.json(
-      { error: `Erro na operacao: ${String(err)}` },
+      { error: 'Erro interno na operacao de sourcing' },
       { status: 500 }
     );
   }

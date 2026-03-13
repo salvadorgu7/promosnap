@@ -1,6 +1,6 @@
 "use client";
 
-import { getSmartCTA, type SmartCTAOpts } from "@/lib/revenue/smart-cta";
+import { getSmartCTA } from "@/lib/revenue/smart-cta";
 
 interface SmartCTAProps {
   discount?: number;

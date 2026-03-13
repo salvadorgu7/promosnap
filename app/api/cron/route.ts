@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
       failedCount++
       await captureError(error, { route: '/api/cron', job: name })
-      results[name] = { status: 'FAILED', error: error instanceof Error ? error.message : 'Unknown' }
+      results[name] = { status: 'FAILED', error: 'Job execution failed' }
     }
   }
 

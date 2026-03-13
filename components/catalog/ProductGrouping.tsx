@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ChevronDown, ChevronUp, Layers, Store, Tag, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, Layers, Store, Tag } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import MiniCluster from "@/components/product/MiniCluster";
 import { formatPrice } from "@/lib/utils";

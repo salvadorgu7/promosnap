@@ -94,7 +94,7 @@ async function upsertListings(listings: RawListing[]) {
       results.upserted++
     } catch (err) {
       results.failed++
-      results.errors.push(`${raw.externalId}: ${String(err)}`)
+      results.errors.push(`${raw.externalId}: falha ao processar`)
     }
   }
 
@@ -118,14 +118,14 @@ export async function GET(request: NextRequest) {
   try {
     listings = await adapter.searchProducts(q, { limit })
   } catch (err) {
-    return NextResponse.json({ error: 'ML API fetch failed', detail: String(err) }, { status: 502 })
+    return NextResponse.json({ error: 'Falha ao buscar dados da API ML' }, { status: 502 })
   }
 
   try {
     const results = await upsertListings(listings)
     return NextResponse.json({ mode: 'search', query: q, fetched: listings.length, ...results })
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: 'Erro interno ao processar ingestao' }, { status: 500 })
   }
 }
 
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
   try {
     listings = await adapter.fetchByItemIds(ids)
   } catch (err) {
-    return NextResponse.json({ error: 'ML API fetch failed', detail: String(err) }, { status: 502 })
+    return NextResponse.json({ error: 'Falha ao buscar dados da API ML' }, { status: 502 })
   }
 
   if (listings.length === 0) {
@@ -170,6 +170,6 @@ export async function POST(request: NextRequest) {
     const results = await upsertListings(listings)
     return NextResponse.json({ mode: 'items', submitted: ids.length, fetched: listings.length, ...results })
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: 'Erro interno ao processar ingestao' }, { status: 500 })
   }
 }

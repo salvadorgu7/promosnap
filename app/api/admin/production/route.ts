@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         score: 0,
         checks: [],
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Falha ao verificar producao',
       },
       { status: 500 }
     )

@@ -70,6 +70,32 @@ export interface AdapterStatus {
 // Source Adapter Interface
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Health Check & Readiness Types
+// ---------------------------------------------------------------------------
+
+export interface AdapterHealthCheckResult {
+  healthy: boolean
+  message: string
+}
+
+export interface AdapterReadinessResult {
+  ready: boolean
+  missing: string[]
+}
+
+export type AdapterCapability =
+  | 'search'
+  | 'lookup'
+  | 'feed_sync'
+  | 'clickout_ready'
+  | 'price_refresh'
+  | 'import_ready'
+
+// ---------------------------------------------------------------------------
+// Source Adapter Interface
+// ---------------------------------------------------------------------------
+
 export interface SourceAdapter {
   /** Display name (e.g. "Amazon Brasil") */
   name: string
@@ -96,4 +122,22 @@ export interface SourceAdapter {
    * Returns current adapter status (configured, enabled, health, missing vars).
    */
   getStatus(): AdapterStatus
+
+  /**
+   * Quick health check — verifies adapter is functional.
+   * Optional for backward compatibility.
+   */
+  healthCheck?(): AdapterHealthCheckResult
+
+  /**
+   * Readiness check — verifies all requirements are met for production use.
+   * Optional for backward compatibility.
+   */
+  readinessCheck?(): AdapterReadinessResult
+
+  /**
+   * Returns which capabilities this adapter supports.
+   * Optional for backward compatibility.
+   */
+  capabilityMap?(): AdapterCapability[]
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
+import { captureError } from "@/lib/monitoring";
 
 export async function POST(req: NextRequest) {
   // Rate limit: 10 req/min for newsletter
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       message: "Inscricao realizada com sucesso! Voce recebera nossas melhores ofertas.",
     });
   } catch (error) {
-    console.error("[newsletter] Subscribe error:", error);
+    await captureError(error, { route: '/api/newsletter', method: 'POST' });
     return NextResponse.json(
       { error: "Erro ao processar inscricao" },
       { status: 500 }

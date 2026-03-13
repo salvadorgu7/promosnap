@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { inferSegment, SEGMENT_CONFIG, type UserSegment, type UserSignals } from "@/lib/personalization/segmentation"
+import { inferSegment, type UserSegment, type UserSignals } from "@/lib/personalization/segmentation"
 import { getPersonalizedOrder } from "@/lib/personalization/recommendations"
 
 interface PersonalizedRailsProps {

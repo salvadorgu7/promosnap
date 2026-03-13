@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ user, site, search })
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    console.error('[test-ml] Error:', err)
+    return NextResponse.json({ error: 'Falha ao testar integracao ML' }, { status: 500 })
   }
 }
