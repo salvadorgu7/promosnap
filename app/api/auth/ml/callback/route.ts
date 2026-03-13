@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   // Validate state against cookie (CSRF protection)
   const savedState = req.cookies.get('ml_oauth_state')?.value
   if (!state || !savedState || state !== savedState) {
-    console.error('[ml-auth] State mismatch', { received: state, saved: savedState })
+    console.error('[ml-auth] State mismatch')
     return NextResponse.redirect(`${adminPage}?auth=error&reason=state_mismatch`)
   }
 
@@ -49,13 +49,13 @@ export async function GET(req: NextRequest) {
     const body = await res.json()
 
     if (!res.ok) {
-      console.error('[ml-auth] Token exchange failed:', res.status, JSON.stringify(body))
+      console.error('[ml-auth] Token exchange failed:', res.status)
       return NextResponse.redirect(`${adminPage}?auth=error&reason=exchange_failed`)
     }
 
     // Validate token structure
     if (!body.access_token) {
-      console.error('[ml-auth] Token exchange returned 200 but no access_token:', JSON.stringify(body))
+      console.error('[ml-auth] Token exchange returned 200 but no access_token')
       return NextResponse.redirect(`${adminPage}?auth=error&reason=no_access_token`)
     }
 
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     body.obtained_at = Date.now()
     await mlTokenStore.set(body)
 
-    console.log('[ml-auth] Token obtained successfully, user_id:', body.user_id, 'expires_in:', body.expires_in, 'token_type:', body.token_type, 'scope:', body.scope)
+    console.log(`[ml-auth] Token obtained, expires_in=${body.expires_in}s, type=${body.token_type}`)
 
     // Quick validation: test token against ML API
     try {

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const suggestions = await getSearchSuggestions(q, 5)
+    const suggestions = await getSearchSuggestions(q, 8)
     return NextResponse.json(suggestions)
   } catch {
     return NextResponse.json({ error: 'Failed to fetch suggestions' }, { status: 500 })

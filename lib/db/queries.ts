@@ -1,5 +1,6 @@
 import prisma from './prisma'
 import type { ProductCard, Badge } from '@/types'
+import { calculateCommercialScore, type CommercialSignals } from '@/lib/ranking/commercial'
 
 // ============================================
 // PRODUCT CARD BUILDER
@@ -91,6 +92,31 @@ const PRODUCT_SELECT_FOR_CARD = {
 }
 
 // ============================================
+// COMMERCIAL RANKING HELPER
+// ============================================
+
+function cardToSignals(card: ProductCard): CommercialSignals {
+  return {
+    currentPrice: card.bestOffer.price,
+    originalPrice: card.bestOffer.originalPrice,
+    offerScore: card.bestOffer.offerScore,
+    isFreeShipping: card.bestOffer.isFreeShipping,
+    hasImage: !!card.imageUrl,
+    hasAffiliate: card.bestOffer.affiliateUrl !== '#',
+  }
+}
+
+function rankCards(cards: ProductCard[], preset: string): ProductCard[] {
+  return cards
+    .map(card => ({
+      card,
+      score: calculateCommercialScore(cardToSignals(card), preset),
+    }))
+    .sort((a, b) => b.score.total - a.score.total)
+    .map(s => s.card)
+}
+
+// ============================================
 // HOME PAGE QUERIES
 // ============================================
 
@@ -101,7 +127,8 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
     orderBy: { popularityScore: 'desc' },
     take: limit * 2,
   })
-  return products.map(buildProductCard).filter(Boolean).sort((a, b) => (b!.bestOffer.offerScore) - (a!.bestOffer.offerScore)).slice(0, limit) as ProductCard[]
+  const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
+  return rankCards(cards, 'deal').slice(0, limit)
 }
 
 export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
@@ -109,9 +136,10 @@ export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
     where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true } }, salesCountEstimate: { gt: 0 } } } },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     orderBy: { popularityScore: 'desc' },
-    take: limit,
+    take: limit * 2,
   })
-  return products.map(buildProductCard).filter(Boolean) as ProductCard[]
+  const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
+  return rankCards(cards, 'trending').slice(0, limit)
 }
 
 export async function getLowestPrices(limit = 16): Promise<ProductCard[]> {
@@ -157,7 +185,7 @@ export async function getProductsByCategory(slug: string, options: {
   if (sort === 'price_asc') cards.sort((a, b) => a.bestOffer.price - b.bestOffer.price)
   else if (sort === 'price_desc') cards.sort((a, b) => b.bestOffer.price - a.bestOffer.price)
   else if (sort === 'discount') cards.sort((a, b) => (b.bestOffer.discount || 0) - (a.bestOffer.discount || 0))
-  else cards.sort((a, b) => b.bestOffer.offerScore - a.bestOffer.offerScore)
+  else cards = rankCards(cards, 'category')
 
   return { products: cards, total }
 }
@@ -188,7 +216,7 @@ export async function getProductsByBrand(slug: string, options: {
   let cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
   if (sort === 'price_asc') cards.sort((a, b) => a.bestOffer.price - b.bestOffer.price)
   else if (sort === 'price_desc') cards.sort((a, b) => b.bestOffer.price - a.bestOffer.price)
-  else cards.sort((a, b) => b.bestOffer.offerScore - a.bestOffer.offerScore)
+  else cards = rankCards(cards, 'brand')
 
   return { products: cards, total }
 }
@@ -315,9 +343,18 @@ export async function searchListings(query: string, options: {
   return { products: cards, total }
 }
 
-export async function getSearchSuggestions(query: string, limit = 5): Promise<string[]> {
+export interface SearchSuggestion {
+  text: string
+  type: 'product' | 'trending' | 'recent'
+}
+
+export async function getSearchSuggestions(query: string, limit = 8): Promise<SearchSuggestion[]> {
   if (!query || query.length < 2) return []
 
+  const suggestions: SearchSuggestion[] = []
+  const seen = new Set<string>()
+
+  // Source 1: Product names (highest priority)
   const products = await prisma.product.findMany({
     where: {
       status: 'ACTIVE',
@@ -328,7 +365,66 @@ export async function getSearchSuggestions(query: string, limit = 5): Promise<st
     orderBy: { popularityScore: 'desc' },
   })
 
-  return products.map(p => p.name)
+  for (const p of products) {
+    const key = p.name.toLowerCase()
+    if (!seen.has(key)) {
+      seen.add(key)
+      suggestions.push({ text: p.name, type: 'product' })
+    }
+  }
+
+  // Source 2: Trending keywords
+  try {
+    const trending = await prisma.trendingKeyword.findMany({
+      where: {
+        keyword: { contains: query, mode: 'insensitive' },
+      },
+      select: { keyword: true },
+      take: 5,
+      orderBy: { position: 'asc' },
+    })
+
+    for (const t of trending) {
+      const key = t.keyword.toLowerCase()
+      if (!seen.has(key)) {
+        seen.add(key)
+        suggestions.push({ text: t.keyword, type: 'trending' })
+      }
+    }
+  } catch {
+    // non-critical
+  }
+
+  // Source 3: Recent popular searches (last 7 days)
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const recentSearches = await prisma.searchLog.groupBy({
+      by: ['normalizedQuery'],
+      where: {
+        normalizedQuery: { contains: query.toLowerCase() },
+        createdAt: { gte: sevenDaysAgo },
+      },
+      _count: { normalizedQuery: true },
+      having: {
+        normalizedQuery: { _count: { gt: 1 } },
+      },
+      orderBy: { _count: { normalizedQuery: 'desc' } },
+      take: 5,
+    })
+
+    for (const s of recentSearches) {
+      if (!s.normalizedQuery) continue
+      const key = s.normalizedQuery.toLowerCase()
+      if (!seen.has(key)) {
+        seen.add(key)
+        suggestions.push({ text: s.normalizedQuery, type: 'recent' })
+      }
+    }
+  } catch {
+    // non-critical — SearchLog may not have data yet
+  }
+
+  return suggestions.slice(0, limit)
 }
 
 // ============================================

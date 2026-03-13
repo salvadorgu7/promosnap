@@ -16,7 +16,9 @@
     "test": "npx tsx lib/__tests__/run-all.ts",
     "test:smoke": "npx tsx scripts/smoke-test.ts",
     "verify": "npx tsx lib/__tests__/run-all.ts && npx tsx scripts/smoke-test.ts && next build",
-    "verify:quick": "npx tsx scripts/verify.ts"
+    "verify:quick": "npx tsx scripts/verify.ts",
+    "import:real": "npx tsx scripts/import-real.ts",
+    "import:urls": "npx tsx scripts/import-from-urls.ts"
   },
   "dependencies": {
     "@prisma/client": "6.2.1",

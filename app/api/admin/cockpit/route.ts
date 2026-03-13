@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateAdmin } from "@/lib/auth/admin";
 import prisma from "@/lib/db/prisma";
 import { getTopOpportunities, summarizeOpportunities } from "@/lib/opportunity/engine";
+import { findZeroResultSearches } from "@/lib/discovery";
 
 export async function GET(req: NextRequest) {
   const denied = validateAdmin(req);
@@ -88,6 +89,15 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+    // Zero-result searches (catalog gaps)
+    const zeroResultSearches = await findZeroResultSearches(10).catch(() => [])
+
+    // Search metrics summary
+    const [totalSearches7d, zeroResultCount7d] = await Promise.all([
+      prisma.searchLog.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      prisma.searchLog.count({ where: { createdAt: { gte: sevenDaysAgo }, resultsCount: 0 } }),
+    ])
+
     const clickoutsDelta =
       clickoutsLastWeek > 0
         ? Math.round(((clickoutsThisWeek - clickoutsLastWeek) / clickoutsLastWeek) * 100)
@@ -122,6 +132,16 @@ export async function GET(req: NextRequest) {
         lowTrustOffers,
         staleOffers,
         needsReviewProducts,
+      },
+      searchIntelligence: {
+        totalSearches7d,
+        zeroResultCount7d,
+        zeroResultRate: totalSearches7d > 0 ? Math.round((zeroResultCount7d / totalSearches7d) * 100) : 0,
+        topZeroResultQueries: zeroResultSearches.map(z => ({
+          query: z.query,
+          count: z.count,
+          lastSearched: z.lastSearched,
+        })),
       },
     });
   } catch (error) {

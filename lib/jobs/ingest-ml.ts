@@ -1,24 +1,26 @@
 import prisma from '@/lib/db/prisma';
 import { runJob, type JobResult } from '@/lib/jobs/runner';
-
-interface MLTrend {
-  keyword: string;
-  url: string;
-}
+import { fetchTrendingSignals } from '@/lib/ml-discovery';
 
 export async function ingestMLTrends(): Promise<JobResult> {
   return runJob('ingest-ml-trends', async (ctx) => {
-    ctx.log('Fetching trends from Mercado Libre API...');
+    // Check ML credentials before attempting fetch
+    const hasML = !!(
+      (process.env.MERCADOLIVRE_APP_ID || process.env.ML_CLIENT_ID) &&
+      (process.env.MERCADOLIVRE_SECRET || process.env.ML_CLIENT_SECRET)
+    )
+    if (!hasML) {
+      ctx.log('ML credentials not configured — skipping trends ingestion')
+      return { itemsTotal: 0, itemsDone: 0, metadata: { skipped: true, reason: 'ml_credentials_missing' } }
+    }
 
-    let trends: MLTrend[] = [];
+    ctx.log('Fetching trends from ML discovery engine...');
+
+    let trends: Awaited<ReturnType<typeof fetchTrendingSignals>> = [];
 
     try {
-      const response = await fetch('https://api.mercadolibre.com/trends/MLB');
-      if (!response.ok) {
-        throw new Error(`API responded with status ${response.status}`);
-      }
-      trends = await response.json();
-      ctx.log(`Fetched ${trends.length} trends from API`);
+      trends = await fetchTrendingSignals();
+      ctx.log(`Fetched ${trends.length} trends`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       ctx.error(`Failed to fetch ML trends: ${message}`);
@@ -62,7 +64,10 @@ export async function ingestMLTrends(): Promise<JobResult> {
     return {
       itemsTotal: trends.length,
       itemsDone: persisted,
-      metadata: { fetchedAt: now.toISOString() },
+      metadata: {
+        fetchedAt: now.toISOString(),
+        categoriesResolved: trends.filter(t => t.resolvedCategory).length,
+      },
     };
   });
 }

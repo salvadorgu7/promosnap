@@ -2,8 +2,25 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, TrendingUp } from "lucide-react";
+import { Search, TrendingUp, Clock } from "lucide-react";
 import VoiceSearch from "./VoiceSearch";
+
+interface Suggestion {
+  text: string;
+  type: "product" | "trending" | "recent";
+}
+
+const SUGGESTION_ICON: Record<Suggestion["type"], typeof Search> = {
+  product: Search,
+  trending: TrendingUp,
+  recent: Clock,
+};
+
+const SUGGESTION_COLOR: Record<Suggestion["type"], string> = {
+  product: "text-surface-400",
+  trending: "text-orange-400",
+  recent: "text-blue-400",
+};
 
 const POPULAR_SEARCHES = [
   "iPhone 15",
@@ -19,7 +36,7 @@ const POPULAR_SEARCHES = [
 export default function SearchBar({ large = false }: { large?: boolean }) {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -39,10 +56,20 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
     setLoading(true);
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search/suggest?q=${encodeURIComponent(query.trim())}`);
+        const res = await fetch(
+          `/api/search/suggest?q=${encodeURIComponent(query.trim())}`
+        );
         if (res.ok) {
-          const data: string[] = await res.json();
-          setSuggestions(data);
+          const data = await res.json();
+          // Support both old (string[]) and new (Suggestion[]) formats
+          const mapped: Suggestion[] = Array.isArray(data)
+            ? data.map((item: string | Suggestion) =>
+                typeof item === "string"
+                  ? { text: item, type: "product" as const }
+                  : item
+              )
+            : [];
+          setSuggestions(mapped);
         } else {
           setSuggestions([]);
         }
@@ -75,7 +102,7 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
     (e: React.FormEvent) => {
       e.preventDefault();
       if (highlightIndex >= 0 && suggestions[highlightIndex]) {
-        navigate(suggestions[highlightIndex]);
+        navigate(suggestions[highlightIndex].text);
       } else {
         navigate(query);
       }
@@ -95,7 +122,9 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
         setHighlightIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setHighlightIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1));
+        setHighlightIndex((prev) =>
+          prev > 0 ? prev - 1 : items.length - 1
+        );
       } else if (e.key === "Escape") {
         setFocused(false);
         setHighlightIndex(-1);
@@ -157,23 +186,32 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
         <div className="absolute top-full left-0 right-0 mt-2 rounded-xl bg-white border border-surface-200 shadow-lg z-50 animate-fade-in overflow-hidden">
           {hasSuggestions ? (
             <ul role="listbox" className="py-1">
-              {suggestions.map((s, i) => (
-                <li
-                  key={s}
-                  role="option"
-                  aria-selected={i === highlightIndex}
-                  className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-                    i === highlightIndex
-                      ? "bg-surface-100 text-accent-blue"
-                      : "text-text-primary hover:bg-surface-50"
-                  }`}
-                  onMouseDown={() => navigate(s)}
-                  onMouseEnter={() => setHighlightIndex(i)}
-                >
-                  <Search className="h-3.5 w-3.5 text-surface-400 flex-shrink-0" />
-                  <span className="text-sm truncate">{s}</span>
-                </li>
-              ))}
+              {suggestions.map((s, i) => {
+                const Icon = SUGGESTION_ICON[s.type] || Search;
+                const iconColor = SUGGESTION_COLOR[s.type] || "text-surface-400";
+                return (
+                  <li
+                    key={`${s.type}-${s.text}`}
+                    role="option"
+                    aria-selected={i === highlightIndex}
+                    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
+                      i === highlightIndex
+                        ? "bg-surface-100 text-accent-blue"
+                        : "text-text-primary hover:bg-surface-50"
+                    }`}
+                    onMouseDown={() => navigate(s.text)}
+                    onMouseEnter={() => setHighlightIndex(i)}
+                  >
+                    <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${iconColor}`} />
+                    <span className="text-sm truncate">{s.text}</span>
+                    {s.type === "trending" && (
+                      <span className="ml-auto text-[10px] font-medium text-orange-400 bg-orange-50 px-1.5 py-0.5 rounded">
+                        trending
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           ) : query.trim().length >= 2 && loading ? (
             <div className="px-4 py-4 text-center">

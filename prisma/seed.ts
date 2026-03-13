@@ -485,11 +485,115 @@ async function main() {
   }
   console.log(`✅ ${trends.length} trending keywords`);
 
-  // 8. Articles
+  // 8. Subscribers
+  const subscriberEmails = [
+    { email: "joao@teste.com", tags: ["eletronicos", "gamer"], interests: ["eletronicos", "gamer"] },
+    { email: "maria@teste.com", tags: ["beleza", "moda"], interests: ["beleza", "moda"] },
+    { email: "pedro@teste.com", tags: ["informatica", "notebooks"], interests: ["informatica", "notebooks"] },
+    { email: "ana@teste.com", tags: ["casa", "infantil"], interests: ["casa", "infantil"] },
+    { email: "lucas@teste.com", tags: ["esportes", "celulares"], interests: ["esportes", "celulares"] },
+  ];
+
+  for (const sub of subscriberEmails) {
+    await prisma.subscriber.upsert({
+      where: { email: sub.email },
+      update: {},
+      create: {
+        email: sub.email,
+        status: "ACTIVE",
+        frequency: "daily",
+        tags: sub.tags,
+        interests: sub.interests,
+      },
+    });
+  }
+  console.log(`✅ ${subscriberEmails.length} subscribers`);
+
+  // 9. Price Alerts (linked to real listings, targetPrice slightly above current to allow testing)
+  const sampleListings = await prisma.listing.findMany({
+    take: 5,
+    orderBy: { createdAt: "desc" },
+    include: {
+      offers: {
+        where: { isActive: true },
+        take: 1,
+        orderBy: { currentPrice: "asc" },
+      },
+    },
+  });
+
+  let alertCount = 0;
+  for (let i = 0; i < sampleListings.length; i++) {
+    const listing = sampleListings[i];
+    const bestOffer = listing.offers[0];
+    if (!bestOffer) continue;
+
+    // Set target price slightly above current so alerts can be triggered by price drops
+    const targetPrice = Math.round(bestOffer.currentPrice * 1.05 * 100) / 100;
+
+    await prisma.priceAlert.create({
+      data: {
+        listingId: listing.id,
+        email: subscriberEmails[i % subscriberEmails.length].email,
+        targetPrice,
+        isActive: true,
+      },
+    });
+    alertCount++;
+  }
+  console.log(`✅ ${alertCount} price alerts`);
+
+  // 10. Search Logs (simulated searches from last 7 days)
+  const popularQueries = [
+    "iphone 15", "air fryer", "notebook gamer", "fone bluetooth", "smart tv",
+    "playstation 5", "cadeira gamer", "kindle", "xiaomi", "nike air max",
+    "samsung galaxy", "macbook", "jbl flip", "airpods", "perfume importado",
+    "lego", "echo dot", "tênis adidas", "mouse gamer", "monitor gamer",
+  ];
+  const zeroResultQueries = [
+    "geladeira duplex smart", "drone dji mini 4", "oculus quest 3",
+    "aspirador dyson v15", "gopro hero 12",
+  ];
+
+  let searchLogCount = 0;
+  const now = Date.now();
+  for (const q of popularQueries) {
+    const daysAgo = randomBetween(0, 6);
+    const count = randomBetween(2, 8);
+    for (let j = 0; j < count; j++) {
+      await prisma.searchLog.create({
+        data: {
+          query: q,
+          normalizedQuery: q.toLowerCase(),
+          resultsCount: randomBetween(3, 50),
+          createdAt: new Date(now - daysAgo * 86400000 - randomBetween(0, 86400000)),
+        },
+      });
+      searchLogCount++;
+    }
+  }
+  for (const q of zeroResultQueries) {
+    const daysAgo = randomBetween(0, 4);
+    for (let j = 0; j < randomBetween(2, 5); j++) {
+      await prisma.searchLog.create({
+        data: {
+          query: q,
+          normalizedQuery: q.toLowerCase(),
+          resultsCount: 0,
+          createdAt: new Date(now - daysAgo * 86400000 - randomBetween(0, 86400000)),
+        },
+      });
+      searchLogCount++;
+    }
+  }
+  console.log(`✅ ${searchLogCount} search logs (${zeroResultQueries.length} zero-result queries)`);
+
+  // 11. Articles
   await seedArticles();
 
-  console.log("\n🎉 Seed V8 completo!");
+  console.log("\n🎉 Seed V9 completo!");
   console.log(`   📦 ${productCount} produtos | 📋 ${listingCount} listings | 💰 ${offerCount} ofertas | 📊 ${snapshotCount} snapshots`);
+  console.log(`   👥 ${subscriberEmails.length} subscribers | 🔔 ${alertCount} alerts | 🔍 ${searchLogCount} search logs`);
 }
 
 main()

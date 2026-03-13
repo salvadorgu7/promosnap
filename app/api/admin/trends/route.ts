@@ -1,40 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
-import { getMLToken } from '@/lib/ml-auth'
+import { fetchTrendingSignals } from '@/lib/ml-discovery'
+import prisma from '@/lib/db/prisma'
 
-interface MLTrend {
-  keyword: string
-  url: string
-}
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   const denied = validateAdmin(req)
   if (denied) return denied
 
   try {
-    const token = await getMLToken()
-    const res = await fetch('https://api.mercadolibre.com/trends/MLB', {
-      headers: {
-        'User-Agent': 'PromoSnap/1.0',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    })
+    const trends = await fetchTrendingSignals()
 
-    if (!res.ok) {
-      return NextResponse.json({ error: `ML API ${res.status}` }, { status: 502 })
+    if (trends.length === 0) {
+      return NextResponse.json({
+        count: 0,
+        keywords: [],
+        message: 'Nenhuma tendencia retornada pelo ML. Verifique credenciais em /admin/integrations/ml',
+      })
     }
 
-    const trends: MLTrend[] = await res.json()
+    // Persist trends to DB for public use (fire-and-forget)
+    try {
+      const now = new Date()
+      await prisma.trendingKeyword.createMany({
+        data: trends.map((t, i) => ({
+          keyword: t.keyword,
+          url: t.url,
+          position: i + 1,
+          fetchedAt: now,
+        })),
+        skipDuplicates: true,
+      })
+    } catch {
+      // Non-critical — don't fail the response
+    }
 
     return NextResponse.json({
       count: trends.length,
-      keywords: trends.map((t) => t.keyword),
-      hint: 'Pesquise essas keywords no mercadolivre.com.br, copie as URLs dos produtos desejados e use POST /api/admin/ingest com os IDs MLB extraídos.',
+      keywords: trends.map(t => t.keyword),
+      trends: trends.map(t => ({
+        keyword: t.keyword,
+        url: t.url,
+        category: t.resolvedCategory?.name || null,
+        categoryId: t.resolvedCategory?.id || null,
+      })),
+      hint: 'Use GET /api/admin/ml/discovery?q={keyword} para descobrir produtos de cada tendencia.',
     })
   } catch (err) {
-    console.error("[trends] Error:", err)
+    console.error('[admin/trends] Error:', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'Erro ao buscar tendencias' }, { status: 500 })
   }
 }

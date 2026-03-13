@@ -35,7 +35,7 @@ class MLTokenStore {
         create: { key: ML_TOKEN_KEY, value: JSON.stringify(token) },
         update: { value: JSON.stringify(token) },
       })
-      console.log('[ml-auth] Token saved to database')
+      // Token persisted to DB
     } catch (err) {
       console.error('[ml-auth] Failed to save token to DB:', err)
     }
@@ -50,7 +50,6 @@ class MLTokenStore {
       })
       if (row) {
         this.cache = JSON.parse(row.value) as MLToken
-        console.log('[ml-auth] Token loaded from database')
         return this.cache
       }
     } catch (err) {
@@ -123,7 +122,7 @@ export async function getMLAppToken(): Promise<string> {
     expiresAt: Date.now() + (data.expires_in || 21600) * 1000,
   }
 
-  console.log('[ml-auth] App token obtained via client_credentials, expires_in:', data.expires_in)
+  console.log(`[ml-auth] App token obtained, expires_in=${data.expires_in}s`)
   return data.access_token
 }
 

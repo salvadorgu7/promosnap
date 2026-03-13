@@ -80,6 +80,7 @@ async function tryInitRedis(): Promise<boolean> {
   if (redisCache !== null) return redisAvailable
   try {
     const { redis } = await import('@/lib/db/redis')
+    if (!redis) return false
     // Quick ping to check connection
     await redis.ping()
     redisCache = redis

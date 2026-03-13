@@ -95,15 +95,20 @@ export default async function HomePage() {
   // Source stats for comparison section
   let sourceStats: { name: string; slug: string; offerCount: number; status: string }[] = [];
   try {
-    const sources = await prisma.source.findMany({ where: { status: "ACTIVE" } });
-    sourceStats = await Promise.all(
-      sources.map(async (s) => {
-        const offerCount = await prisma.offer.count({
-          where: { isActive: true, listing: { sourceId: s.id } },
-        });
-        return { name: s.name, slug: s.slug, offerCount, status: "READY" };
-      })
-    );
+    const sources = await prisma.source.findMany({
+      where: { status: "ACTIVE" },
+      select: {
+        name: true,
+        slug: true,
+        _count: { select: { listings: { where: { status: "ACTIVE", offers: { some: { isActive: true } } } } } },
+      },
+    });
+    sourceStats = sources.map((s) => ({
+      name: s.name,
+      slug: s.slug,
+      offerCount: s._count.listings,
+      status: "READY",
+    }));
   } catch {}
 
   // Category rails (top 3 categories with products)

@@ -4,86 +4,13 @@
 
 import prisma from '@/lib/db/prisma'
 import { dailyDealsEmail } from '@/lib/email/templates'
+import { sendEmail, isEmailConfigured } from '@/lib/email/send'
 import { segmentSubscribers, getSegmentedDeals } from '@/lib/email/segmentation'
-
-const FROM_EMAIL = 'PromoSnap <noreply@promosnap.com.br>'
 
 interface SendResult {
   sent: number
   failed: number
   skipped: number
-}
-
-/**
- * Check if email provider is configured. Returns false if RESEND_API_KEY is missing.
- */
-function isEmailConfigured(): boolean {
-  return !!process.env.RESEND_API_KEY
-}
-
-/**
- * Send a single email via Resend. Logs the result to EmailLog.
- */
-async function sendEmail(opts: {
-  to: string
-  subject: string
-  html: string
-  template: string
-}): Promise<boolean> {
-  if (!isEmailConfigured()) {
-    console.warn('[email-jobs] RESEND_API_KEY not configured, skipping send')
-    return false
-  }
-
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: opts.to,
-        subject: opts.subject,
-        html: opts.html,
-      }),
-    })
-
-    const ok = res.ok
-
-    try {
-      await prisma.emailLog.create({
-        data: {
-          to: opts.to,
-          subject: opts.subject,
-          template: opts.template,
-          status: ok ? 'sent' : 'failed',
-        },
-      })
-    } catch {
-      // logging failure should not block the job
-    }
-
-    return ok
-  } catch (error) {
-    console.error('[email-jobs] Send failed:', error)
-
-    try {
-      await prisma.emailLog.create({
-        data: {
-          to: opts.to,
-          subject: opts.subject,
-          template: opts.template,
-          status: 'failed',
-        },
-      })
-    } catch {
-      // logging failure should not block the job
-    }
-
-    return false
-  }
 }
 
 /**
