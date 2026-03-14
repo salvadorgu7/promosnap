@@ -249,6 +249,8 @@ export async function POST(req: NextRequest) {
     backfillDebug.sampleMisses = sampleMisses;
     backfillDebug.sampleHits = sampleHits;
     backfillDebug.idToParentSize = idToParent.size;
+    backfillDebug.sampleIdToParentKeys = Array.from(idToParent.keys()).slice(0, 5);
+    backfillDebug.sampleHydratedExtIds = hydratedProducts.slice(0, 5).map(p => p.externalId);
 
     if (extIdToSlug.size > 0) {
       const orphanProducts = await prisma.product.findMany({
