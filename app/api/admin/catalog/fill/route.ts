@@ -216,19 +216,41 @@ export async function POST(req: NextRequest) {
   }
 
   // Phase 4: Direct category backfill for existing products
-  // The import pipeline may skip category assignment for existing products.
-  // This step directly updates products that have listings with known ML IDs.
   let backfilled = 0;
+  const backfillDebug: Record<string, unknown> = {};
   try {
     // Build externalId → categorySlug map from hydrated products + parent mapping
     const extIdToSlug = new Map<string, string>();
+    let directHits = 0, parentHits = 0, misses = 0;
+    const sampleMisses: string[] = [];
+    const sampleHits: { extId: string; catId: string; parentCat: string; slug: string }[] = [];
+
     for (const p of hydratedProducts) {
-      const slug = mlCategoryToSlug(p.categoryId || "") || mlCategoryToSlug(idToParent.get(p.externalId) || "");
-      if (slug) extIdToSlug.set(p.externalId, slug);
+      const directSlug = mlCategoryToSlug(p.categoryId || "");
+      const parentCat = idToParent.get(p.externalId) || "";
+      const parentSlug = mlCategoryToSlug(parentCat);
+      const slug = directSlug || parentSlug;
+
+      if (slug) {
+        extIdToSlug.set(p.externalId, slug);
+        if (directSlug) directHits++;
+        else parentHits++;
+        if (sampleHits.length < 3) sampleHits.push({ extId: p.externalId, catId: p.categoryId || "", parentCat, slug });
+      } else {
+        misses++;
+        if (sampleMisses.length < 5) sampleMisses.push(`${p.externalId}|cat=${p.categoryId}|parent=${parentCat}`);
+      }
     }
 
+    backfillDebug.extIdToSlugSize = extIdToSlug.size;
+    backfillDebug.directHits = directHits;
+    backfillDebug.parentHits = parentHits;
+    backfillDebug.misses = misses;
+    backfillDebug.sampleMisses = sampleMisses;
+    backfillDebug.sampleHits = sampleHits;
+    backfillDebug.idToParentSize = idToParent.size;
+
     if (extIdToSlug.size > 0) {
-      // Find products without categories that have listings matching our known externalIds
       const orphanProducts = await prisma.product.findMany({
         where: { categoryId: null },
         select: {
@@ -236,14 +258,21 @@ export async function POST(req: NextRequest) {
           listings: { select: { externalId: true }, take: 1 },
         },
       });
+      backfillDebug.orphanProducts = orphanProducts.length;
 
+      let matched = 0, unmatched = 0;
+      const sampleOrphans: string[] = [];
       for (const prod of orphanProducts) {
         const extId = prod.listings[0]?.externalId;
-        if (!extId) continue;
+        if (!extId) { unmatched++; continue; }
         const slug = extIdToSlug.get(extId);
-        if (!slug) continue;
+        if (!slug) {
+          unmatched++;
+          if (sampleOrphans.length < 5) sampleOrphans.push(extId);
+          continue;
+        }
+        matched++;
 
-        // Ensure category exists
         const cat = await prisma.category.upsert({
           where: { slug },
           create: {
@@ -252,17 +281,20 @@ export async function POST(req: NextRequest) {
           },
           update: {},
         });
-
         await prisma.product.update({
           where: { id: prod.id },
           data: { categoryId: cat.id },
         });
         backfilled++;
       }
+      backfillDebug.matched = matched;
+      backfillDebug.unmatched = unmatched;
+      backfillDebug.sampleUnmatchedOrphans = sampleOrphans;
     }
-    console.log(`[catalog/fill] Category backfill: ${backfilled} products updated`);
+    console.log(`[catalog/fill] Category backfill: ${backfilled} products updated`, backfillDebug);
   } catch (err) {
     console.error(`[catalog/fill] Category backfill error:`, err);
+    backfillDebug.error = err instanceof Error ? err.message : String(err);
   }
 
   return NextResponse.json({
@@ -271,6 +303,7 @@ export async function POST(req: NextRequest) {
     hydratedProducts: hydratedProducts.length,
     imported: agg,
     categoryBackfill: backfilled,
+    backfillDebug,
     categoryStats,
   });
 }
