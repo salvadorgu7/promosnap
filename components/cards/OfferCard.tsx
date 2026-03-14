@@ -68,7 +68,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
     }
     const base = bestOffer.affiliateUrl;
     const params = new URLSearchParams();
-    if ((product as any).originType) params.set('origin', (product as any).originType);
+    if (product.originType) params.set('origin', product.originType);
     if (railSource) params.set('rail', railSource);
     if (page) params.set('page', page);
     const sep = base.includes('?') ? '&' : '?';

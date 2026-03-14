@@ -110,6 +110,7 @@ export interface ProductCard {
   offersCount: number
   minPrice30d?: number
   popularityScore: number
+  originType?: string
   badges: Badge[]
 }
 

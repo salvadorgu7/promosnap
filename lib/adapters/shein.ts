@@ -1,5 +1,10 @@
-// Shein Source Adapter (STUB)
-// Ready for real Shein Affiliate API integration.
+// Placeholder adapter — not yet connected to real API
+//
+// To connect this adapter, you need:
+//   1. Shein Affiliate Program approval
+//   2. Set env var: SHEIN_API_KEY
+//   3. Implement product search and detail endpoints via Shein Affiliate API
+//   See: https://affiliate.shein.com/ for API documentation
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 
@@ -35,7 +40,7 @@ export class SheinSourceAdapter implements SourceAdapter {
       return this.getMockResults(query, options?.limit)
     }
 
-    // TODO: Implement Shein Affiliate API search
+    // NOT IMPLEMENTED: Requires Shein Affiliate API /products/search endpoint
     // https://api.shein.com/affiliate/v1/products/search
     //
     // const res = await fetch('https://api.shein.com/affiliate/v1/products/search', {
@@ -64,7 +69,7 @@ export class SheinSourceAdapter implements SourceAdapter {
       return this.getMockProduct(externalId)
     }
 
-    // TODO: Implement Shein Affiliate API product detail
+    // NOT IMPLEMENTED: Requires Shein Affiliate API /products/detail endpoint
     console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — Shein API integration pending`)
     return this.getMockProduct(externalId)
   }

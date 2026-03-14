@@ -1,5 +1,10 @@
-// Shopee Source Adapter (STUB)
-// Ready for real Shopee Open Platform integration.
+// Placeholder adapter — not yet connected to real API
+//
+// To connect this adapter, you need:
+//   1. Shopee Open Platform partner approval
+//   2. Set env vars: SHOPEE_APP_ID, SHOPEE_APP_SECRET
+//   3. Implement HMAC-signed API calls for product search and item detail
+//   See: https://open.shopee.com/documents/v2/ for API documentation
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 
@@ -35,7 +40,7 @@ export class ShopeeSourceAdapter implements SourceAdapter {
       return this.getMockResults(query, options?.limit)
     }
 
-    // TODO: Implement Shopee Open Platform API
+    // NOT IMPLEMENTED: Requires Shopee Open Platform v2.product.search_item with HMAC signing
     // https://open.shopee.com/documents/v2/v2.product.search_item
     //
     // const timestamp = Math.floor(Date.now() / 1000)
@@ -56,7 +61,7 @@ export class ShopeeSourceAdapter implements SourceAdapter {
       return this.getMockProduct(externalId)
     }
 
-    // TODO: Implement Shopee Open Platform GetItemDetail
+    // NOT IMPLEMENTED: Requires Shopee Open Platform v2.product.get_item_detail with HMAC signing
     console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — Shopee API integration pending`)
     return this.getMockProduct(externalId)
   }

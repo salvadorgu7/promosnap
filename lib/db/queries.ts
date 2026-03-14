@@ -52,6 +52,7 @@ export function buildProductCard(p: any): ProductCard | null {
     },
     offersCount: allOffers.length,
     popularityScore: p.popularityScore,
+    originType: p.originType || undefined,
     badges,
   }
 }
@@ -517,6 +518,17 @@ export async function searchListings(query: string, options: {
   else if (sort === 'price_desc') cards.sort((a, b) => b.bestOffer.price - a.bestOffer.price)
   else if (sort === 'score') cards.sort((a, b) => b.bestOffer.offerScore - a.bestOffer.offerScore)
   else if (sort === 'discount') cards.sort((a, b) => (b.bestOffer.discount || 0) - (a.bestOffer.discount || 0))
+  else if (sort === 'relevance') {
+    // Secondary boost: prefer imported/real products over seed data
+    // Primary sort is already popularityScore from the DB query
+    cards.sort((a, b) => {
+      const aImported = a.originType === 'imported' ? 1 : 0
+      const bImported = b.originType === 'imported' ? 1 : 0
+      if (aImported !== bImported) return bImported - aImported
+      // Preserve existing popularityScore order for ties
+      return b.popularityScore - a.popularityScore
+    })
+  }
 
   // Log search (fire-and-forget)
   prisma.searchLog.create({ data: { query, normalizedQuery: query.toLowerCase().trim(), resultsCount: total } }).catch(() => {})

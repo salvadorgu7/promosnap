@@ -110,9 +110,12 @@ export async function POST(req: NextRequest) {
   const authError = validateAdmin(req)
   if (authError) return authError
 
+  let jobName = 'unknown'
+  const startTime = Date.now()
+
   try {
     const body = await req.json()
-    const jobName = body.job as string
+    jobName = (body.job as string) || ''
 
     if (!jobName) {
       return NextResponse.json(
@@ -131,7 +134,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const startTime = Date.now()
     const result = await jobInfo.fn()
     const durationMs = Date.now() - startTime
 
@@ -143,12 +145,13 @@ export async function POST(req: NextRequest) {
       result,
     })
   } catch (error) {
+    const durationMs = Date.now() - startTime
     const { captureError } = await import('@/lib/monitoring')
-    const jobName = await req.clone().json().then(b => b.job).catch(() => 'unknown')
     await captureError(error, { route: '/api/admin/jobs/run', job: jobName })
-    console.error(`[admin/jobs/run] Job "${jobName}" failed:`, error instanceof Error ? error.message : error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error(`[admin/jobs/run] Job "${jobName}" failed:`, errorMessage)
     return NextResponse.json(
-      { error: 'Falha ao executar job', job: jobName },
+      { error: 'Falha ao executar job', job: jobName, durationMs, detail: errorMessage },
       { status: 500 }
     )
   }

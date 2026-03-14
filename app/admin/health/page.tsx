@@ -1,5 +1,6 @@
 import { runAllHealthChecks } from '@/lib/health/checks'
 import type { HealthCheckResult, HealthStatus } from '@/lib/health/types'
+import prisma from '@/lib/db/prisma'
 import {
   Activity,
   AlertTriangle,
@@ -12,6 +13,12 @@ import {
   Timer,
   XCircle,
   Info,
+  Package,
+  Tag,
+  Users,
+  Search,
+  Lightbulb,
+  BarChart3,
 } from 'lucide-react'
 import {
   toSeverity,

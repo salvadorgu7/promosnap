@@ -1,5 +1,10 @@
-// Amazon PA-API Source Adapter (STUB)
-// Ready for real PA-API 5.0 integration — returns mock data until configured.
+// Placeholder adapter — not yet connected to real API
+//
+// To connect this adapter, you need:
+//   1. An Amazon Associates account with PA-API 5.0 access
+//   2. Set env vars: AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_PARTNER_TAG
+//   3. Implement SearchItems and GetItems calls per PA-API 5.0 docs
+//   See: https://webservices.amazon.com/paapi5/documentation/
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 
@@ -35,7 +40,7 @@ export class AmazonSourceAdapter implements SourceAdapter {
       return this.getMockResults(query, options?.limit)
     }
 
-    // TODO: Implement real PA-API 5.0 SearchItems
+    // NOT IMPLEMENTED: Requires PA-API 5.0 SearchItems call
     // https://webservices.amazon.com/paapi5/documentation/search-items.html
     //
     // const params = {
@@ -61,7 +66,7 @@ export class AmazonSourceAdapter implements SourceAdapter {
       return this.getMockProduct(externalId)
     }
 
-    // TODO: Implement PA-API 5.0 GetItems
+    // NOT IMPLEMENTED: Requires PA-API 5.0 GetItems call
     console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — PA-API integration pending`)
     return this.getMockProduct(externalId)
   }
