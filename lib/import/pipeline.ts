@@ -43,6 +43,7 @@ export interface ImportPipelineResult {
   items: ImportItemResult[]
   durationMs: number
   sourceSlug: string
+  noAffiliateUrl: number
   brandStats: { detected: number; unknown: number }
   categoryStats: { resolved: number; unresolved: number }
   priceStats: { min: number; max: number; avg: number }
@@ -162,6 +163,7 @@ export async function runImportPipeline(
   const start = Date.now()
   const results: ImportItemResult[] = []
   let created = 0, updated = 0, skipped = 0, failed = 0
+  let noAffiliateUrl = 0
   let canonicalMatches = 0
   let brandsDetected = 0, brandsUnknown = 0
   let catsResolved = 0, catsUnresolved = 0
@@ -173,7 +175,7 @@ export async function runImportPipeline(
   const emptyPriceStats = { min: 0, max: 0, avg: 0 }
 
   if (items.length === 0) {
-    return { created, updated, skipped, failed, total: 0, items: results, durationMs: 0, sourceSlug: '', brandStats: emptyStats, categoryStats: { resolved: 0, unresolved: 0 }, priceStats: emptyPriceStats }
+    return { created, updated, skipped, failed, total: 0, items: results, durationMs: 0, sourceSlug: '', noAffiliateUrl: 0, brandStats: emptyStats, categoryStats: { resolved: 0, unresolved: 0 }, priceStats: emptyPriceStats }
   }
 
   const sourceSlug = items[0].sourceSlug
@@ -362,6 +364,11 @@ export async function runImportPipeline(
       // Create offer + snapshot
       // Use productUrl as affiliateUrl for imported products (ML permalink etc.)
       const affiliateUrl = item.productUrl || null
+      const hasValidAffiliateUrl = !!affiliateUrl && affiliateUrl !== '#' && affiliateUrl.startsWith('http')
+      if (!hasValidAffiliateUrl) {
+        console.warn(`[import-pipeline] product "${cleanTitle}" has no valid affiliate URL`)
+        noAffiliateUrl++
+      }
       const offer = await prisma.offer.create({
         data: {
           listingId: listing.id,
@@ -412,7 +419,7 @@ export async function runImportPipeline(
   // Batch summary
   const topBrands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k}:${v}`).join(', ')
   const topCats = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k}:${v}`).join(', ')
-  console.log(`[import-pipeline] batch complete: source=${sourceSlug} created=${created} updated=${updated} skipped=${skipped} failed=${failed} canonicalMatches=${canonicalMatches} brands=[${topBrands}] categories=[${topCats}] priceRange=R$${priceStats.min.toFixed(0)}-R$${priceStats.max.toFixed(0)}`)
+  console.log(`[import-pipeline] batch complete: source=${sourceSlug} created=${created} updated=${updated} skipped=${skipped} failed=${failed} noAffiliateUrl=${noAffiliateUrl} canonicalMatches=${canonicalMatches} brands=[${topBrands}] categories=[${topCats}] priceRange=R$${priceStats.min.toFixed(0)}-R$${priceStats.max.toFixed(0)}`)
 
-  return { created, updated, skipped, failed, total: items.length, items: results, durationMs, sourceSlug, brandStats, categoryStats, priceStats }
+  return { created, updated, skipped, failed, total: items.length, items: results, durationMs, sourceSlug, noAffiliateUrl, brandStats, categoryStats, priceStats }
 }

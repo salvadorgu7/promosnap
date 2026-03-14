@@ -66,7 +66,9 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
 
   if (bestOffer) {
     const snapshots = await getPriceHistory(bestOffer.id, 90);
-    if (snapshots.length >= 2) {
+    const hasTimeSpread = snapshots.length >= 2 &&
+      (snapshots[snapshots.length - 1].capturedAt.getTime() - snapshots[0].capturedAt.getTime()) > 24 * 60 * 60 * 1000;
+    if (hasTimeSpread) {
       priceHistory = snapshots.map((s) => ({
         date: s.capturedAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
         price: s.price,

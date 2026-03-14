@@ -128,11 +128,12 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
   // Price history from best offer
   let priceHistory: PriceHistoryPoint[] = [];
   let priceStats: PriceStats | null = null;
-  const hasSufficientHistory = false;
 
   if (bestOffer) {
     const snapshots = await getPriceHistory(bestOffer.id, 90);
-    if (snapshots.length >= 3) {
+    const hasTimeSpread = snapshots.length >= 3 &&
+      (snapshots[snapshots.length - 1].capturedAt.getTime() - snapshots[0].capturedAt.getTime()) > 24 * 60 * 60 * 1000;
+    if (hasTimeSpread) {
       priceHistory = snapshots.map((s) => ({
         date: s.capturedAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
         price: s.price,
