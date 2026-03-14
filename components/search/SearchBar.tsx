@@ -2,23 +2,27 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, TrendingUp, Clock } from "lucide-react";
+import { Search, TrendingUp, Clock, Tag, Package } from "lucide-react";
 import VoiceSearch from "./VoiceSearch";
 
 interface Suggestion {
   text: string;
-  type: "product" | "trending" | "recent";
+  type: "product" | "trending" | "popular" | "brand" | "recent";
 }
 
 const SUGGESTION_ICON: Record<Suggestion["type"], typeof Search> = {
-  product: Search,
+  product: Package,
   trending: TrendingUp,
+  popular: Search,
+  brand: Tag,
   recent: Clock,
 };
 
 const SUGGESTION_COLOR: Record<Suggestion["type"], string> = {
   product: "text-surface-400",
   trending: "text-orange-400",
+  popular: "text-blue-400",
+  brand: "text-purple-400",
   recent: "text-blue-400",
 };
 
@@ -207,6 +211,16 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
                     {s.type === "trending" && (
                       <span className="ml-auto text-[10px] font-medium text-orange-400 bg-orange-50 px-1.5 py-0.5 rounded">
                         trending
+                      </span>
+                    )}
+                    {s.type === "popular" && (
+                      <span className="ml-auto text-[10px] font-medium text-blue-400 bg-blue-50 px-1.5 py-0.5 rounded">
+                        popular
+                      </span>
+                    )}
+                    {s.type === "brand" && (
+                      <span className="ml-auto text-[10px] font-medium text-purple-400 bg-purple-50 px-1.5 py-0.5 rounded">
+                        marca
                       </span>
                     )}
                   </li>

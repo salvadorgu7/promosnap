@@ -102,11 +102,28 @@ export async function GET(request: NextRequest) {
       // originType column may not exist — skip
     }
 
+    // Check which keywords match imported products specifically
+    const importedCounts = await Promise.all(
+      keywordNames.slice(0, 15).map(kw =>
+        prisma.product.count({
+          where: {
+            status: "ACTIVE",
+            originType: "imported",
+            OR: [
+              { name: { contains: kw, mode: "insensitive" } },
+              { listings: { some: { rawTitle: { contains: kw, mode: "insensitive" } } } },
+            ],
+          },
+        }).catch(() => 0)
+      )
+    );
+
     // Build enriched keywords
     const enrichedKeywords = cleanKeywords.slice(0, 15).map((k, i) => {
       const category = inferCategory(k.keyword);
       const catalogCount = coverageCounts[i] || 0;
       const catalogCoverage = catalogCount > 0;
+      const importedCount = importedCounts[i] || 0;
 
       // Monetization potential: higher if matching imported categories or existing products
       let monetizationPotential = 0;
@@ -117,6 +134,12 @@ export async function GET(request: NextRequest) {
       // Position bonus: top trends get a boost
       if (k.position <= 3) monetizationPotential = Math.min(monetizationPotential + 10, 100);
 
+      // Commercial relevance based on product match quality
+      const commercialRelevance: 'high' | 'medium' | 'low' =
+        importedCount > 0 ? 'high' :
+        catalogCount > 0 ? 'medium' :
+        'low';
+
       return {
         keyword: k.keyword,
         position: k.position,
@@ -125,6 +148,7 @@ export async function GET(request: NextRequest) {
         catalogCoverage,
         catalogCount,
         monetizationPotential: Math.min(monetizationPotential, 100),
+        commercialRelevance,
       };
     });
 

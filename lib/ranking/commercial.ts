@@ -275,9 +275,22 @@ export function calculateCommercialScore(
   const boosts: string[] = []
   const isRealProduct = (signals as any).originType === 'imported'
   if (isRealProduct) {
-    total = Math.round(total * 1.15) // +15% multiplier for imported products
+    total = Math.round(total * 1.25) // +25% multiplier for imported products
     boosts.push('originType_imported')
   }
+
+  // ── Affiliate URL boost: monetizable products rank higher ──────────
+  if (signals.hasAffiliate) {
+    total = Math.round(total * 1.10) // +10% for products with affiliate URLs
+    boosts.push('has_affiliate')
+  }
+
+  // ── Image boost: products with images are more conversion-ready ──────
+  if (signals.hasImage) {
+    total = Math.round(total * 1.05) // +5% for products with images
+    boosts.push('has_image')
+  }
+
   if (signals.isFreeShipping) boosts.push('free_shipping')
   if (signals.hasCoupon) boosts.push('coupon')
 

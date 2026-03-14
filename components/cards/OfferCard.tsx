@@ -57,14 +57,27 @@ function MiniStars({ rating }: { rating: number }) {
   );
 }
 
-export default function OfferCard({ product }: { product: ProductCard }) {
+export default function OfferCard({ product, railSource, page }: { product: ProductCard; railSource?: string; page?: string }) {
   const { bestOffer, badges } = product;
   const discount = bestOffer.discount;
 
-  // Use clickout tracking URL when we have a real offer
-  const ctaUrl = bestOffer.affiliateUrl && bestOffer.affiliateUrl !== "#"
-    ? bestOffer.affiliateUrl
-    : "#";
+  // Build clickout URL with tracking params
+  const buildCtaUrl = () => {
+    if (!bestOffer.affiliateUrl || bestOffer.affiliateUrl === "#") {
+      return `/produto/${product.slug}`;
+    }
+    const base = bestOffer.affiliateUrl;
+    const params = new URLSearchParams();
+    if ((product as any).originType) params.set('origin', (product as any).originType);
+    if (railSource) params.set('rail', railSource);
+    if (page) params.set('page', page);
+    const sep = base.includes('?') ? '&' : '?';
+    const paramStr = params.toString();
+    return paramStr ? `${base}${sep}${paramStr}` : base;
+  };
+  const ctaUrl = buildCtaUrl();
+  const hasDirectLink = bestOffer.affiliateUrl && bestOffer.affiliateUrl !== "#";
+  const isHotDiscount = discount && discount >= 20;
 
   return (
     <div className="card group flex flex-col w-full overflow-hidden">
@@ -140,7 +153,11 @@ export default function OfferCard({ product }: { product: ProductCard }) {
               <span className="price-old">{formatPrice(bestOffer.originalPrice)}</span>
             )}
             {discount && discount > 0 && (
-              <span className="discount-tag text-sm font-display font-bold">-{discount}%</span>
+              <span className={`discount-tag font-display font-bold ${
+                isHotDiscount
+                  ? "text-base text-accent-red bg-accent-red/10 px-2 py-0.5 rounded-md"
+                  : "text-sm"
+              }`}>-{discount}%</span>
             )}
           </div>
           <div className="price-big mt-0.5">{formatPrice(bestOffer.price)}</div>
@@ -150,23 +167,33 @@ export default function OfferCard({ product }: { product: ProductCard }) {
             </p>
           )}
           {bestOffer.isFreeShipping && (
-            <p className="text-[10px] text-accent-green mt-0.5 flex items-center gap-0.5">
+            <p className="text-[10px] text-accent-green font-semibold mt-0.5 flex items-center gap-0.5">
               <Truck className="h-2.5 w-2.5" />
-              Entrega: 2-5 dias
+              Frete Gratis
             </p>
           )}
         </div>
 
         {/* CTA */}
-        <a
-          href={ctaUrl}
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          className="btn-offer mt-3 h-9 sm:h-10 text-xs sm:text-sm"
-        >
-          Ver oferta
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
+        {hasDirectLink ? (
+          <a
+            href={ctaUrl}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            className="btn-offer mt-3 h-9 sm:h-10 text-xs sm:text-sm"
+          >
+            Ver Oferta
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        ) : (
+          <Link
+            href={`/produto/${product.slug}`}
+            className="btn-offer mt-3 h-9 sm:h-10 text-xs sm:text-sm flex items-center justify-center gap-1.5"
+          >
+            Comparar Precos
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+        )}
       </div>
     </div>
   );

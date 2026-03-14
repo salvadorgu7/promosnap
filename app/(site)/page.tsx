@@ -17,7 +17,7 @@ import PersonalizedNews from "@/components/home/PersonalizedNews";
 import PersonalizedRails from "@/components/home/PersonalizedRails";
 import SocialProof from "@/components/home/SocialProof";
 import WhatChanged from "@/components/home/WhatChanged";
-import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
+import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";
@@ -72,12 +72,13 @@ function SectionSeparator() {
 }
 
 export default async function HomePage() {
-  const [hotOffers, bestSellers, lowestPrices, recentlyImported, bestValue, categories, stats, coupons, trendingKeywords] = await Promise.all([
+  const [hotOffers, bestSellers, lowestPrices, recentlyImported, bestValue, readyForCampaign, categories, stats, coupons, trendingKeywords] = await Promise.all([
     getHotOffers(16).catch(() => []),
     getBestSellers(16).catch(() => []),
     getLowestPrices(16).catch(() => []),
     getRecentlyImported(16).catch(() => []),
     getBestValue(16).catch(() => []),
+    getReadyForCampaign(16).catch(() => []),
     getCategories().catch(() => []),
     getSiteStats().catch(() => ({ listings: 0, activeOffers: 0, sources: 4, clickoutsToday: 0, clickoutsWeek: 0, categories: 0, brands: 0 })),
     getActiveCoupons().catch(() => []),
@@ -194,10 +195,12 @@ export default async function HomePage() {
               <div className="text-xs text-text-muted mt-1">Marcas comparadas</div>
             </div>
             <div className="card-depth text-center p-4">
-              <div className="font-display font-extrabold text-2xl text-brand-500">
-                {stats.sources}
+              <div className="font-display font-extrabold text-2xl text-accent-green">
+                {(stats as any).realImported > 0 ? formatNumber((stats as any).realImported) : stats.sources}
               </div>
-              <div className="text-xs text-text-muted mt-1">Lojas monitoradas</div>
+              <div className="text-xs text-text-muted mt-1">
+                {(stats as any).realImported > 0 ? "Produtos Reais" : "Lojas monitoradas"}
+              </div>
             </div>
           </div>
         </div>
@@ -299,7 +302,7 @@ export default async function HomePage() {
           <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
             {hotOffers.map((p) => (
               <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
-                <OfferCard product={p} />
+                <OfferCard product={p} page="home" railSource="hot-offers" />
               </div>
             ))}
           </RailSection>
@@ -317,7 +320,7 @@ export default async function HomePage() {
           <RailSection title="Menor Preco Historico" subtitle="Nunca estiveram tao baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
             {lowestPrices.map((p) => (
               <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
-                <OfferCard product={p} />
+                <OfferCard product={p} page="home" railSource="lowest-prices" />
               </div>
             ))}
           </RailSection>
@@ -339,7 +342,7 @@ export default async function HomePage() {
           <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
             {bestSellers.map((p) => (
               <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
-                <OfferCard product={p} />
+                <OfferCard product={p} page="home" railSource="best-sellers" />
               </div>
             ))}
           </RailSection>
@@ -352,7 +355,7 @@ export default async function HomePage() {
           <RailSection title="Importados Recentemente" subtitle="Produtos reais adicionados nos ultimos 7 dias" icon={Package} iconColor="text-accent-green">
             {recentlyImported.map((p) => (
               <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
-                <OfferCard product={p} />
+                <OfferCard product={p} page="home" railSource="recently-imported" />
               </div>
             ))}
           </RailSection>
@@ -365,7 +368,20 @@ export default async function HomePage() {
           <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" icon={Percent} iconColor="text-accent-purple">
             {bestValue.map((p) => (
               <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
-                <OfferCard product={p} />
+                <OfferCard product={p} page="home" railSource="best-value" />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 14.3. PRONTOS PARA COMPRAR ===== */}
+      {readyForCampaign.length > 0 && (
+        <div id="ready-for-campaign" className="section-highlight py-2">
+          <RailSection title="Prontos para Comprar" subtitle="Produtos reais com desconto e link direto para a loja" icon={Star} iconColor="text-accent-blue">
+            {readyForCampaign.map((p) => (
+              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+                <OfferCard product={p} page="home" railSource="ready-for-campaign" />
               </div>
             ))}
           </RailSection>
