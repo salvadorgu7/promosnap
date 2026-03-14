@@ -165,9 +165,18 @@ export async function POST(req: NextRequest) {
   const affiliateWord = process.env.MERCADOLIVRE_AFFILIATE_WORD;
 
   // Build a map from externalId → mlParentCategory for category resolution
+  // Note: highlight entry IDs may differ from hydrated externalIds (e.g., catalog product ID
+  // vs buy_box_winner item_id). Map both the original highlight ID AND the hydrated externalId.
   const idToParent = new Map<string, string>();
   for (const entry of allEntries.values()) {
     idToParent.set(entry.id, entry.mlParentCategory);
+  }
+  // Also map hydrated products' externalIds → parent via catalogProductId
+  for (const p of hydratedProducts) {
+    if (p.catalogProductId && allEntries.has(p.catalogProductId)) {
+      idToParent.set(p.externalId, allEntries.get(p.catalogProductId)!.mlParentCategory);
+    }
+    // For ITEM type, the highlight ID IS the externalId, so it's already in the map
   }
 
   const importItems: ImportItem[] = hydratedProducts.map((p) => {
