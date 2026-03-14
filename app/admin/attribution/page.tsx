@@ -2,357 +2,117 @@ import {
   Target,
   MousePointerClick,
   DollarSign,
-  Globe,
-  Layers,
-  Radio,
   BarChart3,
-  ArrowRight,
+  Search,
+  TrendingDown,
+  Layers,
 } from "lucide-react";
 import { formatPrice, formatNumber } from "@/lib/utils";
-import prisma from "@/lib/db/prisma";
 import {
-  getAttributionSummary,
-  getAttributionFunnel,
-} from "@/lib/attribution/engine";
-import {
-  getRevenueByAttribution,
-  getTopPerformingPages,
-  getChannelROI,
-} from "@/lib/attribution/revenue-attribution";
+  getClickoutsByRail,
+  getClickoutsByCategory,
+  getClickoutsByProduct,
+  getClickoutConversionRate,
+  getRevenueOpportunities,
+} from "@/lib/analytics/attribution";
 
 export const dynamic = "force-dynamic";
 
 export default async function AttributionPage() {
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000);
+  const [byRail, byCategory, topProducts, conversion, revenueOpps] =
+    await Promise.all([
+      getClickoutsByRail(7),
+      getClickoutsByCategory(7),
+      getClickoutsByProduct(7, 15),
+      getClickoutConversionRate(7),
+      getRevenueOpportunities(15),
+    ]);
 
-  // DB clickout count for 7d (real data)
-  const clickouts7d = await prisma.clickout
-    .count({ where: { clickedAt: { gte: sevenDaysAgo } } })
-    .catch(() => 0);
-
-  // Attribution data (in-memory)
-  const summary = getAttributionSummary(7);
-  const funnel = getAttributionFunnel();
-  const revenue = getRevenueByAttribution(7);
-  const topPages = getTopPerformingPages(10);
-  const channelROI = await getChannelROI();
-
-  // Determine top source and top page type
-  const topSource =
-    Object.entries(summary.bySource).sort(([, a], [, b]) => b - a)[0]?.[0] ||
-    "N/A";
-  const topPageType =
-    Object.entries(summary.byPageType).sort(([, a], [, b]) => b - a)[0]?.[0] ||
-    "N/A";
-
-  // Estimated revenue 7d
-  const estimatedRevenue7d = revenue.totalEstimatedRevenue;
+  const totalClickouts = byRail.reduce((sum, r) => sum + r.count, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold font-display text-text-primary">
+        <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
+          <Target className="h-6 w-6 text-accent-blue" />
           Attribution
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Rastreamento de origem dos clickouts e atribuicao de revenue por
-          dimensao.
+          Atribuicao de clickouts por rail, categoria, produto e oportunidades de revenue (7 dias)
         </p>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <SummaryCard
-          icon={MousePointerClick}
-          label="Clickouts (7d)"
-          value={formatNumber(clickouts7d)}
-          sub={`${summary.total} com atribuicao`}
-        />
-        <SummaryCard
-          icon={DollarSign}
-          label="Revenue Estimado (7d)"
-          value={formatPrice(estimatedRevenue7d)}
-          sub="baseado em comissoes"
-        />
-        <SummaryCard
-          icon={Globe}
-          label="Top Source"
-          value={topSource}
-          sub="maior volume de clickouts"
-        />
-        <SummaryCard
-          icon={Layers}
-          label="Top Page Type"
-          value={topPageType}
-          sub="tipo de pagina com mais clickouts"
-        />
-      </div>
-
-      {/* Origem dos Clickouts */}
-      <section className="bg-white rounded-xl border border-surface-200 p-5">
-        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <Globe className="h-5 w-5 text-accent-blue" />
-          Origem dos Clickouts
-        </h2>
-        {revenue.bySource.length === 0 ? (
-          <p className="text-sm text-text-muted">
-            Nenhum dado de atribuicao por source ainda. Os dados aparecem conforme
-            clickouts com parametros de atribuicao sao registrados.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-200 text-text-muted">
-                  <th className="text-left py-2 pr-4">Source</th>
-                  <th className="text-right py-2 px-4">Clickouts</th>
-                  <th className="text-right py-2 px-4">Revenue Est.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {revenue.bySource.map((r) => (
-                  <tr
-                    key={r.key}
-                    className="border-b border-surface-100 hover:bg-surface-50"
-                  >
-                    <td className="py-2 pr-4 font-medium">{r.key}</td>
-                    <td className="py-2 px-4 text-right">
-                      {formatNumber(r.clickouts)}
-                    </td>
-                    <td className="py-2 px-4 text-right text-green-700">
-                      {formatPrice(r.estimatedRevenue)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <MousePointerClick className="h-4 w-4 text-text-muted" />
+            <span className="text-xs text-text-muted uppercase tracking-wider">Clickouts (7d)</span>
           </div>
-        )}
-      </section>
-
-      {/* Clickouts por Contexto */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* By Page Type */}
-        <section className="bg-white rounded-xl border border-surface-200 p-5">
-          <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-            <Layers className="h-5 w-5 text-brand-500" />
-            Clickouts por Tipo de Pagina
-          </h2>
-          {revenue.byPageType.length === 0 ? (
-            <p className="text-sm text-text-muted">Sem dados de pageType.</p>
-          ) : (
-            <div className="space-y-2">
-              {revenue.byPageType.map((r) => (
-                <div key={r.key} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{r.key}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-text-muted">
-                      {formatNumber(r.clickouts)}
-                    </span>
-                    <span className="text-sm text-green-700">
-                      {formatPrice(r.estimatedRevenue)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* By Channel */}
-        <section className="bg-white rounded-xl border border-surface-200 p-5">
-          <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-            <Radio className="h-5 w-5 text-purple-600" />
-            Clickouts por Canal
-          </h2>
-          {revenue.byChannel.length === 0 ? (
-            <p className="text-sm text-text-muted">Sem dados de channel.</p>
-          ) : (
-            <div className="space-y-2">
-              {revenue.byChannel.map((r) => (
-                <div key={r.key} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{r.key}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-text-muted">
-                      {formatNumber(r.clickouts)}
-                    </span>
-                    <span className="text-sm text-green-700">
-                      {formatPrice(r.estimatedRevenue)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-
-      {/* Revenue por Campanha/Canal/Banner */}
-      <section className="bg-white rounded-xl border border-surface-200 p-5">
-        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-orange-500" />
-          Revenue por Campanha / Canal / Banner
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Campaigns */}
-          <div>
-            <h3 className="text-sm font-semibold text-text-muted mb-2 uppercase tracking-wider">
-              Campanhas
-            </h3>
-            {revenue.byCampaign.length === 0 ? (
-              <p className="text-xs text-text-muted">Sem campanhas rastreadas.</p>
-            ) : (
-              <div className="space-y-1">
-                {revenue.byCampaign.map((r) => (
-                  <div
-                    key={r.key}
-                    className="flex justify-between text-sm"
-                  >
-                    <span>{r.key}</span>
-                    <span className="text-green-700">
-                      {formatPrice(r.estimatedRevenue)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Channel ROI */}
-          <div>
-            <h3 className="text-sm font-semibold text-text-muted mb-2 uppercase tracking-wider">
-              Canal ROI
-            </h3>
-            {channelROI.length === 0 ? (
-              <p className="text-xs text-text-muted">Sem dados de canal.</p>
-            ) : (
-              <div className="space-y-1">
-                {channelROI.map((r) => (
-                  <div
-                    key={r.channel}
-                    className="flex justify-between text-sm"
-                  >
-                    <span>{r.channel}</span>
-                    <span className="text-text-muted">
-                      {r.roi > 0 ? `${r.roi}x` : "-"} &middot;{" "}
-                      <span className="text-green-700">
-                        {formatPrice(r.estimatedRevenue)}
-                      </span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Banners */}
-          <div>
-            <h3 className="text-sm font-semibold text-text-muted mb-2 uppercase tracking-wider">
-              Banners
-            </h3>
-            {revenue.byBanner.length === 0 ? (
-              <p className="text-xs text-text-muted">Sem banners rastreados.</p>
-            ) : (
-              <div className="space-y-1">
-                {revenue.byBanner.map((r) => (
-                  <div
-                    key={r.key}
-                    className="flex justify-between text-sm"
-                  >
-                    <span>{r.key}</span>
-                    <span className="text-green-700">
-                      {formatPrice(r.estimatedRevenue)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <p className="text-2xl font-bold font-display text-text-primary">{formatNumber(totalClickouts)}</p>
         </div>
-      </section>
-
-      {/* Funil de Conversao */}
-      <section className="bg-white rounded-xl border border-surface-200 p-5">
-        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <Target className="h-5 w-5 text-red-500" />
-          Funil de Conversao
-        </h2>
-        {funnel.steps.length === 0 ? (
-          <p className="text-sm text-text-muted">Sem dados de funil.</p>
-        ) : (
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            {funnel.steps.map((step, idx) => (
-              <div key={step.stage} className="flex items-center gap-2">
-                <div className="text-center px-4 py-3 bg-surface-50 rounded-lg min-w-[120px]">
-                  <p className="text-xs text-text-muted uppercase tracking-wider">
-                    {step.stage.replace(/_/g, " ")}
-                  </p>
-                  <p className="text-xl font-bold text-text-primary mt-1">
-                    {step.stage.includes("revenue")
-                      ? formatPrice(step.count)
-                      : formatNumber(step.count)}
-                  </p>
-                  {step.byDimension &&
-                    Object.keys(step.byDimension).length > 0 && (
-                      <div className="mt-1 space-y-0.5">
-                        {Object.entries(step.byDimension)
-                          .sort(([, a], [, b]) => b - a)
-                          .slice(0, 3)
-                          .map(([dim, val]) => (
-                            <p
-                              key={dim}
-                              className="text-[10px] text-text-muted"
-                            >
-                              {dim}: {formatNumber(val)}
-                            </p>
-                          ))}
-                      </div>
-                    )}
-                </div>
-                {idx < funnel.steps.length - 1 && (
-                  <ArrowRight className="h-4 w-4 text-text-muted" />
-                )}
-              </div>
-            ))}
+        <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Layers className="h-4 w-4 text-text-muted" />
+            <span className="text-xs text-text-muted uppercase tracking-wider">Rails Ativos</span>
           </div>
-        )}
-      </section>
+          <p className="text-2xl font-bold font-display text-text-primary">{byRail.length}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Search className="h-4 w-4 text-text-muted" />
+            <span className="text-xs text-text-muted uppercase tracking-wider">Conversao Search</span>
+          </div>
+          <p className="text-2xl font-bold font-display text-text-primary">
+            {(conversion.conversionRate * 100).toFixed(1)}%
+          </p>
+          <p className="text-xs text-text-muted mt-1">
+            {formatNumber(conversion.searchesWithClickout)} / {formatNumber(conversion.totalSearches)} buscas
+          </p>
+        </div>
+        <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="h-4 w-4 text-text-muted" />
+            <span className="text-xs text-text-muted uppercase tracking-wider">Oportunidades</span>
+          </div>
+          <p className="text-2xl font-bold font-display text-text-primary">{revenueOpps.length}</p>
+          <p className="text-xs text-text-muted mt-1">ofertas com desconto e poucos clicks</p>
+        </div>
+      </div>
 
-      {/* Top Performing Pages */}
+      {/* Clickouts by Rail */}
       <section className="bg-white rounded-xl border border-surface-200 p-5">
         <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-accent-blue" />
-          Top Pages (30d)
+          <Layers className="h-5 w-5 text-accent-blue" />
+          Clickouts por Rail
         </h2>
-        {topPages.length === 0 ? (
-          <p className="text-sm text-text-muted">Sem dados de top pages.</p>
+        {byRail.length === 0 ? (
+          <p className="text-sm text-text-muted py-4 text-center">Nenhum clickout registrado nos ultimos 7 dias.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-200 text-text-muted">
-                  <th className="text-left py-2 pr-4">Tipo</th>
+                  <th className="text-left py-2 pr-4">Rail</th>
                   <th className="text-right py-2 px-4">Clickouts</th>
-                  <th className="text-right py-2 px-4">Revenue Est.</th>
-                  <th className="text-right py-2 pl-4">Share</th>
+                  <th className="text-right py-2 px-4">%</th>
+                  <th className="text-left py-2 pl-4">Distribuicao</th>
                 </tr>
               </thead>
               <tbody>
-                {topPages.map((p) => (
-                  <tr
-                    key={p.pageType}
-                    className="border-b border-surface-100 hover:bg-surface-50"
-                  >
-                    <td className="py-2 pr-4 font-medium">{p.pageType}</td>
-                    <td className="py-2 px-4 text-right">
-                      {formatNumber(p.clickouts)}
-                    </td>
-                    <td className="py-2 px-4 text-right text-green-700">
-                      {formatPrice(p.estimatedRevenue)}
-                    </td>
-                    <td className="py-2 pl-4 text-right text-text-muted">
-                      {p.share}%
+                {byRail.map((r) => (
+                  <tr key={r.railSource} className="border-b border-surface-100 hover:bg-surface-50">
+                    <td className="py-2 pr-4 font-medium">{r.railSource}</td>
+                    <td className="py-2 px-4 text-right">{formatNumber(r.count)}</td>
+                    <td className="py-2 px-4 text-right text-text-muted">{r.percentage}%</td>
+                    <td className="py-2 pl-4">
+                      <div className="w-full max-w-[200px] h-2 bg-surface-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-accent-blue rounded-full"
+                          style={{ width: `${Math.min(r.percentage, 100)}%` }}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -361,33 +121,109 @@ export default async function AttributionPage() {
           </div>
         )}
       </section>
-    </div>
-  );
-}
 
-// ─── Components ─────────────────────────────────────────────────────────────
+      {/* Two column: Categories + Top Products */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Clickouts by Category */}
+        <section className="bg-white rounded-xl border border-surface-200 p-5">
+          <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-brand-500" />
+            Clickouts por Categoria
+          </h2>
+          {byCategory.length === 0 ? (
+            <p className="text-sm text-text-muted py-4 text-center">Sem dados de categoria.</p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {byCategory.map((c, i) => (
+                <div key={c.categorySlug} className="flex items-center gap-3 px-3 py-2 bg-surface-50 rounded-lg">
+                  <span className="text-xs font-bold text-text-muted w-5">{i + 1}.</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-text-primary font-medium truncate block">{c.categorySlug}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-text-primary">{formatNumber(c.count)}</span>
+                  <span className="text-xs text-text-muted w-12 text-right">{c.percentage}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-function SummaryCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-}: {
-  icon: typeof Target;
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  return (
-    <div className="bg-white rounded-xl border border-surface-200 p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="h-4 w-4 text-text-muted" />
-        <span className="text-xs text-text-muted uppercase tracking-wider">
-          {label}
-        </span>
+        {/* Top Products */}
+        <section className="bg-white rounded-xl border border-surface-200 p-5">
+          <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+            <MousePointerClick className="h-5 w-5 text-emerald-500" />
+            Top Produtos (Clickouts)
+          </h2>
+          {topProducts.length === 0 ? (
+            <p className="text-sm text-text-muted py-4 text-center">Sem dados de produto.</p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {topProducts.map((p, i) => (
+                <div key={p.productId} className="flex items-center gap-3 px-3 py-2 bg-surface-50 rounded-lg">
+                  <span className="text-xs font-bold text-text-muted w-5">{i + 1}.</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-text-primary font-medium truncate block">{p.productName}</span>
+                    <span className="text-[10px] text-text-muted">/{p.productSlug}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-text-primary">{formatNumber(p.clickouts)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-      <p className="text-2xl font-bold text-text-primary">{value}</p>
-      <p className="text-xs text-text-muted mt-1">{sub}</p>
+
+      {/* Revenue Opportunities */}
+      <section className="bg-white rounded-xl border border-surface-200 p-5">
+        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <DollarSign className="h-5 w-5 text-orange-500" />
+          Oportunidades de Revenue
+        </h2>
+        <p className="text-xs text-text-muted mb-4">
+          Ofertas com desconto significativo (&gt;15%) e affiliate URL, mas poucos clickouts — monetizacao perdida
+        </p>
+        {revenueOpps.length === 0 ? (
+          <p className="text-sm text-text-muted py-4 text-center">Nenhuma oportunidade identificada.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-200 text-text-muted">
+                  <th className="text-left py-2 pr-4">Produto</th>
+                  <th className="text-right py-2 px-4">Preco</th>
+                  <th className="text-right py-2 px-4">De</th>
+                  <th className="text-right py-2 px-4">Desconto</th>
+                  <th className="text-right py-2 px-4">Clickouts (7d)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {revenueOpps.map((opp) => (
+                  <tr key={opp.offerId} className="border-b border-surface-100 hover:bg-surface-50">
+                    <td className="py-2 pr-4 font-medium max-w-[250px] truncate">{opp.productName}</td>
+                    <td className="py-2 px-4 text-right text-emerald-700 font-semibold">
+                      {formatPrice(opp.currentPrice)}
+                    </td>
+                    <td className="py-2 px-4 text-right text-text-muted line-through">
+                      {formatPrice(opp.originalPrice)}
+                    </td>
+                    <td className="py-2 px-4 text-right">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                        -{opp.discountPct}%
+                      </span>
+                    </td>
+                    <td className="py-2 px-4 text-right">
+                      <span className="inline-flex items-center gap-1 text-text-muted">
+                        <TrendingDown className="h-3 w-3" />
+                        {opp.clickouts}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

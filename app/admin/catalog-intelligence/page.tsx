@@ -1,352 +1,249 @@
 import {
   Brain,
-  AlertTriangle,
-  Upload,
-  ArrowRight,
-  Package,
-  Store,
-  Layers,
+  Search,
   TrendingUp,
-  FileText,
-  Globe,
-  Radio,
-  Star,
+  AlertTriangle,
   Target,
-  Lightbulb,
   Zap,
+  ArrowRight,
+  CheckCircle2,
+  Globe,
+  BarChart3,
 } from "lucide-react";
 import Link from "next/link";
-import { getCatalogGaps } from "@/lib/sourcing/catalog-gaps";
-import { getRecommendedImports } from "@/lib/sourcing/import-recommendations";
-import { getNewCanonicalSuggestions } from "@/lib/sourcing/sourcing-seo-bridge";
+import {
+  getTopDemandQueries,
+  getDemandGaps,
+  getGrowthLoops,
+  getDemandOpportunities,
+} from "@/lib/demand/intelligence";
 
 export const dynamic = "force-dynamic";
 
-const PRIORITY_STYLES: Record<string, string> = {
-  critical: "bg-red-100 text-red-700",
-  high: "bg-red-100 text-red-700",
-  medium: "bg-amber-100 text-amber-700",
-  low: "bg-surface-100 text-text-muted",
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  critical: "Critica",
-  high: "Alta",
-  medium: "Media",
-  low: "Baixa",
-};
-
-const IMPACT_STYLES: Record<string, string> = {
-  high: "bg-accent-green/10 text-accent-green",
-  medium: "bg-accent-blue/10 text-accent-blue",
-  low: "bg-surface-100 text-text-muted",
-};
-
-const IMPACT_LABELS: Record<string, string> = {
-  high: "Alto impacto",
-  medium: "Medio impacto",
-  low: "Baixo impacto",
-};
-
-const ACTION_ICONS: Record<string, typeof Brain> = {
-  "feature-homepage": Star,
-  "distribute-channels": Radio,
-  "associate-article": FileText,
-  "create-category-page": Globe,
-};
-
-const ACTION_LABELS: Record<string, string> = {
-  "feature-homepage": "Destacar",
-  "distribute-channels": "Distribuir",
-  "associate-article": "Artigo",
-  "create-category-page": "SEO",
+const INTENT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  brand: { bg: "bg-purple-50", text: "text-purple-700", label: "Marca" },
+  category: { bg: "bg-blue-50", text: "text-blue-700", label: "Categoria" },
+  promotion: { bg: "bg-orange-50", text: "text-orange-700", label: "Promo" },
+  comparison: { bg: "bg-amber-50", text: "text-amber-700", label: "Comparacao" },
+  product: { bg: "bg-emerald-50", text: "text-emerald-700", label: "Produto" },
 };
 
 export default async function CatalogIntelligencePage() {
-  const [gaps, recommendations, suggestions] = await Promise.all([
-    getCatalogGaps().catch(() => ({
-      lowCoverageCategories: [],
-      sparseBrands: [],
-      singleSourceProducts: [],
-      needsComparisonProducts: [],
-      totalGaps: 0,
-    })),
-    getRecommendedImports().catch(() => []),
-    getNewCanonicalSuggestions().catch(() => []),
+  const [topQueries, gaps, growthLoops, opportunities] = await Promise.all([
+    getTopDemandQueries(20),
+    getDemandGaps(20),
+    getGrowthLoops(15),
+    getDemandOpportunities(20),
   ]);
 
-  const totalAll = gaps.totalGaps + recommendations.length + suggestions.length;
-
-  // Summary cards
-  const summaryCards = [
-    {
-      label: "Gaps de Catalogo",
-      count: gaps.totalGaps,
-      icon: AlertTriangle,
-      color: "text-accent-orange",
-      borderColor: "border-l-accent-orange",
-    },
-    {
-      label: "Imports Sugeridos",
-      count: recommendations.length,
-      icon: Upload,
-      color: "text-accent-blue",
-      borderColor: "border-l-accent-blue",
-    },
-    {
-      label: "Canonicos p/ Destacar",
-      count: suggestions.length,
-      icon: Star,
-      color: "text-accent-green",
-      borderColor: "border-l-accent-green",
-    },
-    {
-      label: "Fonte Unica",
-      count: gaps.singleSourceProducts.length,
-      icon: Store,
-      color: "text-accent-purple",
-      borderColor: "border-l-accent-purple",
-    },
-    {
-      label: "Sem Comparacao",
-      count: gaps.needsComparisonProducts.length,
-      icon: Layers,
-      color: "text-brand-500",
-      borderColor: "border-l-brand-500",
-    },
-  ];
+  const totalActions = gaps.length + growthLoops.filter((l) => !l.hasExistingPage).length + opportunities.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
             <Brain className="h-6 w-6 text-accent-blue" />
-            Catalog Intelligence
+            Demand Intelligence
           </h1>
-          <p className="text-sm text-text-muted">
-            Inteligencia de sourcing, gaps de catalogo e recomendacoes de importacao
+          <p className="text-sm text-text-muted mt-1">
+            Analise de demanda: queries populares, gaps, oportunidades de crescimento e conversao
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-blue/10 text-accent-blue text-xs font-medium">
             <Target className="h-3 w-3" />
-            {totalAll} acoes
+            {totalActions} acoes
           </div>
-          <Link
-            href="/admin/growth-ops"
-            className="text-xs text-brand-500 hover:underline flex items-center gap-1"
-          >
-            Growth & Ops <ArrowRight className="h-3 w-3" />
-          </Link>
         </div>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {summaryCards.map((card) => (
-          <div
-            key={card.label}
-            className={`card p-4 border-l-4 ${card.borderColor}`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <card.icon className={`h-4 w-4 ${card.color}`} />
-              <span className="text-xs text-text-muted uppercase tracking-wider">
-                {card.label}
-              </span>
-            </div>
-            <p className="text-2xl font-bold font-display text-text-primary">
-              {card.count}
-            </p>
-          </div>
-        ))}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <SummaryCard icon={Search} label="Top Queries" value={topQueries.length} color="text-accent-blue" borderColor="border-l-accent-blue" />
+        <SummaryCard icon={AlertTriangle} label="Demand Gaps" value={gaps.length} color="text-orange-500" borderColor="border-l-orange-500" />
+        <SummaryCard icon={TrendingUp} label="Growth Loops" value={growthLoops.length} color="text-emerald-500" borderColor="border-l-emerald-500" />
+        <SummaryCard icon={BarChart3} label="Oportunidades" value={opportunities.length} color="text-brand-500" borderColor="border-l-brand-500" />
       </div>
 
-      {/* ── Section: Gaps de Catalogo ── */}
-
-      {/* Low Coverage Categories */}
-      {gaps.lowCoverageCategories.length > 0 && (
-        <Section
-          title="Categorias com Baixa Cobertura"
-          subtitle="Categorias com demanda de busca mas poucos produtos"
-          icon={Package}
-          iconColor="text-accent-orange"
-          count={gaps.lowCoverageCategories.length}
-          actionLabel="Editar Catalogo"
-          actionHref="/admin/catalog-edit"
-        >
-          <div className="space-y-2">
-            {gaps.lowCoverageCategories.slice(0, 8).map((gap, i) => (
-              <GapRow key={i} gap={gap} />
-            ))}
+      {/* Top Demand Queries */}
+      <section className="bg-white rounded-xl border border-surface-200 p-5">
+        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <Search className="h-5 w-5 text-accent-blue" />
+          Top Queries por Demanda
+          <span className="text-xs text-text-muted bg-surface-100 px-2 py-0.5 rounded-full ml-2">{topQueries.length}</span>
+        </h2>
+        <p className="text-xs text-text-muted mb-4">
+          Ranking por frequencia x recencia (30 dias). Queries mais recentes e frequentes tem score maior.
+        </p>
+        {topQueries.length === 0 ? (
+          <EmptyState text="Nenhuma query registrada nos ultimos 30 dias." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-200 text-text-muted">
+                  <th className="text-left py-2 pr-4">#</th>
+                  <th className="text-left py-2 pr-4">Query</th>
+                  <th className="text-right py-2 px-4">Buscas</th>
+                  <th className="text-right py-2 px-4">Recencia</th>
+                  <th className="text-right py-2 px-4">Demand Score</th>
+                  <th className="text-right py-2 pl-4">Ultima Busca</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topQueries.map((q, i) => (
+                  <tr key={q.query} className="border-b border-surface-100 hover:bg-surface-50">
+                    <td className="py-2 pr-4 text-text-muted text-xs">{i + 1}</td>
+                    <td className="py-2 pr-4 font-medium">{q.query}</td>
+                    <td className="py-2 px-4 text-right">{q.count}</td>
+                    <td className="py-2 px-4 text-right text-text-muted">{q.recencyScore}</td>
+                    <td className="py-2 px-4 text-right">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-accent-blue/10 text-accent-blue">
+                        {q.demandScore}
+                      </span>
+                    </td>
+                    <td className="py-2 pl-4 text-right text-text-muted text-xs">
+                      {new Date(q.lastSearched).toLocaleDateString("pt-BR")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </Section>
-      )}
+        )}
+      </section>
 
-      {/* Single Source Products */}
-      {gaps.singleSourceProducts.length > 0 && (
-        <Section
-          title="Produtos com Fonte Unica"
-          subtitle="Produtos disponiveis em apenas uma loja — risco de cobertura"
-          icon={Store}
-          iconColor="text-accent-purple"
-          count={gaps.singleSourceProducts.length}
-          actionLabel="Importar Fontes"
-          actionHref="/admin/imports"
-        >
-          <div className="space-y-2">
-            {gaps.singleSourceProducts.slice(0, 8).map((gap, i) => (
-              <GapRow key={i} gap={gap} />
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Needs Comparison */}
-      {gaps.needsComparisonProducts.length > 0 && (
-        <Section
-          title="Produtos sem Comparacao Real"
-          subtitle="Produtos com demanda que precisam de mais listings para comparacao"
-          icon={Layers}
-          iconColor="text-brand-500"
-          count={gaps.needsComparisonProducts.length}
-          actionLabel="Importar Listings"
-          actionHref="/admin/imports"
-        >
-          <div className="space-y-2">
-            {gaps.needsComparisonProducts.slice(0, 8).map((gap, i) => (
-              <GapRow key={i} gap={gap} />
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Sparse Brands */}
-      {gaps.sparseBrands.length > 0 && (
-        <Section
-          title="Marcas com Poucos Produtos"
-          subtitle="Marcas conhecidas com poucas entradas no catalogo"
-          icon={TrendingUp}
-          iconColor="text-accent-blue"
-          count={gaps.sparseBrands.length}
-          actionLabel="Expandir Marcas"
-          actionHref="/admin/imports"
-        >
-          <div className="space-y-2">
-            {gaps.sparseBrands.slice(0, 6).map((gap, i) => (
-              <GapRow key={i} gap={gap} />
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* ── Section: Proximos Imports Sugeridos ── */}
-
-      {recommendations.length > 0 && (
-        <Section
-          title="Proximos Imports Sugeridos"
-          subtitle="Recomendacoes baseadas em trending, buscas, gaps e artigos"
-          icon={Upload}
-          iconColor="text-accent-blue"
-          count={recommendations.length}
-          actionLabel="Importar Agora"
-          actionHref="/admin/imports"
-        >
-          <div className="space-y-2">
-            {recommendations.slice(0, 12).map((rec, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between px-3 py-2 bg-surface-50 rounded-lg"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Lightbulb className="h-3.5 w-3.5 text-accent-blue flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm text-text-primary font-medium">
-                      {rec.title}
-                    </p>
-                    <p className="text-[10px] text-text-muted truncate">
-                      {rec.description}
+      {/* Two column: Gaps + Opportunities */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Demand Gaps */}
+        <section className="bg-white rounded-xl border border-surface-200 p-5">
+          <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            Demand Gaps
+            <span className="text-xs text-text-muted bg-surface-100 px-2 py-0.5 rounded-full ml-2">{gaps.length}</span>
+          </h2>
+          <p className="text-xs text-text-muted mb-4">
+            Queries frequentes que retornam poucos ou zero resultados — demanda nao atendida.
+          </p>
+          {gaps.length === 0 ? (
+            <EmptyState text="Nenhum gap de demanda identificado." />
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {gaps.map((g) => (
+                <div key={g.query} className="flex items-center justify-between px-3 py-2.5 bg-surface-50 rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">{g.query}</p>
+                    <p className="text-[10px] text-text-muted">
+                      {g.searchCount} buscas | media {g.avgResultsCount} resultados
                     </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                      IMPACT_STYLES[rec.estimatedImpact] || IMPACT_STYLES.low
-                    }`}
-                  >
-                    {IMPACT_LABELS[rec.estimatedImpact] || ""}
-                  </span>
-                  <span className="text-[10px] text-text-muted font-mono">
-                    P{rec.priority}
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 flex-shrink-0">
+                    GAP
                   </span>
                 </div>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
+              ))}
+            </div>
+          )}
+        </section>
 
-      {/* ── Section: Novos Canonicos para Destacar ── */}
-
-      {suggestions.length > 0 && (
-        <Section
-          title="Novos Canonicos para Destacar"
-          subtitle="Produtos canonicos prontos para destaque, distribuicao ou conteudo"
-          icon={Star}
-          iconColor="text-accent-green"
-          count={suggestions.length}
-          actionLabel="Distribuicao"
-          actionHref="/admin/distribution"
-        >
-          <div className="space-y-2">
-            {suggestions.slice(0, 12).map((sug, i) => {
-              const ActionIcon = ACTION_ICONS[sug.action] || Brain;
-              return (
-                <div
-                  key={i}
-                  className="flex items-center justify-between px-3 py-2 bg-surface-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <ActionIcon className="h-3.5 w-3.5 text-accent-green flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm text-text-primary font-medium">
-                        {sug.productName}
-                      </p>
-                      <p className="text-[10px] text-text-muted truncate">
-                        {sug.reason}
-                      </p>
-                    </div>
+        {/* Demand Opportunities */}
+        <section className="bg-white rounded-xl border border-surface-200 p-5">
+          <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-brand-500" />
+            Oportunidades de Conversao
+            <span className="text-xs text-text-muted bg-surface-100 px-2 py-0.5 rounded-full ml-2">{opportunities.length}</span>
+          </h2>
+          <p className="text-xs text-text-muted mb-4">
+            Queries com resultados mas baixa taxa de clickout (&lt;10%) — potencial de UX ou merchandising.
+          </p>
+          {opportunities.length === 0 ? (
+            <EmptyState text="Nenhuma oportunidade de conversao identificada." />
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {opportunities.map((o) => (
+                <div key={o.query} className="flex items-center justify-between px-3 py-2.5 bg-surface-50 rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">{o.query}</p>
+                    <p className="text-[10px] text-text-muted">
+                      {o.searchCount} buscas | {o.avgResultsCount} resultados | {o.clickoutCount} clickouts
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-accent-green/10 text-accent-green">
-                      {ACTION_LABELS[sug.action] || sug.action}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                        PRIORITY_STYLES[sug.priority] || PRIORITY_STYLES.low
-                      }`}
-                    >
-                      {PRIORITY_LABELS[sug.priority] || ""}
-                    </span>
-                  </div>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 flex-shrink-0">
+                    {(o.conversionRate * 100).toFixed(1)}%
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </Section>
-      )}
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
-      {/* Empty state */}
-      {totalAll === 0 && (
-        <div className="card p-12 text-center">
+      {/* Growth Loops */}
+      <section className="bg-white rounded-xl border border-surface-200 p-5">
+        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-emerald-500" />
+          Growth Loops
+          <span className="text-xs text-text-muted bg-surface-100 px-2 py-0.5 rounded-full ml-2">{growthLoops.length}</span>
+        </h2>
+        <p className="text-xs text-text-muted mb-4">
+          Queries frequentes com intencao comercial que podem virar landing pages dedicadas para SEO e conversao.
+        </p>
+        {growthLoops.length === 0 ? (
+          <EmptyState text="Nenhum growth loop identificado." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-200 text-text-muted">
+                  <th className="text-left py-2 pr-4">Query</th>
+                  <th className="text-right py-2 px-4">Buscas</th>
+                  <th className="text-center py-2 px-4">Intencao</th>
+                  <th className="text-left py-2 px-4">Slug Potencial</th>
+                  <th className="text-center py-2 pl-4">Pagina Existente</th>
+                </tr>
+              </thead>
+              <tbody>
+                {growthLoops.map((loop) => {
+                  const intentStyle = INTENT_STYLES[loop.intent] || INTENT_STYLES.product;
+                  return (
+                    <tr key={loop.query} className="border-b border-surface-100 hover:bg-surface-50">
+                      <td className="py-2 pr-4 font-medium">{loop.query}</td>
+                      <td className="py-2 px-4 text-right">{loop.searchCount}</td>
+                      <td className="py-2 px-4 text-center">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${intentStyle.bg} ${intentStyle.text}`}>
+                          {intentStyle.label}
+                        </span>
+                      </td>
+                      <td className="py-2 px-4 text-text-muted font-mono text-xs">/{loop.potentialSlug}</td>
+                      <td className="py-2 pl-4 text-center">
+                        {loop.hasExistingPage ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" />
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            CRIAR
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Empty state fallback */}
+      {topQueries.length === 0 && gaps.length === 0 && growthLoops.length === 0 && opportunities.length === 0 && (
+        <div className="bg-white rounded-xl border border-surface-200 p-12 text-center">
           <Zap className="h-10 w-10 mx-auto mb-3 text-surface-300" />
           <p className="text-text-muted text-sm">
-            Nenhuma acao de inteligencia identificada no momento.
+            Nenhum dado de demand intelligence disponivel.
           </p>
           <p className="text-text-muted text-xs mt-1">
-            Importe dados e monitore tendencias para gerar insights automaticamente.
+            Os dados aparecem conforme buscas e clickouts sao registrados no sistema.
           </p>
         </div>
       )}
@@ -354,89 +251,37 @@ export default async function CatalogIntelligencePage() {
   );
 }
 
-// ── Reusable section component ──────────────────────────────────────────────
+// ── Sub-components ──
 
-function Section({
-  title,
-  subtitle,
+function SummaryCard({
   icon: Icon,
-  iconColor,
-  count,
-  actionLabel,
-  actionHref,
-  children,
+  label,
+  value,
+  color,
+  borderColor,
 }: {
-  title: string;
-  subtitle: string;
-  icon: typeof Package;
-  iconColor: string;
-  count: number;
-  actionLabel: string;
-  actionHref: string;
-  children: React.ReactNode;
+  icon: typeof Search;
+  label: string;
+  value: number;
+  color: string;
+  borderColor: string;
 }) {
   return (
-    <div className="card p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <Icon className={`h-5 w-5 ${iconColor}`} />
-          <div>
-            <h2 className="text-sm font-semibold text-text-primary">
-              {title}{" "}
-              <span className="text-text-muted font-normal">({count})</span>
-            </h2>
-            <p className="text-[10px] text-text-muted">{subtitle}</p>
-          </div>
-        </div>
-        <Link
-          href={actionHref}
-          className="text-xs text-brand-500 hover:underline flex items-center gap-1"
-        >
-          {actionLabel} <ArrowRight className="h-3 w-3" />
-        </Link>
+    <div className={`bg-white rounded-xl border border-surface-200 border-l-4 ${borderColor} p-4`}>
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className={`h-4 w-4 ${color}`} />
+        <span className="text-xs text-text-muted uppercase tracking-wider">{label}</span>
       </div>
-      {children}
+      <p className="text-2xl font-bold font-display text-text-primary">{value}</p>
     </div>
   );
 }
 
-// ── Gap row ─────────────────────────────────────────────────────────────────
-
-function GapRow({
-  gap,
-}: {
-  gap: {
-    title: string;
-    description: string;
-    priority: string;
-    metric: number;
-    metricLabel: string;
-    actionSuggestion: string;
-  };
-}) {
+function EmptyState({ text }: { text: string }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2 bg-surface-50 rounded-lg">
-      <div className="flex items-center gap-3 min-w-0">
-        <AlertTriangle className="h-3.5 w-3.5 text-accent-orange flex-shrink-0" />
-        <div className="min-w-0">
-          <p className="text-sm text-text-primary font-medium">{gap.title}</p>
-          <p className="text-[10px] text-text-muted truncate">
-            {gap.actionSuggestion}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-[10px] text-text-muted">
-          {gap.metric} {gap.metricLabel}
-        </span>
-        <span
-          className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-            PRIORITY_STYLES[gap.priority] || PRIORITY_STYLES.low
-          }`}
-        >
-          {PRIORITY_LABELS[gap.priority] || "Baixa"}
-        </span>
-      </div>
+    <div className="flex items-center gap-2 py-6 justify-center text-sm text-text-muted">
+      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+      {text}
     </div>
   );
 }

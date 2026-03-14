@@ -1,351 +1,267 @@
 import {
-  ShieldCheck,
-  AlertTriangle,
-  ImageOff,
-  Link2,
-  Copy,
+  Gauge,
+  Package,
   Tag,
-  Server,
-  CheckCircle2,
-  ChevronDown,
+  ShieldCheck,
+  Heart,
+  Layers,
+  Users,
   BarChart3,
 } from "lucide-react";
 import prisma from "@/lib/db/prisma";
 import {
-  getQualityIssues,
-  getQualityScore,
-  type QualityIssue,
-  type QualityReport,
-} from "@/lib/catalog/quality-review";
+  catalogOverallScore,
+  categoryMaturity,
+} from "@/lib/catalog/quality";
 
 export const dynamic = "force-dynamic";
 
+async function getCategoryMaturityAll() {
+  const categories = await prisma.category.findMany({
+    where: {
+      products: { some: { status: "ACTIVE" } },
+    },
+    select: { id: true },
+    take: 50,
+  });
+
+  const results = await Promise.all(
+    categories.map((c) => categoryMaturity(c.id))
+  );
+
+  return results.sort((a, b) => b.score - a.score);
+}
+
 export default async function CatalogQualityPage() {
-  const report = await getQualityIssues();
+  const [overall, categories] = await Promise.all([
+    catalogOverallScore(),
+    getCategoryMaturityAll(),
+  ]);
 
-  const {
-    totalProducts,
-    averageScore,
-    scoreDistribution,
-    issues,
-  } = report;
+  const scoreColor =
+    overall.score >= 70
+      ? "text-emerald-600"
+      : overall.score >= 40
+        ? "text-amber-600"
+        : "text-red-600";
 
-  const totalIssues =
-    issues.weakMatches.length +
-    issues.missingAttributes.length +
-    issues.probableDuplicates.length +
-    issues.missingImages.length +
-    issues.weakAffiliateUrls.length +
-    issues.inconsistentSources.length;
+  const scoreBg =
+    overall.score >= 70
+      ? "bg-emerald-50 border-emerald-200"
+      : overall.score >= 40
+        ? "bg-amber-50 border-amber-200"
+        : "bg-red-50 border-red-200";
+
+  // Identify top issues
+  const lowMaturityCategories = categories.filter((c) => c.score < 40);
+  const lowCompletenessFlag = overall.avgCompleteness < 60;
+  const lowOfferHealthFlag = overall.avgOfferHealth < 60;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-accent-blue" />
+          <Gauge className="h-6 w-6 text-accent-blue" />
           Qualidade do Catalogo
         </h1>
-        <p className="text-sm text-text-muted">
-          Revisao de qualidade em escala: duplicatas, atributos, imagens e
-          consistencia
+        <p className="text-sm text-text-muted mt-1">
+          Score geral de qualidade, completude de produtos, saude das ofertas e maturidade por categoria
         </p>
       </div>
 
-      {/* Score overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        <div className="card p-4">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">
-            Score Medio
-          </p>
-          <p
-            className={`text-3xl font-bold font-display ${
-              averageScore >= 70
-                ? "text-accent-green"
-                : averageScore >= 40
-                  ? "text-accent-orange"
-                  : "text-accent-red"
-            }`}
-          >
-            {averageScore}
-          </p>
-          <p className="text-[10px] text-text-muted">/100</p>
+      {/* Overall Score Hero */}
+      <div className={`rounded-xl border p-6 ${scoreBg} flex items-center gap-6`}>
+        <div className="flex-shrink-0 text-center">
+          <p className={`text-5xl font-bold font-display ${scoreColor}`}>{overall.score}</p>
+          <p className="text-xs text-text-muted mt-1">/ 100</p>
         </div>
-        <div className="card p-4">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">
-            Total Produtos
-          </p>
-          <p className="text-3xl font-bold font-display text-text-primary">
-            {totalProducts}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">
-            Excelente (80+)
-          </p>
-          <p className="text-3xl font-bold font-display text-accent-green">
-            {scoreDistribution.excellent}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">
-            Bom (60-79)
-          </p>
-          <p className="text-3xl font-bold font-display text-accent-blue">
-            {scoreDistribution.good}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">
-            Regular (40-59)
-          </p>
-          <p className="text-3xl font-bold font-display text-accent-orange">
-            {scoreDistribution.fair}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-text-muted uppercase tracking-wider mb-1">
-            Ruim (0-39)
-          </p>
-          <p className="text-3xl font-bold font-display text-accent-red">
-            {scoreDistribution.poor}
+        <div className="flex-1">
+          <h2 className="text-lg font-semibold text-text-primary mb-2">Score Geral do Catalogo</h2>
+          <p className="text-sm text-text-muted">
+            Calculado com base em completude de produtos (35%), saude das ofertas (35%),
+            diversidade de categorias (15%) e taxa de produtos ativos (15%).
           </p>
         </div>
       </div>
 
-      {/* Score distribution bar */}
-      <div className="card p-5">
-        <h2 className="text-lg font-semibold font-display text-text-primary mb-3 flex items-center gap-2">
-          <BarChart3 className="h-4 w-4 text-accent-blue" />
-          Distribuicao de Qualidade
-        </h2>
-        {totalProducts > 0 ? (
-          <>
-            <div className="w-full h-6 rounded-full overflow-hidden flex">
-              <ScoreBar
-                value={scoreDistribution.excellent}
-                total={
-                  scoreDistribution.excellent +
-                  scoreDistribution.good +
-                  scoreDistribution.fair +
-                  scoreDistribution.poor
-                }
-                color="bg-accent-green"
-                title="Excelente"
-              />
-              <ScoreBar
-                value={scoreDistribution.good}
-                total={
-                  scoreDistribution.excellent +
-                  scoreDistribution.good +
-                  scoreDistribution.fair +
-                  scoreDistribution.poor
-                }
-                color="bg-accent-blue"
-                title="Bom"
-              />
-              <ScoreBar
-                value={scoreDistribution.fair}
-                total={
-                  scoreDistribution.excellent +
-                  scoreDistribution.good +
-                  scoreDistribution.fair +
-                  scoreDistribution.poor
-                }
-                color="bg-accent-orange"
-                title="Regular"
-              />
-              <ScoreBar
-                value={scoreDistribution.poor}
-                total={
-                  scoreDistribution.excellent +
-                  scoreDistribution.good +
-                  scoreDistribution.fair +
-                  scoreDistribution.poor
-                }
-                color="bg-accent-red"
-                title="Ruim"
-              />
-            </div>
-            <div className="flex flex-wrap gap-4 mt-3">
-              <LegendItem color="bg-accent-green" label="Excelente (80+)" />
-              <LegendItem color="bg-accent-blue" label="Bom (60-79)" />
-              <LegendItem color="bg-accent-orange" label="Regular (40-59)" />
-              <LegendItem color="bg-accent-red" label="Ruim (0-39)" />
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-text-muted text-center py-4">
-            Nenhum produto para avaliar.
-          </p>
-        )}
-      </div>
-
-      {/* Summary */}
-      <div className="text-xs text-text-muted">
-        {totalIssues} problemas de qualidade detectados em {totalProducts}{" "}
-        produtos
-      </div>
-
-      {/* Issue sections */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <IssueSection
-          title="Matches Fracos"
-          icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
-          issues={issues.weakMatches}
-          emptyText="Nenhum match fraco encontrado."
-          badgeColor="bg-amber-100 text-amber-700"
+      {/* Metric Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <MetricCard
+          icon={Package}
+          label="Total Produtos"
+          value={overall.totalProducts}
         />
-
-        <IssueSection
-          title="Sem Atributos"
-          icon={<Tag className="h-4 w-4 text-accent-orange" />}
-          issues={issues.missingAttributes}
-          emptyText="Todos os produtos tem atributos completos."
-          badgeColor="bg-orange-100 text-orange-700"
+        <MetricCard
+          icon={ShieldCheck}
+          label="Ativos"
+          value={overall.activeProducts}
+          sub={overall.totalProducts > 0
+            ? `${Math.round((overall.activeProducts / overall.totalProducts) * 100)}%`
+            : undefined}
         />
-
-        <IssueSection
-          title="Duplicatas Provaveis"
-          icon={<Copy className="h-4 w-4 text-purple-500" />}
-          issues={issues.probableDuplicates}
-          emptyText="Nenhuma duplicata provavel encontrada."
-          badgeColor="bg-purple-100 text-purple-700"
+        <MetricCard
+          icon={BarChart3}
+          label="Completude Media"
+          value={overall.avgCompleteness}
+          sub="/100"
+          valueColor={overall.avgCompleteness >= 60 ? "text-emerald-600" : "text-amber-600"}
         />
-
-        <IssueSection
-          title="Sem Imagem"
-          icon={<ImageOff className="h-4 w-4 text-accent-red" />}
-          issues={issues.missingImages}
-          emptyText="Todos os produtos tem imagem."
-          badgeColor="bg-red-100 text-red-700"
+        <MetricCard
+          icon={Heart}
+          label="Saude Ofertas"
+          value={overall.avgOfferHealth}
+          sub="/100"
+          valueColor={overall.avgOfferHealth >= 60 ? "text-emerald-600" : "text-amber-600"}
         />
-
-        <IssueSection
-          title="URL Fraca"
-          icon={<Link2 className="h-4 w-4 text-blue-500" />}
-          issues={issues.weakAffiliateUrls}
-          emptyText="Todas as URLs de afiliado estao validas."
-          badgeColor="bg-blue-100 text-blue-700"
+        <MetricCard
+          icon={Layers}
+          label="Categorias"
+          value={overall.categoriesWithProducts}
         />
-
-        <IssueSection
-          title="Source Inconsistente"
-          icon={<Server className="h-4 w-4 text-slate-500" />}
-          issues={issues.inconsistentSources}
-          emptyText="Todas as fontes estao consistentes."
-          badgeColor="bg-slate-100 text-slate-700"
+        <MetricCard
+          icon={Users}
+          label="Marcas"
+          value={overall.brandsWithProducts}
         />
       </div>
-    </div>
-  );
-}
 
-// ─── Sub-components ─────────────────────────────────────────────────────────
-
-function ScoreBar({
-  value,
-  total,
-  color,
-  title,
-}: {
-  value: number;
-  total: number;
-  color: string;
-  title: string;
-}) {
-  const pct = total > 0 ? (value / total) * 100 : 0;
-  if (pct === 0) return null;
-  return (
-    <div
-      className={`${color} transition-all`}
-      style={{ width: `${pct}%` }}
-      title={`${title}: ${value} (${pct.toFixed(1)}%)`}
-    />
-  );
-}
-
-function LegendItem({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-      <div className={`w-3 h-3 rounded-sm ${color}`} />
-      {label}
-    </div>
-  );
-}
-
-function IssueSection({
-  title,
-  icon,
-  issues,
-  emptyText,
-  badgeColor,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  issues: QualityIssue[];
-  emptyText: string;
-  badgeColor: string;
-}) {
-  const highCount = issues.filter((i) => i.severity === "high").length;
-  const mediumCount = issues.filter((i) => i.severity === "medium").length;
-
-  return (
-    <div className="card p-5">
-      <div className="flex items-center justify-between mb-1">
-        <h2 className="text-lg font-semibold font-display text-text-primary flex items-center gap-2">
-          {icon}
-          {title}
-        </h2>
-        <span
-          className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${badgeColor}`}
-        >
-          {issues.length}
-        </span>
-      </div>
-
-      {issues.length > 0 && (
-        <div className="flex items-center gap-2 mb-3">
-          {highCount > 0 && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
-              {highCount} alta
-            </span>
-          )}
-          {mediumCount > 0 && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
-              {mediumCount} media
-            </span>
-          )}
-        </div>
-      )}
-
-      {issues.length > 0 ? (
-        <div className="space-y-1.5 max-h-64 overflow-y-auto">
-          {issues.map((issue, idx) => (
-            <div
-              key={idx}
-              className="flex items-start gap-2 p-2.5 rounded-lg bg-surface-50 text-xs"
-            >
-              <span
-                className={`flex-shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full ${
-                  issue.severity === "high" ? "bg-red-500" : "bg-amber-500"
-                }`}
-              />
-              <div className="min-w-0">
-                <p className="text-text-primary font-medium truncate">
-                  {issue.productName}
-                </p>
-                <p className="text-text-muted truncate">{issue.details}</p>
+      {/* Top Issues */}
+      {(lowCompletenessFlag || lowOfferHealthFlag || lowMaturityCategories.length > 0) && (
+        <section className="bg-white rounded-xl border border-surface-200 p-5">
+          <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+            <Tag className="h-5 w-5 text-orange-500" />
+            Principais Problemas
+          </h2>
+          <div className="space-y-2">
+            {lowCompletenessFlag && (
+              <div className="flex items-center gap-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                <BarChart3 className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-text-primary">Completude media abaixo de 60</p>
+                  <p className="text-xs text-text-muted">
+                    Score atual: {overall.avgCompleteness}/100. Produtos precisam de mais atributos preenchidos (imagem, descricao, marca, categoria, preco).
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 py-4 justify-center text-sm text-text-muted">
-          <CheckCircle2 className="h-4 w-4 text-accent-green" />
-          {emptyText}
-        </div>
+            )}
+            {lowOfferHealthFlag && (
+              <div className="flex items-center gap-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                <Heart className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-text-primary">Saude das ofertas abaixo de 60</p>
+                  <p className="text-xs text-text-muted">
+                    Score atual: {overall.avgOfferHealth}/100. Ofertas precisam de preco original, affiliate URL e atualizacao recente.
+                  </p>
+                </div>
+              </div>
+            )}
+            {lowMaturityCategories.length > 0 && (
+              <div className="flex items-center gap-3 px-3 py-2.5 bg-orange-50 border border-orange-200 rounded-lg">
+                <Layers className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-text-primary">
+                    {lowMaturityCategories.length} categoria(s) com maturidade baixa (&lt;40)
+                  </p>
+                  <p className="text-xs text-text-muted">
+                    {lowMaturityCategories.slice(0, 3).map((c) => c.categoryName).join(", ")}
+                    {lowMaturityCategories.length > 3 ? ` e mais ${lowMaturityCategories.length - 3}` : ""}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
       )}
+
+      {/* Category Maturity Table */}
+      <section className="bg-white rounded-xl border border-surface-200 p-5">
+        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <Layers className="h-5 w-5 text-accent-blue" />
+          Maturidade por Categoria
+        </h2>
+        {categories.length === 0 ? (
+          <p className="text-sm text-text-muted py-4 text-center">Nenhuma categoria com produtos ativos.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-200 text-text-muted">
+                  <th className="text-left py-2 pr-4">Categoria</th>
+                  <th className="text-right py-2 px-4">Produtos</th>
+                  <th className="text-right py-2 px-4">Import %</th>
+                  <th className="text-right py-2 px-4">Brand Cov.</th>
+                  <th className="text-right py-2 px-4">Faixa de Preco</th>
+                  <th className="text-right py-2 pl-4">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((cat) => {
+                  const catScoreColor =
+                    cat.score >= 70
+                      ? "text-emerald-700 bg-emerald-50"
+                      : cat.score >= 40
+                        ? "text-amber-700 bg-amber-50"
+                        : "text-red-700 bg-red-50";
+                  return (
+                    <tr key={cat.categoryId} className="border-b border-surface-100 hover:bg-surface-50">
+                      <td className="py-2 pr-4 font-medium">{cat.categoryName}</td>
+                      <td className="py-2 px-4 text-right">{cat.productCount}</td>
+                      <td className="py-2 px-4 text-right text-text-muted">
+                        {Math.round(cat.importedRatio * 100)}%
+                      </td>
+                      <td className="py-2 px-4 text-right text-text-muted">
+                        {Math.round(cat.brandCoverage * 100)}%
+                      </td>
+                      <td className="py-2 px-4 text-right text-text-muted">
+                        {cat.priceRange
+                          ? `R$ ${cat.priceRange.min.toFixed(0)} - ${cat.priceRange.max.toFixed(0)}`
+                          : "-"}
+                      </td>
+                      <td className="py-2 pl-4 text-right">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${catScoreColor}`}>
+                          {cat.score}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+// ── Sub-components ──
+
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  valueColor,
+}: {
+  icon: typeof Package;
+  label: string;
+  value: number;
+  sub?: string;
+  valueColor?: string;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-surface-200 p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="h-4 w-4 text-text-muted" />
+        <span className="text-xs text-text-muted uppercase tracking-wider">{label}</span>
+      </div>
+      <div className="flex items-end gap-1">
+        <p className={`text-2xl font-bold font-display ${valueColor || "text-text-primary"}`}>
+          {value.toLocaleString("pt-BR")}
+        </p>
+        {sub && <span className="text-xs text-text-muted mb-0.5">{sub}</span>}
+      </div>
     </div>
   );
 }

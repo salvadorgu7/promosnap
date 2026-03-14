@@ -487,11 +487,11 @@ async function main() {
 
   // 8. Subscribers
   const subscriberEmails = [
-    { email: "joao@teste.com", tags: ["eletronicos", "gamer"], interests: ["eletronicos", "gamer"] },
-    { email: "maria@teste.com", tags: ["beleza", "moda"], interests: ["beleza", "moda"] },
-    { email: "pedro@teste.com", tags: ["informatica", "notebooks"], interests: ["informatica", "notebooks"] },
-    { email: "ana@teste.com", tags: ["casa", "infantil"], interests: ["casa", "infantil"] },
-    { email: "lucas@teste.com", tags: ["esportes", "celulares"], interests: ["esportes", "celulares"] },
+    { email: "test1@promosnap.com", tags: ["eletronicos", "gamer"], interests: ["eletronicos", "gamer"] },
+    { email: "test2@promosnap.com", tags: ["beleza", "moda"], interests: ["beleza", "moda"] },
+    { email: "test3@promosnap.com", tags: ["informatica", "notebooks"], interests: ["informatica", "notebooks"] },
+    { email: "test4@promosnap.com", tags: ["casa", "infantil"], interests: ["casa", "infantil"] },
+    { email: "test5@promosnap.com", tags: ["esportes", "celulares"], interests: ["esportes", "celulares"] },
   ];
 
   for (const sub of subscriberEmails) {
