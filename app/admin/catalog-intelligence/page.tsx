@@ -139,9 +139,17 @@ export default async function CatalogIntelligencePage() {
                       {g.searchCount} buscas | media {g.avgResultsCount} resultados
                     </p>
                   </div>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 flex-shrink-0">
-                    GAP
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                      GAP
+                    </span>
+                    <Link
+                      href={`/admin/ingestao?q=${encodeURIComponent(g.query)}`}
+                      className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent-blue/10 text-accent-blue hover:bg-accent-blue/20 transition-colors"
+                    >
+                      Importar <ArrowRight className="h-2.5 w-2.5" />
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

@@ -4,6 +4,7 @@ import { runJob, type JobResult } from '@/lib/jobs/runner';
 const SNAPSHOT_RETENTION_DAYS = 180;
 const SEARCH_LOG_RETENTION_DAYS = 30;
 const OFFER_STALE_DAYS = 7;
+const TRENDING_KEYWORD_RETENTION_DAYS = 30;
 
 export async function cleanupData(): Promise<JobResult> {
   return runJob('cleanup', async (ctx) => {
@@ -42,7 +43,20 @@ export async function cleanupData(): Promise<JobResult> {
     });
     ctx.log(`Deactivated ${deactivatedOffers.count} stale offers (imported products preserved)`);
 
-    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count;
+    // Clean stale trending keywords (older than 30 days)
+    let deletedTrends = { count: 0 };
+    try {
+      const trendingCutoff = new Date(now.getTime() - TRENDING_KEYWORD_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+      ctx.log(`Deleting trending keywords older than ${TRENDING_KEYWORD_RETENTION_DAYS} days...`);
+      deletedTrends = await prisma.trendingKeyword.deleteMany({
+        where: { fetchedAt: { lt: trendingCutoff } },
+      });
+      ctx.log(`Cleaned ${deletedTrends.count} stale trending keywords`);
+    } catch (error) {
+      ctx.log(`Warning: failed to clean trending keywords: ${error}`);
+    }
+
+    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count + deletedTrends.count;
 
     ctx.log(`Cleanup complete: ${totalActions} total actions`);
 
@@ -53,6 +67,7 @@ export async function cleanupData(): Promise<JobResult> {
         deletedSnapshots: deletedSnapshots.count,
         deletedSearchLogs: deletedSearchLogs.count,
         deactivatedOffers: deactivatedOffers.count,
+        deletedTrendingKeywords: deletedTrends.count,
       },
     };
   });

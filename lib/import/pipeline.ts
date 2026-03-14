@@ -3,6 +3,7 @@
 // ============================================================================
 
 import prisma from '@/lib/db/prisma'
+import { canonicalMatch } from '@/lib/catalog/canonical-match'
 
 /** Maximum number of items allowed per batch import to prevent memory/timeout issues */
 export const MAX_BATCH_SIZE = 100
@@ -161,6 +162,7 @@ export async function runImportPipeline(
   const start = Date.now()
   const results: ImportItemResult[] = []
   let created = 0, updated = 0, skipped = 0, failed = 0
+  let canonicalMatches = 0
   let brandsDetected = 0, brandsUnknown = 0
   let catsResolved = 0, catsUnresolved = 0
   const prices: number[] = []
@@ -294,10 +296,38 @@ export async function runImportPipeline(
       const slug = generateSlug(cleanTitle, item.externalId.slice(-6).toLowerCase())
 
       // Find or create product
+      // Step 1: Try slug-based lookup (fast, exact match on same product re-import)
       let dbProduct = await prisma.product.findFirst({
         where: { slug: { startsWith: slug.slice(0, 60) } },
       })
 
+      // Step 2: If no slug match, try canonical matching (fuzzy name/brand/model similarity)
+      let matchConfidence: number | null = null
+      if (!dbProduct) {
+        try {
+          const match = await canonicalMatch({
+            rawTitle: item.title,
+            rawBrand: brandName ?? null,
+            rawCategory: item.categorySlug ?? null,
+          })
+          if (match && match.score >= 0.7) {
+            // Strong enough match — reuse existing product
+            dbProduct = await prisma.product.findUnique({ where: { id: match.productId } })
+            if (dbProduct) {
+              matchConfidence = match.score
+              canonicalMatches++
+              console.log(
+                `[import-pipeline] canonical match: "${cleanTitle}" → "${match.productName}" (score=${match.score.toFixed(2)}, ${match.confidence}, via=${match.matchedOn.join(',')})`
+              )
+            }
+          }
+        } catch (err) {
+          // Canonical match is optional — log and continue without it
+          console.warn(`[import-pipeline] canonical match skipped for "${item.externalId}":`, err instanceof Error ? err.message : err)
+        }
+      }
+
+      // Step 3: No match at all — create new product
       if (!dbProduct) {
         dbProduct = await prisma.product.create({
           data: {
@@ -325,6 +355,7 @@ export async function runImportPipeline(
           imageUrl: item.imageUrl ?? null,
           availability: (item.availability === 'in_stock') ? 'IN_STOCK' : 'OUT_OF_STOCK',
           status: 'ACTIVE',
+          ...(matchConfidence != null && { matchConfidence }),
         },
       })
 
@@ -371,7 +402,7 @@ export async function runImportPipeline(
   // Dedup stats
   const existingCount = results.filter(r => r.action === 'updated' || (r.action === 'skipped' && r.reason === 'price unchanged')).length
   const newCount = results.filter(r => r.action === 'created').length
-  console.log(`[import-pipeline] dedup: ${existingCount} existing, ${newCount} new`)
+  console.log(`[import-pipeline] dedup: ${existingCount} existing, ${newCount} new, ${canonicalMatches} canonical-matched`)
   console.log(`[import-pipeline] brands: ${brandsDetected} detected, ${brandsUnknown} unknown`)
   console.log(`[import-pipeline] categories: ${catsResolved} resolved, ${catsUnresolved} unresolved`)
   if (prices.length > 0) {
@@ -381,7 +412,7 @@ export async function runImportPipeline(
   // Batch summary
   const topBrands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k}:${v}`).join(', ')
   const topCats = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k}:${v}`).join(', ')
-  console.log(`[import-pipeline] batch complete: source=${sourceSlug} created=${created} updated=${updated} skipped=${skipped} failed=${failed} brands=[${topBrands}] categories=[${topCats}] priceRange=R$${priceStats.min.toFixed(0)}-R$${priceStats.max.toFixed(0)}`)
+  console.log(`[import-pipeline] batch complete: source=${sourceSlug} created=${created} updated=${updated} skipped=${skipped} failed=${failed} canonicalMatches=${canonicalMatches} brands=[${topBrands}] categories=[${topCats}] priceRange=R$${priceStats.min.toFixed(0)}-R$${priceStats.max.toFixed(0)}`)
 
   return { created, updated, skipped, failed, total: items.length, items: results, durationMs, sourceSlug, brandStats, categoryStats, priceStats }
 }
