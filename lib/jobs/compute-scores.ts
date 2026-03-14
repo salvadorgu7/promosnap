@@ -115,10 +115,15 @@ export async function computeScores(): Promise<JobResult> {
           score = Math.round((score + clickBoost) * 100) / 100;
         }
 
-        await prisma.offer.update({
-          where: { id: offer.id },
-          data: { offerScore: score },
-        });
+        try {
+          await prisma.offer.update({
+            where: { id: offer.id },
+            data: { offerScore: score },
+          });
+        } catch {
+          // Offer may have been deleted between fetch and update — skip gracefully
+          continue;
+        }
 
         // Track best score per product
         const productId = offer.listing.productId;
@@ -157,11 +162,15 @@ export async function computeScores(): Promise<JobResult> {
           ? Math.round(bestScore * 1.15 * 100) / 100
           : bestScore;
 
-        await prisma.product.update({
-          where: { id: productId },
-          data: { popularityScore: boostedScore },
-        });
-        productsUpdated++;
+        try {
+          await prisma.product.update({
+            where: { id: productId },
+            data: { popularityScore: boostedScore },
+          });
+          productsUpdated++;
+        } catch {
+          // Product may have been deleted — skip gracefully
+        }
       }
     }
 

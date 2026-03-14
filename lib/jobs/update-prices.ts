@@ -55,12 +55,16 @@ export async function updatePrices(): Promise<JobResult> {
 
       for (const offer of batch) {
         if (offer.lastSeenAt < deactivateThreshold) {
-          await prisma.offer.update({
-            where: { id: offer.id },
-            data: { isActive: false },
-          });
-          deactivated++;
-          ctx.log(`Deactivated offer ${offer.id} (last seen ${offer.lastSeenAt.toISOString()})`);
+          try {
+            await prisma.offer.update({
+              where: { id: offer.id },
+              data: { isActive: false },
+            });
+            deactivated++;
+            ctx.log(`Deactivated offer ${offer.id} (last seen ${offer.lastSeenAt.toISOString()})`);
+          } catch {
+            // Offer may have been deleted — skip gracefully
+          }
         } else {
           needsUpdate++;
           ctx.log(`Offer ${offer.id} needs update (last seen ${offer.lastSeenAt.toISOString()})`);
@@ -86,15 +90,32 @@ export async function updatePrices(): Promise<JobResult> {
     for (let i = 0; i < activeOffers.length; i += BATCH_SIZE) {
       const batch = activeOffers.slice(i, i + BATCH_SIZE);
 
-      await prisma.priceSnapshot.createMany({
-        data: batch.map((offer) => ({
-          offerId: offer.id,
-          price: offer.currentPrice,
-          originalPrice: offer.originalPrice,
-        })),
-      });
-
-      snapshotsCreated += batch.length;
+      try {
+        await prisma.priceSnapshot.createMany({
+          data: batch.map((offer) => ({
+            offerId: offer.id,
+            price: offer.currentPrice,
+            originalPrice: offer.originalPrice,
+          })),
+        });
+        snapshotsCreated += batch.length;
+      } catch {
+        // Some offers may have been deleted — fall back to individual creates
+        for (const offer of batch) {
+          try {
+            await prisma.priceSnapshot.create({
+              data: {
+                offerId: offer.id,
+                price: offer.currentPrice,
+                originalPrice: offer.originalPrice,
+              },
+            });
+            snapshotsCreated++;
+          } catch {
+            // Offer deleted — skip
+          }
+        }
+      }
     }
 
     ctx.log(
