@@ -105,7 +105,8 @@ function mlToAdapterResult(item: MLSearchResult): AdapterResult {
 
   if (affiliateId && item.permalink) {
     // ML affiliate link format
-    affiliateUrl = `${item.permalink}?matt_tool=${affiliateId}`
+    const mattWord = process.env.MERCADOLIVRE_AFFILIATE_WORD
+    affiliateUrl = `${item.permalink}?matt_tool=${affiliateId}${mattWord ? `&matt_word=${mattWord}` : ''}`
   }
 
   return {
@@ -130,7 +131,8 @@ function mlItemToAdapterResult(item: MLItemResponse): AdapterResult {
   let affiliateUrl: string | undefined
 
   if (affiliateId && item.permalink) {
-    affiliateUrl = `${item.permalink}?matt_tool=${affiliateId}`
+    const mattWord = process.env.MERCADOLIVRE_AFFILIATE_WORD
+    affiliateUrl = `${item.permalink}?matt_tool=${affiliateId}${mattWord ? `&matt_word=${mattWord}` : ''}`
   }
 
   const mainImage = item.pictures?.[0]?.secure_url || item.pictures?.[0]?.url || mlImageUrl(item.thumbnail)

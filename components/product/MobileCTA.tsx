@@ -8,14 +8,15 @@ interface MobileCTAProps {
   price: number;
   affiliateUrl: string;
   sourceName: string;
+  offerId?: string;
 }
 
-export default function MobileCTA({ price, affiliateUrl, sourceName }: MobileCTAProps) {
+export default function MobileCTA({ price, affiliateUrl, sourceName, offerId }: MobileCTAProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setVisible(window.scrollY > 300);
+      setVisible(window.scrollY > 120);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -31,7 +32,7 @@ export default function MobileCTA({ price, affiliateUrl, sourceName }: MobileCTA
           <p className="text-[11px] text-text-muted truncate">em {sourceName}</p>
         </div>
         <a
-          href={affiliateUrl}
+          href={offerId ? `/api/clickout/${offerId}?page=product` : affiliateUrl}
           target="_blank"
           rel="noopener noreferrer nofollow"
           className="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm font-semibold whitespace-nowrap"

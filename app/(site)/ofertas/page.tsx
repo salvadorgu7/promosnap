@@ -81,7 +81,7 @@ export default async function OfertasPage({
       {sorted.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {sorted.map((p) => (
-            <OfferCard key={p.id} product={p} />
+            <OfferCard key={p.id} product={p} railSource="offers" page="offer" />
           ))}
         </div>
       ) : (

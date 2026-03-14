@@ -41,6 +41,7 @@ export function buildProductCard(p: any): ProductCard | null {
     category: p.category?.name,
     categorySlug: p.category?.slug,
     bestOffer: {
+      offerId: best.id,
       price: best.currentPrice,
       originalPrice: best.originalPrice ?? undefined,
       discount,
@@ -74,6 +75,7 @@ export const PRODUCT_INCLUDE = {
         orderBy: { offerScore: 'desc' as const },
         take: 3,
         select: {
+          id: true,
           currentPrice: true,
           originalPrice: true,
           offerScore: true,

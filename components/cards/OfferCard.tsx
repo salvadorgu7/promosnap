@@ -61,19 +61,17 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
   const { bestOffer, badges } = product;
   const discount = bestOffer.discount;
 
-  // Build clickout URL with tracking params
+  // Build clickout URL via tracking API
   const buildCtaUrl = () => {
-    if (!bestOffer.affiliateUrl || bestOffer.affiliateUrl === "#") {
+    if (!bestOffer.offerId || !bestOffer.affiliateUrl || bestOffer.affiliateUrl === "#") {
       return `/produto/${product.slug}`;
     }
-    const base = bestOffer.affiliateUrl;
     const params = new URLSearchParams();
     if (product.originType) params.set('origin', product.originType);
     if (railSource) params.set('rail', railSource);
     if (page) params.set('page', page);
-    const sep = base.includes('?') ? '&' : '?';
     const paramStr = params.toString();
-    return paramStr ? `${base}${sep}${paramStr}` : base;
+    return `/api/clickout/${bestOffer.offerId}${paramStr ? `?${paramStr}` : ''}`;
   };
   const ctaUrl = buildCtaUrl();
   const hasDirectLink = bestOffer.affiliateUrl && bestOffer.affiliateUrl !== "#";
@@ -83,7 +81,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
     <div className="card group flex flex-col w-full overflow-hidden">
       {/* Badges */}
       {badges.length > 0 && (
-        <div className="flex items-center gap-1 px-2.5 pt-2.5 flex-wrap">
+        <div className="flex items-center gap-1 px-2 pt-2 flex-wrap">
           {badges.slice(0, 3).map((b, i) => (
             <BadgeChip key={i} badge={b} />
           ))}
@@ -91,8 +89,8 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
       )}
 
       {/* Image */}
-      <Link href={`/produto/${product.slug}`} className="block px-2.5 pt-2.5">
-        <div className="relative aspect-[4/3] rounded-lg overflow-hidden image-container">
+      <Link href={`/produto/${product.slug}`} className="block px-2 pt-2">
+        <div className="relative aspect-[5/4] rounded-lg overflow-hidden image-container">
           <ImageWithFallback
             src={product.imageUrl}
             alt={product.name}
@@ -113,7 +111,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
       </Link>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col px-2.5 pt-2 pb-2.5">
+      <div className="flex-1 flex flex-col px-2 pt-2 pb-2.5">
         <div className="flex items-center gap-1 text-[11px] text-text-muted mb-1 flex-wrap">
           <span className="font-medium">{bestOffer.sourceName}</span>
           {product.offersCount > 1 && (
@@ -180,7 +178,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
             href={ctaUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="btn-offer mt-2 h-8 sm:h-9 text-xs"
+            className="btn-offer mt-2 h-7 sm:h-8 text-xs"
           >
             Ver Oferta
             <ExternalLink className="w-3 h-3" />
@@ -188,7 +186,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
         ) : (
           <Link
             href={`/produto/${product.slug}`}
-            className="btn-offer mt-2 h-8 sm:h-9 text-xs flex items-center justify-center gap-1.5"
+            className="btn-offer mt-2 h-7 sm:h-8 text-xs flex items-center justify-center gap-1.5"
           >
             Comparar Precos
             <ExternalLink className="w-3 h-3" />

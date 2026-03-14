@@ -362,8 +362,25 @@ export async function runImportPipeline(
       })
 
       // Create offer + snapshot
-      // Use productUrl as affiliateUrl for imported products (ML permalink etc.)
-      const affiliateUrl = item.productUrl || null
+      // Build affiliate URL using adapter when available, fallback to raw product URL
+      let affiliateUrl = item.productUrl || null
+      if (affiliateUrl && affiliateUrl.startsWith('http')) {
+        try {
+          const adapterMap: Record<string, () => Promise<{ buildAffiliateUrl: (url: string) => string }>> = {
+            'mercadolivre': async () => {
+              const { MercadoLivreAdapter } = await import('@/adapters/mercadolivre')
+              return new MercadoLivreAdapter()
+            },
+          }
+          const getAdapter = adapterMap[item.sourceSlug]
+          if (getAdapter) {
+            const adapter = await getAdapter()
+            affiliateUrl = adapter.buildAffiliateUrl(affiliateUrl)
+          }
+        } catch {
+          // Adapter unavailable or misconfigured — use raw URL
+        }
+      }
       const hasValidAffiliateUrl = !!affiliateUrl && affiliateUrl !== '#' && affiliateUrl.startsWith('http')
       if (!hasValidAffiliateUrl) {
         console.warn(`[import-pipeline] product "${cleanTitle}" has no valid affiliate URL`)

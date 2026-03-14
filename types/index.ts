@@ -98,6 +98,7 @@ export interface ProductCard {
   category?: string
   categorySlug?: string
   bestOffer: {
+    offerId: string
     price: number
     originalPrice?: number
     discount?: number

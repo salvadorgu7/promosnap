@@ -7,6 +7,7 @@ export class MercadoLivreAdapter extends BaseAdapter {
   isEnabled = true
 
   private affiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID || ''
+  private affiliateWord = process.env.MERCADOLIVRE_AFFILIATE_WORD || ''
 
   async searchProducts(query: string, options?: SearchOptions): Promise<RawListing[]> {
     this.log(`Searching: "${query}"`, options)
@@ -37,7 +38,11 @@ export class MercadoLivreAdapter extends BaseAdapter {
 
   buildAffiliateUrl(productUrl: string): string {
     if (!this.affiliateId) return productUrl
-    return `https://www.mercadolivre.com.br/affiliate-redirect?url=${encodeURIComponent(productUrl)}&aff_id=${this.affiliateId}`
+    // ML affiliate format: matt_tool (numeric ID) + matt_word (username)
+    const sep = productUrl.includes('?') ? '&' : '?'
+    const params = [`matt_tool=${this.affiliateId}`]
+    if (this.affiliateWord) params.push(`matt_word=${this.affiliateWord}`)
+    return `${productUrl}${sep}${params.join('&')}`
   }
 
   async healthCheck(): Promise<HealthCheckResult> {

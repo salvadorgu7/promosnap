@@ -62,10 +62,10 @@ export default function Header() {
 
           {/* Mobile buttons */}
           <div className="flex md:hidden items-center gap-1">
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-lg hover:bg-surface-100">
+            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-lg hover:bg-surface-100 min-w-[44px] min-h-[44px]">
               <Search className="w-5 h-5 text-surface-600" />
             </button>
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-surface-100">
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-surface-100 min-w-[44px] min-h-[44px]">
               {mobileOpen ? <X className="w-5 h-5 text-surface-600" /> : <Menu className="w-5 h-5 text-surface-600" />}
             </button>
           </div>

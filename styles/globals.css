@@ -165,7 +165,7 @@
 
   /* ---- Prices ---- */
   .price-big {
-    @apply font-display font-extrabold text-2xl text-primary-900 tracking-tight;
+    @apply font-display font-extrabold text-lg sm:text-xl text-primary-900 tracking-tight;
   }
   .price-old {
     @apply text-surface-400 line-through text-sm;
@@ -176,7 +176,7 @@
 
   /* ---- Horizontal rail ---- */
   .rail {
-    @apply flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory;
+    @apply flex gap-3 md:gap-4 overflow-x-auto pb-4 snap-x snap-proximity;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }

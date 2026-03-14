@@ -225,7 +225,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     : undefined;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 pb-24 lg:pb-6">
+    <div className="max-w-7xl mx-auto px-4 py-6 pb-20 lg:pb-6">
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} />
 
@@ -392,7 +392,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                   <p className="text-xs text-text-muted mt-1">em {bestOffer.sourceName}</p>
                 </div>
                 <a
-                  href={bestOffer.affiliateUrl}
+                  href={`/api/clickout/${bestOffer.id}?page=product`}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   className="btn-primary flex items-center gap-2 px-6 py-3"
@@ -535,7 +535,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
 
                       {/* CTA */}
                       <a
-                        href={offer.affiliateUrl}
+                        href={`/api/clickout/${offer.id}?page=product`}
                         target="_blank"
                         rel="noopener noreferrer nofollow"
                         className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -631,7 +631,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {similarProducts.map((p) => (
-              <OfferCard key={p.id} product={p} />
+              <OfferCard key={p.id} product={p} railSource="similar" page="product" />
             ))}
           </div>
         </section>
@@ -643,6 +643,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           price={bestPrice}
           affiliateUrl={bestOffer.affiliateUrl}
           sourceName={bestOffer.sourceName}
+          offerId={bestOffer.id}
         />
       )}
     </div>
