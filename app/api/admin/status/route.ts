@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
     const emailsFailed = await prisma.emailLog.count({ where: { status: 'failed' } }).catch(() => 0)
 
     // Expected jobs vs actual runs
-    const expectedJobs = ['ingest-ml-trends', 'update-prices', 'compute-scores', 'discover-import', 'cleanup-data', 'check-alerts', 'generate-sitemap']
+    const expectedJobs = ['ingest-ml-trends', 'update-prices', 'compute-scores', 'discover-import', 'cleanup', 'check-alerts', 'generate-sitemap']
     const jobCoverage = expectedJobs.map(name => ({
       job: name,
       hasRun: !!lastJobs[name],

@@ -26,7 +26,7 @@ async function loadJobs() {
   JOB_MAP['ingest'] = { fn: ingestMLTrends, description: 'Importar trends do Mercado Livre', requiresCredentials: 'ML_CLIENT_ID', jobRunName: 'ingest-ml-trends' }
   JOB_MAP['update-prices'] = { fn: updatePrices, description: 'Atualizar precos e criar snapshots', jobRunName: 'update-prices' }
   JOB_MAP['compute-scores'] = { fn: computeScores, description: 'Recalcular scores de ofertas e produtos', jobRunName: 'compute-scores' }
-  JOB_MAP['cleanup'] = { fn: cleanupData, description: 'Limpar dados antigos (snapshots, logs, ofertas stale)', jobRunName: 'cleanup-data' }
+  JOB_MAP['cleanup'] = { fn: cleanupData, description: 'Limpar dados antigos (snapshots, logs, ofertas stale)', jobRunName: 'cleanup' }
   JOB_MAP['sitemap'] = { fn: generateSitemap, description: 'Gerar contagem de URLs para sitemap', jobRunName: 'generate-sitemap' }
   JOB_MAP['check-alerts'] = { fn: checkAlerts, description: 'Verificar alertas de preco e enviar emails', requiresCredentials: 'RESEND_API_KEY (opcional)', jobRunName: 'check-alerts' }
   JOB_MAP['discover-import'] = { fn: discoverAndImport, description: 'Discovery automatico + importacao via ML', requiresCredentials: 'ML_CLIENT_ID', jobRunName: 'discover-import' }
