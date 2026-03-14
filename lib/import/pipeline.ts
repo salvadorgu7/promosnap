@@ -216,43 +216,96 @@ export async function runImportPipeline(
       })
 
       if (existing) {
-        // Update existing
-        const lastOffer = existing.offers[0]
-        if (lastOffer && lastOffer.currentPrice !== item.currentPrice) {
-          await prisma.offer.update({
-            where: { id: lastOffer.id },
-            data: {
-              currentPrice: item.currentPrice,
-              originalPrice: item.originalPrice ?? null,
-              isFreeShipping: item.isFreeShipping ?? false,
-              lastSeenAt: new Date(),
-            },
-          })
-          await prisma.priceSnapshot.create({
-            data: {
-              offerId: lastOffer.id,
-              price: item.currentPrice,
-              originalPrice: item.originalPrice ?? null,
-            },
-          })
-          // Update importedAt on re-import
-          if (existing.productId) {
-            await prisma.product.update({
-              where: { id: existing.productId },
-              data: { importedAt: new Date() },
+        // Update existing — also backfill category/brand if missing
+        if (existing.productId) {
+          const productUpdate: Record<string, unknown> = {}
+
+          // Backfill categoryId if product has none and we now have one
+          if (item.categorySlug) {
+            const cat = await prisma.category.upsert({
+              where: { slug: item.categorySlug },
+              create: {
+                name: item.categorySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                slug: item.categorySlug,
+              },
+              update: {},
             })
+            const existingProduct = await prisma.product.findUnique({ where: { id: existing.productId }, select: { categoryId: true, brandId: true } })
+            if (existingProduct && !existingProduct.categoryId) {
+              productUpdate.categoryId = cat.id
+              catsResolved++
+            } else if (existingProduct?.categoryId) {
+              catsResolved++
+            } else {
+              catsUnresolved++
+            }
+
+            // Backfill brandId if product has none
+            if (existingProduct && !existingProduct.brandId) {
+              const brandName = item.brand || detectBrand(item.title)
+              if (brandName) {
+                const brandSlug = brandName.toLowerCase().replace(/\s+/g, '-')
+                const normalizedBrand = brandName.charAt(0).toUpperCase() + brandName.slice(1)
+                const brand = await prisma.brand.upsert({
+                  where: { slug: brandSlug },
+                  create: { name: normalizedBrand, slug: brandSlug },
+                  update: {},
+                })
+                productUpdate.brandId = brand.id
+                brandsDetected++
+              }
+            }
+          } else {
+            catsUnresolved++
           }
-          results.push({ externalId: item.externalId, action: 'updated', productId: existing.productId ?? undefined })
-          updated++
-        } else {
-          // Same price — just touch lastSeenAt
-          if (lastOffer) {
+
+          const lastOffer = existing.offers[0]
+          if (lastOffer && lastOffer.currentPrice !== item.currentPrice) {
             await prisma.offer.update({
               where: { id: lastOffer.id },
-              data: { lastSeenAt: new Date() },
+              data: {
+                currentPrice: item.currentPrice,
+                originalPrice: item.originalPrice ?? null,
+                isFreeShipping: item.isFreeShipping ?? false,
+                lastSeenAt: new Date(),
+              },
             })
+            await prisma.priceSnapshot.create({
+              data: {
+                offerId: lastOffer.id,
+                price: item.currentPrice,
+                originalPrice: item.originalPrice ?? null,
+              },
+            })
+            productUpdate.importedAt = new Date()
+            await prisma.product.update({
+              where: { id: existing.productId },
+              data: productUpdate,
+            })
+            results.push({ externalId: item.externalId, action: 'updated', productId: existing.productId })
+            updated++
+          } else {
+            // Same price — just touch lastSeenAt, but still backfill category/brand
+            if (lastOffer) {
+              await prisma.offer.update({
+                where: { id: lastOffer.id },
+                data: { lastSeenAt: new Date() },
+              })
+            }
+            if (Object.keys(productUpdate).length > 0) {
+              await prisma.product.update({
+                where: { id: existing.productId },
+                data: productUpdate,
+              })
+              results.push({ externalId: item.externalId, action: 'updated', productId: existing.productId, reason: 'backfill category/brand' })
+              updated++
+            } else {
+              results.push({ externalId: item.externalId, action: 'skipped', reason: 'price unchanged' })
+              skipped++
+            }
           }
-          results.push({ externalId: item.externalId, action: 'skipped', reason: 'price unchanged' })
+        } else {
+          results.push({ externalId: item.externalId, action: 'skipped', reason: 'no productId' })
           skipped++
         }
         continue
