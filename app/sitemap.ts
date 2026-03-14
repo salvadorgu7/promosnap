@@ -3,6 +3,8 @@ import prisma from "@/lib/db/prisma";
 import { BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
 import { OFFER_PAGE_SLUGS } from "@/lib/seo/offer-pages";
 import { COMPARISON_SLUGS } from "@/lib/seo/comparisons";
+import { VALE_A_PENA_SLUGS } from "@/lib/seo/vale-a-pena";
+import { PRICE_RANGE_SLUGS } from "@/lib/seo/price-range-pages";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${APP_URL}/lojas`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${APP_URL}/trending`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${APP_URL}/favoritos`, lastModified: now, changeFrequency: "daily", priority: 0.5 },
+    { url: `${APP_URL}/preco-hoje`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
+    { url: `${APP_URL}/radar`, lastModified: now, changeFrequency: "daily", priority: 0.5 },
   ];
 
   // Dynamic pages from DB (graceful fallback if DB unavailable)
@@ -111,6 +115,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // "Vale a Pena" pages
+  const valeAPenaPages: MetadataRoute.Sitemap = VALE_A_PENA_SLUGS.map((slug) => ({
+    url: `${APP_URL}/vale-a-pena/${slug}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  // "Faixa de Preco" pages
+  const faixaPrecoPages: MetadataRoute.Sitemap = PRICE_RANGE_SLUGS.map((slug) => ({
+    url: `${APP_URL}/faixa-preco/${slug}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
   return [
     ...staticPages,
     ...categoryPages,
@@ -120,5 +140,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...ofertasPages,
     ...compararPages,
     ...articlePages,
+    ...valeAPenaPages,
+    ...faixaPrecoPages,
   ];
 }

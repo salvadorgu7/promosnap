@@ -27,6 +27,7 @@ import ContextualNav from "@/components/product/ContextualNav";
 import DecisionSummary from "@/components/product/DecisionSummary";
 import SmartDecisionBlock from "@/components/product/SmartDecisionBlock";
 import QuickCompare from "@/components/product/QuickCompare";
+import ContinueExploring from "@/components/product/ContinueExploring";
 import WhyHighlighted from "@/components/product/WhyHighlighted";
 import CanonicalView from "@/components/product/CanonicalView";
 import MiniCluster from "@/components/product/MiniCluster";
@@ -710,6 +711,13 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
       )}
+
+      {/* Continue Exploring */}
+      <ContinueExploring
+        productName={product.name}
+        categorySlug={product.category?.slug}
+        categoryName={product.category?.name}
+      />
 
       {/* Sticky mobile CTA */}
       {bestOffer && (

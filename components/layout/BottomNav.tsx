@@ -20,6 +20,8 @@ const menuLinks = [
   { href: "/cupons", label: "Cupons" },
   { href: "/mais-vendidos", label: "Mais Vendidos" },
   { href: "/menor-preco", label: "Menor Preço" },
+  { href: "/radar", label: "Meu Radar" },
+  { href: "/preco-hoje", label: "Preco Hoje" },
 ];
 
 export default function BottomNav() {

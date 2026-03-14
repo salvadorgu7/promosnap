@@ -324,6 +324,80 @@ export function distributionEmail(offer: {
   );
 }
 
+/**
+ * Weekly digest email with top deals and summary stats
+ */
+export function weeklyDigestEmail(
+  deals: Array<{
+    name: string;
+    price: number;
+    imageUrl?: string;
+    url: string;
+    discount?: number;
+  }>,
+  summary: { totalDeals: number; avgDiscount: number }
+): string {
+  const weekDate = new Date().toLocaleDateString("pt-BR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const dealCards = deals
+    .slice(0, 10)
+    .map(
+      (deal) => `
+      <div class="deal-card">
+        ${
+          deal.imageUrl
+            ? `<div style="text-align:center;margin-bottom:8px;">
+                <img src="${escapeHtml(deal.imageUrl)}" alt="${escapeHtml(deal.name)}" style="max-width:120px;max-height:120px;border-radius:6px;" />
+              </div>`
+            : ""
+        }
+        <p class="deal-name">${escapeHtml(deal.name)}</p>
+        <p class="deal-price">R$ ${deal.price.toFixed(2).replace(".", ",")}</p>
+        ${deal.discount && deal.discount > 0 ? `<p class="deal-discount">-${deal.discount}% OFF</p>` : ""}
+        <a href="${escapeHtml(deal.url)}" class="deal-btn">Ver Oferta &rarr;</a>
+      </div>
+    `
+    )
+    .join("");
+
+  const statsBlock = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr>
+        <td style="text-align:center;padding:16px;background-color:#f4f4f5;border-radius:8px 0 0 8px;">
+          <p style="color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 4px;">Ofertas da semana</p>
+          <p style="color:#18181b;font-size:24px;font-weight:700;margin:0;">${summary.totalDeals}</p>
+        </td>
+        <td style="text-align:center;padding:16px;background-color:#f4f4f5;border-radius:0 8px 8px 0;">
+          <p style="color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 4px;">Desconto medio</p>
+          <p style="color:#16a34a;font-size:24px;font-weight:700;margin:0;">${summary.avgDiscount}%</p>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const content = `
+    <h2>Resumo Semanal</h2>
+    <p style="color:#71717a;font-size:13px;margin-bottom:20px;">Semana encerrada em ${weekDate}</p>
+    <p>Confira as melhores ofertas que encontramos nesta semana. Precos verificados e comparados em tempo real.</p>
+    <hr class="divider">
+    ${statsBlock}
+    ${dealCards}
+    <hr class="divider">
+    <p style="text-align:center;">
+      <a href="${APP_URL}/ofertas" class="btn">Ver Todas as Ofertas</a>
+    </p>
+  `;
+
+  return baseLayout(
+    content,
+    `Resumo Semanal — ${summary.totalDeals} ofertas com ate ${summary.avgDiscount}% de desconto!`
+  );
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

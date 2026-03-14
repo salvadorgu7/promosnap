@@ -23,6 +23,8 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const fetchedRef = useRef(false);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem("ps_notifications");
@@ -30,6 +32,33 @@ export default function NotificationBell() {
         const stored: Notification[] = JSON.parse(raw);
         setNotifications(stored);
       }
+    } catch {}
+  }, []);
+
+  // Fetch server-side notifications for favorited products (once per session)
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    try {
+      const favs = localStorage.getItem("ps_favorites");
+      if (!favs) return;
+      const ids: string[] = JSON.parse(favs);
+      if (ids.length === 0) return;
+      fetchedRef.current = true;
+
+      fetch(`/api/notifications?ids=${ids.join(",")}`)
+        .then((r) => r.json())
+        .then((serverNotifs: Notification[]) => {
+          setNotifications((prev) => {
+            const existing = new Set(prev.map((n) => n.id));
+            const merged = [
+              ...prev,
+              ...serverNotifs.filter((n: Notification) => !existing.has(n.id)),
+            ];
+            localStorage.setItem("ps_notifications", JSON.stringify(merged));
+            return merged;
+          });
+        })
+        .catch(() => {}); // Silent fail
     } catch {}
   }, []);
 

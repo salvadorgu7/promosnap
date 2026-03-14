@@ -39,6 +39,7 @@ import {
   Play,
   RefreshCw,
   Plug,
+  Search,
 } from "lucide-react";
 
 interface NavItem {
@@ -88,6 +89,8 @@ const navGroups: NavGroup[] = [
     title: "Growth",
     items: [
       { href: "/admin/growth-ops", label: "Growth & Ops", icon: Rocket },
+      { href: "/admin/growth", label: "Growth", icon: TrendingUp },
+      { href: "/admin/query-intelligence", label: "Query Intelligence", icon: Search },
       { href: "/admin/tendencias", label: "Tendencias", icon: TrendingUp },
       { href: "/admin/email", label: "Email", icon: Mail },
       { href: "/admin/alertas", label: "Alertas", icon: Bell },

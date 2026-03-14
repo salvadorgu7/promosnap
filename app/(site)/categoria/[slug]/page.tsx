@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SlidersHorizontal, Brain, TrendingDown, Truck } from "lucide-react";
+import { SlidersHorizontal, Brain, TrendingDown, Truck, Scale, Award } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
@@ -301,6 +301,72 @@ export default async function CategoriaPage({
           ctaHref="/ofertas"
         />
       )}
+
+      {/* Comparativos nesta Categoria */}
+      {(() => {
+        const categoryComparisons = COMPARISON_LIST.filter(
+          (c) =>
+            c.productA.query.toLowerCase().includes(name.toLowerCase()) ||
+            c.productB.query.toLowerCase().includes(name.toLowerCase()) ||
+            name.toLowerCase().includes(c.productA.query.toLowerCase()) ||
+            name.toLowerCase().includes(c.productB.query.toLowerCase())
+        );
+        if (categoryComparisons.length === 0) return null;
+        return (
+          <section className="mt-8">
+            <h2 className="text-lg font-bold font-display text-text-primary mb-3 flex items-center gap-2">
+              <Scale className="w-5 h-5 text-brand-500" /> Comparativos nesta Categoria
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {categoryComparisons.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/comparar/${c.slug}`}
+                  className="card p-4 hover:border-brand-500/30 transition-colors group"
+                >
+                  <p className="text-sm font-semibold text-text-primary group-hover:text-brand-500 transition-colors">
+                    {c.title}
+                  </p>
+                  <p className="text-xs text-text-muted mt-1 line-clamp-2">
+                    {c.description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* Guias de Compra */}
+      {(() => {
+        const guides = Object.entries(BEST_PAGES).filter(([, def]) =>
+          def.query.categories?.includes(slug)
+        );
+        if (guides.length === 0) return null;
+        return (
+          <section className="mt-8">
+            <h2 className="text-lg font-bold font-display text-text-primary mb-3 flex items-center gap-2">
+              <Award className="w-5 h-5 text-accent-orange" /> Guias de Compra
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {guides.map(([bpSlug, def]) => (
+                <Link
+                  key={bpSlug}
+                  href={`/melhores/${bpSlug}`}
+                  className="card p-4 hover:border-brand-500/30 transition-colors group"
+                >
+                  <p className="text-sm font-semibold text-text-primary group-hover:text-brand-500 transition-colors">
+                    {def.title}
+                  </p>
+                  <p className="text-xs text-text-muted mt-1 line-clamp-2">
+                    {def.description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Related searches */}
       <RelatedSearches searches={buildCategoryRelatedSearches(slug, name)} />

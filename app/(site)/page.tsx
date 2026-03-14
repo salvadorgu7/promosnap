@@ -14,6 +14,7 @@ import OfferCarousel from "@/components/home/OfferCarousel";
 import SinceLastVisit from "@/components/home/SinceLastVisit";
 import PersonalizedRails from "@/components/home/PersonalizedRails";
 import SocialProof from "@/components/home/SocialProof";
+import RadarBanner from "@/components/home/RadarBanner";
 import AmazonPromo from "@/components/home/AmazonPromo";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
@@ -185,6 +186,9 @@ export default async function HomePage() {
           <TrendingTags keywords={trendingKeywords.map((t: any) => ({ keyword: t.keyword, url: t.url }))} />
         </div>
       )}
+
+      {/* ===== 2b. RADAR BANNER ===== */}
+      <RadarBanner />
 
       {/* ===== 3. DEAL OF THE DAY (moved up — hero → deal → carousel for immediate value) ===== */}
       {dealOfTheDay && (
