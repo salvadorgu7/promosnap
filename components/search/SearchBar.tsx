@@ -146,13 +146,13 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
         <div
           className={`relative flex items-center rounded-xl border transition-all duration-200 ${
             focused
-              ? "border-accent-blue shadow-glow bg-white"
-              : "border-surface-300 bg-surface-50 hover:border-surface-400"
+              ? "border-brand-500/50 shadow-glow bg-white"
+              : "border-surface-200 bg-white hover:border-surface-300"
           } ${large ? "h-14" : "h-11"}`}
         >
           <Search
             className={`ml-4 flex-shrink-0 ${
-              focused ? "text-accent-blue" : "text-surface-400"
+              focused ? "text-brand-500" : "text-surface-400"
             } ${large ? "w-5 h-5" : "w-4 h-4"}`}
           />
           <input
@@ -177,7 +177,7 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
           <VoiceSearch onResult={(text) => navigate(text)} />
           <button
             type="submit"
-            className={`flex-shrink-0 mr-1.5 px-4 rounded-lg bg-gradient-to-r from-accent-blue to-brand-500 text-white font-semibold hover:shadow-glow transition-all ${
+            className={`flex-shrink-0 mr-1.5 px-4 rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold hover:shadow-glow transition-all ${
               large ? "h-10 text-sm" : "h-8 text-xs"
             }`}
           >
@@ -200,7 +200,7 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
                     aria-selected={i === highlightIndex}
                     className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
                       i === highlightIndex
-                        ? "bg-surface-100 text-accent-blue"
+                        ? "bg-brand-50 text-brand-600"
                         : "text-text-primary hover:bg-surface-50"
                     }`}
                     onMouseDown={() => navigate(s.text)}
@@ -242,7 +242,7 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
                     key={s}
                     type="button"
                     onMouseDown={() => navigate(s)}
-                    className="px-3 py-1.5 rounded-lg bg-surface-100 text-sm text-surface-600 hover:text-accent-blue hover:bg-surface-50 transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-surface-100 text-sm text-surface-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
                   >
                     {s}
                   </button>

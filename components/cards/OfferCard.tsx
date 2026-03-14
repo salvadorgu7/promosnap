@@ -94,7 +94,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
           <ImageWithFallback
             src={product.imageUrl}
             alt={product.name}
-            className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-500 ease-out"
+            className="w-full h-full object-contain p-2.5 group-hover:scale-105 transition-transform duration-500 ease-out drop-shadow-sm"
             width={300}
             height={300}
           />
@@ -151,10 +151,10 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
               <span className="price-old">{formatPrice(bestOffer.originalPrice)}</span>
             )}
             {discount && discount > 0 && (
-              <span className={`discount-tag font-display font-bold ${
+              <span className={`font-display font-bold ${
                 isHotDiscount
-                  ? "text-sm text-accent-red bg-accent-red/10 px-1.5 py-0.5 rounded-md"
-                  : "text-xs"
+                  ? "text-sm text-accent-red bg-accent-red/10 px-1.5 py-0.5 rounded-md border border-accent-red/15"
+                  : "text-xs discount-tag"
               }`}>-{discount}%</span>
             )}
           </div>

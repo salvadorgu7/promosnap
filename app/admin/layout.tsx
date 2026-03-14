@@ -130,10 +130,10 @@ const experimentalItems: NavItem[] = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
-      <aside className="w-56 border-r border-surface-200/80 bg-white flex flex-col" style={{ background: "linear-gradient(180deg, #ffffff 0%, #fcfcff 100%)" }}>
+      <aside className="w-56 border-r border-surface-200 bg-white flex flex-col" style={{ background: "linear-gradient(180deg, #ffffff 0%, #FAFBFF 100%)" }}>
         <div className="p-4 border-b border-surface-200">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-brand-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-sm">
               <Zap className="h-4 w-4 text-white" />
             </div>
             <div>
@@ -190,7 +190,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         </div>
       </aside>
-      <main className="flex-1 p-6 overflow-auto" style={{ background: "linear-gradient(180deg, #f8f9fc 0%, #f4f5fa 100%)" }}>{children}</main>
+      <main className="flex-1 p-6 overflow-auto" style={{ background: "linear-gradient(180deg, #F6F7FB 0%, #F1F4FA 100%)" }}>{children}</main>
     </div>
   );
 }

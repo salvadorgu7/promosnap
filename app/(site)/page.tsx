@@ -41,7 +41,7 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center gap-3 mb-1">
-      <div className={`w-8 h-8 rounded-lg ${iconColor.replace("text-", "bg-")}/10 flex items-center justify-center flex-shrink-0`}>
+      <div className={`w-8 h-8 rounded-lg ${iconColor.replace("text-", "bg-")}/12 flex items-center justify-center flex-shrink-0 border ${iconColor.replace("text-", "border-")}/15`}>
         <Icon className={`w-4 h-4 ${iconColor}`} />
       </div>
       <div>
@@ -131,16 +131,16 @@ export default async function HomePage() {
     <div>
       {/* ===== 1. HERO — Central de Inteligencia de Compra ===== */}
       <section id="hero" className="hero-premium relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-accent-blue/5 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[600px] h-[300px] bg-brand-500/3 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-brand-500/6 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[300px] bg-accent-purple/4 rounded-full blur-[80px] pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 pt-12 pb-10 md:pt-16 md:pb-14">
           <div className="max-w-2xl mx-auto text-center">
             {/* Intelligence branding badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-blue/10 border border-accent-blue/20 text-accent-blue text-xs font-semibold mb-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-500/20 text-brand-600 text-xs font-semibold mb-5">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-blue opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-blue"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
               </span>
               {stats.activeOffers > 0
                 ? `${formatNumber(stats.activeOffers)} ofertas verificadas`
@@ -167,7 +167,7 @@ export default async function HomePage() {
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               {["iPhone 15", "Air Fryer", "PS5", "Notebook", "Fone Bluetooth"].map((tag) => (
                 <a key={tag} href={`/busca?q=${encodeURIComponent(tag)}`}
-                  className="px-3 py-1 rounded-full bg-white border border-surface-200 text-xs text-surface-500 hover:text-accent-blue hover:border-accent-blue/30 transition-all shadow-sm">
+                  className="px-3 py-1 rounded-full bg-white border border-surface-200 text-xs text-surface-500 hover:text-brand-600 hover:border-brand-500/30 hover:bg-brand-50 transition-all shadow-sm">
                   {tag}
                 </a>
               ))}
@@ -441,7 +441,7 @@ export default async function HomePage() {
       <section id="why-promosnap" className="py-12 md:py-16 section-highlight">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-semibold mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-500/20 text-brand-600 text-xs font-semibold mb-4">
               <Sparkles className="w-3.5 h-3.5" />
               Central de Inteligencia de Compra
             </div>

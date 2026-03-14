@@ -142,7 +142,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             <Link
               key={f.label}
               href={f.clearUrl}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent-blue/10 text-accent-blue text-xs font-medium hover:bg-accent-blue/20 transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-medium hover:bg-brand-100 transition-colors border border-brand-500/15"
             >
               {f.label}
               <X className="h-3 w-3" />

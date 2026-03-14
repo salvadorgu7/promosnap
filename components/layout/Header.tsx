@@ -21,15 +21,15 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-surface-200 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-surface-200 shadow-sm">
       {/* Accent bar */}
-      <div className="h-1 bg-gradient-to-r from-accent-blue via-brand-500 to-accent-purple" />
+      <div className="h-1 bg-gradient-to-r from-brand-500 via-brand-600 to-accent-purple" />
 
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-14 gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-1.5 flex-shrink-0 min-w-0">
-            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-accent-blue to-brand-500 flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center flex-shrink-0 shadow-sm">
               <Zap className="w-4 h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
             </div>
             <span className="font-display font-extrabold text-lg md:text-xl tracking-tight text-surface-900 truncate">
@@ -93,7 +93,7 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-surface-200 bg-white animate-slide-up">
+        <div className="md:hidden border-t border-surface-200 bg-white/98 backdrop-blur-md animate-slide-up">
           <nav className="px-4 py-2 space-y-0.5">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;

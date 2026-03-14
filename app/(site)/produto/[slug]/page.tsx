@@ -267,12 +267,12 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         {/* Left column: Image + contextual nav */}
         <div className="lg:col-span-1 space-y-4">
           {/* Product image */}
-          <div className="card aspect-square flex items-center justify-center p-8 overflow-hidden">
+          <div className="card aspect-square flex items-center justify-center p-8 overflow-hidden image-container">
             {product.imageUrl ? (
               <img
                 src={product.imageUrl}
                 alt={product.name}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain drop-shadow-sm"
               />
             ) : (
               <ShoppingCart className="h-24 w-24 text-surface-300" />
@@ -371,7 +371,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
 
           {/* Best price highlight card */}
           {bestOffer && (
-            <div className="card p-5 border-accent-blue/30 bg-accent-blue/5">
+            <div className="card p-5 border-brand-500/25 bg-brand-50">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <p className="text-xs text-text-muted mb-1">Melhor preco encontrado</p>
@@ -381,7 +381,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                     )}
                     {discount && <span className="discount-tag">-{discount}%</span>}
                   </div>
-                  <p className="text-3xl font-bold text-accent-blue font-display mt-1">
+                  <p className="text-3xl font-bold text-brand-600 font-display mt-1">
                     {formatPrice(bestPrice)}
                   </p>
                   {showInstallment && (

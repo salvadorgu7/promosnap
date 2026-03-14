@@ -33,11 +33,11 @@ export default function Footer() {
       {/* Rich gradient background */}
       <div className="absolute inset-0 pointer-events-none"
         style={{
-          background: "linear-gradient(180deg, rgba(248,249,252,0.95) 0%, rgba(241,243,248,0.7) 50%, rgba(241,243,248,0.85) 100%)",
+          background: "linear-gradient(180deg, #F6F7FB 0%, #F1F4FA 50%, #F1F4FA 100%)",
         }}
       />
       <div className="absolute bottom-0 left-0 w-[500px] h-[200px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(ellipse, rgba(41,98,255,0.04), transparent 70%)", filter: "blur(60px)" }}
+        style={{ background: "radial-gradient(ellipse, rgba(108,99,255,0.05), transparent 70%)", filter: "blur(60px)" }}
       />
       <div className="absolute top-0 right-0 w-[300px] h-[150px] rounded-full pointer-events-none"
         style={{ background: "radial-gradient(ellipse, rgba(124,77,255,0.04), transparent 70%)", filter: "blur(50px)" }}
@@ -48,8 +48,7 @@ export default function Footer() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-3 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-brand-500 flex items-center justify-center group-hover:shadow-glow transition-shadow duration-300"
-                style={{ boxShadow: "0 2px 8px rgba(41,98,255,0.2)" }}
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center group-hover:shadow-glow transition-shadow duration-300 shadow-sm"
               >
                 <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
               </div>
@@ -74,7 +73,7 @@ export default function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-text-muted hover:text-accent-blue transition-colors duration-200 inline-block"
+                      className="text-sm text-text-muted hover:text-brand-600 transition-colors duration-200 inline-block"
                     >
                       {link.label}
                     </Link>
@@ -86,7 +85,7 @@ export default function Footer() {
         </div>
 
         {/* Affiliate disclaimer */}
-        <div className="mt-8 pt-6" style={{ borderTop: "1px solid rgba(99,102,241,0.08)" }}>
+        <div className="mt-8 pt-6" style={{ borderTop: "1px solid rgba(108,99,255,0.10)" }}>
           <p className="text-xs text-surface-400 leading-relaxed max-w-3xl mb-4">
             O PromoSnap pode receber comissoes por compras realizadas atraves de links de afiliado.
             Isso nao afeta o preco que voce paga e nos ajuda a manter o servico gratuito.
@@ -100,19 +99,19 @@ export default function Footer() {
           <div className="flex flex-wrap justify-center gap-4 text-xs text-surface-400">
             <Link
               href="/politica-privacidade"
-              className="hover:text-accent-blue transition-colors duration-200"
+              className="hover:text-brand-600 transition-colors duration-200"
             >
               Politica de Privacidade
             </Link>
             <Link
               href="/termos"
-              className="hover:text-accent-blue transition-colors duration-200"
+              className="hover:text-brand-600 transition-colors duration-200"
             >
               Termos de Uso
             </Link>
             <Link
               href="/transparencia"
-              className="hover:text-accent-blue transition-colors duration-200"
+              className="hover:text-brand-600 transition-colors duration-200"
             >
               Transparencia
             </Link>
