@@ -3,6 +3,7 @@ import { validateAdmin } from "@/lib/auth/admin";
 import { runImportPipeline, type ImportItem } from "@/lib/import";
 import { mlFetch, batchHydrateItems, type HydrateEntry } from "@/lib/ml-discovery/items";
 import { mlCategoryToSlug } from "@/lib/ml-discovery/categories";
+import prisma from "@/lib/db/prisma";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 min for Vercel
@@ -214,11 +215,62 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Phase 4: Direct category backfill for existing products
+  // The import pipeline may skip category assignment for existing products.
+  // This step directly updates products that have listings with known ML IDs.
+  let backfilled = 0;
+  try {
+    // Build externalId → categorySlug map from hydrated products + parent mapping
+    const extIdToSlug = new Map<string, string>();
+    for (const p of hydratedProducts) {
+      const slug = mlCategoryToSlug(p.categoryId || "") || mlCategoryToSlug(idToParent.get(p.externalId) || "");
+      if (slug) extIdToSlug.set(p.externalId, slug);
+    }
+
+    if (extIdToSlug.size > 0) {
+      // Find products without categories that have listings matching our known externalIds
+      const orphanProducts = await prisma.product.findMany({
+        where: { categoryId: null },
+        select: {
+          id: true,
+          listings: { select: { externalId: true }, take: 1 },
+        },
+      });
+
+      for (const prod of orphanProducts) {
+        const extId = prod.listings[0]?.externalId;
+        if (!extId) continue;
+        const slug = extIdToSlug.get(extId);
+        if (!slug) continue;
+
+        // Ensure category exists
+        const cat = await prisma.category.upsert({
+          where: { slug },
+          create: {
+            name: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+            slug,
+          },
+          update: {},
+        });
+
+        await prisma.product.update({
+          where: { id: prod.id },
+          data: { categoryId: cat.id },
+        });
+        backfilled++;
+      }
+    }
+    console.log(`[catalog/fill] Category backfill: ${backfilled} products updated`);
+  } catch (err) {
+    console.error(`[catalog/fill] Category backfill error:`, err);
+  }
+
   return NextResponse.json({
     success: true,
     uniqueItemIds: itemIdList.length,
     hydratedProducts: hydratedProducts.length,
     imported: agg,
+    categoryBackfill: backfilled,
     categoryStats,
   });
 }
@@ -229,7 +281,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     description: "Fill catalog via ML subcategory highlights + hydration. POST to execute.",
-    version: "v2-category-backfill",
+    version: "v3-direct-backfill",
     parentCategories: PARENT_CATEGORIES.length,
     strategy: "Expands each parent into subcategories → fetches highlights for each → hydrates item details → imports with category backfill",
   });
