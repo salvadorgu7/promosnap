@@ -46,7 +46,7 @@ export default function BottomNav() {
                   onClick={() => setMenuOpen(false)}
                   className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                     pathname.startsWith(link.href)
-                      ? "bg-accent-blue/10 text-accent-blue"
+                      ? "bg-accent-blue/10 text-brand-500"
                       : "text-surface-700 hover:bg-surface-50"
                   }`}
                 >
@@ -70,7 +70,7 @@ export default function BottomNav() {
                 href={tab.href}
                 className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
                   active
-                    ? "text-accent-blue"
+                    ? "text-brand-500"
                     : "text-surface-400 hover:text-surface-600"
                 }`}
               >
@@ -85,7 +85,7 @@ export default function BottomNav() {
             onClick={() => setMenuOpen(!menuOpen)}
             className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
               menuOpen
-                ? "text-accent-blue"
+                ? "text-brand-500"
                 : "text-surface-400 hover:text-surface-600"
             }`}
           >

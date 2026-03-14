@@ -20,7 +20,9 @@ const SOURCE_COLORS: Record<string, { bg: string; text: string; border: string }
 };
 
 export default function SourcesCompare({ sources }: SourcesCompareProps) {
-  if (sources.length === 0) return null;
+  // Only show sources that actually have offers — showing 0 looks broken
+  const activeSources = sources.filter((s) => s.offerCount > 0);
+  if (activeSources.length === 0) return null;
 
   return (
     <section className="py-8">
@@ -30,7 +32,7 @@ export default function SourcesCompare({ sources }: SourcesCompareProps) {
           <h2 className="font-display font-bold text-lg text-text-primary">Comparar Fontes</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {sources.map((s) => {
+          {activeSources.map((s) => {
             const colors = SOURCE_COLORS[s.slug] || { bg: "bg-surface-50", text: "text-text-primary", border: "border-surface-200" };
             return (
               <Link

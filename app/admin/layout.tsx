@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -91,6 +92,11 @@ const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+export const metadata: Metadata = {
+  title: { default: "Admin | PromoSnap", template: "%s | Admin | PromoSnap" },
+  robots: { index: false, follow: false },
+};
 
 // Experimental items — collapsed by default
 const experimentalItems: NavItem[] = [

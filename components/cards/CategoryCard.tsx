@@ -15,7 +15,7 @@ export default function CategoryCard({ slug, name, icon, productCount }: Categor
     >
       <span className="text-xl group-hover:scale-110 transition-transform">{icon || "📦"}</span>
       <span className="text-[11px] font-medium text-text-primary text-center leading-tight">{name}</span>
-      {productCount !== undefined && (
+      {productCount !== undefined && productCount > 0 && (
         <span className="text-[10px] text-text-muted">{productCount}+ ofertas</span>
       )}
     </Link>

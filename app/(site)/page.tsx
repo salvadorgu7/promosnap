@@ -254,7 +254,7 @@ export default async function HomePage() {
 
       {/* ===== 6. OFERTAS QUENTES (moved up — primary monetization rail) ===== */}
       {hotOffers.length > 0 && (
-        <div id="hot-offers" className="section-alt py-2">
+        <div id="hot-offers" className="section-alt py-4">
           <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
             {hotOffers.map((p) => (
               <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
@@ -267,7 +267,7 @@ export default async function HomePage() {
 
       {/* ===== 7. IMPORTADOS RECENTEMENTE (moved up — real products) ===== */}
       {recentlyImported.length > 0 && (
-        <div id="recently-imported" className="section-highlight py-2">
+        <div id="recently-imported" className="section-highlight py-4">
           <RailSection title="Importados Recentemente" subtitle="Produtos reais adicionados nos ultimos 7 dias" icon={Package} iconColor="text-accent-green">
             {recentlyImported.map((p) => (
               <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
@@ -327,7 +327,7 @@ export default async function HomePage() {
 
       {/* ===== 12. MENOR PRECO HISTORICO ===== */}
       {lowestPrices.length > 0 && (
-        <div id="lowest-prices" className="section-highlight py-2">
+        <div id="lowest-prices" className="section-highlight py-4">
           <RailSection title="Menor Preco Historico" subtitle="Nunca estiveram tao baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
             {lowestPrices.map((p) => (
               <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
@@ -342,14 +342,14 @@ export default async function HomePage() {
 
       {/* ===== 13. COMPARAR FONTES ===== */}
       {sourceStats.length > 0 && (
-        <div id="sources-compare" className="section-cool py-2">
+        <div id="sources-compare" className="section-cool py-4">
           <SourcesCompare sources={sourceStats} />
         </div>
       )}
 
       {/* ===== 14. MAIS VENDIDOS ===== */}
       {bestSellers.length > 0 && (
-        <div id="best-sellers" className="section-alt py-2">
+        <div id="best-sellers" className="section-alt py-4">
           <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
             {bestSellers.map((p) => (
               <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
@@ -362,7 +362,7 @@ export default async function HomePage() {
 
       {/* ===== 14.2. MELHOR CUSTO-BENEFICIO ===== */}
       {bestValue.length > 0 && (
-        <div id="best-value" className="section-cool py-2">
+        <div id="best-value" className="section-cool py-4">
           <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" icon={Percent} iconColor="text-accent-purple">
             {bestValue.map((p) => (
               <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
@@ -375,7 +375,7 @@ export default async function HomePage() {
 
       {/* ===== 14.3. PRONTOS PARA COMPRAR ===== */}
       {readyForCampaign.length > 0 && (
-        <div id="ready-for-campaign" className="section-highlight py-2">
+        <div id="ready-for-campaign" className="section-highlight py-4">
           <RailSection title="Prontos para Comprar" subtitle="Produtos reais com desconto e link direto para a loja" icon={Star} iconColor="text-accent-blue">
             {readyForCampaign.map((p) => (
               <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
@@ -426,7 +426,7 @@ export default async function HomePage() {
       <SectionSeparator />
 
       {/* ===== 16. TOP POR CATEGORIA ===== */}
-      <div id="category-rails" className="py-2">
+      <div id="category-rails" className="py-4">
         {categoryProducts.filter((c) => c.products.length > 0).map((c) => (
           <CategoryRail key={c.slug} title={c.name} slug={c.slug} icon={c.icon} products={c.products} />
         ))}

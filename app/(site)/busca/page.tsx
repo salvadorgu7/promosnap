@@ -157,6 +157,52 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
         </div>
       )}
 
+      {/* Mobile filters */}
+      <details className="lg:hidden mb-4">
+        <summary className="flex items-center gap-2 px-3 py-2.5 bg-white rounded-xl border border-surface-200 text-sm font-medium cursor-pointer shadow-sm">
+          <SlidersHorizontal className="w-4 h-4 text-brand-500" />
+          Filtros
+          {activeFilters.length > 0 && (
+            <span className="ml-auto bg-brand-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+              {activeFilters.length}
+            </span>
+          )}
+        </summary>
+        <div className="mt-2 p-4 bg-white rounded-xl border border-surface-200 shadow-sm space-y-4">
+          {/* Price range */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-text-secondary">Faixa de Preco</p>
+            <form className="flex gap-2">
+              <input type="hidden" name="q" value={query} />
+              {sort !== "relevance" && <input type="hidden" name="sort" value={sort} />}
+              {source && <input type="hidden" name="source" value={source} />}
+              {freeShipping && <input type="hidden" name="freeShipping" value="true" />}
+              {category && <input type="hidden" name="category" value={category} />}
+              <input type="number" name="minPrice" placeholder="Min" defaultValue={params.minPrice || ""} className="input text-xs py-1.5 px-2 w-full" min="0" step="0.01" />
+              <input type="number" name="maxPrice" placeholder="Max" defaultValue={params.maxPrice || ""} className="input text-xs py-1.5 px-2 w-full" min="0" step="0.01" />
+              <button type="submit" formAction="/busca" className="btn-secondary text-xs px-3 py-1.5 whitespace-nowrap">Ir</button>
+            </form>
+          </div>
+          {/* Source */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-text-secondary">Loja</p>
+            <div className="flex flex-wrap gap-2">
+              {SOURCE_OPTIONS.map((s) => (
+                <Link key={s.value} href={buildSearchUrl(params, { source: source === s.value ? undefined : s.value, page: "1" })}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${source === s.value ? "bg-brand-50 text-brand-600 border-brand-500/20" : "bg-surface-50 text-text-muted border-surface-200 hover:bg-surface-100"}`}>
+                  {s.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          {/* Free shipping */}
+          <Link href={buildSearchUrl(params, { freeShipping: freeShipping ? undefined : "true", page: "1" })}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${freeShipping ? "bg-brand-50 text-brand-600 border-brand-500/20" : "bg-surface-50 text-text-muted border-surface-200 hover:bg-surface-100"}`}>
+            <Truck className="h-3.5 w-3.5" /> Frete Gratis
+          </Link>
+        </div>
+      </details>
+
       <div className="flex gap-6">
         {/* Sidebar filters (desktop) */}
         <aside className="hidden lg:block w-60 flex-shrink-0 space-y-4">
@@ -214,14 +260,14 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                   })}
                   className={`flex items-center gap-2 text-xs cursor-pointer transition-colors ${
                     source === s.value
-                      ? "text-accent-blue font-medium"
+                      ? "text-brand-600 font-medium"
                       : "text-text-muted hover:text-text-secondary"
                   }`}
                 >
                   <span
                     className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
                       source === s.value
-                        ? "bg-accent-blue border-accent-blue text-white"
+                        ? "bg-brand-500 border-brand-500 text-white"
                         : "border-surface-300"
                     }`}
                   >
@@ -246,13 +292,13 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                 })}
                 className={`flex items-center gap-2 text-xs cursor-pointer transition-colors ${
                   freeShipping
-                    ? "text-accent-blue font-medium"
+                    ? "text-brand-600 font-medium"
                     : "text-text-muted hover:text-text-secondary"
                 }`}
               >
                 <span
                   className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${
-                    freeShipping ? "bg-accent-blue" : "bg-surface-300"
+                    freeShipping ? "bg-brand-500" : "bg-surface-300"
                   }`}
                 >
                   <span
@@ -267,116 +313,6 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             </div>
           </div>
         </aside>
-
-        {/* Mobile filters */}
-        <details className="lg:hidden mb-4">
-          <summary className="flex items-center gap-2 px-3 py-2 bg-surface-100 rounded-lg text-sm font-medium cursor-pointer">
-            <SlidersHorizontal className="w-4 h-4" />
-            Filtros
-          </summary>
-          <div className="mt-2 p-3 bg-surface-50 rounded-lg border">
-            {/* Price range */}
-            <div className="space-y-2 mb-5">
-              <p className="text-xs font-medium text-text-secondary">Faixa de Preco</p>
-              <form className="flex gap-2">
-                <input type="hidden" name="q" value={query} />
-                {sort !== "relevance" && <input type="hidden" name="sort" value={sort} />}
-                {source && <input type="hidden" name="source" value={source} />}
-                {freeShipping && <input type="hidden" name="freeShipping" value="true" />}
-                {category && <input type="hidden" name="category" value={category} />}
-                <input
-                  type="number"
-                  name="minPrice"
-                  placeholder="Min"
-                  defaultValue={params.minPrice || ""}
-                  className="input text-xs py-1.5 px-2 w-full"
-                  min="0"
-                  step="0.01"
-                />
-                <input
-                  type="number"
-                  name="maxPrice"
-                  placeholder="Max"
-                  defaultValue={params.maxPrice || ""}
-                  className="input text-xs py-1.5 px-2 w-full"
-                  min="0"
-                  step="0.01"
-                />
-                <button
-                  type="submit"
-                  formAction="/busca"
-                  className="btn-secondary text-xs px-3 py-1.5 whitespace-nowrap"
-                >
-                  Ir
-                </button>
-              </form>
-            </div>
-
-            {/* Source checkboxes */}
-            <div className="space-y-2 mb-5">
-              <p className="text-xs font-medium text-text-secondary">Loja</p>
-              {SOURCE_OPTIONS.map((s) => (
-                <Link
-                  key={s.value}
-                  href={buildSearchUrl(params, {
-                    source: source === s.value ? undefined : s.value,
-                    page: "1",
-                  })}
-                  className={`flex items-center gap-2 text-xs cursor-pointer transition-colors ${
-                    source === s.value
-                      ? "text-accent-blue font-medium"
-                      : "text-text-muted hover:text-text-secondary"
-                  }`}
-                >
-                  <span
-                    className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
-                      source === s.value
-                        ? "bg-accent-blue border-accent-blue text-white"
-                        : "border-surface-300"
-                    }`}
-                  >
-                    {source === s.value && (
-                      <svg viewBox="0 0 12 12" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M2 6l3 3 5-5" />
-                      </svg>
-                    )}
-                  </span>
-                  {s.label}
-                </Link>
-              ))}
-            </div>
-
-            {/* Free shipping toggle */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-text-secondary">Entrega</p>
-              <Link
-                href={buildSearchUrl(params, {
-                  freeShipping: freeShipping ? undefined : "true",
-                  page: "1",
-                })}
-                className={`flex items-center gap-2 text-xs cursor-pointer transition-colors ${
-                  freeShipping
-                    ? "text-accent-blue font-medium"
-                    : "text-text-muted hover:text-text-secondary"
-                }`}
-              >
-                <span
-                  className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${
-                    freeShipping ? "bg-accent-blue" : "bg-surface-300"
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform mt-0.5 ${
-                      freeShipping ? "translate-x-4 ml-0.5" : "translate-x-0.5"
-                    }`}
-                  />
-                </span>
-                <Truck className="h-3.5 w-3.5" />
-                Frete Gratis
-              </Link>
-            </div>
-          </div>
-        </details>
 
         {/* Results */}
         <div className="flex-1 min-w-0">
@@ -393,7 +329,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                     href={buildSearchUrl(params, { sort: opt.value, page: "1" })}
                     className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                       sort === opt.value
-                        ? "bg-accent-blue/10 text-accent-blue"
+                        ? "bg-brand-50 text-brand-600"
                         : "text-text-muted hover:bg-surface-200"
                     }`}
                   >
@@ -442,7 +378,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                         href={buildSearchUrl(params, { page: String(pageNum) })}
                         className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                           page === pageNum
-                            ? "bg-accent-blue text-white shadow-sm"
+                            ? "bg-brand-500 text-white shadow-sm"
                             : "bg-surface-100 text-text-muted hover:bg-surface-200"
                         }`}
                       >

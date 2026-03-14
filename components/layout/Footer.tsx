@@ -27,7 +27,7 @@ const LINKS = {
 
 export default function Footer() {
   return (
-    <footer className="mt-12 relative overflow-hidden">
+    <footer className="mt-12 pb-16 md:pb-0 relative overflow-hidden">
       {/* Top gradient divider */}
       <div className="section-divider" />
       {/* Rich gradient background */}
