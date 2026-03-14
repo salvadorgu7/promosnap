@@ -252,15 +252,41 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ===== 6. SINCE LAST VISIT — only for returning users ===== */}
+      {/* ===== 6. OFERTAS QUENTES (moved up — primary monetization rail) ===== */}
+      {hotOffers.length > 0 && (
+        <div id="hot-offers" className="section-alt py-2">
+          <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
+            {hotOffers.map((p) => (
+              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
+                <OfferCard product={p} page="home" railSource="hot-offers" />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 7. IMPORTADOS RECENTEMENTE (moved up — real products) ===== */}
+      {recentlyImported.length > 0 && (
+        <div id="recently-imported" className="section-highlight py-2">
+          <RailSection title="Importados Recentemente" subtitle="Produtos reais adicionados nos ultimos 7 dias" icon={Package} iconColor="text-accent-green">
+            {recentlyImported.map((p) => (
+              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
+                <OfferCard product={p} page="home" railSource="recently-imported" />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 8. SINCE LAST VISIT — only for returning users ===== */}
       <SinceLastVisit />
 
-      {/* ===== 7. PERSONALIZED NEWS — based on user interests ===== */}
+      {/* ===== 9. PERSONALIZED NEWS — based on user interests ===== */}
       <PersonalizedNews />
 
       <SectionSeparator />
 
-      {/* ===== 8. CATEGORIAS ===== */}
+      {/* ===== 10. CATEGORIAS ===== */}
       {categories.length > 0 && (
         <section id="categories" className="py-8 section-cool">
           <div className="max-w-7xl mx-auto px-4">
@@ -281,7 +307,7 @@ export default async function HomePage() {
 
       <SectionSeparator />
 
-      {/* ===== 9. SOCIAL PROOF / RANKING ===== */}
+      {/* ===== 11. SOCIAL PROOF / RANKING ===== */}
       {(socialRanking.mostClicked.length > 0 ||
         socialRanking.mostMonitored.length > 0 ||
         socialRanking.mostPopular.length > 0) && (
@@ -294,35 +320,7 @@ export default async function HomePage() {
         </div>
       )}
 
-      <SectionSeparator />
-
-      {/* ===== 10. OFERTAS QUENTES ===== */}
-      {hotOffers.length > 0 && (
-        <div id="hot-offers" className="section-alt py-2">
-          <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
-            {hotOffers.map((p) => (
-              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
-                <OfferCard product={p} page="home" railSource="hot-offers" />
-              </div>
-            ))}
-          </RailSection>
-        </div>
-      )}
-
-      {/* ===== 10.1. IMPORTADOS RECENTEMENTE ===== */}
-      {recentlyImported.length > 0 && (
-        <div id="recently-imported" className="section-highlight py-2">
-          <RailSection title="Importados Recentemente" subtitle="Produtos reais adicionados nos ultimos 7 dias" icon={Package} iconColor="text-accent-green">
-            {recentlyImported.map((p) => (
-              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
-                <OfferCard product={p} page="home" railSource="recently-imported" />
-              </div>
-            ))}
-          </RailSection>
-        </div>
-      )}
-
-      {/* ===== 11. PERSONALIZED RAILS — for voce / quedas / baseado nos favoritos ===== */}
+      {/* ===== 12. PERSONALIZED RAILS — for voce / quedas / baseado nos favoritos ===== */}
       <PersonalizedRails />
 
       <SectionSeparator />

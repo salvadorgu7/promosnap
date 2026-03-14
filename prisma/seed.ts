@@ -440,6 +440,7 @@ async function main() {
     { code: "ML200", description: "R$200 off TVs acima de R$2000", source: "mercadolivre" },
     { code: "GAMER15", description: "15% off em games e acessórios", source: "amazon-br" },
     { code: "CASA10", description: "10% off em Casa & Cozinha", source: "mercadolivre" },
+    { code: "promosnap-20", description: "Use o cupom promosnap-20 na Amazon para apoiar o PromoSnap. Aplicável a produtos selecionados.", source: "amazon-br" },
   ];
 
   for (const c of couponData) {

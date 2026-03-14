@@ -427,6 +427,10 @@ export async function runImportPipeline(
               const { MercadoLivreAdapter } = await import('@/adapters/mercadolivre')
               return new MercadoLivreAdapter()
             },
+            'amazon-br': async () => {
+              const { AmazonAdapter } = await import('@/adapters/amazon')
+              return new AmazonAdapter()
+            },
           }
           const getAdapter = adapterMap[item.sourceSlug]
           if (getAdapter) {
