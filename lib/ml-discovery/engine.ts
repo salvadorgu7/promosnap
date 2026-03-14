@@ -21,6 +21,7 @@ export interface DiscoveryOptions {
   mode: DiscoveryMode
   query?: string          // Free-text term
   categoryId?: string     // Explicit category ID
+  categoryIds?: string[]  // Override: use these specific category IDs
   limit?: number          // Max products to return
   includeTrends?: boolean // Also fetch trends for additional signals
 }
@@ -65,11 +66,20 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
     })
 
   } else if (options.mode === 'scheduled-auto-import' || options.mode === 'category-bestsellers') {
-    // Cron mode: use priority categories
-    const cronCats = getCronCategories()
-    categoryIds = cronCats.map((c) => c.id)
-    resolvedCategories.push(...cronCats)
-    stages.push({ stage: 'intent', status: 'success', itemsIn: 0, itemsOut: cronCats.length, durationMs: Date.now() - intentStart })
+    // Cron mode: use priority categories (or override with explicit categoryIds)
+    if (options.categoryIds && options.categoryIds.length > 0) {
+      categoryIds = options.categoryIds
+      const allCats = getAllCategories()
+      for (const id of options.categoryIds) {
+        const cat = allCats.find((c) => c.id === id)
+        if (cat) resolvedCategories.push(cat)
+      }
+    } else {
+      const cronCats = getCronCategories()
+      categoryIds = cronCats.map((c) => c.id)
+      resolvedCategories.push(...cronCats)
+    }
+    stages.push({ stage: 'intent', status: 'success', itemsIn: 0, itemsOut: categoryIds.length, durationMs: Date.now() - intentStart })
 
   } else if (options.mode === 'trending-capture') {
     // Trends mode: discover categories from trends

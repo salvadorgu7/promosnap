@@ -5,11 +5,11 @@
 import { runJob, type JobResult } from '@/lib/jobs/runner'
 import { runDiscovery } from '@/lib/ml-discovery'
 import { runImportPipeline, type ImportItem } from '@/lib/import'
-import { getCronCategories, getAllCategories } from '@/lib/ml-discovery/categories'
+import { getAllCategories } from '@/lib/ml-discovery/categories'
 
 // ── Mode configuration ──────────────────────────────────────────────────────
 
-export type DiscoverImportMode = 'daily' | 'extended' | 'category' | 'debug'
+export type DiscoverImportMode = 'daily' | 'extended' | 'massive' | 'category' | 'debug'
 
 interface ModeConfig {
   limit: number
@@ -19,9 +19,10 @@ interface ModeConfig {
 }
 
 const MODE_CONFIGS: Record<DiscoverImportMode, ModeConfig> = {
-  daily:    { limit: 30, categoryFilter: (c) => c.priority <= 2, label: 'daily (top categories, limit 30)' },
-  extended: { limit: 80, label: 'extended (all categories, limit 80)' },
-  category: { limit: 30, label: 'single category' },
+  daily:    { limit: 50, categoryFilter: (c) => c.priority <= 2, label: 'daily (top categories, limit 50)' },
+  extended: { limit: 150, label: 'extended (all categories, limit 150)' },
+  massive:  { limit: 500, label: 'massive (all categories, limit 500)' },
+  category: { limit: 50, label: 'single category' },
   debug:    { limit: 5, categoryFilter: (c) => c.priority <= 1, label: 'debug (priority 1 only, limit 5)' },
 }
 
@@ -64,6 +65,11 @@ export async function discoverAndImport(options?: DiscoverImportOptions): Promis
     }
     if (mode === 'category' && options?.categoryId) {
       discoveryOpts.categoryId = options.categoryId
+    }
+    // For massive/extended modes, use ALL categories instead of just priority ≤ 2
+    if (mode === 'massive' || mode === 'extended') {
+      discoveryOpts.categoryIds = getAllCategories().map(c => c.id)
+      ctx.log(`Using all ${discoveryOpts.categoryIds.length} categories for ${mode} mode`)
     }
 
     let discoveryResult
@@ -125,7 +131,40 @@ export async function discoverAndImport(options?: DiscoverImportOptions): Promis
 
     let importResult
     try {
-      importResult = await runImportPipeline(importItems)
+      // Split into batches of 100 to avoid memory/timeout issues
+      const BATCH = 100
+      if (importItems.length <= BATCH) {
+        importResult = await runImportPipeline(importItems)
+      } else {
+        const aggregated = { created: 0, updated: 0, skipped: 0, failed: 0, total: 0, durationMs: 0, brandStats: { detected: 0, unknown: 0 }, categoryStats: { resolved: 0, unresolved: 0 }, priceStats: { min: Infinity, max: 0, avg: 0 } }
+        const totalBatches = Math.ceil(importItems.length / BATCH)
+        for (let i = 0; i < importItems.length; i += BATCH) {
+          const batch = importItems.slice(i, i + BATCH)
+          const batchNum = Math.floor(i / BATCH) + 1
+          ctx.log(`Importing batch ${batchNum}/${totalBatches} (${batch.length} items)...`)
+          const r = await runImportPipeline(batch)
+          aggregated.created += r.created
+          aggregated.updated += r.updated
+          aggregated.skipped += r.skipped
+          aggregated.failed += r.failed
+          aggregated.total += r.total
+          aggregated.durationMs += r.durationMs
+          if (r.priceStats) {
+            aggregated.priceStats.min = Math.min(aggregated.priceStats.min, r.priceStats.min)
+            aggregated.priceStats.max = Math.max(aggregated.priceStats.max, r.priceStats.max)
+          }
+          if (r.brandStats) {
+            aggregated.brandStats.detected += r.brandStats.detected
+            aggregated.brandStats.unknown += r.brandStats.unknown
+          }
+          if (r.categoryStats) {
+            aggregated.categoryStats.resolved += r.categoryStats.resolved
+            aggregated.categoryStats.unresolved += r.categoryStats.unresolved
+          }
+        }
+        if (aggregated.priceStats.min === Infinity) aggregated.priceStats.min = 0
+        importResult = aggregated
+      }
       ctx.log(`Import done: ${importResult.created} created, ${importResult.updated} updated, ${importResult.skipped} skipped, ${importResult.failed} failed`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)

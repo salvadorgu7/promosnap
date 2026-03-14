@@ -6,7 +6,7 @@ import prisma from '@/lib/db/prisma'
 import { canonicalMatch } from '@/lib/catalog/canonical-match'
 
 /** Maximum number of items allowed per batch import to prevent memory/timeout issues */
-export const MAX_BATCH_SIZE = 100
+export const MAX_BATCH_SIZE = 500
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
