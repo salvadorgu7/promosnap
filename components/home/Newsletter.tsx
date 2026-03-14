@@ -43,20 +43,20 @@ export default function Newsletter() {
   };
 
   return (
-    <section className="py-10">
+    <section className="py-5 md:py-10">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 via-accent-blue to-accent-purple p-8 md:p-12 text-white">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 via-accent-blue to-accent-purple p-4 md:p-12 text-white">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
 
           <div className="relative max-w-xl mx-auto text-center">
-            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
-              <Mail className="h-6 w-6 opacity-90" />
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-2 md:mb-4">
+              <Mail className="h-5 w-5 md:h-6 md:w-6 opacity-90" />
             </div>
-            <h2 className="font-display font-bold text-2xl mb-2">
+            <h2 className="font-display font-bold text-xl md:text-2xl mb-1 md:mb-2">
               Receba as melhores ofertas
             </h2>
-            <p className="text-white/80 text-sm mb-6 leading-relaxed">
+            <p className="text-white/80 text-xs md:text-sm mb-3 md:mb-6 leading-relaxed">
               Cadastre seu e-mail e receba alertas de ofertas imperdíveis direto na sua caixa.
             </p>
 

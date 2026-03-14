@@ -4,8 +4,69 @@ import { SlidersHorizontal, Brain, TrendingDown, Truck } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
+import RelatedSearches from "@/components/ui/RelatedSearches";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { getProductsByCategory, getCategoryBySlug } from "@/lib/db/queries";
+import { BEST_PAGES } from "@/lib/seo/best-pages";
+import { COMPARISON_LIST } from "@/lib/seo/comparisons";
+import { OFFER_PAGES } from "@/lib/seo/offer-pages";
+
+function buildCategoryRelatedSearches(
+  categorySlug: string,
+  categoryName: string
+): { label: string; href: string }[] {
+  const slug = categorySlug.toLowerCase();
+  const name = categoryName.toLowerCase();
+  const results: { label: string; href: string }[] = [];
+
+  // Match best pages by category or keyword overlap
+  for (const [bpSlug, def] of Object.entries(BEST_PAGES)) {
+    if (
+      def.query.categories?.some((c) => c.toLowerCase() === slug || name.includes(c.toLowerCase())) ||
+      def.query.keywords?.some((k) => name.includes(k.toLowerCase()) || k.toLowerCase().includes(name)) ||
+      def.title.toLowerCase().includes(name)
+    ) {
+      results.push({ label: def.title, href: `/melhores/${bpSlug}` });
+    }
+  }
+
+  // Match comparisons
+  for (const comp of COMPARISON_LIST) {
+    if (
+      comp.productA.query.toLowerCase().includes(name) ||
+      comp.productB.query.toLowerCase().includes(name) ||
+      name.includes(comp.productA.query.toLowerCase()) ||
+      name.includes(comp.productB.query.toLowerCase())
+    ) {
+      results.push({ label: comp.title, href: `/comparar/${comp.slug}` });
+    }
+  }
+
+  // Match offer pages
+  for (const [opSlug, def] of Object.entries(OFFER_PAGES)) {
+    if (
+      def.searchQuery.toLowerCase().includes(name) ||
+      name.includes(def.searchQuery.toLowerCase())
+    ) {
+      results.push({ label: def.title, href: `/ofertas/${opSlug}` });
+    }
+  }
+
+  // Generic high-intent searches
+  results.push(
+    { label: `Melhores ${categoryName}`, href: `/busca?q=melhores+${encodeURIComponent(categoryName)}` },
+    { label: `Ofertas ${categoryName}`, href: `/busca?q=ofertas+${encodeURIComponent(categoryName)}` },
+    { label: `${categoryName} menor preco`, href: `/busca?q=${encodeURIComponent(categoryName)}+menor+preco` },
+  );
+
+  // Deduplicate by href and limit to 8
+  const seen = new Set<string>();
+  return results.filter((r) => {
+    if (seen.has(r.href)) return false;
+    seen.add(r.href);
+    return true;
+  }).slice(0, 8);
+}
 
 const SORT_OPTIONS = [
   { value: "score", label: "Melhor oferta" },
@@ -240,6 +301,9 @@ export default async function CategoriaPage({
           ctaHref="/ofertas"
         />
       )}
+
+      {/* Related searches */}
+      <RelatedSearches searches={buildCategoryRelatedSearches(slug, name)} />
     </div>
   );
 }

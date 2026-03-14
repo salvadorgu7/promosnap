@@ -2,9 +2,67 @@ import Link from "next/link";
 import { Search, SlidersHorizontal, ArrowUpDown, X, Truck, Brain, Sparkles, TrendingDown } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import EmptyState from "@/components/ui/EmptyState";
+import RelatedSearches from "@/components/ui/RelatedSearches";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { searchListings } from "@/lib/db/queries";
 import { formatPrice } from "@/lib/utils";
+import { BEST_PAGES } from "@/lib/seo/best-pages";
+import { COMPARISON_LIST } from "@/lib/seo/comparisons";
+import { OFFER_PAGES } from "@/lib/seo/offer-pages";
+
+function buildRelatedSearches(query: string): { label: string; href: string }[] {
+  if (!query) return [];
+  const q = query.toLowerCase();
+  const results: { label: string; href: string }[] = [];
+
+  // Match best pages
+  for (const [slug, def] of Object.entries(BEST_PAGES)) {
+    if (
+      def.title.toLowerCase().includes(q) ||
+      def.query.keywords?.some((k) => q.includes(k.toLowerCase())) ||
+      def.query.categories?.some((c) => q.includes(c.toLowerCase()))
+    ) {
+      results.push({ label: def.title, href: `/melhores/${slug}` });
+    }
+  }
+
+  // Match comparisons
+  for (const comp of COMPARISON_LIST) {
+    if (
+      comp.productA.query.toLowerCase().includes(q) ||
+      comp.productB.query.toLowerCase().includes(q) ||
+      q.includes(comp.productA.query.toLowerCase()) ||
+      q.includes(comp.productB.query.toLowerCase())
+    ) {
+      results.push({ label: comp.title, href: `/comparar/${comp.slug}` });
+    }
+  }
+
+  // Match offer pages
+  for (const [slug, def] of Object.entries(OFFER_PAGES)) {
+    if (
+      def.searchQuery.toLowerCase().includes(q) ||
+      q.includes(def.searchQuery.toLowerCase())
+    ) {
+      results.push({ label: def.title, href: `/ofertas/${slug}` });
+    }
+  }
+
+  // Generic high-intent searches
+  results.push(
+    { label: `Melhores ${query}`, href: `/busca?q=melhores+${encodeURIComponent(query)}` },
+    { label: `Ofertas ${query}`, href: `/busca?q=ofertas+${encodeURIComponent(query)}` },
+    { label: `${query} menor preco`, href: `/busca?q=${encodeURIComponent(query)}+menor+preco` },
+  );
+
+  // Deduplicate by href and limit to 8
+  const seen = new Set<string>();
+  return results.filter((r) => {
+    if (seen.has(r.href)) return false;
+    seen.add(r.href);
+    return true;
+  }).slice(0, 8);
+}
 
 interface SearchParams {
   q?: string;
@@ -443,6 +501,11 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
               title="Busque um produto"
               description="Digite o nome do produto, marca ou categoria para comparar precos nas melhores lojas do Brasil."
             />
+          )}
+
+          {/* Related searches */}
+          {query && (
+            <RelatedSearches searches={buildRelatedSearches(query)} />
           )}
         </div>
       </div>

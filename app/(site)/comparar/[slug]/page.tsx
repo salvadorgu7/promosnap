@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, ChevronDown, ExternalLink, Scale, Truck, Star, Package } from "lucide-react";
+import { ArrowRight, Award, ChevronDown, ExternalLink, Scale, Truck, Star, Package } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
 import { COMPARISONS, COMPARISON_SLUGS } from "@/lib/seo/comparisons";
 import type { ComparisonDef } from "@/lib/seo/comparisons";
+import { BEST_PAGES, BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
 import type { ProductCard } from "@/types";
 import prisma from "@/lib/db/prisma";
 import { formatPrice } from "@/lib/utils";
@@ -185,6 +186,31 @@ function ProductSideCard({
       </a>
     </div>
   );
+}
+
+function getRelatedMelhores(def: ComparisonDef) {
+  const queries = [
+    def.productA.query.toLowerCase(),
+    def.productB.query.toLowerCase(),
+    def.productA.name.toLowerCase(),
+    def.productB.name.toLowerCase(),
+  ];
+
+  return BEST_PAGE_SLUGS.filter((slug) => {
+    const bp = BEST_PAGES[slug];
+    const tokens = [
+      ...(bp.query.keywords ?? []),
+      ...(bp.query.categories ?? []),
+      ...(bp.query.brands ?? []),
+    ].map((t) => t.toLowerCase());
+
+    return tokens.some(
+      (t) =>
+        queries.some((q) => q.includes(t) || t.includes(q))
+    );
+  })
+    .slice(0, 6)
+    .map((slug) => ({ slug, title: BEST_PAGES[slug].title }));
 }
 
 export default async function CompararPage({
@@ -401,6 +427,34 @@ export default async function CompararPage({
           </div>
         </div>
       )}
+
+      {/* Related melhores pages */}
+      {(() => {
+        const related = getRelatedMelhores(def);
+        if (related.length === 0) return null;
+        return (
+          <section className="mb-10">
+            <h2 className="text-xl font-bold font-display text-text-primary mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-accent-blue" />
+              Páginas de Melhores Relacionadas
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {related.map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/melhores/${item.slug}`}
+                  className="group flex items-center justify-between gap-3 px-5 py-4 rounded-xl border border-surface-200 bg-white hover:border-accent-blue/30 hover:bg-accent-blue/5 transition-colors"
+                >
+                  <span className="text-sm font-semibold text-text-primary group-hover:text-accent-blue transition-colors truncate">
+                    {item.title}
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-surface-400 group-hover:text-accent-blue flex-shrink-0 transition-colors" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
     </div>
   );
 }

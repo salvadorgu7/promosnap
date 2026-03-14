@@ -81,7 +81,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
     <div className="card group flex flex-col w-full overflow-hidden">
       {/* Badges */}
       {badges.length > 0 && (
-        <div className="flex items-center gap-1 px-2 pt-2 flex-wrap">
+        <div className="flex items-center gap-1 px-1.5 pt-1.5 flex-wrap">
           {badges.slice(0, 3).map((b, i) => (
             <BadgeChip key={i} badge={b} />
           ))}
@@ -89,12 +89,12 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
       )}
 
       {/* Image */}
-      <Link href={`/produto/${product.slug}`} className="block px-2 pt-2">
+      <Link href={`/produto/${product.slug}`} className="block px-1.5 pt-1.5">
         <div className="relative aspect-[5/4] rounded-lg overflow-hidden image-container">
           <ImageWithFallback
             src={product.imageUrl}
             alt={product.name}
-            className="w-full h-full object-contain p-2.5 group-hover:scale-105 transition-transform duration-500 ease-out drop-shadow-sm"
+            className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500 ease-out drop-shadow-sm"
             width={300}
             height={300}
           />
@@ -111,7 +111,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
       </Link>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col px-2 pt-2 pb-2.5">
+      <div className="flex-1 flex flex-col px-1.5 pt-1.5 pb-2">
         <div className="flex items-center gap-1 text-[11px] text-text-muted mb-1 flex-wrap">
           <span className="font-medium">{bestOffer.sourceName}</span>
           {product.offersCount > 1 && (

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Award, ChevronRight, HelpCircle, Sparkles } from "lucide-react";
+import { Award, ChevronRight, HelpCircle, Scale, Sparkles } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import InternalLinks from "@/components/seo/InternalLinks";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { getProductsByCategory, searchListings } from "@/lib/db/queries";
 import { BEST_PAGES, BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
+import { COMPARISON_LIST } from "@/lib/seo/comparisons";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -47,6 +48,28 @@ async function fetchProducts(query: { categories?: string[]; brands?: string[]; 
   }
 
   return [];
+}
+
+function getRelatedComparisons(query: { categories?: string[]; brands?: string[]; keywords?: string[] }) {
+  const tokens = [
+    ...(query.keywords ?? []),
+    ...(query.categories ?? []),
+    ...(query.brands ?? []),
+  ].map((t) => t.toLowerCase());
+
+  if (tokens.length === 0) return [];
+
+  return COMPARISON_LIST.filter((c) =>
+    tokens.some(
+      (t) =>
+        c.productA.query.toLowerCase().includes(t) ||
+        c.productB.query.toLowerCase().includes(t) ||
+        c.productA.name.toLowerCase().includes(t) ||
+        c.productB.name.toLowerCase().includes(t) ||
+        t.includes(c.productA.query.toLowerCase()) ||
+        t.includes(c.productB.query.toLowerCase())
+    )
+  ).slice(0, 6);
 }
 
 export default async function MelhoresPage({
@@ -169,6 +192,41 @@ export default async function MelhoresPage({
 
       {/* Internal links */}
       <InternalLinks type="melhores" currentSlug={slug} />
+
+      {/* Related comparisons */}
+      {(() => {
+        const related = getRelatedComparisons(page.query);
+        if (related.length === 0) return null;
+        return (
+          <section className="mb-12">
+            <div className="flex items-center gap-2 mb-4">
+              <Scale className="w-5 h-5 text-brand-500" />
+              <h2 className="font-display font-bold text-lg text-text-primary">
+                Comparações Relacionadas
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {related.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/comparar/${c.slug}`}
+                  className="group flex items-center justify-between gap-3 px-5 py-4 rounded-xl border border-surface-200 bg-white hover:border-accent-blue/30 hover:bg-accent-blue/5 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-text-primary group-hover:text-accent-blue transition-colors truncate">
+                      {c.productA.name} vs {c.productB.name}
+                    </p>
+                    <p className="text-xs text-text-muted mt-0.5 truncate">
+                      {c.title}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-surface-400 group-hover:text-accent-blue flex-shrink-0 transition-colors" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* CTA section */}
       <section className="card p-8 text-center bg-gradient-to-r from-accent-blue/5 to-brand-500/5">

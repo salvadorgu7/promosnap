@@ -67,17 +67,17 @@ export default function DailyOpportunities() {
   if (loading || opportunities.length === 0) return null;
 
   return (
-    <section className="py-6">
+    <section className="py-4 md:py-6">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <div className="flex items-center gap-2 md:gap-3">
             <div className="w-8 h-8 rounded-lg bg-accent-green/10 flex items-center justify-center flex-shrink-0">
               <Zap className="w-4 h-4 text-accent-green" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-display font-bold text-lg text-text-primary">
+                <h2 className="font-display font-bold text-base md:text-lg text-text-primary">
                   Oportunidades do Dia
                 </h2>
                 <span className="section-live-indicator">
@@ -99,7 +99,7 @@ export default function DailyOpportunities() {
         </div>
 
         {/* Cards grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {opportunities.map((opp) => {
             const config = REASON_CONFIG[opp.reason];
             const ReasonIcon = config.icon;
@@ -108,14 +108,14 @@ export default function DailyOpportunities() {
               <Link
                 key={opp.id}
                 href={`/produto/${opp.slug}`}
-                className="opportunity-card group flex flex-col p-4 pl-6"
+                className="opportunity-card group flex flex-col p-3 md:p-4 pl-4 md:pl-6"
               >
                 {/* Image + discount badge */}
-                <div className="relative aspect-square rounded-lg overflow-hidden image-container mb-3">
+                <div className="relative aspect-square rounded-lg overflow-hidden image-container mb-2 md:mb-3">
                   <ImageWithFallback
                     src={opp.imageUrl}
                     alt={opp.name}
-                    className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-contain p-2 md:p-3 group-hover:scale-105 transition-transform duration-500"
                     width={200}
                     height={200}
                   />

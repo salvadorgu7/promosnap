@@ -102,10 +102,10 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
           {/* Content */}
           <div
             key={`slide-${current}`}
-            className={`relative flex flex-col md:flex-row items-center gap-6 md:gap-12 p-6 md:p-10 lg:p-12 ${slideClass}`}
+            className={`relative flex flex-col md:flex-row items-center gap-4 md:gap-12 p-4 md:p-10 lg:p-12 ${slideClass}`}
           >
             {/* Image — larger on desktop */}
-            <div className="relative w-44 h-44 md:w-64 md:h-64 flex-shrink-0">
+            <div className="relative w-36 h-36 md:w-64 md:h-64 flex-shrink-0">
               <div className="absolute inset-0 rounded-2xl bg-white/10 backdrop-blur-sm" />
               <div className="relative w-full h-full rounded-2xl overflow-hidden bg-white flex items-center justify-center p-4 shadow-lg">
                 <ImageWithFallback
@@ -135,7 +135,7 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
             {/* Details */}
             <div className="flex-1 text-center md:text-left min-w-0">
               {/* Trust indicators bar */}
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-3 flex-wrap">
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-2 md:mb-3 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-accent-blue/20 text-accent-blue text-xs font-bold tracking-wide uppercase">
                   <Zap className="w-3.5 h-3.5" /> Destaque
                 </span>
@@ -151,7 +151,7 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
               </div>
 
               <Link href={`/produto/${offer.slug}`}>
-                <h3 className="font-display font-bold text-xl md:text-2xl text-white leading-snug line-clamp-2 hover:text-accent-blue transition-colors">
+                <h3 className="font-display font-bold text-lg md:text-2xl text-white leading-snug line-clamp-2 hover:text-accent-blue transition-colors">
                   {offer.name}
                 </h3>
               </Link>
@@ -161,7 +161,7 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
               )}
 
               {/* Price — more prominent */}
-              <div className="mt-5">
+              <div className="mt-3 md:mt-5">
                 {offer.bestOffer.originalPrice &&
                   offer.bestOffer.originalPrice > offer.bestOffer.price && (
                     <div className="flex items-center justify-center md:justify-start gap-2">
@@ -175,7 +175,7 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
                       )}
                     </div>
                   )}
-                <div className="font-display font-extrabold text-4xl md:text-5xl text-white tracking-tight">
+                <div className="font-display font-extrabold text-3xl md:text-5xl text-white tracking-tight">
                   {formatPrice(offer.bestOffer.price)}
                 </div>
                 <div className="flex items-center justify-center md:justify-start gap-3 mt-2">
@@ -193,7 +193,7 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
               </div>
 
               {/* CTA — improved styling */}
-              <div className="mt-6 flex items-center justify-center md:justify-start gap-4">
+              <div className="mt-4 md:mt-6 flex items-center justify-center md:justify-start gap-4">
                 <a
                   href={ctaUrl}
                   target="_blank"
@@ -234,7 +234,7 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
 
           {/* Dots + slide counter */}
           {total > 1 && (
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2">
+            <div className="absolute bottom-3 md:bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2">
               {slides.map((_, i) => (
                 <button
                   key={i}

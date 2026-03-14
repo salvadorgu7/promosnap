@@ -1,4 +1,4 @@
-import { Flame, TrendingDown, Trophy, Sparkles, Tag, ShieldCheck, Store, Bell, Truck, Star, Search, Users, Send, MessageCircle, ArrowRight, Package, Percent, Zap, TrendingUp, RefreshCw, Eye } from "lucide-react";
+import { Flame, TrendingDown, Trophy, Sparkles, Tag, Star, Search, ArrowRight, Package, Percent, Zap } from "lucide-react";
 import DailyOpportunities from "@/components/home/DailyOpportunities";
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";
@@ -8,15 +8,12 @@ import CategoryCard from "@/components/cards/CategoryCard";
 import TrendingTags from "@/components/home/TrendingTags";
 import DealOfTheDay from "@/components/home/DealOfTheDay";
 import RecentlyViewedRail from "@/components/home/RecentlyViewedRail";
-import SourcesCompare from "@/components/home/SourcesCompare";
 import Newsletter from "@/components/home/Newsletter";
 import CategoryRail from "@/components/home/CategoryRail";
 import OfferCarousel from "@/components/home/OfferCarousel";
 import SinceLastVisit from "@/components/home/SinceLastVisit";
-import PersonalizedNews from "@/components/home/PersonalizedNews";
 import PersonalizedRails from "@/components/home/PersonalizedRails";
 import SocialProof from "@/components/home/SocialProof";
-import WhatChanged from "@/components/home/WhatChanged";
 import AmazonPromo from "@/components/home/AmazonPromo";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
@@ -96,25 +93,6 @@ export default async function HomePage() {
   // Best deal of the day
   const dealOfTheDay = hotOffers.length > 0 ? hotOffers[0] : null;
 
-  // Source stats for comparison section
-  let sourceStats: { name: string; slug: string; offerCount: number; status: string }[] = [];
-  try {
-    const sources = await prisma.source.findMany({
-      where: { status: "ACTIVE" },
-      select: {
-        name: true,
-        slug: true,
-        _count: { select: { listings: { where: { status: "ACTIVE", offers: { some: { isActive: true } } } } } },
-      },
-    });
-    sourceStats = sources.map((s) => ({
-      name: s.name,
-      slug: s.slug,
-      offerCount: s._count.listings,
-      status: "READY",
-    }));
-  } catch {}
-
   // Category rails (top 3 categories with products)
   const topCategories = categories.slice(0, 3);
   const categoryProducts = await Promise.all(
@@ -135,10 +113,10 @@ export default async function HomePage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-brand-500/6 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-[600px] h-[300px] bg-accent-purple/4 rounded-full blur-[80px] pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-4 pt-12 pb-10 md:pt-16 md:pb-14">
+        <div className="relative max-w-7xl mx-auto px-4 pt-10 pb-8 md:pt-14 md:pb-12">
           <div className="max-w-2xl mx-auto text-center">
             {/* Intelligence branding badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-500/20 text-brand-600 text-xs font-semibold mb-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-500/20 text-brand-600 text-xs font-semibold mb-4">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-500 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
@@ -148,24 +126,20 @@ export default async function HomePage() {
                 : "Ofertas verificadas com historico real"}
             </div>
 
-            <h1 className="font-display font-extrabold text-4xl md:text-5xl text-surface-900 tracking-tight leading-[1.1]">
+            <h1 className="font-display font-extrabold text-3xl md:text-5xl text-surface-900 tracking-tight leading-[1.1]">
               O melhor preço com{" "}
               <span className="text-gradient">contexto real</span>
             </h1>
 
-            <p className="mt-3 text-surface-400 text-xs font-semibold uppercase tracking-widest">
-              Central de Inteligencia de Compra
+            <p className="mt-2 text-surface-500 text-base max-w-lg mx-auto">
+              Compare preços entre lojas, veja o histórico de 90 dias e saiba se o desconto vale a pena.
             </p>
 
-            <p className="mt-3 text-surface-500 text-lg max-w-lg mx-auto">
-              Compare preços entre lojas, veja o histórico de 90 dias, leia avaliações consolidadas e saiba se o desconto vale a pena antes de comprar.
-            </p>
-
-            <div className="mt-8 max-w-xl mx-auto">
+            <div className="mt-6 max-w-xl mx-auto">
               <SearchBar large />
             </div>
 
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
               {["iPhone 15", "Air Fryer", "PS5", "Notebook", "Fone Bluetooth"].map((tag) => (
                 <a key={tag} href={`/busca?q=${encodeURIComponent(tag)}`}
                   className="px-3 py-1 rounded-full bg-white border border-surface-200 text-xs text-surface-500 hover:text-brand-600 hover:border-brand-500/30 hover:bg-brand-50 transition-all shadow-sm">
@@ -175,33 +149,31 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            <div className="card-depth text-center p-4">
-              <div className="font-display font-extrabold text-2xl text-accent-blue">
+          {/* Compact stats */}
+          <div className="mt-8 flex flex-wrap justify-center gap-6 text-center">
+            <div>
+              <div className="font-display font-extrabold text-xl text-accent-blue">
                 {stats.activeOffers > 0 ? formatNumber(stats.activeOffers) : "100+"}
               </div>
-              <div className="text-xs text-text-muted mt-1">Ofertas ativas</div>
+              <div className="text-[11px] text-text-muted">Ofertas ativas</div>
             </div>
-            <div className="card-depth text-center p-4">
-              <div className="font-display font-extrabold text-2xl text-accent-green">
+            <div>
+              <div className="font-display font-extrabold text-xl text-accent-green">
                 {stats.listings > 0 ? formatNumber(stats.listings) : "107"}
               </div>
-              <div className="text-xs text-text-muted mt-1">Produtos monitorados</div>
+              <div className="text-[11px] text-text-muted">Produtos</div>
             </div>
-            <div className="card-depth text-center p-4">
-              <div className="font-display font-extrabold text-2xl text-accent-orange">
+            <div>
+              <div className="font-display font-extrabold text-xl text-accent-orange">
                 {stats.brands > 0 ? stats.brands : "30+"}
               </div>
-              <div className="text-xs text-text-muted mt-1">Marcas comparadas</div>
+              <div className="text-[11px] text-text-muted">Marcas</div>
             </div>
-            <div className="card-depth text-center p-4">
-              <div className="font-display font-extrabold text-2xl text-accent-green">
-                {(stats as any).realImported > 0 ? formatNumber((stats as any).realImported) : stats.sources}
+            <div>
+              <div className="font-display font-extrabold text-xl text-accent-green">
+                {stats.sources}
               </div>
-              <div className="text-xs text-text-muted mt-1">
-                {(stats as any).realImported > 0 ? "Produtos Reais" : "Lojas monitoradas"}
-              </div>
+              <div className="text-[11px] text-text-muted">Lojas</div>
             </div>
           </div>
         </div>
@@ -214,26 +186,9 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* ===== 3. WHAT CHANGED — compact stats ticker ===== */}
-      <WhatChanged />
-
-      {/* ===== 3.5. OPORTUNIDADES DO DIA ===== */}
-      <DailyOpportunities />
-
-      <SectionSeparator />
-
-      {/* ===== 4. OFFER CAROUSEL ===== */}
-      {hotOffers.length > 0 && (
-        <div id="carousel" className="section-energy">
-          <OfferCarousel offers={hotOffers.slice(0, 5)} />
-        </div>
-      )}
-
-      <SectionSeparator />
-
-      {/* ===== 5. DEAL OF THE DAY ===== */}
+      {/* ===== 3. DEAL OF THE DAY (moved up — hero → deal → carousel for immediate value) ===== */}
       {dealOfTheDay && (
-        <section id="deal-of-the-day" className="py-6">
+        <section id="deal-of-the-day" className="py-4">
           <div className="max-w-7xl mx-auto px-4">
             <DealOfTheDay
               product={{
@@ -254,15 +209,22 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ===== 5.5. AMAZON PROMO — cupom exclusivo ===== */}
+      {/* ===== 4. OFFER CAROUSEL ===== */}
+      {hotOffers.length > 0 && (
+        <div id="carousel" className="section-energy">
+          <OfferCarousel offers={hotOffers.slice(0, 5)} />
+        </div>
+      )}
+
+      {/* ===== 5. AMAZON PROMO ===== */}
       <AmazonPromo />
 
-      {/* ===== 6. OFERTAS QUENTES (moved up — primary monetization rail) ===== */}
+      {/* ===== 6. OFERTAS QUENTES (primary monetization rail) ===== */}
       {hotOffers.length > 0 && (
         <div id="hot-offers" className="section-alt py-4">
           <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
             {hotOffers.map((p) => (
-              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
                 <OfferCard product={p} page="home" railSource="hot-offers" />
               </div>
             ))}
@@ -270,12 +232,12 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* ===== 7. IMPORTADOS RECENTEMENTE (moved up — real products) ===== */}
+      {/* ===== 7. IMPORTADOS RECENTEMENTE ===== */}
       {recentlyImported.length > 0 && (
-        <div id="recently-imported" className="section-highlight py-4">
-          <RailSection title="Importados Recentemente" subtitle="Produtos reais adicionados nos ultimos 7 dias" icon={Package} iconColor="text-accent-green">
+        <div id="recently-imported" className="py-4">
+          <RailSection title="Importados Recentemente" subtitle="Produtos reais dos ultimos 7 dias" icon={Package} iconColor="text-accent-green">
             {recentlyImported.map((p) => (
-              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
                 <OfferCard product={p} page="home" railSource="recently-imported" />
               </div>
             ))}
@@ -283,25 +245,79 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* ===== 8. SINCE LAST VISIT — only for returning users ===== */}
-      <SinceLastVisit />
+      {/* ===== 8. OPORTUNIDADES DO DIA ===== */}
+      <DailyOpportunities />
 
-      {/* ===== 9. PERSONALIZED NEWS — based on user interests ===== */}
-      <PersonalizedNews />
+      {/* ===== 9. SINCE LAST VISIT ===== */}
+      <SinceLastVisit />
 
       <SectionSeparator />
 
-      {/* ===== 10. CATEGORIAS ===== */}
+      {/* ===== 10. MENOR PRECO HISTORICO ===== */}
+      {lowestPrices.length > 0 && (
+        <div id="lowest-prices" className="py-4">
+          <RailSection title="Menor Preco Historico" subtitle="Nunca estiveram tao baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
+            {lowestPrices.map((p) => (
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+                <OfferCard product={p} page="home" railSource="lowest-prices" />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 11. MAIS VENDIDOS ===== */}
+      {bestSellers.length > 0 && (
+        <div id="best-sellers" className="section-alt py-4">
+          <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
+            {bestSellers.map((p) => (
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+                <OfferCard product={p} page="home" railSource="best-sellers" />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 12. MELHOR CUSTO-BENEFICIO ===== */}
+      {bestValue.length > 0 && (
+        <div id="best-value" className="py-4">
+          <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" icon={Percent} iconColor="text-accent-purple">
+            {bestValue.map((p) => (
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+                <OfferCard product={p} page="home" railSource="best-value" />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 13. PRONTOS PARA COMPRAR ===== */}
+      {readyForCampaign.length > 0 && (
+        <div id="ready-for-campaign" className="section-alt py-4">
+          <RailSection title="Prontos para Comprar" subtitle="Com desconto e link direto para a loja" icon={Star} iconColor="text-accent-blue">
+            {readyForCampaign.map((p) => (
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+                <OfferCard product={p} page="home" railSource="ready-for-campaign" />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      <SectionSeparator />
+
+      {/* ===== 14. CATEGORIAS ===== */}
       {categories.length > 0 && (
-        <section id="categories" className="py-8 section-cool">
+        <section id="categories" className="py-6">
           <div className="max-w-7xl mx-auto px-4">
             <SectionHeader
               icon={Tag}
               iconColor="text-brand-500"
               title="Categorias"
-              subtitle="Explore por categoria de produto"
+              subtitle="Explore por categoria"
             />
-            <div className="mt-4 grid grid-cols-4 md:grid-cols-8 gap-3">
+            <div className="mt-3 grid grid-cols-4 md:grid-cols-8 gap-2">
               {categories.map((c: any) => (
                 <CategoryCard key={c.slug} slug={c.slug} name={c.name} icon={c.icon} productCount={c._count?.products || 0} />
               ))}
@@ -310,9 +326,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      <SectionSeparator />
-
-      {/* ===== 11. SOCIAL PROOF / RANKING ===== */}
+      {/* ===== 15. SOCIAL PROOF ===== */}
       {(socialRanking.mostClicked.length > 0 ||
         socialRanking.mostMonitored.length > 0 ||
         socialRanking.mostPopular.length > 0) && (
@@ -325,84 +339,19 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* ===== 12. PERSONALIZED RAILS — for voce / quedas / baseado nos favoritos ===== */}
+      {/* ===== 16. PERSONALIZED RAILS ===== */}
       <PersonalizedRails />
 
-      <SectionSeparator />
-
-      {/* ===== 12. MENOR PRECO HISTORICO ===== */}
-      {lowestPrices.length > 0 && (
-        <div id="lowest-prices" className="section-highlight py-4">
-          <RailSection title="Menor Preco Historico" subtitle="Nunca estiveram tao baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
-            {lowestPrices.map((p) => (
-              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
-                <OfferCard product={p} page="home" railSource="lowest-prices" />
-              </div>
-            ))}
-          </RailSection>
-        </div>
-      )}
-
-      <SectionSeparator />
-
-      {/* ===== 13. COMPARAR FONTES ===== */}
-      {sourceStats.length > 0 && (
-        <div id="sources-compare" className="section-cool py-4">
-          <SourcesCompare sources={sourceStats} />
-        </div>
-      )}
-
-      {/* ===== 14. MAIS VENDIDOS ===== */}
-      {bestSellers.length > 0 && (
-        <div id="best-sellers" className="section-alt py-4">
-          <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
-            {bestSellers.map((p) => (
-              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
-                <OfferCard product={p} page="home" railSource="best-sellers" />
-              </div>
-            ))}
-          </RailSection>
-        </div>
-      )}
-
-      {/* ===== 14.2. MELHOR CUSTO-BENEFICIO ===== */}
-      {bestValue.length > 0 && (
-        <div id="best-value" className="section-cool py-4">
-          <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" icon={Percent} iconColor="text-accent-purple">
-            {bestValue.map((p) => (
-              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
-                <OfferCard product={p} page="home" railSource="best-value" />
-              </div>
-            ))}
-          </RailSection>
-        </div>
-      )}
-
-      {/* ===== 14.3. PRONTOS PARA COMPRAR ===== */}
-      {readyForCampaign.length > 0 && (
-        <div id="ready-for-campaign" className="section-highlight py-4">
-          <RailSection title="Prontos para Comprar" subtitle="Produtos reais com desconto e link direto para a loja" icon={Star} iconColor="text-accent-blue">
-            {readyForCampaign.map((p) => (
-              <div key={p.id} className="w-[170px] md:w-[220px] flex-shrink-0">
-                <OfferCard product={p} page="home" railSource="ready-for-campaign" />
-              </div>
-            ))}
-          </RailSection>
-        </div>
-      )}
-
-      <SectionSeparator />
-
-      {/* ===== 15. CUPONS ===== */}
+      {/* ===== 17. CUPONS ===== */}
       {coupons.length > 0 && (
-        <section id="coupons" className="py-8 section-warm">
+        <section id="coupons" className="py-6">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <SectionHeader
                 icon={Tag}
                 iconColor="text-accent-orange"
                 title="Cupons Ativos"
-                subtitle="Economize ainda mais com codigos de desconto"
+                subtitle="Economize com codigos de desconto"
               />
               <Link href="/cupons" className="text-sm text-accent-blue hover:text-brand-500 font-medium">
                 Ver todos
@@ -410,14 +359,14 @@ export default async function HomePage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {coupons.slice(0, 4).map((c: any) => (
-                <div key={c.id} className="card p-4 flex flex-col gap-2">
+                <div key={c.id} className="card p-3 flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
                     <span className="font-mono font-semibold text-accent-blue text-sm">{c.code}</span>
-                    <span className="text-xs text-text-muted">{c.source?.name || "Geral"}</span>
+                    <span className="text-[10px] text-text-muted">{c.source?.name || "Geral"}</span>
                   </div>
-                  <p className="text-sm text-text-secondary">{c.description}</p>
+                  <p className="text-xs text-text-secondary">{c.description}</p>
                   {c.endAt && (
-                    <span className="text-xs text-accent-orange">
+                    <span className="text-[10px] text-accent-orange">
                       Expira em {new Date(c.endAt).toLocaleDateString("pt-BR")}
                     </span>
                   )}
@@ -430,129 +379,15 @@ export default async function HomePage() {
 
       <SectionSeparator />
 
-      {/* ===== 16. TOP POR CATEGORIA ===== */}
+      {/* ===== 18. TOP POR CATEGORIA ===== */}
       <div id="category-rails" className="py-4">
         {categoryProducts.filter((c) => c.products.length > 0).map((c) => (
           <CategoryRail key={c.slug} title={c.name} slug={c.slug} icon={c.icon} products={c.products} />
         ))}
       </div>
 
-      {/* ===== 17. RECENTLY VIEWED ===== */}
+      {/* ===== 19. RECENTLY VIEWED ===== */}
       <RecentlyViewedRail />
-
-      <SectionSeparator />
-
-      {/* ===== 18. POR QUE PROMOSNAP? ===== */}
-      <section id="why-promosnap" className="py-12 md:py-16 section-highlight">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-500/20 text-brand-600 text-xs font-semibold mb-4">
-              <Sparkles className="w-3.5 h-3.5" />
-              Central de Inteligencia de Compra
-            </div>
-            <h2 className="font-display font-extrabold text-2xl md:text-3xl text-text-primary">
-              Por que usar o PromoSnap?
-            </h2>
-            <p className="mt-3 text-surface-500 text-sm md:text-base max-w-xl mx-auto">
-              Mais do que um comparador de precos. Uma camada de inteligencia sobre suas compras online.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
-            <div className="card-depth p-6 group hover:border-accent-blue/30">
-              <div className="w-12 h-12 rounded-xl bg-accent-blue/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <ShieldCheck className="w-6 h-6 text-accent-blue" />
-              </div>
-              <h3 className="font-display font-bold text-text-primary mb-2">Preco Verificado</h3>
-              <p className="text-sm text-text-muted leading-relaxed">Cada preco e verificado direto na fonte. Historico de 90 dias mostra se o desconto e real ou maquiagem.</p>
-            </div>
-            <div className="card-depth p-6 group hover:border-accent-green/30">
-              <div className="w-12 h-12 rounded-xl bg-accent-green/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Store className="w-6 h-6 text-accent-green" />
-              </div>
-              <h3 className="font-display font-bold text-text-primary mb-2">Comparacao entre Lojas</h3>
-              <p className="text-sm text-text-muted leading-relaxed">Amazon, Mercado Livre, Shopee e Shein lado a lado. Veja quem tem o melhor preco agora.</p>
-            </div>
-            <div className="card-depth p-6 group hover:border-accent-orange/30">
-              <div className="w-12 h-12 rounded-xl bg-accent-orange/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Star className="w-6 h-6 text-accent-orange" />
-              </div>
-              <h3 className="font-display font-bold text-text-primary mb-2">Avaliacao Consolidada</h3>
-              <p className="text-sm text-text-muted leading-relaxed">Reunimos avaliacoes de diferentes marketplaces para voce ter uma visao completa antes de decidir.</p>
-            </div>
-            <div className="card-depth p-6 group hover:border-accent-red/30">
-              <div className="w-12 h-12 rounded-xl bg-accent-red/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Bell className="w-6 h-6 text-accent-red" />
-              </div>
-              <h3 className="font-display font-bold text-text-primary mb-2">Alerta de Preco</h3>
-              <p className="text-sm text-text-muted leading-relaxed">Defina o preco desejado e receba um alerta quando o produto atingir o valor. Sem precisar ficar monitorando.</p>
-            </div>
-            <div className="card-depth p-6 group hover:border-accent-purple/30">
-              <div className="w-12 h-12 rounded-xl bg-accent-purple/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Truck className="w-6 h-6 text-accent-purple" />
-              </div>
-              <h3 className="font-display font-bold text-text-primary mb-2">Entrega e Prazo</h3>
-              <p className="text-sm text-text-muted leading-relaxed">Informacoes de frete e prazo de entrega de cada loja. O menor preco nem sempre e a melhor escolha.</p>
-            </div>
-            <div className="card-depth p-6 group hover:border-brand-500/30">
-              <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Search className="w-6 h-6 text-brand-500" />
-              </div>
-              <h3 className="font-display font-bold text-text-primary mb-2">Curadoria Real</h3>
-              <p className="text-sm text-text-muted leading-relaxed">Nao mostramos tudo. Nosso algoritmo filtra ofertas reais e destaca so o que realmente vale a pena.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <SectionSeparator />
-
-      {/* ===== 19. COMMUNITY CHANNELS ===== */}
-      <section id="community" className="py-8 section-cool">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-5">
-            <SectionHeader
-              icon={Users}
-              iconColor="text-brand-500"
-              title="Canais da Comunidade"
-              badge="Ao vivo"
-            />
-            <Link href="/canais" className="text-sm text-accent-blue hover:text-brand-500 font-medium flex items-center gap-1">
-              Ver todos <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Link href="/canais" className="card p-5 flex items-center gap-4 hover:-translate-y-1 transition-transform border border-blue-500/10">
-              <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                <Send className="w-5 h-5 text-blue-500" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-display font-bold text-sm text-text-primary">Telegram</h3>
-                <p className="text-xs text-text-muted">Ofertas verificadas em tempo real</p>
-              </div>
-            </Link>
-            <Link href="/canais" className="card p-5 flex items-center gap-4 hover:-translate-y-1 transition-transform border border-green-500/10">
-              <div className="w-11 h-11 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                <MessageCircle className="w-5 h-5 text-green-500" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-display font-bold text-sm text-text-primary">WhatsApp</h3>
-                <p className="text-xs text-text-muted">Resumo diario das melhores ofertas</p>
-              </div>
-            </Link>
-            <Link href="/canais" className="card p-5 flex items-center gap-4 hover:-translate-y-1 transition-transform border border-purple-500/10">
-              <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                <Bell className="w-5 h-5 text-purple-500" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-display font-bold text-sm text-text-primary">Alertas por E-mail</h3>
-                <p className="text-xs text-text-muted">Cupons e alertas de preco na caixa</p>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <SectionSeparator />
 
       {/* ===== 20. NEWSLETTER ===== */}
       <div id="newsletter" className="section-deep">
@@ -560,9 +395,9 @@ export default async function HomePage() {
       </div>
 
       {/* ===== 21. SEO ===== */}
-      <section id="seo" className="py-10 section-alt">
+      <section id="seo" className="py-8 section-alt">
         <div className="max-w-7xl mx-auto px-4 max-w-3xl">
-          <h2 className="font-display font-bold text-xl text-text-primary mb-3">
+          <h2 className="font-display font-bold text-xl text-text-primary mb-2">
             PromoSnap — Ofertas reais com historico de preco
           </h2>
           <p className="text-sm text-text-muted leading-relaxed">

@@ -14,12 +14,12 @@ export default function CategoryRail({ title, slug, icon, products }: CategoryRa
   if (products.length === 0) return null;
 
   return (
-    <section className="py-4">
+    <section className="py-3 md:py-4">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{icon}</span>
-            <h2 className="font-display font-bold text-base text-text-primary">{title}</h2>
+        <div className="flex items-center justify-between mb-2 md:mb-3">
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <span className="text-base md:text-lg">{icon}</span>
+            <h2 className="font-display font-bold text-sm md:text-base text-text-primary">{title}</h2>
           </div>
           <Link
             href={`/categoria/${slug}`}
@@ -28,9 +28,9 @@ export default function CategoryRail({ title, slug, icon, products }: CategoryRa
             Ver todos <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
-        <div className="rail gap-3 pb-2">
+        <div className="rail gap-2.5 md:gap-3 pb-2">
           {products.map((p) => (
-            <div key={p.id} className="w-[200px] md:w-[240px] flex-shrink-0">
+            <div key={p.id} className="w-[165px] md:w-[240px] flex-shrink-0">
               <OfferCard product={p} />
             </div>
           ))}

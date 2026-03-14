@@ -18,55 +18,19 @@ const TYPE_CONFIG = {
   hot_deal: { icon: Flame, color: "text-accent-red", bg: "bg-red-50" },
 };
 
-const SAMPLE_NOTIFICATIONS: Omit<Notification, "id" | "createdAt" | "read">[] = [
-  {
-    title: "Novas ofertas disponiveis",
-    body: "Encontramos 12 novas ofertas que podem te interessar.",
-    type: "new_offer",
-  },
-  {
-    title: "Queda de preco detectada",
-    body: "Um produto que voce viu baixou de preco.",
-    type: "price_drop",
-  },
-  {
-    title: "Oferta relampago",
-    body: "Descontos acima de 40% por tempo limitado.",
-    type: "hot_deal",
-  },
-  {
-    title: "Novos cupons adicionados",
-    body: "Cupons exclusivos para lojas parceiras.",
-    type: "new_offer",
-  },
-];
-
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load existing notifications
-    let stored: Notification[] = [];
     try {
       const raw = localStorage.getItem("ps_notifications");
-      if (raw) stored = JSON.parse(raw);
+      if (raw) {
+        const stored: Notification[] = JSON.parse(raw);
+        setNotifications(stored);
+      }
     } catch {}
-
-    // Generate some if none exist or it's been > 1h since last generation
-    if (stored.length === 0) {
-      const now = new Date();
-      stored = SAMPLE_NOTIFICATIONS.map((n, i) => ({
-        ...n,
-        id: `notif-${Date.now()}-${i}`,
-        read: false,
-        createdAt: new Date(now.getTime() - i * 3600000).toISOString(),
-      }));
-      localStorage.setItem("ps_notifications", JSON.stringify(stored));
-    }
-
-    setNotifications(stored);
   }, []);
 
   // Close dropdown on outside click
@@ -188,7 +152,7 @@ export default function NotificationBell() {
             ) : (
               <div className="py-8 text-center">
                 <Bell className="h-8 w-8 text-surface-300 mx-auto mb-2" />
-                <p className="text-xs text-text-muted">Nenhuma notificacao</p>
+                <p className="text-xs text-text-muted px-4">Nenhuma notificacao ainda. Quando houver quedas de preco ou novas ofertas, elas aparecerao aqui.</p>
               </div>
             )}
           </div>

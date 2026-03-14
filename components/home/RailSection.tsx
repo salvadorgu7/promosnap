@@ -13,24 +13,24 @@ interface RailSectionProps {
 
 export default function RailSection({ title, subtitle, href, icon: Icon, iconColor = "text-accent-blue", liveBadge, children }: RailSectionProps) {
   return (
-    <section className="py-6">
+    <section className="py-4">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
             {Icon && (
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{
                   background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.06) 100%)",
                   boxShadow: "0 1px 4px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.5)",
                 }}
               >
-                <Icon className={`w-4.5 h-4.5 ${iconColor}`} />
+                <Icon className={`w-4 h-4 ${iconColor}`} />
               </div>
             )}
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-display font-bold text-lg text-text-primary tracking-tight">{title}</h2>
+                <h2 className="font-display font-bold text-base text-text-primary tracking-tight">{title}</h2>
                 {liveBadge && (
                   <span className="section-live-indicator">
                     <span className="pulse-dot" />
