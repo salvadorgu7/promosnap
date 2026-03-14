@@ -65,9 +65,9 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
   const discount = offer.bestOffer.discount;
   const isVerified = offer.bestOffer.offerScore >= 70;
   const ctaUrl =
-    offer.bestOffer.affiliateUrl && offer.bestOffer.affiliateUrl !== "#"
-      ? offer.bestOffer.affiliateUrl
-      : "#";
+    offer.bestOffer.offerId && offer.bestOffer.affiliateUrl && offer.bestOffer.affiliateUrl !== "#"
+      ? `/api/clickout/${offer.bestOffer.offerId}?page=home&origin=carousel&rail=carousel`
+      : `/produto/${offer.slug}`;
 
   const slideClass =
     direction === "right" ? "carousel-slide-right" : "carousel-slide-left";

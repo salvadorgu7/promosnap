@@ -224,93 +224,206 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* Monetization Readiness */}
-      {(() => {
-        const mlAffiliateId = !!process.env.MERCADOLIVRE_AFFILIATE_ID;
-        const amazonTag = !!process.env.AMAZON_AFFILIATE_TAG;
-        const adminSecret = !!process.env.ADMIN_SECRET;
-        const resendKey = !!process.env.RESEND_API_KEY;
-        const allReady = mlAffiliateId && amazonTag && adminSecret;
-        const items = [
-          { label: "MERCADOLIVRE_AFFILIATE_ID", ok: mlAffiliateId, critical: true },
-          { label: "AMAZON_AFFILIATE_TAG", ok: amazonTag, critical: true },
-          { label: "ADMIN_SECRET", ok: adminSecret, critical: true },
-          { label: "RESEND_API_KEY", ok: resendKey, critical: false },
-        ];
-        return (
-          <div className={`stat-card ${allReady ? "stat-card-green" : "stat-card-orange"} border-l-4 ${allReady ? "border-l-accent-green" : "border-l-amber-500"}`}>
-            <div className="flex items-center gap-2 mb-3">
-              <Shield className="h-4 w-4 text-brand-500" />
-              <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Monetization Status</span>
-              <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${allReady ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600"}`}>
-                {allReady ? "READY" : "INCOMPLETE"}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {items.map((item) => (
-                <div key={item.label} className="flex items-center gap-2">
-                  {item.ok ? (
-                    <CheckCircle className="h-3.5 w-3.5 text-accent-green flex-shrink-0" />
-                  ) : (
-                    <XCircle className={`h-3.5 w-3.5 flex-shrink-0 ${item.critical ? "text-red-500" : "text-amber-500"}`} />
-                  )}
-                  <span className="text-xs text-text-secondary font-mono truncate">{item.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 pt-3 border-t border-surface-200 grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-xs text-text-muted">Total clickouts</p>
-                <p className="text-lg font-bold font-display text-text-primary">{formatNumber(clickouts7d)}</p>
+      {/* Revenue Funnel + Monetization Status — side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Revenue Funnel */}
+        {(() => {
+          const funnelSteps = [
+            { label: "Produtos ativos", value: productsTotal, color: "bg-accent-blue" },
+            { label: "Ofertas rastreadas", value: stats.activeOffers, color: "bg-brand-500" },
+            { label: "Prontas p/ clickout", value: readyForDistribution, color: "bg-accent-purple" },
+            { label: "Clickouts 7d", value: clickouts7d, color: "bg-accent-orange" },
+          ];
+          const maxFunnel = Math.max(...funnelSteps.map(s => s.value), 1);
+          return (
+            <div className="stat-card">
+              <div className="flex items-center gap-2 mb-3">
+                <BarChart3 className="h-4 w-4 text-brand-500" />
+                <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Revenue Funnel</span>
               </div>
-              <div>
-                <p className="text-xs text-text-muted">Ofertas c/ affiliate URL</p>
-                <p className="text-lg font-bold font-display text-text-primary">{formatNumber(readyForDistribution)}</p>
+              <div className="space-y-2.5">
+                {funnelSteps.map((step) => {
+                  const pct = Math.max((step.value / maxFunnel) * 100, 3);
+                  return (
+                    <div key={step.label}>
+                      <div className="flex items-center justify-between text-xs mb-0.5">
+                        <span className="text-text-muted">{step.label}</span>
+                        <span className="font-bold text-text-primary">{formatNumber(step.value)}</span>
+                      </div>
+                      <div className="h-2 bg-surface-100 rounded-full overflow-hidden">
+                        <div className={`h-full ${step.color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+              {productsTotal > 0 && clickouts7d === 0 && (
+                <p className="mt-3 pt-2 border-t border-surface-200 text-[11px] text-red-500 font-medium">
+                  ⚠ Zero clickouts — o funil para antes da conversao. Verificar CTAs e affiliate URLs.
+                </p>
+              )}
+              {productsTotal > 0 && clickouts7d > 0 && (
+                <p className="mt-3 pt-2 border-t border-surface-200 text-[11px] text-text-muted">
+                  Taxa de conversao estimada: <span className="font-bold text-text-primary">{((clickouts7d / Math.max(readyForDistribution, 1)) * 100).toFixed(1)}%</span> das ofertas prontas geraram click
+                </p>
+              )}
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
-      {/* Proximos Passos — strategic recommendations */}
+        {/* Monetization Readiness */}
+        {(() => {
+          const mlAffiliateId = !!process.env.MERCADOLIVRE_AFFILIATE_ID;
+          const amazonTag = !!process.env.AMAZON_AFFILIATE_TAG;
+          const adminSecret = !!process.env.ADMIN_SECRET;
+          const resendKey = !!process.env.RESEND_API_KEY;
+          const allReady = mlAffiliateId && amazonTag && adminSecret;
+          const items = [
+            { label: "MERCADOLIVRE_AFFILIATE_ID", ok: mlAffiliateId, critical: true },
+            { label: "AMAZON_AFFILIATE_TAG", ok: amazonTag, critical: true },
+            { label: "ADMIN_SECRET", ok: adminSecret, critical: true },
+            { label: "RESEND_API_KEY", ok: resendKey, critical: false },
+          ];
+          return (
+            <div className={`stat-card ${allReady ? "stat-card-green" : "stat-card-orange"} border-l-4 ${allReady ? "border-l-accent-green" : "border-l-amber-500"}`}>
+              <div className="flex items-center gap-2 mb-3">
+                <Shield className="h-4 w-4 text-brand-500" />
+                <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Monetization Status</span>
+                <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${allReady ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600"}`}>
+                  {allReady ? "READY" : "INCOMPLETE"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {items.map((item) => (
+                  <div key={item.label} className="flex items-center gap-2">
+                    {item.ok ? (
+                      <CheckCircle className="h-3.5 w-3.5 text-accent-green flex-shrink-0" />
+                    ) : (
+                      <XCircle className={`h-3.5 w-3.5 flex-shrink-0 ${item.critical ? "text-red-500" : "text-amber-500"}`} />
+                    )}
+                    <span className="text-xs text-text-secondary font-mono truncate">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Source-level revenue breakdown */}
+              {rev7dRaw.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-surface-200">
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-2">Revenue por Fonte (7d)</p>
+                  <div className="space-y-1.5">
+                    {rev7dRaw.sort((a, b) => Number(b.clickouts) - Number(a.clickouts)).map((row) => {
+                      const srcRevenue = Number(row.clickouts) * (row.avgPrice ?? 0) * getRate(row.sourceSlug);
+                      return (
+                        <div key={row.sourceSlug || "unknown"} className="flex items-center justify-between text-xs">
+                          <span className="text-text-secondary">{row.sourceSlug || "desconhecida"}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-text-muted">{Number(row.clickouts)} clicks</span>
+                            <span className="font-bold text-text-primary">{formatPrice(srcRevenue)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <div className="mt-3 pt-3 border-t border-surface-200 grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-text-muted">Total clickouts 7d</p>
+                  <p className="text-lg font-bold font-display text-text-primary">{formatNumber(clickouts7d)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-muted">Ofertas c/ affiliate URL</p>
+                  <p className="text-lg font-bold font-display text-text-primary">{formatNumber(readyForDistribution)}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* O que bloqueia receita — brutally honest */}
       {(() => {
-        const recs: string[] = [];
+        const blockers: { text: string; severity: "critical" | "warning" | "info" }[] = [];
         const mlConfigured = !!(process.env.ML_CLIENT_ID || process.env.MERCADOLIVRE_APP_ID);
         const emailConfigured = !!process.env.RESEND_API_KEY;
         const mlAffiliate = !!process.env.MERCADOLIVRE_AFFILIATE_ID;
         const amazonAffiliate = !!process.env.AMAZON_AFFILIATE_TAG;
-        // Build recommendations based on current state
-        if (!mlAffiliate) recs.push("⚡ Configurar MERCADOLIVRE_AFFILIATE_ID para gerar receita nos clicks do ML");
-        if (!amazonAffiliate) recs.push("⚡ Configurar AMAZON_AFFILIATE_TAG para gerar receita nos clicks da Amazon");
-        if (!mlConfigured) recs.push("Configurar credenciais ML (ML_CLIENT_ID + SECRET) para discovery automatico de produtos");
-        if (!emailConfigured) recs.push("Configurar RESEND_API_KEY para habilitar envio de alertas e newsletters");
-        if (productsTotal === 0) recs.push("Catalogo vazio — importar produtos via /admin/ingestao ou rodar discover-import");
-        if (stats.activeOffers === 0 && productsTotal > 0) recs.push("Nenhuma oferta ativa — verificar pipeline de ingestao");
-        if (stats.clickoutsToday === 0 && clickouts7d === 0) recs.push("Nenhum clickout registrado — verificar affiliate links e tracking");
-        if (candidatesPending > 0) recs.push(`${candidatesPending} candidato(s) pendente(s) para revisar em Ingestao`);
-        if (trendingWithoutCoverage > 0) recs.push(`${trendingWithoutCoverage} keywords trending sem cobertura no catalogo`);
-        if (errorSources > 0) recs.push(`${errorSources} fonte(s) com erro — verificar em Fontes`);
-        if (lastJob?.status === "FAILED") recs.push(`Ultimo job falhou (${lastJob.jobName}) — verificar em Jobs`);
-        // Only show top 5
-        const topRecs = recs.slice(0, 5);
-        if (topRecs.length === 0) return null;
-        return (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-0">
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="h-4 w-4 text-amber-700" />
-              <h3 className="font-bold text-amber-800 text-sm">Proximos Passos</h3>
-              <span className="ml-auto text-[10px] font-medium text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
-                {topRecs.length} acao/acoes
-              </span>
+
+        // Critical blockers — these prevent revenue
+        if (!mlAffiliate) blockers.push({ text: "MERCADOLIVRE_AFFILIATE_ID ausente — clicks no ML nao geram comissao", severity: "critical" });
+        if (!amazonAffiliate) blockers.push({ text: "AMAZON_AFFILIATE_TAG ausente — clicks na Amazon nao geram comissao", severity: "critical" });
+        if (productsTotal === 0) blockers.push({ text: "Catalogo vazio — sem produtos, sem receita possivel", severity: "critical" });
+        if (stats.activeOffers === 0 && productsTotal > 0) blockers.push({ text: "Zero ofertas ativas — produtos existem mas nao tem precos", severity: "critical" });
+        if (readyForDistribution === 0 && stats.activeOffers > 0) blockers.push({ text: "Nenhuma oferta com affiliate URL — clicks existem mas nao monetizam", severity: "critical" });
+        if (stats.clickoutsToday === 0 && clickouts7d === 0) blockers.push({ text: "Zero clickouts — ninguem esta clicando para comprar", severity: "critical" });
+
+        // Warnings — these reduce revenue
+        if (errorSources > 0) blockers.push({ text: `${errorSources} fonte(s) com erro — precos desatualizados`, severity: "warning" });
+        if (lastJob?.status === "FAILED") blockers.push({ text: `Job "${lastJob.jobName}" falhou — pipeline pode estar parado`, severity: "warning" });
+        if (!mlConfigured) blockers.push({ text: "ML API nao configurada — discovery automatico desabilitado", severity: "warning" });
+        if (candidatesPending > 0) blockers.push({ text: `${candidatesPending} candidato(s) esperando revisao em Ingestao`, severity: "warning" });
+
+        // Growth opportunities
+        if (!emailConfigured) blockers.push({ text: "RESEND_API_KEY ausente — alertas de preco e newsletters desabilitados", severity: "info" });
+        if (trendingWithoutCoverage > 0) blockers.push({ text: `${trendingWithoutCoverage} keywords trending sem produtos no catalogo`, severity: "info" });
+
+        if (blockers.length === 0) return (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <h3 className="font-bold text-green-800 text-sm">Sistema Operacional</h3>
             </div>
-            <ul className="text-sm text-amber-700 space-y-1">
-              {topRecs.map((r, i) => (
-                <li key={i} className="flex items-start gap-1.5">
-                  <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-amber-500" />
-                  {r}
-                </li>
-              ))}
-            </ul>
+            <p className="text-sm text-green-700 mt-1">Nenhum bloqueio critico identificado. Pipeline de receita funcional.</p>
+          </div>
+        );
+
+        const criticals = blockers.filter(b => b.severity === "critical");
+        const warnings = blockers.filter(b => b.severity === "warning");
+        const infos = blockers.filter(b => b.severity === "info");
+        const borderColor = criticals.length > 0 ? "border-red-500" : warnings.length > 0 ? "border-amber-500" : "border-blue-400";
+
+        return (
+          <div className={`card p-4 border-l-4 ${borderColor}`}>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className={`h-4 w-4 ${criticals.length > 0 ? "text-red-500" : "text-amber-500"}`} />
+              <h3 className="font-bold text-text-primary text-sm">O Que Bloqueia Receita</h3>
+              {criticals.length > 0 && (
+                <span className="ml-auto text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                  {criticals.length} critico{criticals.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+            <div className="space-y-2">
+              {criticals.length > 0 && (
+                <div className="space-y-1">
+                  {criticals.map((b, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm">
+                      <XCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-red-500" />
+                      <span className="text-red-700">{b.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {warnings.length > 0 && (
+                <div className="space-y-1">
+                  {warnings.map((b, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm">
+                      <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-amber-500" />
+                      <span className="text-amber-700">{b.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {infos.length > 0 && (
+                <div className="space-y-1 pt-1 border-t border-surface-200">
+                  {infos.map((b, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm">
+                      <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-accent-blue" />
+                      <span className="text-text-muted">{b.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         );
       })()}
@@ -407,72 +520,6 @@ export default async function AdminDashboard() {
             <p className="text-2xl font-bold font-display text-text-primary">{s.value}</p>
           </div>
         ))}
-      </div>
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-        <Link href="/admin/banners" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
-          <div className="flex items-center gap-2">
-            <Image className="w-4 h-4 text-accent-purple" />
-            <div>
-              <p className="text-sm font-medium text-text-primary">Banners</p>
-              <p className="text-xs text-text-muted">{bannersActive} ativos</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-text-muted" />
-        </Link>
-        <Link href="/admin/catalog-edit" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
-          <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-accent-blue" />
-            <div>
-              <p className="text-sm font-medium text-text-primary">Editor</p>
-              <p className="text-xs text-text-muted">Catalogo</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-text-muted" />
-        </Link>
-        {candidatesPending > 0 && (
-          <Link href="/admin/ingestao" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors border border-accent-orange/30">
-            <div className="flex items-center gap-2">
-              <Upload className="w-4 h-4 text-accent-orange" />
-              <div>
-                <p className="text-sm font-medium text-text-primary">Importacao</p>
-                <p className="text-xs text-accent-orange font-medium">{candidatesPending} pendentes</p>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-text-muted" />
-          </Link>
-        )}
-        <Link href="/admin/alertas" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-accent-orange" />
-            <div>
-              <p className="text-sm font-medium text-text-primary">{alertsActive} alertas</p>
-              <p className="text-xs text-text-muted">Alertas de preco</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-text-muted" />
-        </Link>
-        <Link href="/admin/jobs" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-accent-green" />
-            <div>
-              <p className="text-sm font-medium text-text-primary">Jobs</p>
-              <p className="text-xs text-text-muted">Automacao</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-text-muted" />
-        </Link>
-        <Link href="/admin/growth-ops" className="card p-3 flex items-center justify-between hover:bg-surface-50 transition-colors border border-brand-500/20">
-          <div className="flex items-center gap-2">
-            <Rocket className="w-4 h-4 text-brand-500" />
-            <div>
-              <p className="text-sm font-medium text-text-primary">Growth</p>
-              <p className="text-xs text-text-muted">Oportunidades</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-text-muted" />
-        </Link>
       </div>
 
       {/* Sources health */}

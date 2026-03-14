@@ -14,6 +14,9 @@ const tabs = [
 
 const menuLinks = [
   { href: "/categorias", label: "Categorias" },
+  { href: "/categoria/eletronicos", label: "Eletrônicos" },
+  { href: "/categoria/casa", label: "Casa & Cozinha" },
+  { href: "/categoria/gaming", label: "Gaming" },
   { href: "/cupons", label: "Cupons" },
   { href: "/mais-vendidos", label: "Mais Vendidos" },
   { href: "/menor-preco", label: "Menor Preço" },

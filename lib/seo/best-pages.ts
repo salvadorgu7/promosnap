@@ -201,6 +201,39 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
       { q: 'IPS, VA ou OLED para 4K?', a: 'IPS oferece melhor precisao de cor e angulos de visao. VA tem melhor contraste e pretos mais profundos. OLED e superior em tudo, mas custa significativamente mais.' },
     ],
   },
+  'melhores-tablets': {
+    title: 'Melhores Tablets',
+    description: 'Os melhores tablets com preco comparado. iPad, Samsung Galaxy Tab e mais — compare modelos para trabalho, estudo e entretenimento.',
+    intro: 'Tablets sao dispositivos versateis para trabalho, estudo e entretenimento. Comparamos os principais modelos do mercado brasileiro, desde opcoes acessiveis ate tablets premium, com precos monitorados em tempo real para voce encontrar a melhor oferta.',
+    query: { keywords: ['tablet'] },
+    faqs: [
+      { q: 'iPad ou Samsung Galaxy Tab: qual escolher?', a: 'O iPad oferece melhor ecossistema de apps otimizados e longevidade de software. O Galaxy Tab tem mais flexibilidade com Android, suporte a DeX e geralmente custa menos no Brasil.' },
+      { q: 'Quanto de armazenamento e recomendado em um tablet?', a: 'Para uso basico (navegacao e streaming), 64GB e suficiente. Para estudo e trabalho com documentos, 128GB. Para desenho, edicao e jogos pesados, 256GB ou mais.' },
+      { q: 'Tablet WiFi ou com chip celular (4G/5G)?', a: 'A versao WiFi atende a maioria dos usuarios e custa menos. A versao celular e ideal para quem precisa de internet movel fora de casa sem depender de hotspot do celular.' },
+    ],
+  },
+  'melhores-cafeteiras': {
+    title: 'Melhores Cafeteiras',
+    description: 'As melhores cafeteiras com preco comparado. Cafeteiras de capsulas, espresso, coador e mais com descontos reais.',
+    intro: 'Encontrar a cafeteira ideal e o primeiro passo para um cafe perfeito em casa. Comparamos cafeteiras de capsulas, espresso e tradicionais de diversas marcas, com precos monitorados em todas as lojas para voce encontrar a melhor oferta.',
+    query: { keywords: ['cafeteira'] },
+    faqs: [
+      { q: 'Cafeteira de capsula ou tradicional: qual compensa mais?', a: 'Cafeteiras de capsula sao mais praticas e consistentes, mas o custo por xicara e maior. Cafeteiras tradicionais e espresso tem custo menor por cafe e oferecem mais controle sobre o preparo.' },
+      { q: 'Quais sao as melhores marcas de cafeteira?', a: 'Nespresso e Dolce Gusto lideram em capsulas. Para espresso, DeLonghi e Tramontina sao referencia. Para coador eletrico, Mondial e Britania oferecem otimo custo-beneficio.' },
+      { q: 'Como fazer a manutencao da cafeteira?', a: 'Faca a descalcificacao a cada 2-3 meses com solucao propria ou vinagre diluido. Limpe o reservatorio semanalmente e troque filtros conforme recomendacao do fabricante.' },
+    ],
+  },
+  'melhores-caixas-som-bluetooth': {
+    title: 'Melhores Caixas de Som Bluetooth',
+    description: 'As melhores caixas de som Bluetooth com preco comparado. Portateis, a prova dagua e potentes com descontos verificados.',
+    intro: 'Caixas de som Bluetooth sao companheiras perfeitas para festas, viagens e uso no dia a dia. Comparamos modelos portateis, resistentes a agua e de alta potencia de marcas como JBL, Sony, Harman Kardon e mais, com precos atualizados em tempo real.',
+    query: { keywords: ['caixa som bluetooth'] },
+    faqs: [
+      { q: 'Qual a melhor caixa de som Bluetooth para uso ao ar livre?', a: 'Para uso externo, priorize modelos com certificacao IP67 ou superior, como JBL Flip e Charge ou Sony SRS-XB. Eles resistem a agua, poeira e quedas leves.' },
+      { q: 'Quanto tempo dura a bateria de uma caixa Bluetooth?', a: 'Modelos compactos duram entre 8-12 horas. Caixas maiores como JBL Charge e Boombox podem durar 15-24 horas. O volume alto reduz a autonomia em ate 30%.' },
+      { q: 'JBL ou concorrentes: qual marca escolher?', a: 'JBL lidera em popularidade e custo-beneficio no Brasil. Sony oferece graves mais potentes, Harman Kardon tem design premium e som refinado, e Marshall agrada quem busca estetica vintage.' },
+    ],
+  },
 }
 
 export const BEST_PAGE_SLUGS = Object.keys(BEST_PAGES)

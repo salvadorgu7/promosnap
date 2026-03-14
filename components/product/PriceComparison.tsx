@@ -236,7 +236,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
 
               {/* CTA */}
               <a
-                href={offer.affiliateUrl}
+                href={`/api/clickout/${offer.id}?page=product&origin=comparison&rail=price-comparison`}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
                 className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
@@ -360,7 +360,7 @@ export default function PriceComparison({ offers, productName }: PriceComparison
                   </div>
                 </div>
                 <a
-                  href={offer.affiliateUrl}
+                  href={`/api/clickout/${offer.id}?page=product&origin=comparison&rail=price-comparison`}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${

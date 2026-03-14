@@ -17,6 +17,7 @@ import PersonalizedNews from "@/components/home/PersonalizedNews";
 import PersonalizedRails from "@/components/home/PersonalizedRails";
 import SocialProof from "@/components/home/SocialProof";
 import WhatChanged from "@/components/home/WhatChanged";
+import AmazonPromo from "@/components/home/AmazonPromo";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
@@ -252,6 +253,9 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ===== 5.5. AMAZON PROMO — cupom exclusivo ===== */}
+      <AmazonPromo />
 
       {/* ===== 6. OFERTAS QUENTES (moved up — primary monetization rail) ===== */}
       {hotOffers.length > 0 && (

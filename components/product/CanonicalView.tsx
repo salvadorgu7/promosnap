@@ -224,7 +224,7 @@ export default function CanonicalView({
                         </div>
 
                         <a
-                          href={offer.affiliateUrl || "#"}
+                          href={`/api/clickout/${offer.id}?page=product&origin=canonical&rail=canonical-view`}
                           target="_blank"
                           rel="noopener noreferrer nofollow"
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold btn-secondary"

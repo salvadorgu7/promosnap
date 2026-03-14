@@ -25,6 +25,8 @@ import CategoryInsightsComponent from "@/components/product/CategoryInsights";
 import ShippingBadge from "@/components/product/ShippingBadge";
 import ContextualNav from "@/components/product/ContextualNav";
 import DecisionSummary from "@/components/product/DecisionSummary";
+import SmartDecisionBlock from "@/components/product/SmartDecisionBlock";
+import QuickCompare from "@/components/product/QuickCompare";
 import WhyHighlighted from "@/components/product/WhyHighlighted";
 import CanonicalView from "@/components/product/CanonicalView";
 import MiniCluster from "@/components/product/MiniCluster";
@@ -374,6 +376,21 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
+          {/* Smart Decision Analysis */}
+          {bestOffer && (
+            <SmartDecisionBlock
+              productName={product.name}
+              currentPrice={bestPrice}
+              originalPrice={bestOffer.originalPrice ?? undefined}
+              avg30d={priceStats?.avg30d}
+              allTimeMin={priceStats?.allTimeMin}
+              offersCount={allOffers.length}
+              isFreeShipping={bestOffer.isFreeShipping}
+              offerScore={bestOffer.offerScore}
+              trend={priceStats?.trend}
+            />
+          )}
+
           {/* Best price highlight card */}
           {bestOffer && (
             <div className="card p-5 border-brand-500/25 bg-brand-50">
@@ -628,9 +645,19 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
 
+      {/* Quick Compare — top 3 alternatives side by side */}
+      {alternatives.length >= 2 && (
+        <section className="mt-10" id="quick-compare">
+          <QuickCompare
+            products={alternatives.slice(0, 3)}
+            title="Se nao for esse, compare estes"
+          />
+        </section>
+      )}
+
       {/* Alternatives in same price range */}
       {alternatives.length > 0 && (
-        <section className="mt-10" id="alternatives">
+        <section className="mt-8" id="alternatives">
           <h2 className="text-xl font-bold font-display text-text-primary mb-1">
             Alternativas na Mesma Faixa
           </h2>

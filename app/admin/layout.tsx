@@ -70,6 +70,8 @@ const navGroups: NavGroup[] = [
       { href: "/admin/ofertas", label: "Ofertas", icon: Tag },
       { href: "/admin/fontes", label: "Fontes", icon: Store },
       { href: "/admin/imports", label: "Import", icon: Upload },
+      { href: "/admin/ingestao", label: "Ingestao", icon: Upload },
+      { href: "/admin/banners", label: "Banners", icon: Image },
     ],
   },
   {
@@ -78,7 +80,15 @@ const navGroups: NavGroup[] = [
       { href: "/admin/attribution", label: "Attribution", icon: Target },
       { href: "/admin/monetizacao", label: "Monetizacao", icon: DollarSign },
       { href: "/admin/analytics", label: "Analytics", icon: Activity },
+      { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
       { href: "/admin/seo", label: "SEO", icon: Globe },
+    ],
+  },
+  {
+    title: "Growth",
+    items: [
+      { href: "/admin/growth-ops", label: "Growth & Ops", icon: Rocket },
+      { href: "/admin/tendencias", label: "Tendencias", icon: TrendingUp },
       { href: "/admin/email", label: "Email", icon: Mail },
       { href: "/admin/alertas", label: "Alertas", icon: Bell },
     ],
@@ -98,38 +108,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Experimental items — collapsed by default
+// Experimental items — collapsed by default (only genuinely useful extras)
 const experimentalItems: NavItem[] = [
   { href: "/admin/cockpit", label: "Cockpit", icon: Gauge },
-  { href: "/admin/integrations", label: "Integracoes", icon: Plug },
-  { href: "/admin/business", label: "Business OS", icon: BarChart3 },
-  { href: "/admin/growth-ops", label: "Growth & Ops", icon: Rocket },
-  { href: "/admin/catalog-edit", label: "Editor", icon: Pencil },
-  { href: "/admin/prioridades", label: "Prioridades", icon: Target },
-  { href: "/admin/catalog-governance", label: "Governanca", icon: ShieldCheck },
   { href: "/admin/catalog-quality", label: "Qualidade", icon: Gauge },
-  { href: "/admin/catalog-opportunities", label: "Oportunidades", icon: Gem },
   { href: "/admin/catalog-intelligence", label: "Intelligence", icon: Brain },
   { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
-  { href: "/admin/content", label: "Conteudo", icon: FileText },
-  { href: "/admin/artigos", label: "Artigos", icon: FileText },
-  { href: "/admin/banners", label: "Banners", icon: Image },
-  { href: "/admin/tendencias", label: "Tendencias", icon: TrendingUp },
-  { href: "/admin/performance", label: "Desempenho", icon: BarChart3 },
-  { href: "/admin/referrals", label: "Indicacoes", icon: Gift },
-  { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
-  { href: "/admin/merchandising", label: "Merchandising", icon: ShoppingBag },
-  { href: "/admin/automation", label: "Automacao", icon: Zap },
-  { href: "/admin/inteligencia", label: "Inteligencia", icon: Lightbulb },
-  { href: "/admin/decisoes", label: "Decisoes", icon: Brain },
   { href: "/admin/seo-gaps", label: "SEO Gaps", icon: SearchX },
-  { href: "/admin/email-intelligence", label: "Email Intel", icon: MailCheck },
-  { href: "/admin/feed-sync", label: "Feed Sync", icon: RefreshCw },
-  { href: "/admin/ingestao", label: "Ingestao", icon: Upload },
-  { href: "/admin/release", label: "Release", icon: Rocket },
-  { href: "/admin/audit", label: "Auditoria", icon: ClipboardCheck },
-  { href: "/admin/runtime", label: "Runtime QA", icon: Activity },
-  { href: "/admin/production", label: "Production", icon: Gauge },
+  { href: "/admin/automation", label: "Automacao", icon: Zap },
   { href: "/admin/rate-limits", label: "Rate Limits", icon: ShieldAlert },
 ];
 

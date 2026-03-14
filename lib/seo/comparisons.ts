@@ -378,6 +378,58 @@ const comparisons: ComparisonDef[] = [
       },
     ],
   },
+  {
+    slug: "nintendo-switch-vs-ps5",
+    title: "Nintendo Switch vs PS5: Qual console comprar?",
+    description:
+      "Comparativo Nintendo Switch vs PS5. Jogos exclusivos, portabilidade, desempenho e precos no Brasil.",
+    intro:
+      "Nintendo Switch e PlayStation 5 atendem publicos diferentes, mas disputam espaco no orcamento dos gamers brasileiros. O Switch oferece portabilidade unica e exclusivos da Nintendo, enquanto o PS5 entrega graficos de ultima geracao e jogos AAA. Comparamos precos e recursos para ajudar na sua escolha.",
+    productA: { name: "Nintendo Switch", query: "nintendo switch" },
+    productB: { name: "PS5", query: "ps5" },
+    verdict:
+      "O Nintendo Switch e ideal para jogos casuais, familias e quem valoriza portabilidade. O PS5 e a escolha certa para quem busca graficos de ponta e jogos AAA. No Brasil, o Switch costuma ser mais acessivel e seus jogos mantem valor de revenda por mais tempo.",
+    faqs: [
+      {
+        q: "Nintendo Switch vale a pena em 2025?",
+        a: "Sim, o Switch tem uma biblioteca enorme de jogos exclusivos como Zelda, Mario e Pokemon. Mesmo com rumores do sucessor, o catalogo atual justifica a compra, especialmente com precos em queda.",
+      },
+      {
+        q: "Qual console tem jogos mais baratos?",
+        a: "O PS5 tem jogos AAA que caem de preco rapidamente e o PS Plus oferece otimo custo-beneficio. Jogos da Nintendo raramente entram em promocao significativa, mantendo precos altos por mais tempo.",
+      },
+      {
+        q: "Da para jogar online em ambos?",
+        a: "Sim, mas ambos exigem assinatura paga. O PS Plus custa mais, porem oferece jogos mensais gratis. O Nintendo Switch Online e mais barato e inclui classicos retro.",
+      },
+    ],
+  },
+  {
+    slug: "alexa-echo-vs-google-nest",
+    title: "Alexa Echo vs Google Nest: Qual caixa inteligente escolher?",
+    description:
+      "Comparativo Alexa Echo vs Google Nest. Assistente virtual, som, smart home e precos atualizados no Brasil.",
+    intro:
+      "As caixas inteligentes da Amazon e do Google disputam a lideranca no mercado de smart home brasileiro. Alexa Echo e Google Nest oferecem assistente de voz, controle de dispositivos inteligentes e streaming de musica. Comparamos recursos e precos para facilitar sua decisao.",
+    productA: { name: "Alexa Echo", query: "echo dot alexa" },
+    productB: { name: "Google Nest", query: "google nest" },
+    verdict:
+      "A Alexa Echo lidera no Brasil com mais skills, maior compatibilidade com dispositivos smart home e precos agressivos. O Google Nest se destaca em respostas mais naturais, melhor integracao com servicos Google e qualidade de som superior nos modelos maiores. Para a maioria dos brasileiros, o Echo Dot oferece o melhor custo-beneficio de entrada.",
+    faqs: [
+      {
+        q: "Qual assistente e mais inteligente, Alexa ou Google?",
+        a: "O Google Assistente tende a responder perguntas de conhecimento geral com mais precisao. A Alexa tem mais skills e integracoes no Brasil, sendo mais versatil para automacao residencial.",
+      },
+      {
+        q: "Preciso de internet para usar caixa inteligente?",
+        a: "Sim, ambas precisam de conexao WiFi para funcionar. Sem internet, as funcoes de assistente de voz, streaming e controle smart home nao funcionam.",
+      },
+      {
+        q: "Qual tem melhor qualidade de som?",
+        a: "Nos modelos de entrada (Echo Dot vs Nest Mini), o som e similar e limitado. Nos modelos maiores, o Echo Studio e o Nest Audio oferecem som de alta qualidade, com o Nest Audio se destacando em clareza de medios.",
+      },
+    ],
+  },
 ];
 
 export const COMPARISONS: Record<string, ComparisonDef> = Object.fromEntries(

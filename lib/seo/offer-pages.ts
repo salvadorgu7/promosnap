@@ -161,6 +161,39 @@ export const OFFER_PAGES: Record<string, OfferPageDef> = {
       { q: 'Quando comprar eletrodomesticos de cozinha?', a: 'Black Friday, Dia das Maes e eventos como Amazon Prime Day costumam ter os maiores descontos em itens de cozinha.' },
     ],
   },
+  'ofertas-tablets': {
+    title: 'Ofertas de Tablets',
+    description: 'As melhores ofertas de tablets com preco comparado. iPad, Samsung Galaxy Tab, Lenovo e mais com descontos reais.',
+    intro: 'Tablets sao ideais para estudo, trabalho e entretenimento. Monitoramos precos de iPads, Galaxy Tabs e outras marcas em todas as lojas para que voce encontre o melhor desconto na hora certa.',
+    searchQuery: 'tablet',
+    faqs: [
+      { q: 'Quando o iPad fica mais barato?', a: 'Geralmente apos o lancamento de novos modelos (setembro/outubro) e em eventos como Black Friday, Amazon Prime Day e volta as aulas.' },
+      { q: 'Tablet Samsung ou iPad?', a: 'O iPad tem melhor ecossistema de apps e longevidade. O Galaxy Tab oferece mais flexibilidade com Android e modo DeX para produtividade, alem de precos geralmente menores.' },
+      { q: 'Tablet recondicionado vale a pena?', a: 'Sim, tablets recondicionados certificados podem ter economia de 20-40%. Compre de vendedores com garantia e politica de devolucao clara.' },
+    ],
+  },
+  'ofertas-smartwatch': {
+    title: 'Ofertas de Smartwatch',
+    description: 'As melhores ofertas de smartwatch com preco comparado. Apple Watch, Galaxy Watch, Amazfit e mais com descontos verificados.',
+    intro: 'Smartwatches estao cada vez mais acessiveis e funcionais. Monitoramos precos dos principais relogios inteligentes em todas as lojas brasileiras para voce comprar com o melhor desconto disponivel.',
+    searchQuery: 'smartwatch',
+    faqs: [
+      { q: 'Qual o melhor momento para comprar smartwatch?', a: 'Black Friday e lancamento de novos modelos (geralmente setembro) sao os melhores momentos. Amazon Prime Day tambem traz bons descontos.' },
+      { q: 'Smartwatch barato funciona bem?', a: 'Sim, modelos como Amazfit Bip e Xiaomi Band oferecem monitoramento de saude, notificacoes e bateria longa por precos a partir de R$200.' },
+      { q: 'Smartwatch precisa de plano de celular?', a: 'A maioria funciona via Bluetooth pareado com o celular. Modelos com LTE permitem uso independente, mas exigem plano separado na operadora.' },
+    ],
+  },
+  'ofertas-som-audio': {
+    title: 'Ofertas de Som e Audio',
+    description: 'As melhores ofertas de som e audio. Caixas de som Bluetooth, soundbars, fones e mais com preco comparado.',
+    intro: 'Produtos de audio estao sempre em promocao, mas nem todo desconto e real. Monitoramos precos de caixas de som Bluetooth, soundbars, fones e sistemas de audio em todas as lojas para garantir que voce compre no melhor momento.',
+    searchQuery: 'caixa som audio bluetooth soundbar',
+    faqs: [
+      { q: 'Caixa de som Bluetooth ou soundbar?', a: 'Caixas Bluetooth sao portateis e ideais para uso externo. Soundbars sao fixas e oferecem melhor experiencia de audio para TV e filmes em casa.' },
+      { q: 'Qual marca de audio tem melhor custo-beneficio?', a: 'JBL lidera em caixas portateis. Para soundbars, Samsung e JBL oferecem boas opcoes. Para fones, Edifier e QCY surpreendem na faixa acessivel.' },
+      { q: 'Quando produtos de audio ficam mais baratos?', a: 'Black Friday e o melhor periodo. Amazon Prime Day e Dia dos Pais tambem trazem descontos significativos em caixas de som e fones.' },
+    ],
+  },
 }
 
 export const OFFER_PAGE_SLUGS = Object.keys(OFFER_PAGES)

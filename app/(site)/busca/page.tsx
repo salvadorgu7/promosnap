@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, SlidersHorizontal, ArrowUpDown, X, Truck } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpDown, X, Truck, Brain, Sparkles, TrendingDown } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import EmptyState from "@/components/ui/EmptyState";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -339,6 +339,37 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
               </div>
             </div>
           )}
+
+          {/* Search intelligence bar */}
+          {products.length > 0 && (() => {
+            const bestDeal = products.reduce((best, p) => p.bestOffer.offerScore > best.bestOffer.offerScore ? p : best, products[0]);
+            const cheapest = products.reduce((best, p) => p.bestOffer.price < best.bestOffer.price ? p : best, products[0]);
+            const withDiscount = products.filter(p => p.bestOffer.discount && p.bestOffer.discount > 0).length;
+            return (
+              <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r from-brand-50/50 to-accent-blue/5 border border-brand-500/10 flex-wrap">
+                <div className="flex items-center gap-1.5 text-xs">
+                  <Brain className="w-3.5 h-3.5 text-brand-500" />
+                  <span className="font-semibold text-text-primary">Inteligencia:</span>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[11px] text-text-secondary">
+                  <Sparkles className="w-3 h-3 text-accent-orange" />
+                  Melhor oferta: <Link href={`/produto/${bestDeal.slug}`} className="font-semibold text-accent-blue hover:underline truncate max-w-[180px]">{bestDeal.name}</Link>
+                  <span className="text-accent-green font-bold">(score {bestDeal.bestOffer.offerScore})</span>
+                </span>
+                {cheapest.id !== bestDeal.id && (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-text-secondary">
+                    <TrendingDown className="w-3 h-3 text-accent-green" />
+                    Mais barato: <span className="font-bold text-accent-green">{formatPrice(cheapest.bestOffer.price)}</span>
+                  </span>
+                )}
+                {withDiscount > 0 && (
+                  <span className="text-[11px] text-text-muted">
+                    {withDiscount} com desconto
+                  </span>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Product grid */}
           {products.length > 0 ? (

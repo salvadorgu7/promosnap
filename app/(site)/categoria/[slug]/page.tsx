@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, Brain, TrendingDown, Truck } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
@@ -112,6 +112,58 @@ export default async function CategoriaPage({
           </div>
         )}
       </div>
+
+      {/* Category intelligence summary */}
+      {products.length > 0 && (() => {
+        const prices = products.map(p => p.bestOffer.price);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const withDiscount = products.filter(p => p.bestOffer.discount && p.bestOffer.discount > 0).length;
+        const withFreeShipping = products.filter(p => p.bestOffer.isFreeShipping).length;
+        const avgScore = Math.round(products.reduce((sum, p) => sum + p.bestOffer.offerScore, 0) / products.length);
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div className="card p-3 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center flex-shrink-0">
+                <Brain className="w-4 h-4 text-accent-blue" />
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">Score medio</p>
+                <p className="text-sm font-bold text-text-primary">{avgScore}/100</p>
+              </div>
+            </div>
+            <div className="card p-3 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-accent-green/10 flex items-center justify-center flex-shrink-0">
+                <TrendingDown className="w-4 h-4 text-accent-green" />
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">Com desconto</p>
+                <p className="text-sm font-bold text-text-primary">{withDiscount} produtos</p>
+              </div>
+            </div>
+            <div className="card p-3 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-accent-purple/10 flex items-center justify-center flex-shrink-0">
+                <Truck className="w-4 h-4 text-accent-purple" />
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">Frete gratis</p>
+                <p className="text-sm font-bold text-text-primary">{withFreeShipping} produtos</p>
+              </div>
+            </div>
+            <div className="card p-3 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-accent-orange/10 flex items-center justify-center flex-shrink-0">
+                <SlidersHorizontal className="w-4 h-4 text-accent-orange" />
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">Faixa de preco</p>
+                <p className="text-[11px] font-bold text-text-primary">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(minPrice)} - {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(maxPrice)}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Product grid */}
       {products.length > 0 ? (

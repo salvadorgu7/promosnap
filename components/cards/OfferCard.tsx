@@ -178,7 +178,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
             href={ctaUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="btn-offer mt-2 h-7 sm:h-8 text-xs"
+            className="btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold"
           >
             Ver Oferta
             <ExternalLink className="w-3 h-3" />
@@ -186,7 +186,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
         ) : (
           <Link
             href={`/produto/${product.slug}`}
-            className="btn-offer mt-2 h-7 sm:h-8 text-xs flex items-center justify-center gap-1.5"
+            className="btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold flex items-center justify-center gap-1.5"
           >
             Comparar Precos
             <ExternalLink className="w-3 h-3" />
