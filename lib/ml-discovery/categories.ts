@@ -60,6 +60,16 @@ export const FALLBACK_CATEGORIES: Record<string, string[]> = {
   'MLB352679': ['MLB1055'],                       // Smartwatch → Celulares (parent)
   'MLB1039':   ['MLB271599'],                     // Cameras → Cameras Digitais subcat
   'MLB1672':   ['MLB4882'],                       // Impressoras → Impressoras subcat
+  // Categories that commonly 404 on highlights — map to working parent/sibling
+  'MLB7517':   ['MLB1648', 'MLB1652'],             // SSDs → Desktop, Notebooks
+  'MLB12119':  ['MLB1648'],                         // Teclados → Desktop
+  'MLB4739':   ['MLB1648'],                         // Mouses → Desktop
+  'MLB1714':   ['MLB1648'],                         // GPUs → Desktop
+  'MLB111079': ['MLB1576'],                         // Micro-ondas → Geladeiras parent
+  'MLB110447': ['MLB1576'],                         // Cafeteiras → Geladeiras parent
+  'MLB1581':   ['MLB1576'],                         // Lavadoras → Geladeiras parent
+  'MLB99614':  ['MLB1055'],                         // Tenis → Celulares (generic popular)
+  'MLB16117':  ['MLB1055'],                         // Mochilas → Celulares (generic popular)
 }
 
 /** Get all categories sorted by priority */
