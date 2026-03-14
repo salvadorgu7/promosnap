@@ -18,7 +18,6 @@ import OfferCard from "@/components/cards/OfferCard";
 import MobileCTA from "@/components/product/MobileCTA";
 import ShareButtons from "@/components/product/ShareButtons";
 import PriceAlertForm from "@/components/product/PriceAlertForm";
-import PriceComparison from "@/components/product/PriceComparison";
 import SavingsBlock from "@/components/product/SavingsBlock";
 import PriceTrend from "@/components/product/PriceTrend";
 import ConsolidatedRatingComponent from "@/components/product/ConsolidatedRating";
