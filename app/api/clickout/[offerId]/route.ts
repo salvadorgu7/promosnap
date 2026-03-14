@@ -5,6 +5,45 @@ import { captureError, logWarn } from "@/lib/monitoring";
 import { enrichClickoutAttribution } from "@/lib/attribution/engine";
 import type { PageType, ChannelOrigin } from "@/lib/attribution/engine";
 
+/**
+ * Append affiliate tracking params to redirect URL if missing.
+ * Handles Mercado Livre (matt_tool + matt_word) and can be extended for other sources.
+ */
+function appendAffiliateParams(url: string, sourceSlug: string): string {
+  try {
+    const parsed = new URL(url);
+
+    // Mercado Livre / Mercado Libre
+    if (
+      sourceSlug === "mercadolivre" ||
+      parsed.hostname.includes("mercadolivre.com") ||
+      parsed.hostname.includes("mercadolibre.com")
+    ) {
+      const affiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID;
+      if (affiliateId && !parsed.searchParams.has("matt_tool")) {
+        parsed.searchParams.set("matt_tool", affiliateId);
+        const word = process.env.MERCADOLIVRE_AFFILIATE_WORD;
+        if (word) parsed.searchParams.set("matt_word", word);
+      }
+    }
+
+    // Amazon BR
+    if (
+      sourceSlug === "amazon" ||
+      parsed.hostname.includes("amazon.com.br")
+    ) {
+      const tag = process.env.AMAZON_AFFILIATE_TAG;
+      if (tag && !parsed.searchParams.has("tag")) {
+        parsed.searchParams.set("tag", tag);
+      }
+    }
+
+    return parsed.toString();
+  } catch {
+    return url; // If URL parsing fails, return as-is
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ offerId: string }> }
@@ -102,7 +141,9 @@ export async function GET(
         captureError(err, { route: "/api/clickout", offerId: offer.id, sourceSlug });
       });
 
-    return NextResponse.redirect(offer.affiliateUrl, 302);
+    // Ensure affiliate params are present on redirect URL
+    const finalUrl = appendAffiliateParams(offer.affiliateUrl, sourceSlug);
+    return NextResponse.redirect(finalUrl, 302);
   } catch (error) {
     await captureError(error, { route: "/api/clickout", offerId });
     return NextResponse.redirect(homeUrl, 302);
