@@ -8,6 +8,8 @@ import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { searchListings } from "@/lib/db/queries";
 import { OFFER_PAGES, OFFER_PAGE_SLUGS } from "@/lib/seo/offer-pages";
 
+export const revalidate = 3600; // Revalidate every hour
+
 export async function generateStaticParams() {
   return OFFER_PAGE_SLUGS.map((slug) => ({ slug }));
 }

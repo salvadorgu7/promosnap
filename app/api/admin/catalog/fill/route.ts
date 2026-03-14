@@ -224,88 +224,43 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Phase 4: Direct category backfill for existing products
+  // Phase 4: Direct category backfill for orphan products (no category assigned)
   let backfilled = 0;
-  const backfillDebug: Record<string, unknown> = {};
+  let orphanCount = 0;
   try {
-    // Build externalId → categorySlug map from hydrated products + parent mapping
     const extIdToSlug = new Map<string, string>();
-    let directHits = 0, parentHits = 0, misses = 0;
-    const sampleMisses: string[] = [];
-    const sampleHits: { extId: string; catId: string; parentCat: string; slug: string }[] = [];
-
     for (const p of hydratedProducts) {
-      const directSlug = mlCategoryToSlug(p.categoryId || "");
-      const parentCat = idToParent.get(p.externalId) || "";
-      const parentSlug = mlCategoryToSlug(parentCat);
-      const slug = directSlug || parentSlug;
-
-      if (slug) {
-        extIdToSlug.set(p.externalId, slug);
-        if (directSlug) directHits++;
-        else parentHits++;
-        if (sampleHits.length < 3) sampleHits.push({ extId: p.externalId, catId: p.categoryId || "", parentCat, slug });
-      } else {
-        misses++;
-        if (sampleMisses.length < 5) sampleMisses.push(`${p.externalId}|cat=${p.categoryId}|parent=${parentCat}`);
-      }
+      const slug = mlCategoryToSlug(p.categoryId || "") || mlCategoryToSlug(idToParent.get(p.externalId) || "");
+      if (slug) extIdToSlug.set(p.externalId, slug);
     }
-
-    backfillDebug.extIdToSlugSize = extIdToSlug.size;
-    backfillDebug.directHits = directHits;
-    backfillDebug.parentHits = parentHits;
-    backfillDebug.misses = misses;
-    backfillDebug.sampleMisses = sampleMisses;
-    backfillDebug.sampleHits = sampleHits;
-    backfillDebug.idToParentSize = idToParent.size;
-    backfillDebug.sampleIdToParentKeys = Array.from(idToParent.keys()).slice(0, 5);
-    backfillDebug.sampleHydratedExtIds = hydratedProducts.slice(0, 5).map(p => p.externalId);
 
     if (extIdToSlug.size > 0) {
       const orphanProducts = await prisma.product.findMany({
         where: { categoryId: null },
-        select: {
-          id: true,
-          listings: { select: { externalId: true }, take: 1 },
-        },
+        select: { id: true, listings: { select: { externalId: true }, take: 1 } },
       });
-      backfillDebug.orphanProducts = orphanProducts.length;
+      orphanCount = orphanProducts.length;
 
-      let matched = 0, unmatched = 0;
-      const sampleOrphans: string[] = [];
       for (const prod of orphanProducts) {
         const extId = prod.listings[0]?.externalId;
-        if (!extId) { unmatched++; continue; }
+        if (!extId) continue;
         const slug = extIdToSlug.get(extId);
-        if (!slug) {
-          unmatched++;
-          if (sampleOrphans.length < 5) sampleOrphans.push(extId);
-          continue;
-        }
-        matched++;
+        if (!slug) continue;
 
         const cat = await prisma.category.upsert({
           where: { slug },
-          create: {
-            name: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-            slug,
-          },
+          create: { name: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), slug },
           update: {},
         });
-        await prisma.product.update({
-          where: { id: prod.id },
-          data: { categoryId: cat.id },
-        });
+        await prisma.product.update({ where: { id: prod.id }, data: { categoryId: cat.id } });
         backfilled++;
       }
-      backfillDebug.matched = matched;
-      backfillDebug.unmatched = unmatched;
-      backfillDebug.sampleUnmatchedOrphans = sampleOrphans;
     }
-    console.log(`[catalog/fill] Category backfill: ${backfilled} products updated`, backfillDebug);
+    if (backfilled > 0 || orphanCount > 0) {
+      console.log(`[catalog/fill] Category backfill: ${backfilled}/${orphanCount} orphan products categorized`);
+    }
   } catch (err) {
     console.error(`[catalog/fill] Category backfill error:`, err);
-    backfillDebug.error = err instanceof Error ? err.message : String(err);
   }
 
   return NextResponse.json({
@@ -313,8 +268,7 @@ export async function POST(req: NextRequest) {
     uniqueItemIds: itemIdList.length,
     hydratedProducts: hydratedProducts.length,
     imported: agg,
-    categoryBackfill: backfilled,
-    backfillDebug,
+    categoryBackfill: { updated: backfilled, orphans: orphanCount },
     categoryStats,
   });
 }
@@ -325,7 +279,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     description: "Fill catalog via ML subcategory highlights + hydration. POST to execute.",
-    version: "v3-direct-backfill",
+    version: "v4",
     parentCategories: PARENT_CATEGORIES.length,
     strategy: "Expands each parent into subcategories → fetches highlights for each → hydrates item details → imports with category backfill",
   });

@@ -8,6 +8,8 @@ import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { getProductsByCategory, searchListings } from "@/lib/db/queries";
 import { BEST_PAGES, BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
 
+export const revalidate = 3600; // Revalidate every hour
+
 export async function generateStaticParams() {
   return BEST_PAGE_SLUGS.map((slug) => ({ slug }));
 }
