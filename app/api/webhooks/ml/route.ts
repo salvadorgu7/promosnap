@@ -2,11 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { rateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
 
+const WEBHOOK_SECRET = process.env.ML_WEBHOOK_SECRET
+
 // ML envia notificacoes via POST neste endpoint
 export async function POST(req: NextRequest) {
-  // Rate limit webhooks: 60 req/min
+  // Rate limit webhooks: 30 req/min (stricter than public)
   const rl = rateLimit(req, 'public')
   if (!rl.success) return rateLimitResponse(rl)
+
+  // Validate webhook token if configured
+  if (WEBHOOK_SECRET) {
+    const token = req.headers.get('x-webhook-token') || req.nextUrl.searchParams.get('token')
+    if (token !== WEBHOOK_SECRET) {
+      console.warn('[webhook:ml] Unauthorized request — invalid or missing token')
+      return NextResponse.json({ ok: false }, { status: 401 })
+    }
+  }
 
   try {
     const body = await req.json()

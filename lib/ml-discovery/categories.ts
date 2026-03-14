@@ -49,10 +49,17 @@ const CATEGORY_REGISTRY: (MLCategory & { keywords: string[] })[] = [
 
 /** Fallback categories for IDs that commonly return 404 on highlights */
 export const FALLBACK_CATEGORIES: Record<string, string[]> = {
-  'MLB1596':   ['MLB181294', 'MLB1645'],  // Ar condicionado → Climatizacao subcats
-  'MLB352679': ['MLB1055'],               // Smartwatch → Celulares (parent)
-  'MLB1039':   ['MLB271599'],             // Cameras → Cameras Digitais subcat
-  'MLB1672':   ['MLB4882'],               // Impressoras → Impressoras subcat
+  // Top 5 high-priority categories
+  'MLB1055':   ['MLB1055', 'MLB420017'],         // Celulares → Celulares e Smartphones, Acessorios para Celulares
+  'MLB1652':   ['MLB1652', 'MLB430687'],         // Notebooks → Notebooks, Acessorios para Notebooks
+  'MLB1676':   ['MLB1676', 'MLB234773'],         // Fones → Fones de Ouvido, Fones Bluetooth
+  'MLB1002':   ['MLB1002', 'MLB1002'],           // TVs → TVs
+  'MLB186456': ['MLB186456', 'MLB1132'],         // Consoles → Consoles, Jogos de Video Game
+  // Existing fallbacks
+  'MLB1596':   ['MLB181294', 'MLB1645'],         // Ar condicionado → Climatizacao subcats
+  'MLB352679': ['MLB1055'],                       // Smartwatch → Celulares (parent)
+  'MLB1039':   ['MLB271599'],                     // Cameras → Cameras Digitais subcat
+  'MLB1672':   ['MLB4882'],                       // Impressoras → Impressoras subcat
 }
 
 /** Get all categories sorted by priority */

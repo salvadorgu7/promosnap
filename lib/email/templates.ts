@@ -170,28 +170,39 @@ export function alertTriggeredEmail(product: {
     : "";
 
   const content = `
+    ${imageBlock}
     <div class="alert-box">
       <p style="font-size:13px;color:#16a34a;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">
         Alerta de Preco Ativado!
       </p>
-      ${imageBlock}
-      <p style="color:#18181b;font-size:16px;font-weight:600;margin:0 0 12px;">
+      <p style="color:#18181b;font-size:16px;font-weight:600;margin:0 0 16px;">
         ${escapeHtml(product.name)}
       </p>
-      <p class="price">R$ ${product.price.toFixed(2).replace(".", ",")}</p>
-      <p style="color:#71717a;font-size:13px;margin:4px 0 0;">
-        Seu alerta: R$ ${product.targetPrice.toFixed(2).replace(".", ",")}
-      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;">
+        <tr>
+          <td style="text-align:center;padding:8px;">
+            <p style="color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 4px;">Seu alerta</p>
+            <p style="color:#71717a;font-size:18px;font-weight:600;text-decoration:line-through;margin:0;">R$ ${product.targetPrice.toFixed(2).replace(".", ",")}</p>
+          </td>
+          <td style="text-align:center;padding:8px;">
+            <p style="color:#16a34a;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 4px;">Preco atual</p>
+            <p class="price" style="margin:0;">R$ ${product.price.toFixed(2).replace(".", ",")}</p>
+          </td>
+        </tr>
+      </table>
     </div>
     ${savingsStr ? `<p style="text-align:center;color:#16a34a;font-weight:600;">${savingsStr}</p>` : ""}
     <p>O produto que voce estava monitorando atingiu o preco desejado. Corra, pois precos promocionais costumam durar pouco!</p>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${escapeHtml(product.url)}" class="btn">Comprar Agora &rarr;</a>
+      <a href="${escapeHtml(product.url)}" class="btn" style="font-size:16px;padding:16px 36px;">Comprar Agora &rarr;</a>
     </p>
     ${promoSnapLink}
     <hr class="divider">
     <p style="font-size:13px;color:#71717a;">
       Este alerta foi criado por voce no ${APP_NAME}. Caso nao reconheca, pode ignorar este e-mail.
+    </p>
+    <p style="font-size:11px;color:#a1a1aa;">
+      Para deixar de receber alertas, acesse sua conta no ${APP_NAME} e desative seus alertas de preco.
     </p>
   `;
 

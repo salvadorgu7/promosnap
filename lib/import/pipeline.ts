@@ -56,7 +56,58 @@ const KNOWN_BRANDS = [
   'amazon', 'anker', 'hyperx', 'akg', 'sennheiser', 'wacom', 'canon', 'nikon',
   'gopro', 'garmin', 'fitbit', 'oneplus', 'nothing', 'poco', 'redmi',
   'tcl', 'hisense', 'roku', 'epson', 'brother', 'kindle', 'echo',
+  // Brazilian electronics brands
+  'positivo', 'multilaser', 'mondial', 'electrolux', 'brastemp', 'consul',
+  'tramontina', 'intelbras', 'cadence', 'philco', 'britania', 'walita', 'arno', 'oster',
 ]
+
+/** Noise suffixes commonly appended by ML listings */
+const TITLE_NOISE = [
+  /\s*[-–|]\s*envio\s+gr[aá]tis\s*$/i,
+  /\s*[-–|]\s*frete\s+gr[aá]tis\s*$/i,
+  /\s*[-–|]\s*full\s*$/i,
+  /\s*[-–|]\s*original\s*$/i,
+  /\s*[-–|]\s*12x\s+sem\s+juros\s*$/i,
+]
+
+/** Brands that should keep their original casing (not be title-cased) */
+const BRAND_CASING: Record<string, string> = {
+  iphone: 'iPhone', ipad: 'iPad', macbook: 'MacBook', airpods: 'AirPods',
+  playstation: 'PlayStation', xbox: 'Xbox', jbl: 'JBL', lg: 'LG', hp: 'HP',
+  ssd: 'SSD', led: 'LED', '4k': '4K', hd: 'HD', usb: 'USB', hdmi: 'HDMI',
+}
+
+/** Clean up title before saving */
+function normalizeTitle(raw: string): string {
+  let title = raw
+    // Collapse excessive whitespace
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+
+  // Remove ML noise suffixes
+  for (const pattern of TITLE_NOISE) {
+    title = title.replace(pattern, '')
+  }
+
+  // Title-case major words, preserving known brand casings
+  title = title
+    .split(/\s+/)
+    .map(word => {
+      const lower = word.toLowerCase()
+      if (BRAND_CASING[lower]) return BRAND_CASING[lower]
+      // Keep short prepositions/articles lowercase (Portuguese)
+      if (['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'com', 'para', 'por', 'a', 'o', 'no', 'na'].includes(lower) && word !== raw.split(/\s+/)[0]) {
+        return lower
+      }
+      // Already mixed-case brand/model (e.g. "iPhone") — keep as-is
+      if (word.length > 1 && word !== lower && word !== word.toUpperCase()) return word
+      // Capitalize first letter
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    })
+    .join(' ')
+
+  return title.trim()
+}
 
 function detectBrand(title: string): string | null {
   const lower = title.toLowerCase()
@@ -64,13 +115,20 @@ function detectBrand(title: string): string | null {
 }
 
 function generateSlug(title: string, suffix: string): string {
-  return title
+  const base = title
     .toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 120)
-    + '-' + suffix
+
+  // Truncate at word boundary (last '-' before position 120) instead of mid-word
+  let truncated = base
+  if (base.length > 120) {
+    const lastDash = base.lastIndexOf('-', 120)
+    truncated = lastDash > 40 ? base.slice(0, lastDash) : base.slice(0, 120)
+  }
+
+  return truncated + '-' + suffix
 }
 
 function validateItem(item: ImportItem): string | null {
@@ -95,8 +153,9 @@ export async function runImportPipeline(
 ): Promise<ImportPipelineResult> {
   // Enforce batch size limit to prevent memory/timeout issues
   if (items.length > MAX_BATCH_SIZE) {
+    const originalLength = items.length
     items = items.slice(0, MAX_BATCH_SIZE)
-    console.warn(`[import-pipeline] Batch truncated to ${MAX_BATCH_SIZE} items (received ${items.length})`)
+    console.warn(`[import-pipeline] Batch truncated to ${MAX_BATCH_SIZE} items (received ${originalLength})`)
   }
 
   const start = Date.now()
@@ -195,8 +254,11 @@ export async function runImportPipeline(
         continue
       }
 
+      // Normalize title before saving
+      const cleanTitle = normalizeTitle(item.title)
+
       // New item — detect brand
-      const brandName = item.brand || detectBrand(item.title)
+      const brandName = item.brand || detectBrand(cleanTitle)
       let brandId: string | null = null
       if (brandName) {
         brandsDetected++
@@ -229,7 +291,7 @@ export async function runImportPipeline(
       }
 
       // Slug
-      const slug = generateSlug(item.title, item.externalId.slice(-6).toLowerCase())
+      const slug = generateSlug(cleanTitle, item.externalId.slice(-6).toLowerCase())
 
       // Find or create product
       let dbProduct = await prisma.product.findFirst({
@@ -239,7 +301,7 @@ export async function runImportPipeline(
       if (!dbProduct) {
         dbProduct = await prisma.product.create({
           data: {
-            name: item.title,
+            name: cleanTitle,
             slug,
             imageUrl: item.imageUrl ?? null,
             brandId,

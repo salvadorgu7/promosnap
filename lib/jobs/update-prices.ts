@@ -13,6 +13,7 @@ export async function updatePrices(): Promise<JobResult> {
 
     ctx.log('Finding stale active offers...');
 
+    // Prioritize imported products: fetch their stale offers first, then seed
     const staleOffers = await prisma.offer.findMany({
       where: {
         isActive: true,
@@ -24,7 +25,22 @@ export async function updatePrices(): Promise<JobResult> {
         originalPrice: true,
         lastSeenAt: true,
         listingId: true,
+        listing: {
+          select: {
+            product: {
+              select: { originType: true },
+            },
+          },
+        },
       },
+    });
+
+    // Sort: imported products first, then by lastSeenAt (oldest first)
+    staleOffers.sort((a, b) => {
+      const aImported = a.listing?.product?.originType === 'imported' ? 0 : 1;
+      const bImported = b.listing?.product?.originType === 'imported' ? 0 : 1;
+      if (aImported !== bImported) return aImported - bImported;
+      return a.lastSeenAt.getTime() - b.lastSeenAt.getTime();
     });
 
     ctx.log(`Found ${staleOffers.length} stale offers`);

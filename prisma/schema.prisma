@@ -124,6 +124,7 @@ model Product {
   @@index([originType])
   @@index([importedAt])
   @@index([status, popularityScore(sort: Desc)])
+  @@index([status, originType])
   @@index([categoryId, status])
   @@index([brandId, status])
   @@map("products")
@@ -306,6 +307,7 @@ model Clickout {
   @@index([clickedAt])
   @@index([sourceSlug])
   @@index([sourceSlug, clickedAt])
+  @@index([offerId, clickedAt])
   @@map("clickouts")
 }
 

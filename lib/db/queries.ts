@@ -1,6 +1,9 @@
 import prisma from './prisma'
 import type { ProductCard, Badge } from '@/types'
 import { calculateCommercialScore, type CommercialSignals } from '@/lib/ranking/commercial'
+import { memoryCache } from '@/lib/cache/memory'
+
+const HOMEPAGE_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
 // ============================================
 // PRODUCT CARD BUILDER
@@ -82,13 +85,14 @@ export const PRODUCT_INCLUDE = {
   },
 }
 
-// Product select — only fields used by buildProductCard
+// Product select — only fields used by buildProductCard + ranking helpers
 const PRODUCT_SELECT_FOR_CARD = {
   id: true,
   name: true,
   slug: true,
   imageUrl: true,
   popularityScore: true,
+  originType: true,
 }
 
 // ============================================
@@ -121,6 +125,10 @@ function rankCards(cards: ProductCard[], preset: string): ProductCard[] {
 // ============================================
 
 export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
+  const cacheKey = `homepage:hotOffers:${limit}`
+  const cached = memoryCache.get<ProductCard[]>(cacheKey)
+  if (cached) return cached
+
   const products = await prisma.product.findMany({
     where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true } } } } },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
@@ -128,10 +136,16 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
     take: limit * 2,
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
-  return rankCards(cards, 'deal').slice(0, limit)
+  const result = rankCards(cards, 'deal').slice(0, limit)
+  memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
+  return result
 }
 
 export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
+  const cacheKey = `homepage:bestSellers:${limit}`
+  const cached = memoryCache.get<ProductCard[]>(cacheKey)
+  if (cached) return cached
+
   const products = await prisma.product.findMany({
     where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true } }, salesCountEstimate: { gt: 0 } } } },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
@@ -139,41 +153,56 @@ export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
     take: limit * 2,
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
-  return rankCards(cards, 'trending').slice(0, limit)
+  const result = rankCards(cards, 'trending').slice(0, limit)
+  memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
+  return result
 }
 
 export async function getLowestPrices(limit = 16): Promise<ProductCard[]> {
+  const cacheKey = `homepage:lowestPrices:${limit}`
+  const cached = memoryCache.get<ProductCard[]>(cacheKey)
+  if (cached) return cached
+
   const products = await prisma.product.findMany({
     where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true, originalPrice: { not: null } } } } } },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     take: limit * 2,
   })
-  return products.map(buildProductCard).filter(Boolean)
+  const result = products.map(buildProductCard).filter(Boolean)
     .filter(p => p!.bestOffer.discount && p!.bestOffer.discount > 10)
     .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
     .slice(0, limit) as ProductCard[]
+  memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
+  return result
 }
 
 // ============================================
-// RECENTLY IMPORTED (last 7 days)
+// RECENTLY IMPORTED (last 14 days — wider window for sparse catalogs)
 // ============================================
 
 export async function getRecentlyImported(limit = 16): Promise<ProductCard[]> {
+  const cacheKey = `homepage:recentlyImported:${limit}`
+  const cached = memoryCache.get<ProductCard[]>(cacheKey)
+  if (cached) return cached
+
   try {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
     const products = await prisma.product.findMany({
       where: {
         status: 'ACTIVE',
-        importedAt: { not: null, gte: sevenDaysAgo },
+        originType: 'imported',
+        importedAt: { not: null, gte: fourteenDaysAgo },
         listings: { some: { offers: { some: { isActive: true } } } },
       },
       select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
       orderBy: { importedAt: 'desc' },
       take: limit,
     })
-    return products.map(buildProductCard).filter(Boolean) as ProductCard[]
+    const result = products.map(buildProductCard).filter(Boolean) as ProductCard[]
+    memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
+    return result
   } catch {
-    // Defensive: importedAt column may not exist yet
+    // Defensive: importedAt/originType column may not exist yet
     return []
   }
 }
@@ -183,6 +212,10 @@ export async function getRecentlyImported(limit = 16): Promise<ProductCard[]> {
 // ============================================
 
 export async function getBestValue(limit = 16): Promise<ProductCard[]> {
+  const cacheKey = `homepage:bestValue:${limit}`
+  const cached = memoryCache.get<ProductCard[]>(cacheKey)
+  if (cached) return cached
+
   try {
     const products = await prisma.product.findMany({
       where: {
@@ -192,8 +225,8 @@ export async function getBestValue(limit = 16): Promise<ProductCard[]> {
             offers: {
               some: {
                 isActive: true,
-                isFreeShipping: true,
                 originalPrice: { not: null },
+                currentPrice: { gt: 0 },
               },
             },
           },
@@ -202,12 +235,20 @@ export async function getBestValue(limit = 16): Promise<ProductCard[]> {
       select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
       take: limit * 3,
     })
-    return products
+    // Sort raw products so imported ones come first
+    products.sort((a: any, b: any) => {
+      const aImported = a.originType === 'imported' ? 1 : 0
+      const bImported = b.originType === 'imported' ? 1 : 0
+      return bImported - aImported
+    })
+    const result = products
       .map(buildProductCard)
       .filter(Boolean)
-      .filter((p) => p!.bestOffer.discount && p!.bestOffer.discount > 10 && p!.bestOffer.isFreeShipping)
+      .filter((p) => p!.bestOffer.discount && p!.bestOffer.discount > 10 && p!.bestOffer.price > 0)
       .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
       .slice(0, limit) as ProductCard[]
+    memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
+    return result
   } catch {
     return []
   }
@@ -246,6 +287,50 @@ export async function getNewsletterProducts(limit = 10): Promise<ProductCard[]> 
       .slice(0, limit) as ProductCard[]
   } catch {
     // Defensive: originType column may not exist yet
+    return []
+  }
+}
+
+// ============================================
+// CAMPAIGN-READY PRODUCTS (imported, good image, affiliate URL, >15% discount, in stock)
+// ============================================
+
+export async function getReadyForCampaign(limit = 20): Promise<ProductCard[]> {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        originType: 'imported',
+        imageUrl: { not: null },
+        listings: {
+          some: {
+            status: 'ACTIVE',
+            availability: 'IN_STOCK',
+            offers: {
+              some: {
+                isActive: true,
+                affiliateUrl: { not: null },
+                originalPrice: { not: null },
+                currentPrice: { gt: 0 },
+              },
+            },
+          },
+        },
+      },
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+      take: limit * 3,
+    })
+    return products
+      .map(buildProductCard)
+      .filter(Boolean)
+      .filter((p) =>
+        p!.bestOffer.discount && p!.bestOffer.discount > 15
+        && p!.bestOffer.affiliateUrl !== '#'
+        && !!p!.imageUrl
+      )
+      .sort((a, b) => (b!.bestOffer.offerScore || 0) - (a!.bestOffer.offerScore || 0))
+      .slice(0, limit) as ProductCard[]
+  } catch {
     return []
   }
 }

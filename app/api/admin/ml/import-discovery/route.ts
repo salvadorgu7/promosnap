@@ -89,9 +89,36 @@ export async function POST(req: NextRequest) {
       // 5. Run import pipeline on valid products
       if (withPrice.length === 0) {
         console.log(`[ml-import-discovery] No products with valid prices to import`)
+
+        // Build structured diagnostic for zero-result debugging
+        const highlightsStage = discoveryResult.meta.pipeline.find(s => s.stage === 'highlights')
+        const hydrateStage = discoveryResult.meta.pipeline.find(s => s.stage === 'hydrate')
+        const highlightsResponded = highlightsStage?.status !== 'failure'
+        const hydrateSuccessRate = hydrateStage
+          ? (hydrateStage.itemsIn > 0 ? hydrateStage.itemsOut / hydrateStage.itemsIn : 0)
+          : 0
+
+        let suggestion = 'Verifique se as credenciais ML estao configuradas.'
+        if (!highlightsResponded) {
+          suggestion = 'A API de highlights nao respondeu. Verifique o access token ML e tente novamente.'
+        } else if (allProducts.length > 0 && withPrice.length === 0) {
+          suggestion = 'Produtos encontrados mas todos com preco zero. A API pode estar retornando dados incompletos — tente outra categoria.'
+        } else if (hydrateSuccessRate === 0 && highlightsResponded) {
+          suggestion = 'Highlights retornou IDs mas a hidratacao falhou. Verifique rate limits da API ML.'
+        }
+
+        const diagnostic = {
+          credentialsOk: highlightsResponded,
+          highlightsResponded,
+          hydrateSuccessRate: Math.round(hydrateSuccessRate * 100) / 100,
+          suggestion,
+        }
+
         return NextResponse.json({
           ok: true,
+          summary: `Nenhum produto com preco valido encontrado. ${suggestion}`,
           totalDurationMs: Date.now() - pipelineStart,
+          diagnostic,
           discovery: {
             found: allProducts.length,
             withPrice: 0,
@@ -122,8 +149,28 @@ export async function POST(req: NextRequest) {
 
       console.log(`[ml-import-discovery] Import done: created=${importResult.created} updated=${importResult.updated} skipped=${importResult.skipped} failed=${importResult.failed} (${importResult.durationMs}ms)`)
 
+      // Build per-item status for response
+      const itemStatuses = importResult.items.map(item => ({
+        externalId: item.externalId,
+        title: withPrice.find(p => p.externalId === item.externalId)?.title || item.externalId,
+        status: item.action as 'created' | 'updated' | 'skipped' | 'failed',
+        reason: item.reason,
+      }))
+      // Add discarded items
+      for (const d of discarded) {
+        itemStatuses.push({
+          externalId: d.externalId,
+          title: d.title,
+          status: 'discarded' as any,
+          reason: d.reason,
+        })
+      }
+
+      const summary = `Descoberta: ${allProducts.length} produtos encontrados (${withPrice.length} com preco valido). Importacao: ${importResult.created} novos, ${importResult.updated} atualizados, ${importResult.skipped} ignorados, ${importResult.failed} falhas. Categorias: ${categories.join(', ') || 'nenhuma'}.`
+
       return NextResponse.json({
         ok: true,
+        summary,
         totalDurationMs: Date.now() - pipelineStart,
         discovery: {
           found: allProducts.length,
@@ -140,6 +187,7 @@ export async function POST(req: NextRequest) {
           total: importResult.total,
           durationMs: importResult.durationMs,
         },
+        items: itemStatuses,
         details: { discarded },
       })
     }
@@ -167,9 +215,19 @@ export async function POST(req: NextRequest) {
 
     if (validProducts.length === 0) {
       console.log(`[ml-import-discovery] No valid products to import after filtering`)
+      const suggestion = body.products!.length > 0
+        ? 'Todos os produtos enviados tinham preco zero ou invalido. Verifique os dados de origem.'
+        : 'Nenhum produto recebido.'
       return NextResponse.json({
         ok: true,
+        summary: `Nenhum produto valido para importar. ${suggestion}`,
         totalDurationMs: Date.now() - pipelineStart,
+        diagnostic: {
+          credentialsOk: true,
+          highlightsResponded: true,
+          hydrateSuccessRate: 0,
+          suggestion,
+        },
         import: {
           created: 0, updated: 0, skipped: 0, failed: 0, total: 0, durationMs: 0,
         },
@@ -193,8 +251,27 @@ export async function POST(req: NextRequest) {
 
     console.log(`[ml-import-discovery] Import done: created=${result.created} updated=${result.updated} skipped=${result.skipped} failed=${result.failed} (${result.durationMs}ms)`)
 
+    // Build per-item status for response
+    const itemStatuses = result.items.map(item => ({
+      externalId: item.externalId,
+      title: validProducts.find(p => p.externalId === item.externalId)?.title || item.externalId,
+      status: item.action as 'created' | 'updated' | 'skipped' | 'failed',
+      reason: item.reason,
+    }))
+    for (const d of discarded) {
+      itemStatuses.push({
+        externalId: d.externalId,
+        title: d.title,
+        status: 'discarded' as any,
+        reason: d.reason,
+      })
+    }
+
+    const summary = `Importacao: ${result.created} novos, ${result.updated} atualizados, ${result.skipped} ignorados, ${result.failed} falhas (${body.products!.length} recebidos, ${validProducts.length} com preco valido).`
+
     return NextResponse.json({
       ok: true,
+      summary,
       totalDurationMs: Date.now() - pipelineStart,
       import: {
         created: result.created,
@@ -204,6 +281,7 @@ export async function POST(req: NextRequest) {
         total: result.total,
         durationMs: result.durationMs,
       },
+      items: itemStatuses,
       details: { discarded },
     })
   } catch (error) {
@@ -230,5 +308,6 @@ function mlProductsToImportItems(products: MLProduct[]): ImportItem[] {
     soldQuantity: p.soldQuantity,
     condition: p.condition,
     sourceSlug: 'mercadolivre',
+    discoverySource: 'ml_discovery',
   }))
 }

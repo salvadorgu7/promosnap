@@ -41,12 +41,19 @@ export async function GET(req: NextRequest) {
   captureEvent('cron:start')
 
   const allJobs: [string, () => Promise<any>][] = [
+    // ingest: VALUE — ingests ML trending keywords for discovery
     ['ingest', () => import('@/lib/jobs/ingest-ml').then(m => m.ingestMLTrends())],
+    // update-prices: VALUE — refreshes prices for tracked listings
     ['update-prices', () => import('@/lib/jobs/update-prices').then(m => m.updatePrices())],
+    // compute-scores: SUPPORT — recalculates offer and popularity scores
     ['compute-scores', () => import('@/lib/jobs/compute-scores').then(m => m.computeScores())],
+    // discover-import: VALUE — discovers and imports new real products
     ['discover-import', () => import('@/lib/jobs/discover-import').then(m => m.discoverAndImport())],
+    // cleanup: HYGIENE — removes stale data
     ['cleanup', () => import('@/lib/jobs/cleanup').then(m => m.cleanupData())],
+    // check-alerts: VALUE — triggers price alerts and sends emails
     ['check-alerts', () => import('@/lib/jobs/check-alerts').then(m => m.checkAlerts())],
+    // sitemap: SUPPORT — regenerates XML sitemap
     ['sitemap', () => import('@/lib/jobs/generate-sitemap').then(m => m.generateSitemap())],
   ]
 
@@ -92,11 +99,30 @@ export async function GET(req: NextRequest) {
     logInfo('cron', `Cron cycle completed successfully in ${totalDuration}ms`)
   }
 
+  // Build recommendations based on job results
+  const recommendations: string[] = []
+  const discoverResult = results['discover-import']
+  if (discoverResult) {
+    const itemsDone = discoverResult?.itemsDone ?? discoverResult?.status === 'FAILED' ? -1 : 0
+    if (itemsDone === 0 || (discoverResult?.metadata?.created === 0 && discoverResult?.metadata?.updated === 0)) {
+      recommendations.push('discover-import returned 0 products — check ML API credentials and rate limits')
+    }
+  }
+  const alertResult = results['check-alerts']
+  if (alertResult && alertResult?.metadata?.checked === 0 && alertResult?.status !== 'FAILED') {
+    recommendations.push('check-alerts found 0 active alerts — add price alerts for imported products')
+  }
+  const scoresResult = results['compute-scores']
+  if (scoresResult && (scoresResult?.itemsTotal === 0 || scoresResult?.itemsDone === 0) && scoresResult?.status !== 'FAILED') {
+    recommendations.push('compute-scores found 0 active offers — import real products first')
+  }
+
   return NextResponse.json({
     ok: failedCount === 0,
     totalDurationMs: totalDuration,
     jobCount: jobs.length,
     failedCount,
     results,
+    ...(recommendations.length > 0 ? { recommendations } : {}),
   })
 }

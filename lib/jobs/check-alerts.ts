@@ -119,6 +119,11 @@ export async function checkAlerts(): Promise<JobResult> {
 
     ctx.log(`Done: ${checked} checked, ${triggered} triggered, ${emailed} emailed, ${emailFailed} email failures`);
 
+    // Structured summary for monitoring/log aggregation
+    if (emailed > 0) {
+      ctx.log(`[check-alerts] Summary: ${checked}/${triggered}/${emailed}/${emailFailed}`);
+    }
+
     return {
       itemsTotal: alerts.length,
       itemsDone: checked,

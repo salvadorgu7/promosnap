@@ -75,10 +75,27 @@ export async function computeScores(): Promise<JobResult> {
             reviewsCount: true,
             matchConfidence: true,
             productId: true,
+            product: {
+              select: { originType: true },
+            },
           },
         },
       },
     });
+
+    // Fetch clickout counts per offer for the last 7 days (real engagement signal)
+    let clickoutsByOffer = new Map<string, number>();
+    try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const clickouts = await prisma.clickout.groupBy({
+        by: ['offerId'],
+        _count: { id: true },
+        where: { clickedAt: { gte: sevenDaysAgo } },
+      });
+      clickoutsByOffer = new Map(clickouts.map(c => [c.offerId, c._count.id]));
+    } catch {
+      // non-critical — clickout data is supplementary
+    }
 
     ctx.log(`Found ${offers.length} active offers to score`);
 
@@ -89,7 +106,14 @@ export async function computeScores(): Promise<JobResult> {
       const batch = offers.slice(i, i + BATCH_SIZE);
 
       for (const offer of batch) {
-        const score = computeOfferScore(offer);
+        let score = computeOfferScore(offer);
+
+        // Boost clickout engagement signal: up to +5 points for popular offers
+        const clicks = clickoutsByOffer.get(offer.id) || 0;
+        if (clicks > 0) {
+          const clickBoost = Math.min(clicks / 10, 1) * 5;
+          score = Math.round((score + clickBoost) * 100) / 100;
+        }
 
         await prisma.offer.update({
           where: { id: offer.id },
@@ -115,14 +139,27 @@ export async function computeScores(): Promise<JobResult> {
     ctx.log(`Updating popularity scores for ${productBestScores.size} products...`);
     let productsUpdated = 0;
 
+    // Build a set of imported product IDs for boost
+    const importedProductIds = new Set<string>();
+    for (const offer of offers) {
+      if (offer.listing.product?.originType === 'imported' && offer.listing.productId) {
+        importedProductIds.add(offer.listing.productId);
+      }
+    }
+
     const productEntries = Array.from(productBestScores.entries());
     for (let i = 0; i < productEntries.length; i += BATCH_SIZE) {
       const batch = productEntries.slice(i, i + BATCH_SIZE);
 
       for (const [productId, bestScore] of batch) {
+        // 1.15x boost for imported (real) products on popularity score
+        const boostedScore = importedProductIds.has(productId)
+          ? Math.round(bestScore * 1.15 * 100) / 100
+          : bestScore;
+
         await prisma.product.update({
           where: { id: productId },
-          data: { popularityScore: bestScore },
+          data: { popularityScore: boostedScore },
         });
         productsUpdated++;
       }

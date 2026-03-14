@@ -26,16 +26,21 @@ export async function cleanupData(): Promise<JobResult> {
     });
     ctx.log(`Deleted ${deletedSearchLogs.count} search logs`);
 
-    // Deactivate stale offers
-    ctx.log(`Deactivating offers not seen in ${OFFER_STALE_DAYS}+ days...`);
+    // Deactivate stale offers — NEVER deactivate offers from imported products
+    ctx.log(`Deactivating offers not seen in ${OFFER_STALE_DAYS}+ days (excluding imported products)...`);
     const deactivatedOffers = await prisma.offer.updateMany({
       where: {
         isActive: true,
         lastSeenAt: { lt: offerStaleCutoff },
+        listing: {
+          product: {
+            originType: { not: 'imported' },
+          },
+        },
       },
       data: { isActive: false },
     });
-    ctx.log(`Deactivated ${deactivatedOffers.count} stale offers`);
+    ctx.log(`Deactivated ${deactivatedOffers.count} stale offers (imported products preserved)`);
 
     const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count;
 

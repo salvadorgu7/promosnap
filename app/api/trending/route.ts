@@ -48,7 +48,12 @@ export async function GET(request: NextRequest) {
   if (!rl.success) return rateLimitResponse(rl);
 
   try {
-    const limit = Math.min(parseInt(new URL(request.url).searchParams.get("limit") || "20"), 50);
+    const rawLimit = parseInt(new URL(request.url).searchParams.get("limit") || "20");
+    const limit = Math.max(1, Math.min(isNaN(rawLimit) ? 20 : rawLimit, 50));
+
+    // Sanitize category param: alphanumeric + dash only
+    const rawCategory = new URL(request.url).searchParams.get("category") || "";
+    const category = rawCategory.replace(/[^a-zA-Z0-9\-]/g, "").slice(0, 100) || undefined;
 
     // Check cache
     const cacheKey = `trending:${limit}`;

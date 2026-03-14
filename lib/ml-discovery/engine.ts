@@ -174,7 +174,9 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
   stageTimings.hydrate = Date.now() - hydrateStart
 
   // ── Stage 4b: Search Fallback (if hydrate returned too few products) ────
-  if (products.length < 5 && categoryIds.length > 0) {
+  // Search API (/sites/MLB/search) is known to return 403. Only attempt if explicitly enabled.
+  const mlSearchEnabled = process.env.FF_ML_SEARCH_ENABLED === 'true'
+  if (products.length < 5 && categoryIds.length > 0 && mlSearchEnabled) {
     const searchStart = Date.now()
     log('search-fallback', `Hydrate returned ${products.length} products — falling back to ML Search API`)
 
@@ -245,6 +247,8 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
       log('search-fallback', 'failed', { error: String(err) })
     }
     stageTimings.searchFallback = Date.now() - searchStart
+  } else if (products.length < 5 && categoryIds.length > 0 && !mlSearchEnabled) {
+    log('search-fallback', 'Skipped — FF_ML_SEARCH_ENABLED is not true (search API returns 403)')
   }
 
   // ── Stage 5: Normalize + Deduplicate ────────────────────────────────────

@@ -262,7 +262,57 @@ export async function GET(req: NextRequest) {
       discoverySuccess,
     };
 
+    // ── System Health ────────────────────────────────────────────────────
+    const mlConfigured = !!(
+      (process.env.MERCADOLIVRE_APP_ID || process.env.ML_CLIENT_ID) &&
+      (process.env.MERCADOLIVRE_SECRET || process.env.ML_CLIENT_SECRET)
+    )
+    const emailConfigured = !!process.env.RESEND_API_KEY
+    const hasImportsEver = realImported > 0
+    const hasRecentImports = importedLast7d > 0
+
+    let systemHealth: 'healthy' | 'degraded' | 'critical'
+    if (mlConfigured && emailConfigured && hasRecentImports) {
+      systemHealth = 'healthy'
+    } else if (!mlConfigured && !hasImportsEver) {
+      systemHealth = 'critical'
+    } else {
+      systemHealth = 'degraded'
+    }
+
+    // ── Next Actions (prioritized for maximum revenue impact) ─────────
+    const nextActions: { priority: number; action: string; impact: string }[] = []
+
+    if (!hasImportsEver) {
+      nextActions.push({ priority: 1, action: 'Importar produtos reais via discover-import ou importacao manual', impact: 'Sem produtos reais, nao ha receita possivel' })
+    }
+    if (!mlConfigured) {
+      nextActions.push({ priority: 2, action: 'Configurar credenciais ML para discovery automatico', impact: 'Habilita importacao continua de novos produtos' })
+    }
+    if (hasImportsEver && !hasRecentImports) {
+      nextActions.push({ priority: 3, action: 'Verificar pipeline de discovery — nenhum produto importado em 7 dias', impact: 'Catalogo fica desatualizado, perdendo oportunidades' })
+    }
+    if (clickoutsThisWeek === 0 && totalActiveOffers > 0) {
+      nextActions.push({ priority: 4, action: 'Verificar affiliate links e tracking de clickouts', impact: 'Ofertas existem mas nao geram receita sem clicks' })
+    }
+    if (totalSubscribers === 0) {
+      nextActions.push({ priority: 5, action: 'Implementar captacao de assinantes de newsletter', impact: 'Email marketing e canal de distribuicao de maior conversao' })
+    }
+    if (!emailConfigured) {
+      nextActions.push({ priority: 6, action: 'Configurar RESEND_API_KEY para envio de emails', impact: 'Alertas de preco e newsletters nao serao enviados' })
+    }
+    if (staleOffers > totalActiveOffers * 0.3 && totalActiveOffers > 0) {
+      nextActions.push({ priority: 7, action: `${staleOffers} ofertas stale — rodar update-prices e cleanup`, impact: 'Ofertas desatualizadas prejudicam confianca do usuario' })
+    }
+    if (needsReviewProducts > 0) {
+      nextActions.push({ priority: 8, action: `${needsReviewProducts} produtos aguardando revisao`, impact: 'Produtos pendentes podem estar com dados incorretos' })
+    }
+
+    nextActions.sort((a, b) => a.priority - b.priority)
+
     const responseData = {
+      systemHealth,
+      nextActions,
       opportunities,
       summary,
       weeklyStats: {

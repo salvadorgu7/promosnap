@@ -7,8 +7,9 @@ import { cacheGet, cacheSet } from '@/lib/db/redis'
 import { normalizeText } from '@/lib/utils'
 import { understandQuery } from '@/lib/query'
 import { calculateCommercialScore, presetForIntent, type CommercialSignals } from '@/lib/ranking/commercial'
+import { buildProductCard } from '@/lib/db/queries'
 import type { QueryUnderstanding, SearchMetrics } from '@/lib/query/types'
-import type { ProductCard, SearchResult, SearchFilters, Badge } from '@/types'
+import type { ProductCard, SearchResult, SearchFilters } from '@/types'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -147,51 +148,6 @@ function buildListingFilter(params: SearchParams): Record<string, unknown> {
     listingWhere.source = { slug: params.source }
   }
   return listingWhere
-}
-
-/** Convert product + offers into a ProductCard */
-function toProductCard(p: any): ProductCard | null {
-  const allOffers = p.listings.flatMap((l: any) =>
-    l.offers.map((o: any) => ({
-      ...o,
-      sourceSlug: l.source.slug,
-      sourceName: l.source.name,
-    }))
-  )
-  const best = allOffers.sort((a: any, b: any) => b.offerScore - a.offerScore)[0]
-  if (!best) return null
-
-  const discount = best.originalPrice
-    ? Math.round(((best.originalPrice - best.currentPrice) / best.originalPrice) * 100)
-    : undefined
-
-  const badges: Badge[] = []
-  if (best.offerScore >= 80) badges.push({ type: 'hot_deal', label: '🔥 Oferta Quente', color: 'red' })
-  if (best.isFreeShipping) badges.push({ type: 'free_shipping', label: '🚚 Frete Grátis', color: 'purple' })
-  if (discount && discount >= 30) badges.push({ type: 'price_drop', label: `↓ ${discount}% OFF`, color: 'green' })
-
-  return {
-    id: p.id,
-    name: p.name,
-    slug: p.slug,
-    imageUrl: p.imageUrl,
-    brand: p.brand?.name,
-    category: p.category?.name,
-    categorySlug: p.category?.slug,
-    bestOffer: {
-      price: best.currentPrice,
-      originalPrice: best.originalPrice ?? undefined,
-      discount,
-      sourceSlug: best.sourceSlug,
-      sourceName: best.sourceName,
-      affiliateUrl: best.affiliateUrl ?? '#',
-      isFreeShipping: best.isFreeShipping,
-      offerScore: best.offerScore,
-    },
-    offersCount: allOffers.length,
-    popularityScore: p.popularityScore,
-    badges,
-  }
 }
 
 /** Build signals for commercial ranking from a ProductCard */
@@ -414,7 +370,7 @@ export async function searchProducts(params: SearchParams): Promise<EnhancedSear
 
   // ── Build ProductCards (keep raw product ref for signals) ─────────────
   const cardPairs = products
-    .map(p => ({ card: toProductCard(p), raw: p }))
+    .map(p => ({ card: buildProductCard(p), raw: p }))
     .filter((pair): pair is { card: ProductCard; raw: any } => pair.card !== null)
 
   let productCards: ProductCard[] = cardPairs.map(p => p.card)

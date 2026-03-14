@@ -233,7 +233,35 @@ export async function GET(req: NextRequest) {
       deploymentUrl: process.env.VERCEL_URL ?? null,
     }
 
+    // ── Operational Health ──────────────────────────────────────────────────
+    const mlOk = services.ml === 'configured'
+    const emailOk = services.email === 'configured'
+    const hasImportsEver = realImported > 0
+    const hasRecentImports = importedLast7d > 0
+
+    let operationalHealth: 'healthy' | 'degraded' | 'critical'
+    if (mlOk && emailOk && hasRecentImports) {
+      operationalHealth = 'healthy'
+    } else if (!mlOk && !hasImportsEver) {
+      operationalHealth = 'critical'
+    } else {
+      operationalHealth = 'degraded'
+    }
+
+    // ── Action Items ──────────────────────────────────────────────────────
+    const actionItems: string[] = []
+    if (!mlOk) actionItems.push('Configurar credenciais ML (MERCADOLIVRE_APP_ID + SECRET) para habilitar discovery automatico')
+    if (!emailOk) actionItems.push('Configurar RESEND_API_KEY para envio de alertas e newsletters')
+    if (!hasImportsEver) actionItems.push('Rodar discover-import para popular o catalogo com produtos reais')
+    if (hasImportsEver && !hasRecentImports) actionItems.push('Nenhum produto importado nos ultimos 7 dias — verificar pipeline de discovery')
+    if (activeAlertCount === 0 && realImported > 0) actionItems.push('Criar alertas de preco para produtos importados para engajar usuarios')
+    if (subscriberCount === 0) actionItems.push('Captar assinantes de newsletter para distribuicao de ofertas')
+    if (clickoutCount === 0) actionItems.push('Verificar tracking de affiliate links — nenhum clickout registrado')
+    if (Object.keys(lastJobs).length === 0) actionItems.push('Executar cron manualmente para inicializar jobs')
+
     const responseData = {
+      operationalHealth,
+      actionItems,
       environment,
       services,
       features,
