@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateAdmin } from "@/lib/auth/admin";
 import { runImportPipeline, type ImportItem } from "@/lib/import";
-import { mlFetch, batchHydrateItems } from "@/lib/ml-discovery/items";
+import { mlFetch, batchHydrateItems, type HydrateEntry } from "@/lib/ml-discovery/items";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 min for Vercel
@@ -58,7 +58,12 @@ async function getSubcategories(categoryId: string): Promise<MLSubcategory[]> {
   }
 }
 
-async function fetchHighlights(categoryId: string): Promise<string[]> {
+interface HighlightEntry {
+  id: string;
+  type: "ITEM" | "PRODUCT";
+}
+
+async function fetchHighlights(categoryId: string): Promise<HighlightEntry[]> {
   try {
     const res = await mlFetch(`${ML_API}/highlights/MLB/category/${categoryId}`);
     if (!res.ok) return [];
@@ -66,7 +71,7 @@ async function fetchHighlights(categoryId: string): Promise<string[]> {
     const content = data.content || [];
     return content
       .filter((e: { type: string }) => e.type === "ITEM" || e.type === "PRODUCT")
-      .map((e: { id: string }) => e.id);
+      .map((e: { id: string; type: string }) => ({ id: e.id, type: e.type as "ITEM" | "PRODUCT" }));
   } catch {
     return [];
   }
@@ -80,10 +85,10 @@ export async function POST(req: NextRequest) {
   const maxSubcategories = body.maxSubcategories || 8; // per parent
   const parentCats: string[] = body.categories || PARENT_CATEGORIES;
 
-  const allItemIds = new Set<string>();
+  const allEntries = new Map<string, HydrateEntry>();
   const categoryStats: { parent: string; subcats: number; items: number }[] = [];
 
-  // Phase 1: Get subcategories and fetch highlights
+  // Phase 1: Get subcategories and fetch highlights (with type hints)
   for (const parentId of parentCats) {
     const subcats = await getSubcategories(parentId);
     const selectedSubcats = subcats.slice(0, maxSubcategories);
@@ -91,7 +96,9 @@ export async function POST(req: NextRequest) {
 
     // Also fetch parent highlights
     const parentHighlights = await fetchHighlights(parentId);
-    for (const id of parentHighlights) allItemIds.add(id);
+    for (const entry of parentHighlights) {
+      if (!allEntries.has(entry.id)) allEntries.set(entry.id, { id: entry.id, type: entry.type });
+    }
     parentItemCount += parentHighlights.length;
 
     // Fetch subcategory highlights in parallel (batches of 4)
@@ -102,7 +109,9 @@ export async function POST(req: NextRequest) {
       );
       for (const r of results) {
         if (r.status === "fulfilled") {
-          for (const id of r.value) allItemIds.add(id);
+          for (const entry of r.value) {
+            if (!allEntries.has(entry.id)) allEntries.set(entry.id, { id: entry.id, type: entry.type });
+          }
           parentItemCount += r.value.length;
         }
       }
@@ -115,7 +124,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  if (allItemIds.size === 0) {
+  if (allEntries.size === 0) {
     return NextResponse.json({
       success: false,
       message: "No item IDs found from highlights",
@@ -123,11 +132,12 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Phase 2: Hydrate items via multi-get
-  const itemIdList = Array.from(allItemIds);
+  // Phase 2: Hydrate items with type hints (ITEM vs PRODUCT)
+  const entryList = Array.from(allEntries.values());
+  const itemIdList = entryList.map(e => e.id);
   let hydratedProducts;
   try {
-    const hydrated = await batchHydrateItems(itemIdList);
+    const hydrated = await batchHydrateItems(entryList);
     // Products from batchHydrateItems are already normalized MLProduct objects
     hydratedProducts = hydrated.products.filter((p) => p.currentPrice > 0);
   } catch (err) {
