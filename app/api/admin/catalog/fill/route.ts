@@ -229,7 +229,8 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     description: "Fill catalog via ML subcategory highlights + hydration. POST to execute.",
+    version: "v2-category-backfill",
     parentCategories: PARENT_CATEGORIES.length,
-    strategy: "Expands each parent into subcategories → fetches highlights for each → hydrates item details → imports",
+    strategy: "Expands each parent into subcategories → fetches highlights for each → hydrates item details → imports with category backfill",
   });
 }
