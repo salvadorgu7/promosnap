@@ -129,7 +129,7 @@ export default async function MelhoresPage({
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {products.map((p) => (
-              <OfferCard key={p.id} product={p} />
+              <OfferCard key={p.id} product={p} railSource="best-page" page="melhores" />
             ))}
           </div>
         </section>

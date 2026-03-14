@@ -246,6 +246,7 @@ export default async function HomePage() {
                 sourceName: dealOfTheDay.bestOffer.sourceName,
                 offerScore: dealOfTheDay.bestOffer.offerScore,
                 isFreeShipping: dealOfTheDay.bestOffer.isFreeShipping,
+                offerId: dealOfTheDay.bestOffer.offerId,
               }}
             />
           </div>

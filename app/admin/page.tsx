@@ -224,12 +224,64 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
+      {/* Monetization Readiness */}
+      {(() => {
+        const mlAffiliateId = !!process.env.MERCADOLIVRE_AFFILIATE_ID;
+        const amazonTag = !!process.env.AMAZON_AFFILIATE_TAG;
+        const adminSecret = !!process.env.ADMIN_SECRET;
+        const resendKey = !!process.env.RESEND_API_KEY;
+        const allReady = mlAffiliateId && amazonTag && adminSecret;
+        const items = [
+          { label: "MERCADOLIVRE_AFFILIATE_ID", ok: mlAffiliateId, critical: true },
+          { label: "AMAZON_AFFILIATE_TAG", ok: amazonTag, critical: true },
+          { label: "ADMIN_SECRET", ok: adminSecret, critical: true },
+          { label: "RESEND_API_KEY", ok: resendKey, critical: false },
+        ];
+        return (
+          <div className={`stat-card ${allReady ? "stat-card-green" : "stat-card-orange"} border-l-4 ${allReady ? "border-l-accent-green" : "border-l-amber-500"}`}>
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="h-4 w-4 text-brand-500" />
+              <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Monetization Status</span>
+              <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${allReady ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600"}`}>
+                {allReady ? "READY" : "INCOMPLETE"}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {items.map((item) => (
+                <div key={item.label} className="flex items-center gap-2">
+                  {item.ok ? (
+                    <CheckCircle className="h-3.5 w-3.5 text-accent-green flex-shrink-0" />
+                  ) : (
+                    <XCircle className={`h-3.5 w-3.5 flex-shrink-0 ${item.critical ? "text-red-500" : "text-amber-500"}`} />
+                  )}
+                  <span className="text-xs text-text-secondary font-mono truncate">{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t border-surface-200 grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-text-muted">Total clickouts</p>
+                <p className="text-lg font-bold font-display text-text-primary">{formatNumber(clickouts7d)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">Ofertas c/ affiliate URL</p>
+                <p className="text-lg font-bold font-display text-text-primary">{formatNumber(readyForDistribution)}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Proximos Passos — strategic recommendations */}
       {(() => {
         const recs: string[] = [];
         const mlConfigured = !!(process.env.ML_CLIENT_ID || process.env.MERCADOLIVRE_APP_ID);
         const emailConfigured = !!process.env.RESEND_API_KEY;
+        const mlAffiliate = !!process.env.MERCADOLIVRE_AFFILIATE_ID;
+        const amazonAffiliate = !!process.env.AMAZON_AFFILIATE_TAG;
         // Build recommendations based on current state
+        if (!mlAffiliate) recs.push("⚡ Configurar MERCADOLIVRE_AFFILIATE_ID para gerar receita nos clicks do ML");
+        if (!amazonAffiliate) recs.push("⚡ Configurar AMAZON_AFFILIATE_TAG para gerar receita nos clicks da Amazon");
         if (!mlConfigured) recs.push("Configurar credenciais ML (ML_CLIENT_ID + SECRET) para discovery automatico de produtos");
         if (!emailConfigured) recs.push("Configurar RESEND_API_KEY para habilitar envio de alertas e newsletters");
         if (productsTotal === 0) recs.push("Catalogo vazio — importar produtos via /admin/ingestao ou rodar discover-import");

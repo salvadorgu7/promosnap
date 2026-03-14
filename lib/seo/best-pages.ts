@@ -157,6 +157,50 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
       { q: 'Posso devolver um presente comprado online?', a: 'Sim, o Código do Consumidor garante 7 dias de arrependimento para compras online. Verifique a política de troca da loja antes de comprar.' },
     ],
   },
+  'melhores-teclados-mecanicos': {
+    title: 'Melhores Teclados Mecanicos',
+    description: 'Os melhores teclados mecanicos com preco comparado. Switches, layouts e marcas com os melhores descontos.',
+    intro: 'Teclados mecanicos oferecem precisao, durabilidade e uma experiencia de digitacao superior. Comparamos os modelos mais populares do mercado brasileiro, desde opcoes entry-level ate teclados custom, com precos monitorados em tempo real.',
+    query: { categories: ['perifericos'], keywords: ['teclado mecanico', 'teclado gamer', 'keyboard'] },
+    faqs: [
+      { q: 'Qual switch e melhor para jogos?', a: 'Switches lineares como Cherry MX Red ou Gateron Red sao os mais populares para jogos por serem rapidos e suaves. Tactile como Brown sao versateis para jogos e digitacao.' },
+      { q: 'Teclado mecanico vale a pena?', a: 'Sim. A durabilidade (50-100 milhoes de toques), a precisao e o conforto justificam o investimento, especialmente para quem digita muito ou joga diariamente.' },
+      { q: 'TKL ou full-size?', a: 'TKL (sem numpad) economiza espaco na mesa e e ideal para gamers. Full-size e melhor para quem usa numeros frequentemente, como em planilhas.' },
+    ],
+  },
+  'melhores-panelas-eletricas': {
+    title: 'Melhores Panelas Eletricas',
+    description: 'As melhores panelas eletricas com preco comparado. Panelas de pressao, arrozeiras e multicookers com descontos reais.',
+    intro: 'Panelas eletricas revolucionaram a cozinha, oferecendo praticidade e seguranca. Comparamos panelas de pressao eletricas, arrozeiras e multicookers para ajudar voce a escolher o modelo ideal para sua rotina.',
+    query: { categories: ['casa'], keywords: ['panela eletrica', 'panela pressao', 'multicooker', 'arrozeira'] },
+    faqs: [
+      { q: 'Panela eletrica e segura?', a: 'Sim. Panelas eletricas modernas possuem multiplas valvulas de seguranca e sensores de pressao que eliminam o risco de acidentes comuns em panelas de pressao tradicionais.' },
+      { q: 'Qual o tamanho ideal?', a: 'Para 1-2 pessoas, 3-4L. Para familias de 3-5 pessoas, 5-6L. Para familias maiores ou meal prep, 8L ou mais.' },
+      { q: 'Multicooker substitui outros aparelhos?', a: 'Sim, multicookers podem substituir panela de pressao, arrozeira, yogurteira e ate air fryer em alguns modelos, economizando espaco na cozinha.' },
+    ],
+  },
+  'melhores-aspiradores-robo': {
+    title: 'Melhores Aspiradores Robo',
+    description: 'Os melhores aspiradores robo com preco comparado. Navegacao laser, mop integrado e base auto-esvaziamento.',
+    intro: 'Aspiradores robo sao um investimento em tempo e praticidade. Comparamos modelos com navegacao inteligente, succao potente e funcao mop para ajudar voce a encontrar o robo ideal para sua casa.',
+    query: { categories: ['casa'], keywords: ['aspirador robo', 'robo aspirador', 'roomba'] },
+    faqs: [
+      { q: 'Aspirador robo funciona em casa com pets?', a: 'Sim, e e ate recomendado. Modelos com succao acima de 2500Pa lidam bem com pelos de animais. Prefira modelos com escova anti-emaranhamento.' },
+      { q: 'Navegacao laser vs camera, qual melhor?', a: 'Laser (LiDAR) e mais preciso e funciona no escuro. Camera e mais barata mas pode falhar em ambientes escuros. Para melhor custo-beneficio, prefira laser.' },
+      { q: 'Base auto-esvaziamento vale a pena?', a: 'Sim, especialmente para casas maiores ou com pets. A base armazena sujeira por semanas, reduzindo a manutencao a quase zero.' },
+    ],
+  },
+  'melhores-monitores-4k': {
+    title: 'Melhores Monitores 4K',
+    description: 'Os melhores monitores 4K com preco comparado. IPS, VA e OLED para trabalho, jogos e criacao de conteudo.',
+    intro: 'Monitores 4K oferecem nitidez impressionante para trabalho, entretenimento e criacao. Comparamos os melhores modelos do mercado brasileiro, desde opcoes acessiveis ate monitores profissionais.',
+    query: { categories: ['monitores'], keywords: ['monitor 4k', 'monitor uhd', '4k'] },
+    faqs: [
+      { q: 'Monitor 4K vale a pena para trabalho?', a: 'Sim, especialmente para programacao, design e planilhas. A resolucao extra permite ver mais conteudo na tela com textos mais nitidos.' },
+      { q: 'Qual tamanho ideal para 4K?', a: '27 polegadas e o sweet spot para 4K em mesa. 32 polegadas e otimo para quem senta mais longe. Abaixo de 27", a diferenca entre 4K e QHD e sutil.' },
+      { q: 'IPS, VA ou OLED para 4K?', a: 'IPS oferece melhor precisao de cor e angulos de visao. VA tem melhor contraste e pretos mais profundos. OLED e superior em tudo, mas custa significativamente mais.' },
+    ],
+  },
 }
 
 export const BEST_PAGE_SLUGS = Object.keys(BEST_PAGES)

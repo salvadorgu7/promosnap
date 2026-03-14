@@ -383,7 +383,7 @@ export default async function CompararPage({
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {productsA.slice(0, 4).map((p) => (
-              <OfferCard key={p.id} product={p} />
+              <OfferCard key={p.id} product={p} railSource="comparison" page="comparar" />
             ))}
           </div>
         </div>
@@ -396,7 +396,7 @@ export default async function CompararPage({
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {productsB.slice(0, 4).map((p) => (
-              <OfferCard key={p.id} product={p} />
+              <OfferCard key={p.id} product={p} railSource="comparison" page="comparar" />
             ))}
           </div>
         </div>

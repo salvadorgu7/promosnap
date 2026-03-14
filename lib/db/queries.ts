@@ -462,6 +462,34 @@ export async function getSimilarProducts(categorySlug: string | undefined, exclu
   return products.map(buildProductCard).filter(Boolean) as ProductCard[]
 }
 
+export async function getAlternatives(categorySlug: string | undefined, price: number, excludeId: string, limit = 6): Promise<ProductCard[]> {
+  if (!categorySlug || !price) return []
+  const minPrice = price * 0.7
+  const maxPrice = price * 1.3
+  const products = await prisma.product.findMany({
+    where: {
+      status: 'ACTIVE',
+      id: { not: excludeId },
+      category: { slug: categorySlug },
+      listings: {
+        some: {
+          offers: {
+            some: {
+              isActive: true,
+              currentPrice: { gte: minPrice, lte: maxPrice },
+            },
+          },
+        },
+      },
+    },
+    select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+    take: limit * 2,
+    orderBy: { popularityScore: 'desc' },
+  })
+  const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
+  return rankCards(cards, 'deal').slice(0, limit)
+}
+
 export async function getPriceHistory(offerId: string, days = 90) {
   const since = new Date()
   since.setDate(since.getDate() - days)

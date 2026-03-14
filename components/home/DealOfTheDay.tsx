@@ -16,6 +16,7 @@ interface Props {
     sourceName: string;
     offerScore: number;
     isFreeShipping: boolean;
+    offerId?: string;
   };
 }
 
@@ -113,13 +114,25 @@ export default function DealOfTheDay({ product }: Props) {
 
                 {/* Countdown + CTA */}
                 <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <Link
-                    href={`/produto/${product.slug}`}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent-yellow text-surface-900 font-display font-bold text-sm hover:bg-yellow-300 transition-colors shadow-lg"
-                  >
-                    Ver Oferta
-                    <ExternalLink className="w-4 h-4" />
-                  </Link>
+                  {product.offerId ? (
+                    <a
+                      href={`/api/clickout/${product.offerId}?page=home&origin=deal-of-day`}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent-yellow text-surface-900 font-display font-bold text-sm hover:bg-yellow-300 transition-colors shadow-lg"
+                    >
+                      Ver Oferta
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  ) : (
+                    <Link
+                      href={`/produto/${product.slug}`}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent-yellow text-surface-900 font-display font-bold text-sm hover:bg-yellow-300 transition-colors shadow-lg"
+                    >
+                      Ver Oferta
+                      <ExternalLink className="w-4 h-4" />
+                    </Link>
+                  )}
                   <DealOfTheDayWrapper />
                 </div>
               </div>

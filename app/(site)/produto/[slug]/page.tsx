@@ -29,10 +29,12 @@ import WhyHighlighted from "@/components/product/WhyHighlighted";
 import CanonicalView from "@/components/product/CanonicalView";
 import MiniCluster from "@/components/product/MiniCluster";
 import { buildMetadata, productSchema, breadcrumbSchema } from "@/lib/seo/metadata";
+import { findComparisonsForProduct } from "@/lib/seo/comparisons";
 import { formatPrice } from "@/lib/utils";
 import {
   getProductBySlug,
   getSimilarProducts,
+  getAlternatives,
   getPriceHistory,
 } from "@/lib/db/queries";
 import { getConsolidatedRating } from "@/lib/reviews/consolidated";
@@ -142,8 +144,11 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     }
   }
 
-  // Similar products
-  const similarProducts = await getSimilarProducts(product.category?.slug, slug, 8);
+  // Similar products + alternatives in same price range
+  const [similarProducts, alternatives] = await Promise.all([
+    getSimilarProducts(product.category?.slug, slug, 8),
+    getAlternatives(product.category?.slug, bestPrice, product.id, 6),
+  ]);
 
   // Consolidated rating
   const consolidatedRating = await getConsolidatedRating(product.id);
@@ -622,6 +627,48 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
       </div>
+
+      {/* Alternatives in same price range */}
+      {alternatives.length > 0 && (
+        <section className="mt-10" id="alternatives">
+          <h2 className="text-xl font-bold font-display text-text-primary mb-1">
+            Alternativas na Mesma Faixa
+          </h2>
+          <p className="text-sm text-text-muted mb-4">
+            Produtos similares entre {formatPrice(bestPrice * 0.7)} e {formatPrice(bestPrice * 1.3)}
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+            {alternatives.map((p) => (
+              <OfferCard key={p.id} product={p} railSource="alternatives" page="product" />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Comparison links */}
+      {(() => {
+        const comparisons = findComparisonsForProduct(product.name);
+        if (comparisons.length === 0) return null;
+        return (
+          <section className="mt-8">
+            <h3 className="text-lg font-bold font-display text-text-primary mb-3">
+              Compare
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {comparisons.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/comparar/${c.slug}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface-50 border border-surface-200 text-sm font-medium text-text-primary hover:border-brand-500/30 hover:bg-brand-50 transition-colors"
+                >
+                  <BarChart3 className="h-3.5 w-3.5 text-brand-500" />
+                  vs {c.otherProduct}
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Similar products rail */}
       {similarProducts.length > 0 && (

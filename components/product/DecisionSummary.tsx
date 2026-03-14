@@ -271,9 +271,19 @@ export default function DecisionSummary({
         </div>
       )}
 
-      {/* CTA */}
+      {/* Below 30-day average indicator */}
+      {priceStats && bestPrice.price < priceStats.avg30d && !(bestPrice.price <= priceStats.allTimeMin * 1.02) && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-brand-50 rounded-lg border border-brand-100 mb-3">
+          <ArrowDown className="h-4 w-4 text-brand-600 flex-shrink-0" />
+          <p className="text-xs text-text-secondary font-medium">
+            <span className="text-brand-600">{Math.round((1 - bestPrice.price / priceStats.avg30d) * 100)}% abaixo</span> da media dos ultimos 30 dias
+          </p>
+        </div>
+      )}
+
+      {/* CTA — routed through clickout API for tracking */}
       <a
-        href={bestPrice.affiliateUrl}
+        href={`/api/clickout/${bestPrice.id}?page=product&origin=decision`}
         target="_blank"
         rel="noopener noreferrer nofollow"
         className="btn-primary w-full flex items-center justify-center gap-2 py-3"

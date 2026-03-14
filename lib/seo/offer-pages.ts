@@ -117,6 +117,50 @@ export const OFFER_PAGES: Record<string, OfferPageDef> = {
       { q: 'Aspirador robô funciona em casa com pets?', a: 'Sim, e é especialmente útil para manter o chão livre de pelos. Prefira modelos com sucção potente e escova anti-emaranhamento.' },
     ],
   },
+  'eletronicos-hoje': {
+    title: 'Ofertas de Eletronicos Hoje',
+    description: 'As melhores ofertas de eletronicos do dia. Celulares, notebooks, fones e mais com descontos reais atualizados.',
+    intro: 'Eletronicos sao uma das categorias com mais oscilacao de preco. Monitoramos ofertas de celulares, notebooks, fones e acessorios para que voce encontre o melhor desconto do dia.',
+    searchQuery: 'eletronicos',
+    faqs: [
+      { q: 'Os precos de eletronicos mudam todo dia?', a: 'Sim, precos de eletronicos podem variar varias vezes ao dia nos marketplaces. O PromoSnap monitora essas variacoes para destacar os melhores momentos de compra.' },
+      { q: 'Como saber se uma oferta de eletronico e real?', a: 'Verifique o historico de precos no PromoSnap. Se o preco atual esta abaixo da media dos ultimos 30 dias, o desconto e real.' },
+      { q: 'Qual marketplace tem mais ofertas de eletronicos?', a: 'Amazon e Mercado Livre costumam ter o maior volume de ofertas, seguidos por Magazine Luiza e Americanas.' },
+    ],
+  },
+  'casa-inteligente': {
+    title: 'Ofertas de Casa Inteligente',
+    description: 'As melhores ofertas de produtos para casa inteligente. Alexa, lampadas smart, tomadas e mais.',
+    intro: 'Transforme sua casa em um ambiente inteligente gastando menos. Comparamos precos de assistentes virtuais, lampadas smart, tomadas inteligentes e sensores em todas as lojas.',
+    searchQuery: 'smart home alexa',
+    faqs: [
+      { q: 'Por onde comecar com casa inteligente?', a: 'Comece com uma caixa inteligente (Echo Dot) e lampadas smart. Com menos de R$300 voce ja tem controle de voz para luzes e musica.' },
+      { q: 'Alexa ou Google Home?', a: 'Alexa tem mais dispositivos compativeis e skills no Brasil. Google Home integra melhor com servicos Google. Ambos sao excelentes opcoes.' },
+      { q: 'Casa inteligente gasta muita energia?', a: 'Nao. A maioria dos dispositivos smart consome menos de 5W em standby. Lampadas smart LED consomem menos que lampadas comuns e ainda permitem ajustar brilho.' },
+    ],
+  },
+  'gaming-setup': {
+    title: 'Ofertas para Setup Gamer',
+    description: 'As melhores ofertas para montar seu setup gamer. Teclados, mouses, monitores e cadeiras com descontos.',
+    intro: 'Montar um setup gamer completo exige investimento, por isso cada economia conta. Comparamos precos de perifericos, monitores, cadeiras e acessorios para que voce monte seu setup pelo menor custo.',
+    searchQuery: 'gamer setup',
+    faqs: [
+      { q: 'Quanto custa um setup gamer basico?', a: 'Um setup basico com teclado mecanico, mouse gamer, mousepad e headset pode sair por R$500-1000. Adicionando monitor e cadeira, R$2000-4000.' },
+      { q: 'Quais perifericos priorizar?', a: 'Mouse e mousepad sao os mais importantes para performance. Depois, monitor de alta taxa de atualizacao e teclado mecanico.' },
+      { q: 'Periferico gamer RGB vale a pena?', a: 'RGB e estetico e nao melhora performance. Se o orcamento e limitado, priorize qualidade do sensor do mouse e switches do teclado sobre iluminacao.' },
+    ],
+  },
+  'cozinha': {
+    title: 'Ofertas para Cozinha',
+    description: 'As melhores ofertas de eletrodomesticos de cozinha. Air fryers, panelas, cafeteiras e mais com descontos.',
+    intro: 'Eletrodomesticos de cozinha estao entre os itens mais buscados em promocoes. Comparamos precos de air fryers, panelas eletricas, cafeteiras, liquidificadores e mais para equipar sua cozinha gastando menos.',
+    searchQuery: 'cozinha eletrodomestico',
+    faqs: [
+      { q: 'Quais eletrodomesticos de cozinha mais desvalorizam?', a: 'Cafeteiras e liquidificadores costumam ter grandes descontos. Air fryers e panelas eletricas tambem entram em promocao frequentemente.' },
+      { q: 'Eletrodomestico de marca propria e confiavel?', a: 'Marcas como Mondial e Britania oferecem otimo custo-beneficio com garantia. Para uso casual, sao opcoes excelentes.' },
+      { q: 'Quando comprar eletrodomesticos de cozinha?', a: 'Black Friday, Dia das Maes e eventos como Amazon Prime Day costumam ter os maiores descontos em itens de cozinha.' },
+    ],
+  },
 }
 
 export const OFFER_PAGE_SLUGS = Object.keys(OFFER_PAGES)

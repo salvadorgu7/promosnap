@@ -274,6 +274,110 @@ const comparisons: ComparisonDef[] = [
       },
     ],
   },
+  {
+    slug: "airpods-vs-galaxy-buds",
+    title: "AirPods vs Galaxy Buds: Qual fone TWS comprar?",
+    description:
+      "Comparativo AirPods Pro vs Galaxy Buds. ANC, qualidade sonora, bateria e preco. Veja qual vale mais no Brasil.",
+    intro:
+      "AirPods e Galaxy Buds sao os fones TWS mais populares. A escolha depende do seu smartphone, mas tambem de preferencias sonoras e funcionalidades. Comparamos precos e recursos para ajudar sua decisao.",
+    productA: { name: "AirPods", query: "airpods" },
+    productB: { name: "Galaxy Buds", query: "galaxy buds" },
+    verdict:
+      "Para usuarios iPhone, os AirPods oferecem integracao perfeita e ANC excelente. Para Android, os Galaxy Buds tem mais recursos, melhor equalizador e custo geralmente menor no Brasil.",
+    faqs: [
+      {
+        q: "AirPods funcionam com Android?",
+        a: "Sim, conectam via Bluetooth, mas perdem recursos como audio espacial, troca automatica entre dispositivos e personalizacao de ANC.",
+      },
+      {
+        q: "Qual tem melhor cancelamento de ruido?",
+        a: "AirPods Pro 2 e Galaxy Buds2 Pro tem ANC comparavel. Em testes, os AirPods Pro 2 cancelam ligeiramente melhor ruidos graves, enquanto os Galaxy Buds lidam melhor com vozes.",
+      },
+      {
+        q: "Qual dura mais a bateria?",
+        a: "Galaxy Buds geralmente duram mais: 5-8h vs 4-6h dos AirPods. Com o case, ambos chegam a 24-30h no total.",
+      },
+    ],
+  },
+  {
+    slug: "cadeira-gamer-vs-escritorio",
+    title: "Cadeira Gamer vs Cadeira de Escritorio: Qual escolher?",
+    description:
+      "Cadeira gamer ou cadeira de escritorio ergonomica? Comparamos conforto, ergonomia, durabilidade e preco.",
+    intro:
+      "A escolha entre cadeira gamer e cadeira de escritorio depende do seu uso e prioridades. Cadeiras gamer focam em estetica e reclinacao, enquanto ergonomicas priorizam postura e conforto prolongado. Comparamos as opcoes com precos reais.",
+    productA: { name: "Cadeira Gamer", query: "cadeira gamer" },
+    productB: { name: "Cadeira Escritorio", query: "cadeira escritorio" },
+    verdict:
+      "Para sessoes longas de trabalho, cadeiras ergonomicas de escritorio geralmente oferecem melhor suporte lombar e ajustes. Para gamers que querem estetica e reclinacao, cadeiras gamer sao ideais. No Brasil, cadeiras gamer costumam ter melhor custo-beneficio.",
+    faqs: [
+      {
+        q: "Cadeira gamer e ergonomica?",
+        a: "Depende do modelo. Cadeiras gamer premium com apoio lombar ajustavel e bracos 4D sao ergonomicas. Modelos baratos podem ser desconfortaveis para uso prolongado.",
+      },
+      {
+        q: "Quanto investir em uma boa cadeira?",
+        a: "Cadeiras gamer decentes comecam em R$600-800. Cadeiras ergonomicas de escritorio comecam em R$1.000-1.500 para modelos com bom suporte.",
+      },
+      {
+        q: "Qual material e melhor para o Brasil?",
+        a: "Tecido mesh e o mais indicado para clima quente, pois permite ventilacao. Couro sintetico esquenta mais mas e mais facil de limpar.",
+      },
+    ],
+  },
+  {
+    slug: "fritadeira-air-fryer-vs-forno",
+    title: "Air Fryer vs Forno Eletrico: Qual comprar?",
+    description:
+      "Air fryer ou forno eletrico? Comparamos versatilidade, economia, facilidade e preco para ajudar sua escolha.",
+    intro:
+      "Air fryers e fornos eletricos atendem propositos diferentes na cozinha. Enquanto a air fryer se destaca em praticidade e velocidade, o forno eletrico oferece mais versatilidade e capacidade. Comparamos ambos com precos reais.",
+    productA: { name: "Air Fryer", query: "air fryer" },
+    productB: { name: "Forno Eletrico", query: "forno eletrico" },
+    verdict:
+      "Para quem busca praticidade e velocidade no dia a dia, a air fryer e a melhor escolha. Para cozinheiros que precisam de versatilidade (assar bolos, pizzas, gratinar), o forno eletrico e mais completo. O ideal e ter ambos.",
+    faqs: [
+      {
+        q: "Air fryer substitui o forno?",
+        a: "Para frituras, assados pequenos e reaquecimento, sim. Para bolos, pizzas grandes e gratinados, o forno ainda e necessario.",
+      },
+      {
+        q: "Qual gasta menos energia?",
+        a: "A air fryer geralmente consome menos energia por refeicao, pois cozinha mais rapido e em menor volume. O forno eletrico consome mais, especialmente em tempos longos de cozimento.",
+      },
+      {
+        q: "Air fryer forno 2 em 1 vale a pena?",
+        a: "Sim, modelos combinados oferecem versatilidade com capacidade maior. Sao uma otima opcao para quem tem pouco espaco na cozinha.",
+      },
+    ],
+  },
+  {
+    slug: "monitor-ips-vs-va",
+    title: "Monitor IPS vs VA: Qual painel e melhor?",
+    description:
+      "IPS ou VA? Comparamos angulo de visao, contraste, cores, tempo de resposta e preco de monitores.",
+    intro:
+      "IPS e VA sao as tecnologias de painel mais populares em monitores. Cada uma tem vantagens distintas que atendem perfis diferentes de uso. Comparamos ambas com foco em precos do mercado brasileiro.",
+    productA: { name: "Monitor IPS", query: "monitor ips" },
+    productB: { name: "Monitor VA", query: "monitor va" },
+    verdict:
+      "IPS e melhor para criacao de conteudo, design e jogos competitivos (melhor cor e angulo de visao). VA e melhor para filmes, jogos single-player e ambientes escuros (melhor contraste). VA geralmente custa menos no Brasil.",
+    faqs: [
+      {
+        q: "IPS ou VA para jogos FPS?",
+        a: "IPS e preferido para FPS competitivo por ter tempos de resposta mais rapidos e menor ghosting. Paineis IPS de 1ms sao ideais para jogadores competitivos.",
+      },
+      {
+        q: "VA tem cores boas?",
+        a: "VA tem boas cores, mas com angulos de visao mais limitados que IPS. Para uso frontal, a diferenca e pequena. Para trabalho criativo profissional, IPS e mais preciso.",
+      },
+      {
+        q: "OLED e melhor que ambos?",
+        a: "Sim, OLED combina o melhor de ambos: preto perfeito, cores excepcionais e tempo de resposta instantaneo. Porem, custa significativamente mais e tem risco de burn-in.",
+      },
+    ],
+  },
 ];
 
 export const COMPARISONS: Record<string, ComparisonDef> = Object.fromEntries(
@@ -283,3 +387,24 @@ export const COMPARISONS: Record<string, ComparisonDef> = Object.fromEntries(
 export const COMPARISON_SLUGS: string[] = comparisons.map((c) => c.slug);
 
 export const COMPARISON_LIST = comparisons;
+
+/** Find comparisons that match a product name (case-insensitive substring) */
+export function findComparisonsForProduct(productName: string): Array<{
+  slug: string;
+  title: string;
+  otherProduct: string;
+}> {
+  const lower = productName.toLowerCase();
+  return comparisons
+    .filter((c) =>
+      lower.includes(c.productA.query.toLowerCase()) ||
+      lower.includes(c.productB.query.toLowerCase())
+    )
+    .map((c) => ({
+      slug: c.slug,
+      title: c.title,
+      otherProduct: lower.includes(c.productA.query.toLowerCase())
+        ? c.productB.name
+        : c.productA.name,
+    }));
+}
