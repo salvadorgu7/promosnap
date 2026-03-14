@@ -83,7 +83,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
     <div className="card group flex flex-col w-full overflow-hidden">
       {/* Badges */}
       {badges.length > 0 && (
-        <div className="flex items-center gap-1.5 px-3 pt-3 flex-wrap">
+        <div className="flex items-center gap-1 px-2.5 pt-2.5 flex-wrap">
           {badges.slice(0, 3).map((b, i) => (
             <BadgeChip key={i} badge={b} />
           ))}
@@ -91,21 +91,21 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
       )}
 
       {/* Image */}
-      <Link href={`/produto/${product.slug}`} className="block px-3 pt-3">
-        <div className="relative aspect-square rounded-lg overflow-hidden image-container">
+      <Link href={`/produto/${product.slug}`} className="block px-2.5 pt-2.5">
+        <div className="relative aspect-[4/3] rounded-lg overflow-hidden image-container">
           <ImageWithFallback
             src={product.imageUrl}
             alt={product.name}
-            className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500 ease-out"
+            className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-500 ease-out"
             width={300}
             height={300}
           />
-          <div className="absolute top-2 right-2 flex items-center gap-1.5">
+          <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
             <FavoriteButton productId={product.id} size="sm" />
             <ScorePill score={bestOffer.offerScore} />
           </div>
           {discount && discount >= 40 && (
-            <div className="absolute top-2 left-2 bg-gradient-to-r from-accent-red to-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">
+            <div className="absolute top-1.5 left-1.5 bg-gradient-to-r from-accent-red to-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
               MEGA OFERTA
             </div>
           )}
@@ -113,8 +113,8 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
       </Link>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col px-3 pt-2.5 pb-3">
-        <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1.5 flex-wrap">
+      <div className="flex-1 flex flex-col px-2.5 pt-2 pb-2.5">
+        <div className="flex items-center gap-1 text-[11px] text-text-muted mb-1 flex-wrap">
           <span className="font-medium">{bestOffer.sourceName}</span>
           {product.offersCount > 1 && (
             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-surface-100 text-[9px] font-medium text-text-muted">
@@ -135,28 +135,28 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
         </div>
 
         <Link href={`/produto/${product.slug}`}>
-          <h3 className="text-sm font-medium text-text-primary leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors duration-200">
+          <h3 className="text-xs font-medium text-text-primary leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors duration-200">
             {product.name}
           </h3>
         </Link>
 
         {product.brand && (
-          <Link href={`/marca/${product.brand.toLowerCase().replace(/\s+/g, '-')}`} className="text-xs text-text-muted mt-1 hover:text-accent-blue transition-colors">
+          <Link href={`/marca/${product.brand.toLowerCase().replace(/\s+/g, '-')}`} className="text-[11px] text-text-muted mt-0.5 hover:text-accent-blue transition-colors">
             {product.brand}
           </Link>
         )}
 
         {/* Price block */}
-        <div className="mt-auto pt-3">
-          <div className="flex items-end gap-2">
+        <div className="mt-auto pt-2">
+          <div className="flex items-end gap-1.5">
             {bestOffer.originalPrice && bestOffer.originalPrice > bestOffer.price && (
               <span className="price-old">{formatPrice(bestOffer.originalPrice)}</span>
             )}
             {discount && discount > 0 && (
               <span className={`discount-tag font-display font-bold ${
                 isHotDiscount
-                  ? "text-base text-accent-red bg-accent-red/10 px-2 py-0.5 rounded-md"
-                  : "text-sm"
+                  ? "text-sm text-accent-red bg-accent-red/10 px-1.5 py-0.5 rounded-md"
+                  : "text-xs"
               }`}>-{discount}%</span>
             )}
           </div>
@@ -180,18 +180,18 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
             href={ctaUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="btn-offer mt-3 h-9 sm:h-10 text-xs sm:text-sm"
+            className="btn-offer mt-2 h-8 sm:h-9 text-xs"
           >
             Ver Oferta
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3 h-3" />
           </a>
         ) : (
           <Link
             href={`/produto/${product.slug}`}
-            className="btn-offer mt-3 h-9 sm:h-10 text-xs sm:text-sm flex items-center justify-center gap-1.5"
+            className="btn-offer mt-2 h-8 sm:h-9 text-xs flex items-center justify-center gap-1.5"
           >
             Comparar Precos
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3 h-3" />
           </Link>
         )}
       </div>

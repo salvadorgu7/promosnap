@@ -58,6 +58,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/cockpit", label: "Cockpit", icon: Gauge },
       { href: "/admin/setup", label: "Setup", icon: Settings },
+      { href: "/admin/integrations", label: "Integracoes", icon: Plug },
       { href: "/admin/business", label: "Business OS", icon: BarChart3 },
       { href: "/admin/growth-ops", label: "Growth & Ops", icon: Rocket },
     ],
@@ -88,38 +89,28 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Growth",
+    title: "Growth & Monetizacao",
     items: [
       { href: "/admin/seo", label: "SEO", icon: Globe },
       { href: "/admin/analytics", label: "Analise", icon: Activity },
       { href: "/admin/performance", label: "Desempenho", icon: BarChart3 },
       { href: "/admin/referrals", label: "Indicacoes", icon: Gift },
-    ],
-  },
-  {
-    title: "Monetizacao",
-    items: [
       { href: "/admin/monetizacao", label: "Monetizacao", icon: DollarSign },
       { href: "/admin/attribution", label: "Attribution", icon: Target },
     ],
   },
   {
-    title: "Engajamento",
+    title: "Engajamento & Comercial",
     items: [
       { href: "/admin/email", label: "Email", icon: Mail },
       { href: "/admin/alertas", label: "Alertas", icon: Bell },
+      { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
+      { href: "/admin/merchandising", label: "Merchandising", icon: ShoppingBag },
+      { href: "/admin/automation", label: "Automacao", icon: Zap },
       { href: "/admin/inteligencia", label: "Inteligencia", icon: Lightbulb },
       { href: "/admin/decisoes", label: "Decisoes", icon: Brain },
       { href: "/admin/seo-gaps", label: "SEO Gaps", icon: SearchX },
       { href: "/admin/email-intelligence", label: "Email Intel", icon: MailCheck },
-      { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
-    ],
-  },
-  {
-    title: "Comercial",
-    items: [
-      { href: "/admin/merchandising", label: "Merchandising", icon: ShoppingBag },
-      { href: "/admin/automation", label: "Automacao", icon: Zap },
     ],
   },
   {
@@ -137,12 +128,6 @@ const navGroups: NavGroup[] = [
       { href: "/admin/monitoring", label: "Monitoring", icon: MonitorDot },
       { href: "/admin/production", label: "Production", icon: Gauge },
       { href: "/admin/rate-limits", label: "Rate Limits", icon: ShieldAlert },
-    ],
-  },
-  {
-    title: "Ativacao",
-    items: [
-      { href: "/admin/integrations", label: "Integracoes", icon: Plug },
     ],
   },
 ];

@@ -224,6 +224,45 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
+      {/* Proximos Passos — strategic recommendations */}
+      {(() => {
+        const recs: string[] = [];
+        const mlConfigured = !!(process.env.ML_CLIENT_ID || process.env.MERCADOLIVRE_APP_ID);
+        const emailConfigured = !!process.env.RESEND_API_KEY;
+        // Build recommendations based on current state
+        if (!mlConfigured) recs.push("Configurar credenciais ML (ML_CLIENT_ID + SECRET) para discovery automatico de produtos");
+        if (!emailConfigured) recs.push("Configurar RESEND_API_KEY para habilitar envio de alertas e newsletters");
+        if (productsTotal === 0) recs.push("Catalogo vazio — importar produtos via /admin/ingestao ou rodar discover-import");
+        if (stats.activeOffers === 0 && productsTotal > 0) recs.push("Nenhuma oferta ativa — verificar pipeline de ingestao");
+        if (stats.clickoutsToday === 0 && clickouts7d === 0) recs.push("Nenhum clickout registrado — verificar affiliate links e tracking");
+        if (candidatesPending > 0) recs.push(`${candidatesPending} candidato(s) pendente(s) para revisar em Ingestao`);
+        if (trendingWithoutCoverage > 0) recs.push(`${trendingWithoutCoverage} keywords trending sem cobertura no catalogo`);
+        if (errorSources > 0) recs.push(`${errorSources} fonte(s) com erro — verificar em Fontes`);
+        if (lastJob?.status === "FAILED") recs.push(`Ultimo job falhou (${lastJob.jobName}) — verificar em Jobs`);
+        // Only show top 5
+        const topRecs = recs.slice(0, 5);
+        if (topRecs.length === 0) return null;
+        return (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-0">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="h-4 w-4 text-amber-700" />
+              <h3 className="font-bold text-amber-800 text-sm">Proximos Passos</h3>
+              <span className="ml-auto text-[10px] font-medium text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
+                {topRecs.length} acao/acoes
+              </span>
+            </div>
+            <ul className="text-sm text-amber-700 space-y-1">
+              {topRecs.map((r, i) => (
+                <li key={i} className="flex items-start gap-1.5">
+                  <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-amber-500" />
+                  {r}
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
+
       {/* Acoes do dia */}
       <div className="card p-5 border-l-4 border-l-brand-500">
         <div className="flex items-center gap-2 mb-3">

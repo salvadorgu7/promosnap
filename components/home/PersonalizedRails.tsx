@@ -120,7 +120,7 @@ export default function PersonalizedRails() {
             iconColor="text-accent-orange"
           >
             {topPicks.map((p) => (
-              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+              <div key={p.id} className="w-[200px] md:w-[240px] flex-shrink-0">
                 <OfferCard product={p} />
               </div>
             ))}
@@ -138,7 +138,7 @@ export default function PersonalizedRails() {
             iconColor="text-accent-green"
           >
             {priceDrops.map((p) => (
-              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+              <div key={p.id} className="w-[200px] md:w-[240px] flex-shrink-0">
                 <OfferCard product={p} />
               </div>
             ))}
@@ -156,7 +156,7 @@ export default function PersonalizedRails() {
             iconColor="text-accent-red"
           >
             {favBased.map((p) => (
-              <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+              <div key={p.id} className="w-[200px] md:w-[240px] flex-shrink-0">
                 <OfferCard product={p} />
               </div>
             ))}

@@ -11,10 +11,10 @@ export default function CategoryCard({ slug, name, icon, productCount }: Categor
   return (
     <Link
       href={`/categoria/${slug}`}
-      className="card group flex flex-col items-center justify-center gap-2 p-4 hover:shadow-card-hover hover:border-accent-blue/30 transition-all"
+      className="card group flex flex-col items-center justify-center gap-1.5 p-3 hover:shadow-card-hover hover:border-accent-blue/30 transition-all"
     >
-      <span className="text-2xl group-hover:scale-110 transition-transform">{icon || "📦"}</span>
-      <span className="text-xs font-medium text-text-primary text-center">{name}</span>
+      <span className="text-xl group-hover:scale-110 transition-transform">{icon || "📦"}</span>
+      <span className="text-[11px] font-medium text-text-primary text-center leading-tight">{name}</span>
       {productCount !== undefined && (
         <span className="text-[10px] text-text-muted">{productCount}+ ofertas</span>
       )}

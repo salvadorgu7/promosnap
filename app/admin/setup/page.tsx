@@ -3,6 +3,7 @@ import {
   Settings,
   CheckCircle2,
   XCircle,
+  AlertTriangle,
   ShoppingCart,
   Mail,
   MessageCircle,
@@ -12,12 +13,21 @@ import {
   Clock,
   Globe,
   ArrowRight,
+  Database,
+  BarChart3,
+  Package,
+  Tag,
+  Layers,
+  Rocket,
+  Upload,
+  Shield,
 } from "lucide-react";
 import {
   getAllIntegrationReadiness,
   getActivationScore,
   type IntegrationStatus,
 } from "@/lib/integrations/readiness";
+import prisma from "@/lib/db/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -64,28 +74,88 @@ const integrationIcons: Record<string, typeof ShoppingCart> = {
 interface ChecklistItem {
   label: string;
   ok: boolean;
+  partial?: boolean;
+  detail?: string;
 }
 
 function buildGlobalChecklist(): ChecklistItem[] {
+  const adminSecret = process.env.ADMIN_SECRET;
+  const adminWeak = adminSecret === "change-me-in-production" || adminSecret === "admin";
   return [
-    { label: "Dominio (APP_URL)", ok: !!(process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL) },
-    { label: "CRON_SECRET", ok: !!process.env.CRON_SECRET },
-    { label: "ADMIN_SECRET", ok: !!process.env.ADMIN_SECRET },
+    { label: "Database", ok: true, detail: "Prisma conectado" },
+    { label: "Dominio (APP_URL)", ok: !!(process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL), detail: process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || undefined },
+    { label: "CRON_SECRET", ok: !!process.env.CRON_SECRET, detail: !process.env.CRON_SECRET ? "Cron acessivel sem auth" : undefined },
+    { label: "ADMIN_SECRET", ok: !!adminSecret && !adminWeak, partial: !!adminSecret && adminWeak, detail: adminWeak ? "Valor padrao — trocar em producao" : undefined },
     { label: "Email (RESEND_API_KEY)", ok: !!process.env.RESEND_API_KEY },
     { label: "ML OAuth (ML_CLIENT_ID)", ok: !!(process.env.ML_CLIENT_ID || process.env.MERCADOLIVRE_APP_ID) },
+    { label: "Analytics (GA_ID)", ok: !!process.env.NEXT_PUBLIC_GA_ID },
+    { label: "Sentry (DSN)", ok: !!process.env.SENTRY_DSN },
+    { label: "Redis", ok: !!process.env.REDIS_URL, partial: !process.env.REDIS_URL, detail: !process.env.REDIS_URL ? "Usando cache in-memory" : undefined },
     { label: "Telegram (BOT_TOKEN)", ok: !!process.env.TELEGRAM_BOT_TOKEN },
     { label: "Slack / Discord Webhook", ok: !!(process.env.SLACK_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL) },
   ];
 }
 
 // ---------------------------------------------------------------------------
+// Catalog stats (server-side)
+// ---------------------------------------------------------------------------
+
+async function getCatalogStats() {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const [products, offers, listings, clickouts, subscribers, alerts, jobs] = await Promise.all([
+      prisma.product.count({ where: { status: "ACTIVE" } }).catch(() => 0),
+      prisma.offer.count({ where: { isActive: true } }).catch(() => 0),
+      prisma.listing.count({ where: { status: "ACTIVE" } }).catch(() => 0),
+      prisma.clickout.count().catch(() => 0),
+      prisma.subscriber.count({ where: { status: "ACTIVE" } }).catch(() => 0),
+      prisma.priceAlert.count({ where: { isActive: true, triggeredAt: null } }).catch(() => 0),
+      prisma.jobRun.findMany({ orderBy: { startedAt: "desc" }, take: 5, select: { jobName: true, status: true, startedAt: true } }).catch(() => []),
+    ]);
+
+    let realImported = 0;
+    try {
+      realImported = await prisma.product.count({ where: { status: "ACTIVE", originType: "imported" } });
+    } catch { /* originType may not exist */ }
+
+    return { products, offers, listings, clickouts, subscribers, alerts, realImported, seedProducts: products - realImported, recentJobs: jobs };
+  } catch {
+    return { products: 0, offers: 0, listings: 0, clickouts: 0, subscribers: 0, alerts: 0, realImported: 0, seedProducts: 0, recentJobs: [] };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Build dynamic recommendations
+// ---------------------------------------------------------------------------
+
+function buildRecommendations(checklist: ChecklistItem[], catalog: Awaited<ReturnType<typeof getCatalogStats>>): string[] {
+  const recs: string[] = [];
+  const mlConfigured = !!(process.env.ML_CLIENT_ID || process.env.MERCADOLIVRE_APP_ID);
+  const emailConfigured = !!process.env.RESEND_API_KEY;
+
+  if (!mlConfigured) recs.push("Configurar ML_CLIENT_ID + ML_CLIENT_SECRET para habilitar discovery automatico de produtos");
+  if (!emailConfigured) recs.push("Configurar RESEND_API_KEY para envio de alertas e newsletters");
+  if (catalog.realImported === 0) recs.push("Rodar discover-import para popular o catalogo com produtos reais do Mercado Livre");
+  if (catalog.clickouts === 0 && catalog.products > 0) recs.push("Verificar tracking de affiliate links — nenhum clickout registrado");
+  if (catalog.subscribers === 0) recs.push("Captar assinantes de newsletter para distribuicao de ofertas");
+  if (catalog.alerts === 0 && catalog.realImported > 0) recs.push("Criar alertas de preco para engajar usuarios");
+  if (catalog.recentJobs.length === 0) recs.push("Executar cron manualmente em /admin/jobs para inicializar a automacao");
+  if (!process.env.CRON_SECRET) recs.push("Configurar CRON_SECRET para proteger endpoints de cron");
+  if (!process.env.NEXT_PUBLIC_GA_ID) recs.push("Configurar NEXT_PUBLIC_GA_ID para habilitar analytics");
+
+  return recs;
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
-export default function AdminSetupPage() {
+export default async function AdminSetupPage() {
   const integrations = getAllIntegrationReadiness();
   const score = getActivationScore();
   const checklist = buildGlobalChecklist();
+  const catalog = await getCatalogStats();
+  const recommendations = buildRecommendations(checklist, catalog);
 
   const scoreColor =
     score >= 80
@@ -131,7 +201,7 @@ export default function AdminSetupPage() {
       {/* ── Global checklist ── */}
       <div className="stat-card">
         <h2 className="text-lg font-semibold font-display text-text-primary mb-4">
-          Checklist de Ativacao
+          O Que Funciona
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {checklist.map((item) => (
@@ -140,19 +210,80 @@ export default function AdminSetupPage() {
               className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
                 item.ok
                   ? "bg-emerald-50 text-emerald-700"
-                  : "bg-red-50 text-red-700"
+                  : item.partial
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-red-50 text-red-700"
               }`}
             >
               {item.ok ? (
                 <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+              ) : item.partial ? (
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
               ) : (
                 <XCircle className="h-4 w-4 flex-shrink-0" />
               )}
-              {item.label}
+              <div className="min-w-0">
+                <span>{item.label}</span>
+                {item.detail && (
+                  <span className="block text-[10px] opacity-75 truncate">{item.detail}</span>
+                )}
+              </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* ── Catalog Stats ── */}
+      <div className="stat-card">
+        <h2 className="text-lg font-semibold font-display text-text-primary mb-4">
+          Estado do Catalogo
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { label: "Produtos", value: catalog.products, icon: Package, color: "text-accent-blue" },
+            { label: "Importados", value: catalog.realImported, icon: Upload, color: catalog.realImported > 0 ? "text-emerald-600" : "text-red-500" },
+            { label: "Seed", value: catalog.seedProducts, icon: Database, color: "text-text-muted" },
+            { label: "Ofertas", value: catalog.offers, icon: Tag, color: "text-accent-green" },
+            { label: "Listings", value: catalog.listings, icon: Layers, color: "text-brand-500" },
+            { label: "Clickouts", value: catalog.clickouts, icon: BarChart3, color: catalog.clickouts > 0 ? "text-accent-orange" : "text-red-500" },
+          ].map((s) => (
+            <div key={s.label} className="flex flex-col items-center py-3 px-2 rounded-lg bg-surface-50">
+              <s.icon className={`h-5 w-5 ${s.color} mb-1`} />
+              <span className="text-2xl font-bold font-display text-text-primary">{s.value}</span>
+              <span className="text-[10px] text-text-muted uppercase tracking-wider">{s.label}</span>
+            </div>
+          ))}
+        </div>
+        {catalog.realImported === 0 && catalog.products > 0 && (
+          <p className="text-xs text-amber-600 mt-3 flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            Todos os produtos sao seed/demo. Rode o job de import para popular com dados reais.
+          </p>
+        )}
+      </div>
+
+      {/* ── Proximos Passos ── */}
+      {recommendations.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Rocket className="h-5 w-5 text-amber-700" />
+            <h2 className="text-lg font-semibold font-display text-amber-800">
+              Proximos Passos
+            </h2>
+            <span className="ml-auto text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
+              {recommendations.length} pendente{recommendations.length > 1 ? "s" : ""}
+            </span>
+          </div>
+          <ul className="space-y-2">
+            {recommendations.map((r, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
+                <ArrowRight className="h-4 w-4 flex-shrink-0 mt-0.5 text-amber-500" />
+                {r}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* ── Integration cards grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -30,7 +30,7 @@ export default function CategoryRail({ title, slug, icon, products }: CategoryRa
         </div>
         <div className="rail gap-3 pb-2">
           {products.map((p) => (
-            <div key={p.id} className="w-[220px] md:w-[240px] flex-shrink-0">
+            <div key={p.id} className="w-[200px] md:w-[240px] flex-shrink-0">
               <OfferCard product={p} />
             </div>
           ))}

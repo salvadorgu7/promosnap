@@ -134,7 +134,7 @@ export default function PersonalizedNews() {
         {products.map((p) => {
           const reasonInfo = getReasonLabel(p._reason)
           return (
-            <div key={p.id} className="w-[240px] md:w-[260px] flex-shrink-0">
+            <div key={p.id} className="w-[200px] md:w-[240px] flex-shrink-0">
               <div className="relative">
                 <OfferCard product={p} />
                 {/* Recommendation reason tag */}

@@ -28,11 +28,11 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-14 gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-brand-500 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" strokeWidth={2.5} />
+          <Link href="/" className="flex items-center gap-1.5 flex-shrink-0 min-w-0">
+            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-accent-blue to-brand-500 flex items-center justify-center flex-shrink-0">
+              <Zap className="w-4 h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-display font-extrabold text-xl tracking-tight text-surface-900">
+            <span className="font-display font-extrabold text-lg md:text-xl tracking-tight text-surface-900 truncate">
               Promo<span className="text-gradient">Snap</span>
             </span>
           </Link>
@@ -94,17 +94,23 @@ export default function Header() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden border-t border-surface-200 bg-white animate-slide-up">
-          <nav className="px-4 py-3 space-y-1">
+          <nav className="px-4 py-2 space-y-0.5">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">
-                  <Icon className={`w-5 h-5 ${item.color}`} />
-                  <span className="font-medium">{item.label}</span>
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">
+                  <Icon className={`w-4 h-4 ${item.color}`} />
+                  <span className="text-sm font-medium">{item.label}</span>
                 </Link>
               );
             })}
+            <div className="h-px bg-surface-200 my-1" />
+            <Link href="/favoritos" onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">
+              <Heart className="w-4 h-4 text-accent-red" />
+              <span className="text-sm font-medium">Meus Favoritos</span>
+            </Link>
           </nav>
         </div>
       )}
