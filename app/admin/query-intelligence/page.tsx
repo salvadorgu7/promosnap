@@ -1,257 +1,133 @@
-import { Search, AlertTriangle, Lightbulb, BarChart3 } from "lucide-react";
-import prisma from "@/lib/db/prisma";
-import { Prisma } from "@prisma/client";
-import { BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
-import { COMPARISON_SLUGS } from "@/lib/seo/comparisons";
+import { getDemandGraph } from "@/lib/demand/graph"
+import { Search, TrendingUp, AlertTriangle, BarChart3, ArrowUpRight, Target } from "lucide-react"
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"
 
 export default async function QueryIntelligencePage() {
-  // Top queries (last 7 days)
-  let topQueries: { query: string; count: bigint; clicks: bigint }[] = [];
-  try {
-    topQueries = await prisma.$queryRaw(Prisma.sql`
-      SELECT "normalizedQuery" as query, COUNT(*) as count,
-        SUM(CASE WHEN "clickedProductId" IS NOT NULL THEN 1 ELSE 0 END) as clicks
-      FROM search_logs
-      WHERE "createdAt" > NOW() - INTERVAL '7 days' AND "normalizedQuery" IS NOT NULL
-      GROUP BY "normalizedQuery"
-      ORDER BY count DESC LIMIT 30
-    `);
-  } catch {
-    topQueries = [];
-  }
-
-  // Zero-result queries (last 30 days)
-  let zeroResultQueries: { query: string; count: bigint }[] = [];
-  try {
-    zeroResultQueries = await prisma.$queryRaw(Prisma.sql`
-      SELECT "normalizedQuery" as query, COUNT(*) as count
-      FROM search_logs
-      WHERE "resultsCount" = 0 AND "createdAt" > NOW() - INTERVAL '30 days' AND "normalizedQuery" IS NOT NULL
-      GROUP BY "normalizedQuery"
-      ORDER BY count DESC LIMIT 20
-    `);
-  } catch {
-    zeroResultQueries = [];
-  }
-
-  // Search conversion rate
-  let conversionData: { total: bigint; converted: bigint }[] = [];
-  try {
-    conversionData = await prisma.$queryRaw(Prisma.sql`
-      SELECT COUNT(*) as total,
-        SUM(CASE WHEN "clickedProductId" IS NOT NULL THEN 1 ELSE 0 END) as converted
-      FROM search_logs
-      WHERE "createdAt" > NOW() - INTERVAL '7 days'
-    `);
-  } catch {
-    conversionData = [];
-  }
-
-  const totalSearches = Number(conversionData[0]?.total ?? 0);
-  const totalConverted = Number(conversionData[0]?.converted ?? 0);
-  const conversionRate = totalSearches > 0 ? ((totalConverted / totalSearches) * 100).toFixed(1) : "0.0";
-  const totalZeroResults = zeroResultQueries.reduce((sum, q) => sum + Number(q.count), 0);
-  const zeroResultRate = totalSearches > 0 ? ((totalZeroResults / totalSearches) * 100).toFixed(1) : "0.0";
-
-  // Cross-reference top queries with existing SEO pages
-  const allSeoSlugs = new Set([...BEST_PAGE_SLUGS, ...COMPARISON_SLUGS]);
-  const queryToSlug = (q: string) =>
-    q
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-
-  const uncoveredQueries = topQueries
-    .filter((q) => {
-      const slug = queryToSlug(q.query);
-      const melhoresSlug = `melhores-${slug}`;
-      return !allSeoSlugs.has(slug) && !allSeoSlugs.has(melhoresSlug);
-    })
-    .slice(0, 10);
+  const demand = await getDemandGraph(30)
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div>
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
-          <Search className="h-6 w-6 text-accent-blue" />
-          Query Intelligence
-        </h1>
-        <p className="text-sm text-text-muted mt-1">
-          Comportamento de busca, gaps de conteudo e oportunidades de SEO
-        </p>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl bg-accent-blue/10 flex items-center justify-center">
+          <Search className="w-5 h-5 text-accent-blue" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold font-display text-text-primary">Query Intelligence</h1>
+          <p className="text-sm text-text-muted">O que os usuarios buscam, o que encontram, e o que falta</p>
+        </div>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-surface-200 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Search className="h-4 w-4 text-text-muted" />
-            <span className="text-xs text-text-muted uppercase tracking-wider">Buscas (7d)</span>
-          </div>
-          <p className="text-2xl font-bold font-display text-text-primary">
-            {totalSearches.toLocaleString("pt-BR")}
+          <p className="text-xs text-text-muted">Total Buscas (30d)</p>
+          <p className="text-2xl font-bold font-display text-text-primary">{demand.totalSearches.toLocaleString("pt-BR")}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <p className="text-xs text-text-muted">Queries Unicas</p>
+          <p className="text-2xl font-bold font-display text-text-primary">{demand.uniqueQueries}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-surface-200 p-4">
+          <p className="text-xs text-text-muted">Taxa Zero Resultado</p>
+          <p className={`text-2xl font-bold font-display ${demand.zeroResultRate > 0.3 ? "text-accent-red" : demand.zeroResultRate > 0.15 ? "text-amber-500" : "text-accent-green"}`}>
+            {(demand.zeroResultRate * 100).toFixed(1)}%
           </p>
         </div>
         <div className="bg-white rounded-xl border border-surface-200 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="h-4 w-4 text-text-muted" />
-            <span className="text-xs text-text-muted uppercase tracking-wider">Conversao</span>
-          </div>
-          <p className="text-2xl font-bold font-display text-text-primary">{conversionRate}%</p>
-          <p className="text-xs text-text-muted mt-1">
-            {totalConverted.toLocaleString("pt-BR")} / {totalSearches.toLocaleString("pt-BR")} buscas
-          </p>
-        </div>
-        <div className="bg-white rounded-xl border border-surface-200 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-            <span className="text-xs text-text-muted uppercase tracking-wider">Zero Resultado</span>
-          </div>
-          <p className="text-2xl font-bold font-display text-text-primary">{zeroResultRate}%</p>
-          <p className="text-xs text-text-muted mt-1">
-            {totalZeroResults.toLocaleString("pt-BR")} buscas sem resultado (30d)
-          </p>
+          <p className="text-xs text-text-muted">Trending Up</p>
+          <p className="text-2xl font-bold font-display text-accent-blue">{demand.trendingUp.length}</p>
         </div>
       </div>
 
-      {/* Top Queries Table */}
-      <section className="bg-white rounded-xl border border-surface-200 p-5">
-        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-accent-blue" />
-          Top Queries (7 dias)
-        </h2>
-        {topQueries.length === 0 ? (
-          <p className="text-sm text-text-muted py-4 text-center">Nenhuma busca registrada nos ultimos 7 dias.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-200">
-                  <th className="text-left text-text-muted font-medium py-2 pr-4">Query</th>
-                  <th className="text-right text-text-muted font-medium py-2 px-4">Buscas</th>
-                  <th className="text-right text-text-muted font-medium py-2 px-4">Clicks</th>
-                  <th className="text-right text-text-muted font-medium py-2 px-4">CTR%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topQueries.map((q, i) => {
-                  const count = Number(q.count);
-                  const clicks = Number(q.clicks);
-                  const ctr = count > 0 ? ((clicks / count) * 100).toFixed(1) : "0.0";
-                  return (
-                    <tr
-                      key={q.query}
-                      className={`border-b border-surface-100 ${i % 2 === 0 ? "bg-white" : "bg-surface-50"}`}
-                    >
-                      <td className="py-2 pr-4 font-medium text-text-primary">{q.query}</td>
-                      <td className="py-2 px-4 text-right">{count.toLocaleString("pt-BR")}</td>
-                      <td className="py-2 px-4 text-right">{clicks.toLocaleString("pt-BR")}</td>
-                      <td className="py-2 px-4 text-right">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            parseFloat(ctr) >= 10
-                              ? "bg-green-50 text-green-700"
-                              : parseFloat(ctr) >= 5
-                                ? "bg-yellow-50 text-yellow-700"
-                                : "bg-red-50 text-red-700"
-                          }`}
-                        >
-                          {ctr}%
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Zero-Result Queries */}
-      <section className="bg-white rounded-xl border border-surface-200 p-5">
-        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-orange-500" />
-          Queries Sem Resultado (30 dias)
-        </h2>
-        <p className="text-xs text-text-muted mb-4">
-          Buscas que nao retornaram nenhum produto — oportunidades de conteudo ou catalogo
-        </p>
-        {zeroResultQueries.length === 0 ? (
-          <p className="text-sm text-text-muted py-4 text-center">Nenhuma query sem resultado nos ultimos 30 dias.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-200">
-                  <th className="text-left text-text-muted font-medium py-2 pr-4">Query</th>
-                  <th className="text-right text-text-muted font-medium py-2 px-4">Buscas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {zeroResultQueries.map((q) => (
-                  <tr key={q.query} className="border-b border-surface-100 hover:bg-orange-50/50">
-                    <td className="py-2 pr-4 font-medium text-orange-700">{q.query}</td>
-                    <td className="py-2 px-4 text-right">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
-                        {Number(q.count).toLocaleString("pt-BR")}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Content Suggestions */}
-      <section className="bg-white rounded-xl border border-surface-200 p-5">
-        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <Lightbulb className="h-5 w-5 text-yellow-500" />
-          Sugestoes de Conteudo
-        </h2>
-        <p className="text-xs text-text-muted mb-4">
-          Top queries que ainda nao possuem pagina SEO dedicada (best-pages ou comparisons)
-        </p>
-        {uncoveredQueries.length === 0 ? (
-          <p className="text-sm text-text-muted py-4 text-center">
-            Todas as top queries ja possuem paginas dedicadas.
-          </p>
-        ) : (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Queries */}
+        <div className="bg-white rounded-xl border border-surface-200 p-6">
+          <h2 className="text-base font-bold font-display text-text-primary mb-4 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-accent-blue" />
+            Top Queries
+          </h2>
           <div className="space-y-2">
-            {uncoveredQueries.map((q) => {
-              const suggestedSlug = queryToSlug(q.query);
-              return (
-                <div
-                  key={q.query}
-                  className="flex items-center justify-between px-4 py-3 bg-yellow-50/50 border border-yellow-200/60 rounded-lg"
-                >
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-text-primary block truncate">
-                      &ldquo;{q.query}&rdquo;
-                    </span>
-                    <span className="text-[11px] text-text-muted">
-                      {Number(q.count).toLocaleString("pt-BR")} buscas &middot; slug sugerido:{" "}
-                      <code className="text-xs bg-surface-100 px-1 py-0.5 rounded">
-                        /melhores/{suggestedSlug}
-                      </code>
-                    </span>
-                  </div>
-                  <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full ml-3 whitespace-nowrap">
-                    Sem pagina
-                  </span>
-                </div>
-              );
-            })}
+            {demand.topQueries.slice(0, 15).map((q, i) => (
+              <div key={q.query} className="flex items-center gap-3 py-1.5 border-b border-surface-50 last:border-0">
+                <span className="text-xs text-text-muted w-5 text-right">{i + 1}</span>
+                <span className="text-sm text-text-primary flex-1 truncate">{q.query}</span>
+                <span className="text-xs font-mono text-text-muted">{q.count}x</span>
+                <span className={`text-xs font-mono ${q.avgResultCount > 5 ? "text-accent-green" : q.avgResultCount > 0 ? "text-amber-500" : "text-accent-red"}`}>
+                  {q.avgResultCount} results
+                </span>
+                {q.clickthroughRate > 0 && (
+                  <span className="text-xs font-mono text-accent-blue">{(q.clickthroughRate * 100).toFixed(0)}% CTR</span>
+                )}
+              </div>
+            ))}
+            {demand.topQueries.length === 0 && (
+              <p className="text-sm text-text-muted py-4 text-center">Nenhuma busca registrada ainda</p>
+            )}
           </div>
-        )}
-      </section>
+        </div>
+
+        {/* Zero Result Queries */}
+        <div className="bg-white rounded-xl border border-surface-200 p-6">
+          <h2 className="text-base font-bold font-display text-text-primary mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-accent-red" />
+            Zero Resultado — Oportunidades
+          </h2>
+          <div className="space-y-2">
+            {demand.zeroResultQueries.slice(0, 15).map((q) => (
+              <div key={q.query} className="flex items-center gap-3 py-1.5 border-b border-surface-50 last:border-0">
+                <span className="text-sm text-text-primary flex-1 truncate">{q.query}</span>
+                <span className="text-xs font-mono text-text-muted">{q.count}x buscado</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-accent-red font-medium">sem resultado</span>
+              </div>
+            ))}
+            {demand.zeroResultQueries.length === 0 && (
+              <p className="text-sm text-text-muted py-4 text-center">Nenhuma query sem resultado</p>
+            )}
+          </div>
+        </div>
+
+        {/* High Demand Low Supply */}
+        <div className="bg-white rounded-xl border border-surface-200 p-6">
+          <h2 className="text-base font-bold font-display text-text-primary mb-4 flex items-center gap-2">
+            <Target className="w-4 h-4 text-amber-500" />
+            Alta Demanda / Pouca Oferta
+          </h2>
+          <div className="space-y-2">
+            {demand.highDemandLowSupply.slice(0, 10).map((q) => (
+              <div key={q.query} className="flex items-center gap-3 py-1.5 border-b border-surface-50 last:border-0">
+                <span className="text-sm text-text-primary flex-1 truncate">{q.query}</span>
+                <span className="text-xs font-mono text-text-muted">{q.count}x buscado</span>
+                <span className="text-xs font-mono text-amber-500">{q.avgResultCount} prod</span>
+              </div>
+            ))}
+            {demand.highDemandLowSupply.length === 0 && (
+              <p className="text-sm text-text-muted py-4 text-center">Catalogo atende bem a demanda</p>
+            )}
+          </div>
+        </div>
+
+        {/* Trending Up */}
+        <div className="bg-white rounded-xl border border-surface-200 p-6">
+          <h2 className="text-base font-bold font-display text-text-primary mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-accent-green" />
+            Trending Up (7d vs 30d)
+          </h2>
+          <div className="space-y-2">
+            {demand.trendingUp.slice(0, 10).map((q) => (
+              <div key={q.query} className="flex items-center gap-3 py-1.5 border-b border-surface-50 last:border-0">
+                <ArrowUpRight className="w-3.5 h-3.5 text-accent-green flex-shrink-0" />
+                <span className="text-sm text-text-primary flex-1 truncate">{q.query}</span>
+                <span className="text-xs font-mono text-text-muted">{q.count}x total</span>
+              </div>
+            ))}
+            {demand.trendingUp.length === 0 && (
+              <p className="text-sm text-text-muted py-4 text-center">Sem tendencias detectadas</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
-  );
+  )
 }

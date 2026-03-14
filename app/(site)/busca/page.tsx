@@ -3,6 +3,7 @@ import { Search, SlidersHorizontal, ArrowUpDown, X, Truck, Brain, Sparkles, Tren
 import OfferCard from "@/components/cards/OfferCard";
 import EmptyState from "@/components/ui/EmptyState";
 import RelatedSearches from "@/components/ui/RelatedSearches";
+import ZeroResultActions from "@/components/search/ZeroResultActions";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { searchListings } from "@/lib/db/queries";
 import { formatPrice } from "@/lib/utils";
@@ -488,13 +489,16 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
               )}
             </>
           ) : query ? (
-            <EmptyState
-              icon={Search}
-              title="Nenhum resultado encontrado"
-              description={`Nao encontramos ofertas para "${query}". Tente buscar com termos diferentes, verificar a ortografia ou remover filtros aplicados.`}
-              ctaLabel="Limpar filtros"
-              ctaHref={`/busca?q=${encodeURIComponent(query)}`}
-            />
+            <>
+              <EmptyState
+                icon={Search}
+                title="Nenhum resultado encontrado"
+                description={`Nao encontramos ofertas para "${query}". Tente buscar com termos diferentes, verificar a ortografia ou remover filtros aplicados.`}
+                ctaLabel="Limpar filtros"
+                ctaHref={`/busca?q=${encodeURIComponent(query)}`}
+              />
+              <ZeroResultActions query={query} />
+            </>
           ) : (
             <EmptyState
               icon={Search}

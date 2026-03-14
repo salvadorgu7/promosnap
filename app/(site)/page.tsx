@@ -18,6 +18,8 @@ import RadarBanner from "@/components/home/RadarBanner";
 import ReturnUserGreeting from "@/components/home/ReturnUserGreeting";
 import SmartSuggestions from "@/components/home/SmartSuggestions";
 import AmazonPromo from "@/components/home/AmazonPromo";
+import FirstSaleBanner from "@/components/home/FirstSaleBanner";
+import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/seo/JsonLd";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
@@ -111,6 +113,18 @@ export default async function HomePage() {
 
   return (
     <div>
+      <WebsiteJsonLd />
+      <OrganizationJsonLd />
+
+      {/* ===== 0. FIRST SALE BANNER ===== */}
+      <FirstSaleBanner
+        topDealName={dealOfTheDay?.name}
+        topDealSlug={dealOfTheDay?.slug}
+        topDealPrice={dealOfTheDay?.bestOffer?.price}
+        topDealDiscount={dealOfTheDay?.bestOffer?.discount}
+        activeOffers={stats.activeOffers || 0}
+      />
+
       {/* ===== 1. HERO — Central de Inteligencia de Compra ===== */}
       <section id="hero" className="hero-premium relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-brand-500/6 rounded-full blur-[100px] pointer-events-none" />

@@ -34,6 +34,8 @@ import BetterAlternativeHint from "@/components/product/BetterAlternativeHint";
 import QuickCompare from "@/components/product/QuickCompare";
 import ContinueExploring from "@/components/product/ContinueExploring";
 import AmazonAlternative from "@/components/product/AmazonAlternative";
+import RelatedContent from "@/components/seo/RelatedContent";
+import { getRelatedLinks } from "@/lib/seo/internal-links";
 import WhyHighlighted from "@/components/product/WhyHighlighted";
 import CanonicalView from "@/components/product/CanonicalView";
 import MiniCluster from "@/components/product/MiniCluster";
@@ -811,6 +813,17 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         productName={product.name}
         categorySlug={product.category?.slug}
         categoryName={product.category?.name}
+      />
+
+      {/* Related Content — SEO internal linking */}
+      <RelatedContent
+        links={getRelatedLinks({
+          categorySlug: product.category?.slug,
+          brandSlug: brandSlug,
+          productName: product.name,
+          limit: 6,
+        })}
+        title="Conteudo Relacionado"
       />
 
       {/* Sticky mobile CTA */}

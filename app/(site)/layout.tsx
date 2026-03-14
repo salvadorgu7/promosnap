@@ -5,6 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import PromoBanner from "@/components/ui/PromoBanner";
 import PromoModal from "@/components/ui/PromoModal";
 import ReturnHook from "@/components/engagement/ReturnHook";
+import StickyAlertBar from "@/components/engagement/StickyAlertBar";
 
 export default function SiteLayout({
   children,
@@ -13,6 +14,7 @@ export default function SiteLayout({
 }) {
   return (
     <div className="flex flex-col min-h-screen">
+      <StickyAlertBar />
       <PromoBanner />
       <Header />
       <div className="flex flex-1">
