@@ -1,4 +1,4 @@
-import { Flame, TrendingDown, Trophy, Sparkles, Tag, ShieldCheck, Store, Bell, Truck, Star, Search, Users, Send, MessageCircle, ArrowRight, Package, Percent } from "lucide-react";
+import { Flame, TrendingDown, Trophy, Sparkles, Tag, ShieldCheck, Store, Bell, Truck, Star, Search, Users, Send, MessageCircle, ArrowRight, Package, Percent, Zap, TrendingUp, RefreshCw, Eye } from "lucide-react";
 import DailyOpportunities from "@/components/home/DailyOpportunities";
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";

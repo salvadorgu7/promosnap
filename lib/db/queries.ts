@@ -926,3 +926,184 @@ export async function getClickoutsBySource() {
     ORDER BY count DESC
   `.catch(() => [])
 }
+
+// ============================================
+// MOST SEARCHED (from SearchLog)
+// ============================================
+
+export async function getMostSearched(limit = 10): Promise<{ term: string; count: number }[]> {
+  try {
+    const results = await prisma.$queryRaw<{ term: string; count: number }[]>`
+      SELECT "normalizedQuery" as term, COUNT(*)::int as count
+      FROM search_logs
+      WHERE "createdAt" > NOW() - INTERVAL '7 days'
+      AND "normalizedQuery" IS NOT NULL
+      AND LENGTH("normalizedQuery") > 2
+      GROUP BY "normalizedQuery"
+      ORDER BY count DESC
+      LIMIT ${limit}
+    `
+    return results as { term: string; count: number }[]
+  } catch {
+    return []
+  }
+}
+
+// ============================================
+// HIGHLIGHTED IMPORTS (high-discount imported products)
+// ============================================
+
+export async function getHighlightedImports(limit = 16): Promise<ProductCard[]> {
+  const cacheKey = `homepage:highlightedImports:${limit}`
+  const cached = memoryCache.get<ProductCard[]>(cacheKey)
+  if (cached) return cached
+
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        originType: 'imported',
+        imageUrl: { not: null },
+        listings: {
+          some: {
+            offers: {
+              some: {
+                isActive: true,
+                originalPrice: { not: null },
+                affiliateUrl: { not: null },
+              },
+            },
+          },
+        },
+      },
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+      take: limit * 3,
+    })
+    const result = products
+      .map(buildProductCard)
+      .filter(Boolean)
+      .filter((p) => p!.bestOffer.discount && p!.bestOffer.discount > 15 && p!.imageUrl)
+      .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
+      .slice(0, limit) as ProductCard[]
+    memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
+    return result
+  } catch {
+    return []
+  }
+}
+
+// ============================================
+// RELATED SEARCHES (for internal linking)
+// ============================================
+
+export async function getRelatedSearches(context: string, limit = 8): Promise<string[]> {
+  try {
+    const results = await prisma.$queryRaw<{ term: string }[]>`
+      SELECT DISTINCT "normalizedQuery" as term
+      FROM search_logs
+      WHERE "normalizedQuery" IS NOT NULL
+      AND LENGTH("normalizedQuery") > 2
+      AND "resultsCount" > 0
+      AND "createdAt" > NOW() - INTERVAL '30 days'
+      AND "normalizedQuery" != ${context.toLowerCase().trim()}
+      ORDER BY term ASC
+      LIMIT ${limit}
+    `
+    return (results as { term: string }[]).map(r => r.term)
+  } catch {
+    return []
+  }
+}
+
+// ============================================
+// CATEGORY BRANDS (for brand filtering)
+// ============================================
+
+export async function getCategoryBrands(categorySlug: string): Promise<{ name: string; slug: string; count: number }[]> {
+  try {
+    const brands = await prisma.brand.findMany({
+      where: {
+        products: {
+          some: {
+            status: 'ACTIVE',
+            category: { slug: categorySlug },
+            listings: { some: { offers: { some: { isActive: true } } } },
+          },
+        },
+      },
+      select: {
+        name: true,
+        slug: true,
+        _count: {
+          select: {
+            products: {
+              where: {
+                status: 'ACTIVE',
+                category: { slug: categorySlug },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
+    })
+    return brands.map(b => ({ name: b.name, slug: b.slug, count: b._count.products }))
+  } catch {
+    return []
+  }
+}
+
+// ============================================
+// CATEGORY RECENTLY IMPORTED
+// ============================================
+
+export async function getCategoryRecentImports(categorySlug: string, limit = 8): Promise<ProductCard[]> {
+  try {
+    const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+    const products = await prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        originType: 'imported',
+        importedAt: { not: null, gte: fourteenDaysAgo },
+        category: { slug: categorySlug },
+        listings: { some: { offers: { some: { isActive: true } } } },
+      },
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+      orderBy: { importedAt: 'desc' },
+      take: limit,
+    })
+    return products.map(buildProductCard).filter(Boolean) as ProductCard[]
+  } catch {
+    return []
+  }
+}
+
+// ============================================
+// CATEGORY TRENDING KEYWORDS
+// ============================================
+
+export async function getCategoryTrendingKeywords(categorySlug: string, limit = 6): Promise<string[]> {
+  try {
+    // Get product names in this category to match against search logs
+    const results = await prisma.$queryRaw<{ term: string }[]>`
+      SELECT DISTINCT sl."normalizedQuery" as term
+      FROM search_logs sl
+      WHERE sl."normalizedQuery" IS NOT NULL
+      AND sl."createdAt" > NOW() - INTERVAL '14 days'
+      AND sl."resultsCount" > 0
+      AND LENGTH(sl."normalizedQuery") > 2
+      AND EXISTS (
+        SELECT 1 FROM products p
+        JOIN categories c ON p."categoryId" = c.id
+        WHERE c.slug = ${categorySlug}
+        AND p.status = 'ACTIVE'
+        AND LOWER(p.name) LIKE '%' || sl."normalizedQuery" || '%'
+      )
+      ORDER BY term ASC
+      LIMIT ${limit}
+    `
+    return (results as { term: string }[]).map(r => r.term)
+  } catch {
+    return []
+  }
+}

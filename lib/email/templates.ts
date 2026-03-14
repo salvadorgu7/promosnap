@@ -147,6 +147,7 @@ export function alertTriggeredEmail(product: {
   name: string;
   price: number;
   targetPrice: number;
+  originalPrice?: number;
   url: string;
   imageUrl?: string;
   promoSnapUrl?: string;
@@ -154,8 +155,20 @@ export function alertTriggeredEmail(product: {
   const savings = product.targetPrice - product.price;
   const savingsStr =
     savings > 0
-      ? `Voce economizara R$ ${savings.toFixed(2).replace(".", ",")} em relacao ao preco alvo!`
+      ? `R$ ${savings.toFixed(2).replace(".", ",")}`
       : "";
+
+  // Calculate discount percentage from original price if available, or from target price
+  const referencePrice = product.originalPrice && product.originalPrice > product.price
+    ? product.originalPrice
+    : product.targetPrice;
+  const discountPct = referencePrice > 0
+    ? Math.round(((referencePrice - product.price) / referencePrice) * 100)
+    : 0;
+
+  const economia = product.originalPrice && product.originalPrice > product.price
+    ? (product.originalPrice - product.price).toFixed(2).replace(".", ",")
+    : savingsStr;
 
   const imageBlock = product.imageUrl
     ? `<div style="text-align:center;margin-bottom:16px;">
@@ -169,11 +182,21 @@ export function alertTriggeredEmail(product: {
       </p>`
     : "";
 
+  // Price context block: originalPrice → currentPrice = economia
+  const priceContextBlock = product.originalPrice && product.originalPrice > product.price
+    ? `<div style="text-align:center;margin:16px 0;padding:12px;background-color:#fafafa;border-radius:8px;">
+        <span style="color:#71717a;font-size:14px;text-decoration:line-through;">R$ ${product.originalPrice.toFixed(2).replace(".", ",")}</span>
+        <span style="color:#71717a;font-size:14px;margin:0 8px;">&rarr;</span>
+        <span style="color:#16a34a;font-size:18px;font-weight:700;">R$ ${product.price.toFixed(2).replace(".", ",")}</span>
+        <span style="color:#16a34a;font-size:13px;font-weight:600;margin-left:8px;">= economia de R$ ${economia}</span>
+      </div>`
+    : "";
+
   const content = `
     ${imageBlock}
     <div class="alert-box">
       <p style="font-size:13px;color:#16a34a;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">
-        Alerta de Preco Ativado!
+        ${discountPct > 0 ? `${discountPct}% OFF — ` : ""}Alerta de Preco Ativado!
       </p>
       <p style="color:#18181b;font-size:16px;font-weight:600;margin:0 0 16px;">
         ${escapeHtml(product.name)}
@@ -191,10 +214,11 @@ export function alertTriggeredEmail(product: {
         </tr>
       </table>
     </div>
-    ${savingsStr ? `<p style="text-align:center;color:#16a34a;font-weight:600;">${savingsStr}</p>` : ""}
+    ${priceContextBlock}
+    ${savingsStr ? `<p style="text-align:center;color:#16a34a;font-weight:600;">Voce economiza ${savingsStr} em relacao ao preco alvo!</p>` : ""}
     <p>O produto que voce estava monitorando atingiu o preco desejado. Corra, pois precos promocionais costumam durar pouco!</p>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${escapeHtml(product.url)}" class="btn" style="font-size:16px;padding:16px 36px;">Comprar Agora &rarr;</a>
+      <a href="${escapeHtml(product.url)}" class="btn" style="font-size:16px;padding:16px 36px;">Aproveitar Desconto &rarr;</a>
     </p>
     ${promoSnapLink}
     <hr class="divider">
@@ -206,10 +230,34 @@ export function alertTriggeredEmail(product: {
     </p>
   `;
 
+  // Better subject line with product name and discount percentage
+  const subjectDiscount = discountPct > 0 ? ` (-${discountPct}%)` : "";
+
   return baseLayout(
     content,
-    `${product.name} atingiu R$ ${product.price.toFixed(2).replace(".", ",")}!`
+    `${product.name}${subjectDiscount} — R$ ${product.price.toFixed(2).replace(".", ",")}!`
   );
+}
+
+/**
+ * Generate alert email subject line with product name and discount.
+ * Useful for email sending code that needs the subject separately.
+ */
+export function alertEmailSubject(product: {
+  name: string;
+  price: number;
+  originalPrice?: number;
+  targetPrice: number;
+}): string {
+  const referencePrice = product.originalPrice && product.originalPrice > product.price
+    ? product.originalPrice
+    : product.targetPrice;
+  const discountPct = referencePrice > 0
+    ? Math.round(((referencePrice - product.price) / referencePrice) * 100)
+    : 0;
+  const discountStr = discountPct > 0 ? ` (-${discountPct}%)` : "";
+  const shortName = product.name.length > 50 ? product.name.slice(0, 47) + "..." : product.name;
+  return `${shortName}${discountStr} por R$ ${product.price.toFixed(2).replace(".", ",")} — PromoSnap`;
 }
 
 /**

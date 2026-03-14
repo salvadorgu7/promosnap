@@ -44,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const [categories, brands, products, articles] = await Promise.all([
       prisma.category.findMany({ select: { slug: true, updatedAt: true } }),
       prisma.brand.findMany({ select: { slug: true, updatedAt: true } }),
-      prisma.product.findMany({ where: { status: "ACTIVE" }, select: { slug: true, updatedAt: true } }),
+      prisma.product.findMany({ where: { status: "ACTIVE" }, select: { slug: true, updatedAt: true, originType: true } }),
       prisma.article.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, updatedAt: true } }),
     ]);
 
@@ -67,7 +67,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${APP_URL}/produto/${p.slug}`,
         lastModified: p.updatedAt,
         changeFrequency: "daily" as const,
-        priority: 0.8,
+        priority: p.originType === "imported" ? 0.9 : 0.8,
       },
       {
         url: `${APP_URL}/preco/${p.slug}`,
