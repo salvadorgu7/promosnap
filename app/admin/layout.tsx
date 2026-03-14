@@ -83,6 +83,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/analytics", label: "Analytics", icon: Activity },
       { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
       { href: "/admin/seo", label: "SEO", icon: Globe },
+      { href: "/admin/amazon", label: "Amazon", icon: ShoppingBag },
     ],
   },
   {
@@ -94,6 +95,13 @@ const navGroups: NavGroup[] = [
       { href: "/admin/tendencias", label: "Tendencias", icon: TrendingUp },
       { href: "/admin/email", label: "Email", icon: Mail },
       { href: "/admin/alertas", label: "Alertas", icon: Bell },
+      { href: "/admin/habit-loops", label: "Habit Loops", icon: Brain },
+    ],
+  },
+  {
+    title: "Fontes",
+    items: [
+      { href: "/admin/multi-source", label: "Multi-Source", icon: Store },
     ],
   },
   {

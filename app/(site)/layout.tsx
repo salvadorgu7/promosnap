@@ -4,6 +4,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import Sidebar from "@/components/layout/Sidebar";
 import PromoBanner from "@/components/ui/PromoBanner";
 import PromoModal from "@/components/ui/PromoModal";
+import ReturnHook from "@/components/engagement/ReturnHook";
 
 export default function SiteLayout({
   children,
@@ -18,6 +19,7 @@ export default function SiteLayout({
         <Sidebar />
         <main className="flex-1 min-w-0 pb-16 md:pb-0">{children}</main>
       </div>
+      <ReturnHook />
       <Footer />
       <BottomNav />
       <PromoModal />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Award, ChevronDown, ExternalLink, Scale, Truck, Star, Package } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
+import ComparisonTracker from "@/components/seo/ComparisonTracker";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
@@ -232,6 +233,8 @@ export default async function CompararPage({
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
+      <ComparisonTracker slug={slug} title={def.title} />
+
       {/* Schema */}
       <script
         type="application/ld+json"

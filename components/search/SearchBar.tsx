@@ -97,6 +97,15 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
         setSuggestions([]);
         setHighlightIndex(-1);
         router.push(`/busca?q=${encodeURIComponent(term.trim())}`);
+        // Log search to localStorage
+        try {
+          const KEY = "ps_searches";
+          const MAX = 30;
+          const raw = localStorage.getItem(KEY);
+          const prev: string[] = raw ? JSON.parse(raw) : [];
+          const next = [term.trim(), ...prev.filter((s) => s !== term.trim())].slice(0, MAX);
+          localStorage.setItem(KEY, JSON.stringify(next));
+        } catch {}
       }
     },
     [router]

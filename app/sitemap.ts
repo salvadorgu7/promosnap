@@ -5,6 +5,7 @@ import { OFFER_PAGE_SLUGS } from "@/lib/seo/offer-pages";
 import { COMPARISON_SLUGS } from "@/lib/seo/comparisons";
 import { VALE_A_PENA_SLUGS } from "@/lib/seo/vale-a-pena";
 import { PRICE_RANGE_SLUGS } from "@/lib/seo/price-range-pages";
+import { BUYING_GUIDE_SLUGS } from "@/lib/seo/buying-guides";
 
 export const dynamic = "force-dynamic";
 
@@ -131,6 +132,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // "Guia de Compra" pages
+  const guiaCompraPages: MetadataRoute.Sitemap = BUYING_GUIDE_SLUGS.map((slug) => ({
+    url: `${APP_URL}/guia-compra/${slug}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
   return [
     ...staticPages,
     ...categoryPages,
@@ -142,5 +151,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...articlePages,
     ...valeAPenaPages,
     ...faixaPrecoPages,
+    ...guiaCompraPages,
   ];
 }

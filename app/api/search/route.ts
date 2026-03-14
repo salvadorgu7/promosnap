@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/security/rate-limit";
 import { searchProducts } from "@/lib/search/engine";
+import prisma from "@/lib/db/prisma";
 
 /** Check if request has valid admin secret */
 function isAdminRequest(request: NextRequest): boolean {
@@ -55,6 +56,17 @@ export async function GET(request: NextRequest) {
       maxPrice,
       isAdmin,
     });
+
+    // Fire-and-forget: log search to SearchLog for intelligence
+    if (q.trim()) {
+      prisma.searchLog.create({
+        data: {
+          query: q.trim(),
+          normalizedQuery: q.trim().toLowerCase().replace(/\s+/g, ' '),
+          resultsCount: result.totalCount,
+        },
+      }).catch(() => {}) // Silent fail — don't block search response
+    }
 
     const response = NextResponse.json({
       products: result.products,

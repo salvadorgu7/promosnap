@@ -29,10 +29,10 @@ function appendAffiliateParams(url: string, sourceSlug: string): string {
 
     // Amazon BR
     if (
-      sourceSlug === "amazon" ||
+      sourceSlug === "amazon" || sourceSlug === "amazon-br" ||
       parsed.hostname.includes("amazon.com.br")
     ) {
-      const tag = process.env.AMAZON_AFFILIATE_TAG;
+      const tag = process.env.AMAZON_AFFILIATE_TAG || process.env.AMAZON_PARTNER_TAG || "promosnap-20";
       if (tag && !parsed.searchParams.has("tag")) {
         parsed.searchParams.set("tag", tag);
       }

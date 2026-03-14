@@ -1,74 +1,138 @@
-// Placeholder adapter — not yet connected to real API
-//
-// To connect this adapter, you need:
-//   1. An Amazon Associates account with PA-API 5.0 access
-//   2. Set env vars: AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_PARTNER_TAG
-//   3. Implement SearchItems and GetItems calls per PA-API 5.0 docs
-//   See: https://webservices.amazon.com/paapi5/documentation/
+/**
+ * Amazon Source Adapter — PromoSnap
+ *
+ * Supports 3 modes:
+ * 1. AFFILIATE-ONLY: Links with tracking tag (works NOW)
+ * 2. PA-API: Product Advertising API 5.0 (requires credentials)
+ * 3. CREATORS: Amazon Creators API (requires credentials)
+ *
+ * Current mode is auto-detected from env vars.
+ * See lib/amazon/strategy.ts for full documentation.
+ */
 
-import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
-
-const REQUIRED_ENV_VARS = ['AMAZON_ACCESS_KEY', 'AMAZON_SECRET_KEY', 'AMAZON_PARTNER_TAG'] as const
+import type {
+  SourceAdapter,
+  AdapterSearchOptions,
+  AdapterResult,
+  AdapterStatus,
+  AdapterHealthCheckResult,
+  AdapterReadinessResult,
+  AdapterCapability,
+  SyncResult,
+  SourceCapabilityTruth,
+} from "./types"
+import {
+  AMAZON_TRACKING_TAG,
+  detectAmazonApiPath,
+  buildAmazonProductUrl,
+  buildAmazonSearchUrl,
+  type AmazonApiPath,
+} from "@/lib/amazon/strategy"
 
 export class AmazonSourceAdapter implements SourceAdapter {
-  name = 'Amazon Brasil'
-  slug = 'amazon-br'
+  name = "Amazon Brasil"
+  slug = "amazon-br"
+
+  // ---------------------------------------------------------------------------
+  // Configuration Detection
+  // ---------------------------------------------------------------------------
+
+  private getApiPath(): AmazonApiPath {
+    return detectAmazonApiPath().path
+  }
 
   isConfigured(): boolean {
-    return REQUIRED_ENV_VARS.every((key) => !!process.env[key])
+    // "configured" means we have at least the tracking tag
+    // For full API, check getApiPath()
+    return AMAZON_TRACKING_TAG !== ""
+  }
+
+  private hasApiAccess(): boolean {
+    const path = this.getApiPath()
+    return path === "creators" || path === "pa-api"
   }
 
   getStatus(): AdapterStatus {
-    const missingEnvVars = REQUIRED_ENV_VARS.filter((key) => !process.env[key])
+    const apiPath = this.getApiPath()
+    const hasApi = this.hasApiAccess()
+
+    const missingEnvVars: string[] = []
+    if (!process.env.AMAZON_AFFILIATE_TAG && !process.env.AMAZON_PARTNER_TAG) {
+      missingEnvVars.push("AMAZON_AFFILIATE_TAG")
+    }
+
+    let health: "READY" | "MOCK" | "DEGRADED" = "MOCK"
+    let message = ""
+
+    if (hasApi) {
+      health = "READY"
+      message = `${apiPath === "creators" ? "Creators API" : "PA-API 5.0"} configured — adapter operational`
+    } else if (AMAZON_TRACKING_TAG) {
+      health = "DEGRADED" as "MOCK" // Type coercion for existing interface
+      message = `Affiliate-only mode (tag: ${AMAZON_TRACKING_TAG}) — no API access`
+    } else {
+      message = `Missing env vars: ${missingEnvVars.join(", ")}`
+    }
 
     return {
       name: this.name,
       slug: this.slug,
       configured: this.isConfigured(),
       enabled: true,
-      health: this.isConfigured() ? 'READY' : 'MOCK',
-      message: this.isConfigured()
-        ? 'PA-API 5.0 credentials configured'
-        : `Missing env vars: ${missingEnvVars.join(', ')}`,
+      health: hasApi ? "READY" : "MOCK",
+      message,
       missingEnvVars: [...missingEnvVars],
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Search & Lookup (requires API)
+  // ---------------------------------------------------------------------------
+
   async search(query: string, options?: AdapterSearchOptions): Promise<AdapterResult[]> {
-    if (!this.isConfigured()) {
-      console.log(`[SourceAdapter:${this.slug}] Not configured — returning mock data for "${query}"`)
-      return this.getMockResults(query, options?.limit)
+    const path = this.getApiPath()
+
+    if (path === "creators") {
+      // Creators API search — not yet implemented
+      console.log(`[Amazon:creators] search("${query}") — implementation pending`)
+      return []
     }
 
-    // NOT IMPLEMENTED: Requires PA-API 5.0 SearchItems call
-    // https://webservices.amazon.com/paapi5/documentation/search-items.html
-    //
-    // const params = {
-    //   Keywords: query,
-    //   SearchIndex: 'All',
-    //   ItemCount: options?.limit ?? 10,
-    //   Resources: [
-    //     'ItemInfo.Title', 'ItemInfo.ByLineInfo', 'ItemInfo.Features',
-    //     'Offers.Listings.Price', 'Offers.Listings.DeliveryInfo',
-    //     'Images.Primary.Large',
-    //   ],
-    //   PartnerTag: process.env.AMAZON_PARTNER_TAG,
-    //   PartnerType: 'Associates',
-    // }
+    if (path === "pa-api") {
+      // PA-API 5.0 SearchItems — not yet implemented
+      // https://webservices.amazon.com/paapi5/documentation/search-items.html
+      console.log(`[Amazon:pa-api] search("${query}") — implementation pending`)
+      return []
+    }
 
-    console.log(`[SourceAdapter:${this.slug}] search("${query}") — PA-API integration pending`)
-    return this.getMockResults(query, options?.limit)
+    // Affiliate-only: no search capability
+    console.log(`[Amazon:affiliate-only] search not available — use manual import`)
+    return []
   }
 
   async getProduct(externalId: string): Promise<AdapterResult | null> {
-    if (!this.isConfigured()) {
-      console.log(`[SourceAdapter:${this.slug}] Not configured — returning mock for ${externalId}`)
-      return this.getMockProduct(externalId)
+    const path = this.getApiPath()
+
+    if (path === "creators" || path === "pa-api") {
+      // API lookup — not yet implemented
+      console.log(`[Amazon:${path}] getProduct(${externalId}) — implementation pending`)
+      return null
     }
 
-    // NOT IMPLEMENTED: Requires PA-API 5.0 GetItems call
-    console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — PA-API integration pending`)
-    return this.getMockProduct(externalId)
+    // Affiliate-only: return a basic affiliate link
+    if (AMAZON_TRACKING_TAG && externalId.match(/^B[A-Z0-9]{9}$/)) {
+      return {
+        externalId,
+        title: `Amazon Product ${externalId}`,
+        productUrl: `https://www.amazon.com.br/dp/${externalId}`,
+        affiliateUrl: buildAmazonProductUrl(externalId),
+        currentPrice: 0,
+        currency: "BRL",
+        availability: "unknown",
+      }
+    }
+
+    return null
   }
 
   // ---------------------------------------------------------------------------
@@ -76,104 +140,108 @@ export class AmazonSourceAdapter implements SourceAdapter {
   // ---------------------------------------------------------------------------
 
   healthCheck(): AdapterHealthCheckResult {
-    if (this.isConfigured()) {
-      return { healthy: true, message: 'PA-API 5.0 credentials present — adapter operacional' }
+    if (this.hasApiAccess()) {
+      const path = this.getApiPath()
+      return {
+        healthy: true,
+        message: `${path === "creators" ? "Creators API" : "PA-API 5.0"} credentials present`,
+      }
     }
-    return { healthy: false, message: 'Credenciais PA-API ausentes — usando dados mock' }
+    if (AMAZON_TRACKING_TAG) {
+      return {
+        healthy: true,
+        message: `Affiliate-only mode — clickout tracking functional (tag: ${AMAZON_TRACKING_TAG})`,
+      }
+    }
+    return { healthy: false, message: "Nenhuma configuração Amazon detectada" }
   }
 
   readinessCheck(): AdapterReadinessResult {
-    const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]) as unknown as string[]
-    return { ready: missing.length === 0, missing }
+    const missing: string[] = []
+    if (!AMAZON_TRACKING_TAG) missing.push("AMAZON_AFFILIATE_TAG")
+    if (!this.hasApiAccess()) {
+      missing.push("AMAZON_CREATORS_TOKEN + AMAZON_CREATORS_SECRET (recommended)")
+      missing.push("or AMAZON_ACCESS_KEY + AMAZON_SECRET_KEY (PA-API fallback)")
+    }
+    return { ready: this.hasApiAccess(), missing }
   }
 
   capabilityMap(): AdapterCapability[] {
-    const caps: AdapterCapability[] = ['search', 'lookup']
-    if (this.isConfigured()) {
-      caps.push('clickout_ready', 'price_refresh')
+    const caps: AdapterCapability[] = []
+    if (AMAZON_TRACKING_TAG) {
+      caps.push("clickout_ready")
+    }
+    if (this.hasApiAccess()) {
+      caps.push("search", "lookup", "price_refresh")
     }
     return caps
   }
 
   // ---------------------------------------------------------------------------
-  // V22: Sync methods & Capability Truth
+  // Sync (requires API)
   // ---------------------------------------------------------------------------
 
   async syncFeed(): Promise<SyncResult> {
-    console.log(`[SourceAdapter:${this.slug}] syncFeed() — PA-API integration pending (mock)`)
-    // Mock: simulate a feed sync that returns placeholder data
+    const path = this.getApiPath()
+    if (path === "associates-only" || path === "unknown") {
+      return {
+        synced: 0,
+        failed: 0,
+        stale: 0,
+        errors: ["Feed sync requer Creators API ou PA-API — apenas affiliate-only disponível"],
+      }
+    }
+    console.log(`[Amazon:${path}] syncFeed() — implementation pending`)
     return {
       synced: 0,
       failed: 0,
       stale: 0,
-      errors: this.isConfigured()
-        ? ['PA-API feed sync nao implementado — stub retornando mock']
-        : ['PA-API credentials ausentes — configure AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_PARTNER_TAG'],
+      errors: [`${path} feed sync não implementado`],
     }
   }
 
   async importBatch(items: AdapterResult[]): Promise<SyncResult> {
-    console.log(`[SourceAdapter:${this.slug}] importBatch(${items.length} items) — creating candidates (mock)`)
-    // Mock: mark all items as "synced" candidates (no real DB write in stub)
+    console.log(`[Amazon] importBatch(${items.length} items) — stub`)
     return {
-      synced: items.length,
-      failed: 0,
+      synced: 0,
+      failed: items.length,
       stale: 0,
-      errors: ['importBatch stub — candidatos nao persistidos (PA-API integration pendente)'],
+      errors: ["importBatch não implementado — use import pipeline manual"],
     }
   }
 
   async refreshOffer(offerId: string): Promise<AdapterResult | null> {
-    console.log(`[SourceAdapter:${this.slug}] refreshOffer(${offerId}) — mock refresh`)
-    // Mock: return the mock product as "refreshed"
-    return this.getMockProduct(offerId)
+    if (!this.hasApiAccess()) return null
+    console.log(`[Amazon:${this.getApiPath()}] refreshOffer(${offerId}) — implementation pending`)
+    return null
   }
 
   getCapabilityTruth(): SourceCapabilityTruth {
-    return {
-      status: 'provider-needed',
-      capabilities: ['search', 'lookup'],
-      missing: [
-        'PA-API 5.0 key (AMAZON_ACCESS_KEY)',
-        'PA-API 5.0 secret (AMAZON_SECRET_KEY)',
-        'Partner tag (AMAZON_PARTNER_TAG)',
-        'Feed sync integration',
-        'Real price refresh',
-      ],
-      lastSync: undefined,
+    const path = this.getApiPath()
+    const capabilities: string[] = []
+    const missing: string[] = []
+
+    if (AMAZON_TRACKING_TAG) capabilities.push("clickout_ready")
+
+    if (path === "creators") {
+      capabilities.push("search", "lookup")
+      missing.push("Feed sync implementation", "Real price refresh")
+    } else if (path === "pa-api") {
+      capabilities.push("search", "lookup")
+      missing.push("Feed sync implementation", "Real price refresh", "Migration to Creators API")
+    } else {
+      missing.push(
+        "Creators API credentials (AMAZON_CREATORS_TOKEN, AMAZON_CREATORS_SECRET)",
+        "Or PA-API 5.0 credentials (AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY)",
+        "Feed sync integration",
+        "Real price refresh",
+      )
     }
-  }
 
-  // ---------------------------------------------------------------------------
-  // Mock data
-  // ---------------------------------------------------------------------------
+    let status: SourceCapabilityTruth["status"] = "provider-needed"
+    if (path === "creators" || path === "pa-api") status = "partial"
+    else if (AMAZON_TRACKING_TAG) status = "mock" // affiliate-only, not truly mock but limited
 
-  private getMockResults(query: string, limit = 5): AdapterResult[] {
-    return Array.from({ length: Math.min(limit, 5) }, (_, i) => ({
-      externalId: `AMZN-MOCK-${i + 1}`,
-      title: `[Mock] ${query} — Produto Amazon ${i + 1}`,
-      productUrl: `https://www.amazon.com.br/dp/BMOCK000${i + 1}`,
-      affiliateUrl: `https://www.amazon.com.br/dp/BMOCK000${i + 1}?tag=${process.env.AMAZON_PARTNER_TAG || 'promosnap-20'}`,
-      currentPrice: 99.9 + i * 30,
-      originalPrice: 149.9 + i * 30,
-      currency: 'BRL',
-      availability: 'in_stock' as const,
-      imageUrl: undefined,
-      isFreeShipping: i % 2 === 0,
-    }))
-  }
-
-  private getMockProduct(externalId: string): AdapterResult {
-    return {
-      externalId,
-      title: `[Mock] Produto Amazon ${externalId}`,
-      productUrl: `https://www.amazon.com.br/dp/${externalId}`,
-      affiliateUrl: `https://www.amazon.com.br/dp/${externalId}?tag=${process.env.AMAZON_PARTNER_TAG || 'promosnap-20'}`,
-      currentPrice: 129.9,
-      originalPrice: 199.9,
-      currency: 'BRL',
-      availability: 'in_stock',
-      isFreeShipping: true,
-    }
+    return { status, capabilities, missing, lastSync: undefined }
   }
 }

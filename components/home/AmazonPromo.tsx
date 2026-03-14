@@ -1,30 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Tag, Copy, Check, ExternalLink, ShoppingBag } from "lucide-react";
+import { ExternalLink, ShoppingBag } from "lucide-react";
 
 export default function AmazonPromo() {
-  const [copied, setCopied] = useState(false);
-  const code = "promosnap-20";
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback for older browsers
-      const el = document.createElement("textarea");
-      el.value = code;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand("copy");
-      document.body.removeChild(el);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   return (
     <section className="py-4">
       <div className="max-w-7xl mx-auto px-4">
@@ -39,49 +17,33 @@ export default function AmazonPromo() {
                 <ShoppingBag className="w-5 h-5 text-[#FF9900]" />
               </div>
               <div className="sm:hidden">
-                <h3 className="font-display font-bold text-sm text-text-primary">Cupom Amazon</h3>
-                <p className="text-[11px] text-text-muted">Descontos exclusivos PromoSnap</p>
+                <h3 className="font-display font-bold text-sm text-text-primary">Compre na Amazon</h3>
+                <p className="text-[11px] text-text-muted">Apoie o PromoSnap sem custo extra</p>
               </div>
             </div>
 
-            {/* Text */}
+            {/* Desktop text */}
             <div className="hidden sm:block flex-1 min-w-0">
               <h3 className="font-display font-bold text-sm text-text-primary">
-                Cupom exclusivo Amazon
+                Compre na Amazon e apoie o PromoSnap
               </h3>
               <p className="text-xs text-text-muted mt-0.5">
-                Use o codigo <span className="font-mono font-bold text-[#FF9900]">{code}</span> para descontos em produtos selecionados na Amazon
+                Ao comprar por este link, uma pequena comissao vai para o PromoSnap — sem nenhum custo extra para voce
               </p>
             </div>
 
             {/* Mobile text */}
             <p className="sm:hidden text-xs text-text-muted">
-              Use o codigo abaixo para descontos em produtos selecionados na Amazon
+              Ao comprar por este link, uma pequena comissao vai para o PromoSnap — sem custo extra para voce
             </p>
 
-            {/* Code + CTA */}
+            {/* CTA */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-[#FF9900]/30 text-sm font-mono font-bold text-[#FF9900] hover:bg-[#FF9900]/5 transition-colors flex-1 sm:flex-initial justify-center"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-accent-green" />
-                    <span className="text-accent-green">Copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    {code}
-                  </>
-                )}
-              </button>
               <a
                 href="https://www.amazon.com.br/?tag=promosnap-20"
                 target="_blank"
                 rel="noopener noreferrer nofollow"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#FF9900] text-white text-sm font-semibold hover:bg-[#E8890A] transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#FF9900] text-white text-sm font-semibold hover:bg-[#E8890A] transition-colors whitespace-nowrap flex-1 sm:flex-initial justify-center"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Ir para Amazon</span>

@@ -10,6 +10,7 @@ import { getProductsByCategory, getCategoryBySlug } from "@/lib/db/queries";
 import { BEST_PAGES } from "@/lib/seo/best-pages";
 import { COMPARISON_LIST } from "@/lib/seo/comparisons";
 import { OFFER_PAGES } from "@/lib/seo/offer-pages";
+import CategoryHub from "@/components/seo/CategoryHub";
 
 function buildCategoryRelatedSearches(
   categorySlug: string,
@@ -301,6 +302,11 @@ export default async function CategoriaPage({
           ctaHref="/ofertas"
         />
       )}
+
+      {/* Category Hub — cross-links to guides, comparisons, rankings */}
+      <div className="mt-8">
+        <CategoryHub categorySlug={slug} categoryName={name} />
+      </div>
 
       {/* Comparativos nesta Categoria */}
       {(() => {

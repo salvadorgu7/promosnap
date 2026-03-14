@@ -15,6 +15,8 @@ import SinceLastVisit from "@/components/home/SinceLastVisit";
 import PersonalizedRails from "@/components/home/PersonalizedRails";
 import SocialProof from "@/components/home/SocialProof";
 import RadarBanner from "@/components/home/RadarBanner";
+import ReturnUserGreeting from "@/components/home/ReturnUserGreeting";
+import SmartSuggestions from "@/components/home/SmartSuggestions";
 import AmazonPromo from "@/components/home/AmazonPromo";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
@@ -190,6 +192,9 @@ export default async function HomePage() {
       {/* ===== 2b. RADAR BANNER ===== */}
       <RadarBanner />
 
+      {/* ===== 2c. RETURN USER GREETING ===== */}
+      <ReturnUserGreeting />
+
       {/* ===== 3. DEAL OF THE DAY (moved up — hero → deal → carousel for immediate value) ===== */}
       {dealOfTheDay && (
         <section id="deal-of-the-day" className="py-4">
@@ -342,6 +347,9 @@ export default async function HomePage() {
           />
         </div>
       )}
+
+      {/* ===== 15b. SMART SUGGESTIONS ===== */}
+      <SmartSuggestions />
 
       {/* ===== 16. PERSONALIZED RAILS ===== */}
       <PersonalizedRails />

@@ -1,16 +1,18 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Radar, Heart, TrendingDown, Sparkles, Bell, Tag, ArrowRight } from "lucide-react"
+import { Radar, Heart, TrendingDown, Sparkles, Bell, Tag, ArrowRight, Clock, ExternalLink, Scale } from "lucide-react"
 import Link from "next/link"
 import OfferCard from "@/components/cards/OfferCard"
 import { OfferCardSkeleton } from "@/components/ui/Skeleton"
 import { useWatchlist } from "@/lib/hooks/useWatchlist"
+import { useDecisionMemory } from "@/lib/hooks/useDecisionMemory"
 import { formatPrice } from "@/lib/utils"
 import type { ProductCard } from "@/types"
 
 export default function RadarPage() {
   const { favorites, favCategories, getPriceChange, updatePriceCacheBatch } = useWatchlist()
+  const { decisions } = useDecisionMemory()
   const [products, setProducts] = useState<ProductCard[]>([])
   const [opportunities, setOpportunities] = useState<ProductCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -238,6 +240,46 @@ export default function RadarPage() {
                     {slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                     <ArrowRight className="w-3 h-3 text-text-muted" />
                   </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Historico de Decisoes */}
+          {decisions.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="w-4.5 h-4.5 text-text-muted" />
+                <h2 className="text-lg font-bold font-display text-text-primary">
+                  Historico de Decisoes
+                </h2>
+              </div>
+              <div className="space-y-2">
+                {decisions.slice(0, 10).map((d, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-surface-50 border border-surface-100">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      d.type === "clickout" ? "bg-green-50" : d.type === "compare" ? "bg-blue-50" : d.type === "save" ? "bg-red-50" : "bg-orange-50"
+                    }`}>
+                      {d.type === "clickout" && <ExternalLink className="w-4 h-4 text-accent-green" />}
+                      {d.type === "compare" && <Scale className="w-4 h-4 text-accent-blue" />}
+                      {d.type === "save" && <Heart className="w-4 h-4 text-accent-red" />}
+                      {d.type === "alert" && <Bell className="w-4 h-4 text-accent-orange" />}
+                      {d.type === "view_price" && <TrendingDown className="w-4 h-4 text-accent-purple" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-text-primary truncate">
+                        {d.productName || d.productSlug || d.productId}
+                      </p>
+                      <p className="text-[10px] text-text-muted">
+                        {d.type === "clickout" ? "Visitou loja" : d.type === "compare" ? "Comparou" : d.type === "save" ? "Salvou" : d.type === "alert" ? "Criou alerta" : "Viu preco"} · {new Date(d.timestamp).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                      </p>
+                    </div>
+                    {d.productSlug && (
+                      <Link href={`/produto/${d.productSlug}`} className="text-xs text-accent-blue hover:underline flex-shrink-0">
+                        Ver
+                      </Link>
+                    )}
+                  </div>
                 ))}
               </div>
             </section>

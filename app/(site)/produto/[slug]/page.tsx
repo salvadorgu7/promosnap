@@ -26,11 +26,20 @@ import ShippingBadge from "@/components/product/ShippingBadge";
 import ContextualNav from "@/components/product/ContextualNav";
 import DecisionSummary from "@/components/product/DecisionSummary";
 import SmartDecisionBlock from "@/components/product/SmartDecisionBlock";
+import SmartInsight from "@/components/product/SmartInsight";
+import TrustSignals from "@/components/product/TrustSignals";
+import PriceStabilityBadge from "@/components/product/PriceStabilityBadge";
+import OpportunityScore from "@/components/product/OpportunityScore";
+import BetterAlternativeHint from "@/components/product/BetterAlternativeHint";
 import QuickCompare from "@/components/product/QuickCompare";
 import ContinueExploring from "@/components/product/ContinueExploring";
+import AmazonAlternative from "@/components/product/AmazonAlternative";
 import WhyHighlighted from "@/components/product/WhyHighlighted";
 import CanonicalView from "@/components/product/CanonicalView";
 import MiniCluster from "@/components/product/MiniCluster";
+import DecisionTracker from "@/components/product/DecisionTracker";
+import SourceComparison from "@/components/product/SourceComparison";
+import { analyzeCrossSource, buildCrossSourceOffer } from "@/lib/source/cross-source";
 import { buildMetadata, productSchema, breadcrumbSchema } from "@/lib/seo/metadata";
 import { findComparisonsForProduct } from "@/lib/seo/comparisons";
 import { formatPrice } from "@/lib/utils";
@@ -187,6 +196,21 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     }),
   }));
 
+  // Cross-source comparison
+  const crossSourceOffers = allOffers.map((offer) =>
+    buildCrossSourceOffer({
+      id: offer.id,
+      currentPrice: offer.price,
+      originalPrice: offer.originalPrice ?? undefined,
+      offerScore: offer.offerScore,
+      sourceSlug: offer.sourceSlug,
+      sourceName: offer.sourceName,
+      affiliateUrl: offer.affiliateUrl,
+      isFreeShipping: offer.isFreeShipping,
+    })
+  );
+  const crossSourceAnalysis = analyzeCrossSource(crossSourceOffers);
+
   // Installment calculation
   const installmentCount = 12;
   const showInstallment = bestPrice > 100;
@@ -258,6 +282,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           __html: JSON.stringify(breadcrumbSchema(breadcrumbSchemaItems)),
         }}
       />
+
+      {/* Decision logging */}
+      <DecisionTracker productId={product.id} productSlug={slug} productName={product.name} />
 
       {/* Mobile contextual nav */}
       <div className="lg:hidden mb-4">
@@ -392,6 +419,38 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
+          {/* Smart Insight — "Vale a pena agora?" */}
+          {priceStats && bestOffer && (
+            <SmartInsight
+              priceStats={priceStats}
+              productName={product.name}
+              offerScore={bestOffer.offerScore}
+              hasFreShipping={bestOffer.isFreeShipping}
+              discount={discount}
+            />
+          )}
+
+          {/* Opportunity Score assessment */}
+          {priceStats && bestOffer && (
+            <OpportunityScore
+              priceStats={priceStats}
+              offerScore={bestOffer.offerScore}
+              discount={discount}
+              isFreeShipping={bestOffer.isFreeShipping}
+              offersCount={allOffers.length}
+              sourceSlug={bestOffer.sourceSlug}
+            />
+          )}
+
+          {/* Better Alternative Hint */}
+          {bestOffer && alternatives.length > 0 && (
+            <BetterAlternativeHint
+              alternatives={alternatives}
+              currentPrice={bestOffer.price}
+              currentScore={bestOffer.offerScore}
+            />
+          )}
+
           {/* Best price highlight card */}
           {bestOffer && (
             <div className="card p-5 border-brand-500/25 bg-brand-50">
@@ -426,6 +485,19 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             </div>
           )}
 
+          {/* Trust signals strip */}
+          {priceStats && bestOffer && (
+            <TrustSignals
+              priceStats={priceStats}
+              sourceName={bestOffer.sourceName}
+              sourceSlug={bestOffer.sourceSlug}
+              offerScore={bestOffer.offerScore}
+              isFreeShipping={bestOffer.isFreeShipping}
+              offersCount={allOffers.length}
+              hasHistory={priceHistory.length >= 3}
+            />
+          )}
+
           {/* Why highlighted — transparency block */}
           {bestOffer && (
             <WhyHighlighted
@@ -458,6 +530,15 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               }))}
               variants={variants}
               productName={product.name}
+            />
+          )}
+
+          {/* Cross-source comparison */}
+          {crossSourceOffers.length > 1 && (
+            <SourceComparison
+              analysis={crossSourceAnalysis}
+              offers={crossSourceOffers}
+              productSlug={slug}
             />
           )}
 
@@ -581,6 +662,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             </h2>
             {priceHistory.length >= 3 && priceStats ? (
               <>
+                <div className="flex items-center gap-2 mb-3">
+                  <PriceStabilityBadge priceStats={priceStats} />
+                </div>
                 <PriceChart data={priceHistory} stats={priceStats} />
                 <Link href={`/preco/${slug}`} className="mt-2 inline-block text-xs text-accent-blue hover:underline">
                   Ver historico completo →
@@ -709,6 +793,16 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               <OfferCard key={p.id} product={p} railSource="similar" page="product" />
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Amazon alternative — show when best offer is not from Amazon */}
+      {product.name && (!bestOffer || !bestOffer.sourceSlug.includes("amazon")) && (
+        <section className="mt-8">
+          <AmazonAlternative
+            productName={product.name}
+            category={product.category?.name}
+          />
         </section>
       )}
 
