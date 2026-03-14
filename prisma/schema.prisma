@@ -12,18 +12,18 @@ datasource db {
 // ============================================
 
 model Source {
-  id              String    @id @default(cuid())
-  name            String    // "Amazon Brasil", "Mercado Livre", etc.
-  slug            String    @unique
+  id              String       @id @default(cuid())
+  name            String // "Amazon Brasil", "Mercado Livre", etc.
+  slug            String       @unique
   logoUrl         String?
   status          SourceStatus @default(ACTIVE)
-  affiliateConfig Json?     // Config específica por parceiro
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  affiliateConfig Json? // Config específica por parceiro
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  merchants       Merchant[]
-  listings        Listing[]
-  coupons         Coupon[]
+  merchants Merchant[]
+  listings  Listing[]
+  coupons   Coupon[]
 
   @@map("sources")
 }
@@ -36,18 +36,18 @@ enum SourceStatus {
 }
 
 model Merchant {
-  id          String   @id @default(cuid())
-  sourceId    String
-  externalId  String?
-  name        String
-  slug        String
-  rating      Float?
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  sourceId   String
+  externalId String?
+  name       String
+  slug       String
+  rating     Float?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  source      Source     @relation(fields: [sourceId], references: [id])
-  listings    Listing[]
+  source   Source    @relation(fields: [sourceId], references: [id])
+  listings Listing[]
 
   @@unique([sourceId, externalId])
   @@map("merchants")
@@ -58,70 +58,74 @@ model Merchant {
 // ============================================
 
 model Category {
-  id              String     @id @default(cuid())
-  parentId        String?
-  name            String
-  slug            String     @unique
-  icon            String?
-  description     String?
-  seoTitle        String?
-  seoDescription  String?
-  position        Int        @default(0)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id             String   @id @default(cuid())
+  parentId       String?
+  name           String
+  slug           String   @unique
+  icon           String?
+  description    String?
+  seoTitle       String?
+  seoDescription String?
+  position       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  parent          Category?  @relation("CategoryTree", fields: [parentId], references: [id])
-  children        Category[] @relation("CategoryTree")
-  products        Product[]
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  products Product[]
 
   @@map("categories")
 }
 
 model Brand {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  slug      String    @unique
+  slug      String   @unique
   logoUrl   String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  products  Product[]
+  products Product[]
 
   @@map("brands")
 }
 
 model Product {
-  id              String          @id @default(cuid())
+  id              String        @id @default(cuid())
   brandId         String?
   categoryId      String?
   name            String
-  slug            String          @unique
+  slug            String        @unique
   description     String?
   imageUrl        String?
-  images          String[]        // array de URLs
+  images          String[] // array de URLs
   specsJson       Json?
-  status          ProductStatus   @default(ACTIVE)
-  popularityScore Float           @default(0)
-  featured        Boolean         @default(false)
-  hidden          Boolean         @default(false)
-  needsReview     Boolean         @default(false)
+  status          ProductStatus @default(ACTIVE)
+  popularityScore Float         @default(0)
+  featured        Boolean       @default(false)
+  hidden          Boolean       @default(false)
+  needsReview     Boolean       @default(false)
   editorialScore  Int?
-  originType      String          @default("seed")   // "seed" | "imported" | "manual" | "curated"
-  discoverySource String?         // "ml_discovery" | "ml_highlights" | "manual_import" | "csv_upload" | "admin"
+  originType      String        @default("seed") // "seed" | "imported" | "manual" | "curated"
+  discoverySource String? // "ml_discovery" | "ml_highlights" | "manual_import" | "csv_upload" | "admin"
   importedAt      DateTime?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  brand           Brand?          @relation(fields: [brandId], references: [id])
-  category        Category?       @relation(fields: [categoryId], references: [id])
-  variants        ProductVariant[]
-  listings        Listing[]
+  brand    Brand?           @relation(fields: [brandId], references: [id])
+  category Category?        @relation(fields: [categoryId], references: [id])
+  variants ProductVariant[]
+  listings Listing[]
 
   @@index([slug])
   @@index([categoryId])
   @@index([brandId])
   @@index([popularityScore(sort: Desc)])
   @@index([originType])
+  @@index([importedAt])
+  @@index([status, popularityScore(sort: Desc)])
+  @@index([categoryId, status])
+  @@index([brandId, status])
   @@map("products")
 }
 
@@ -145,8 +149,8 @@ model ProductVariant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  listings    Listing[]
+  product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  listings Listing[]
 
   @@map("product_variants")
 }
@@ -156,41 +160,43 @@ model ProductVariant {
 // ============================================
 
 model Listing {
-  id                  String            @id @default(cuid())
-  sourceId            String
-  merchantId          String?
-  productId           String?
-  variantId           String?
-  externalId          String
-  rawTitle            String
-  rawDescription      String?
-  rawBrand            String?
-  rawCategory         String?
-  imageUrl            String?
-  productUrl          String
-  availability        AvailabilityStatus @default(IN_STOCK)
-  rating              Float?
-  reviewsCount        Int?
-  salesCountEstimate  Int?
-  rawPayloadJson      Json?
-  matchConfidence     Float?            // 0-1 confidence of product match
-  status              ListingStatus     @default(ACTIVE)
-  lastSeenAt          DateTime          @default(now())
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  id                 String             @id @default(cuid())
+  sourceId           String
+  merchantId         String?
+  productId          String?
+  variantId          String?
+  externalId         String
+  rawTitle           String
+  rawDescription     String?
+  rawBrand           String?
+  rawCategory        String?
+  imageUrl           String?
+  productUrl         String
+  availability       AvailabilityStatus @default(IN_STOCK)
+  rating             Float?
+  reviewsCount       Int?
+  salesCountEstimate Int?
+  rawPayloadJson     Json?
+  matchConfidence    Float? // 0-1 confidence of product match
+  status             ListingStatus      @default(ACTIVE)
+  lastSeenAt         DateTime           @default(now())
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
-  source              Source         @relation(fields: [sourceId], references: [id])
-  merchant            Merchant?      @relation(fields: [merchantId], references: [id])
-  product             Product?       @relation(fields: [productId], references: [id])
-  variant             ProductVariant? @relation(fields: [variantId], references: [id])
-  offers              Offer[]
-  priceAlerts         PriceAlert[]
+  source      Source          @relation(fields: [sourceId], references: [id])
+  merchant    Merchant?       @relation(fields: [merchantId], references: [id])
+  product     Product?        @relation(fields: [productId], references: [id])
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
+  offers      Offer[]
+  priceAlerts PriceAlert[]
 
   @@unique([sourceId, externalId])
   @@index([productId])
   @@index([sourceId])
   @@index([status])
   @@index([status, sourceId])
+  @@index([productId, status])
+  @@index([status, lastSeenAt])
   @@map("listings")
 }
 
@@ -209,24 +215,24 @@ enum AvailabilityStatus {
 }
 
 model Offer {
-  id              String    @id @default(cuid())
+  id              String   @id @default(cuid())
   listingId       String
   currentPrice    Float
   originalPrice   Float?
   couponText      String?
   shippingPrice   Float?
   installmentText String?
-  isFreeShipping  Boolean   @default(false)
-  isActive        Boolean   @default(true)
-  offerScore      Float     @default(0)
+  isFreeShipping  Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  offerScore      Float    @default(0)
   affiliateUrl    String?
-  lastSeenAt      DateTime  @default(now())
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  lastSeenAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  listing         Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  priceSnapshots  PriceSnapshot[]
-  clickouts       Clickout[]
+  listing        Listing         @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  priceSnapshots PriceSnapshot[]
+  clickouts      Clickout[]
 
   @@index([listingId])
   @@index([offerScore(sort: Desc)])
@@ -244,7 +250,7 @@ model PriceSnapshot {
   originalPrice Float?
   capturedAt    DateTime @default(now())
 
-  offer         Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
 
   @@index([offerId, capturedAt])
   @@map("price_snapshots")
@@ -266,7 +272,7 @@ model Coupon {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  source      Source?      @relation(fields: [sourceId], references: [id])
+  source Source? @relation(fields: [sourceId], references: [id])
 
   @@map("coupons")
 }
@@ -282,19 +288,19 @@ enum CouponStatus {
 // ============================================
 
 model Clickout {
-  id            String   @id @default(cuid())
-  offerId       String
-  sourceSlug    String?
-  clickedAt     DateTime @default(now())
-  referrer      String?
-  sessionId     String?
-  query         String?
-  categorySlug  String?
-  userAgent     String?
-  originType    String?  // "seed" | "imported" | "manual" | "curated"
-  railSource    String?  // "hot_offers" | "best_sellers" | "recently_imported" | "best_value" | "lowest_prices" | "deal_of_day" | "category" | "search" | "product"
+  id           String   @id @default(cuid())
+  offerId      String
+  sourceSlug   String?
+  clickedAt    DateTime @default(now())
+  referrer     String?
+  sessionId    String?
+  query        String?
+  categorySlug String?
+  userAgent    String?
+  originType   String? // "seed" | "imported" | "manual" | "curated"
+  railSource   String? // "hot_offers" | "best_sellers" | "recently_imported" | "best_value" | "lowest_prices" | "deal_of_day" | "category" | "search" | "product"
 
-  offer         Offer    @relation(fields: [offerId], references: [id])
+  offer Offer @relation(fields: [offerId], references: [id])
 
   @@index([offerId])
   @@index([clickedAt])
@@ -323,16 +329,16 @@ model SearchLog {
 // ============================================
 
 model EditorialBlock {
-  id          String           @id @default(cuid())
+  id          String          @id @default(cuid())
   blockType   EditorialType
   title       String
-  slug        String           @unique
+  slug        String          @unique
   subtitle    String?
   payloadJson Json?
-  position    Int              @default(0)
-  status      EditorialStatus  @default(DRAFT)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  position    Int             @default(0)
+  status      EditorialStatus @default(DRAFT)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   @@map("editorial_blocks")
 }
@@ -357,16 +363,16 @@ enum EditorialStatus {
 // ============================================
 
 model JobRun {
-  id          String    @id @default(cuid())
-  jobName     String
-  status      JobStatus @default(RUNNING)
-  startedAt   DateTime  @default(now())
-  endedAt     DateTime?
-  durationMs  Int?
-  itemsTotal  Int?
-  itemsDone   Int?
-  errorLog    String?
-  metadata    Json?
+  id         String    @id @default(cuid())
+  jobName    String
+  status     JobStatus @default(RUNNING)
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+  durationMs Int?
+  itemsTotal Int?
+  itemsDone  Int?
+  errorLog   String?
+  metadata   Json?
 
   @@index([jobName, startedAt])
   @@map("job_runs")
@@ -392,7 +398,7 @@ model PriceAlert {
   triggeredAt DateTime?
   createdAt   DateTime  @default(now())
 
-  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([email])
   @@index([isActive])
@@ -427,7 +433,7 @@ model Article {
   slug        String        @unique
   title       String
   subtitle    String?
-  content     String        // markdown
+  content     String // markdown
   category    String?
   tags        String[]
   imageUrl    String?
@@ -453,13 +459,13 @@ enum ArticleStatus {
 // ============================================
 
 model Referral {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  email       String?
-  visits      Int      @default(0)
-  clickouts   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  code      String   @unique
+  email     String?
+  visits    Int      @default(0)
+  clickouts Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([code])
   @@map("referrals")
@@ -470,15 +476,15 @@ model Referral {
 // ============================================
 
 model Subscriber {
-  id          String           @id @default(cuid())
-  email       String           @unique
-  status      SubscriberStatus @default(ACTIVE)
-  source      String           @default("website")
-  interests   String[]         // category slugs of interest
-  tags        String[]         // segmentation tags: tech, bargain, gamer, etc.
-  frequency   String           @default("weekly") // daily, weekly, monthly
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id        String           @id @default(cuid())
+  email     String           @unique
+  status    SubscriberStatus @default(ACTIVE)
+  source    String           @default("website")
+  interests String[] // category slugs of interest
+  tags      String[] // segmentation tags: tech, bargain, gamer, etc.
+  frequency String           @default("weekly") // daily, weekly, monthly
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   @@index([status])
   @@index([source])
@@ -495,12 +501,12 @@ enum SubscriberStatus {
 // ============================================
 
 model EmailLog {
-  id          String   @id @default(cuid())
-  to          String
-  subject     String
-  template    String
-  status      String   @default("sent")
-  sentAt      DateTime @default(now())
+  id       String   @id @default(cuid())
+  to       String
+  subject  String
+  template String
+  status   String   @default("sent")
+  sentAt   DateTime @default(now())
 
   @@index([sentAt])
   @@index([template])
@@ -512,20 +518,20 @@ model EmailLog {
 // ============================================
 
 model Banner {
-  id          String      @id @default(cuid())
-  title       String
-  subtitle    String?
-  imageUrl    String?
-  ctaText     String?
-  ctaUrl      String?
-  bannerType  BannerType  @default(HERO)
-  priority    Int         @default(0)
-  isActive    Boolean     @default(true)
-  startAt     DateTime?
-  endAt       DateTime?
-  autoMode    String?     // "top-offers", "top-discount", "campaign", null=manual
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id         String     @id @default(cuid())
+  title      String
+  subtitle   String?
+  imageUrl   String?
+  ctaText    String?
+  ctaUrl     String?
+  bannerType BannerType @default(HERO)
+  priority   Int        @default(0)
+  isActive   Boolean    @default(true)
+  startAt    DateTime?
+  endAt      DateTime?
+  autoMode   String? // "top-offers", "top-discount", "campaign", null=manual
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@index([isActive, bannerType, priority(sort: Desc)])
   @@map("banners")
@@ -543,19 +549,19 @@ enum BannerType {
 // ============================================
 
 model ImportBatch {
-  id          String        @id @default(cuid())
+  id          String       @id @default(cuid())
   fileName    String?
-  format      String        @default("json") // json, csv
-  status      ImportStatus  @default(PENDING)
-  totalItems  Int           @default(0)
-  imported    Int           @default(0)
-  rejected    Int           @default(0)
+  format      String       @default("json") // json, csv
+  status      ImportStatus @default(PENDING)
+  totalItems  Int          @default(0)
+  imported    Int          @default(0)
+  rejected    Int          @default(0)
   errors      Json?
   processedAt DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  candidates  CatalogCandidate[]
+  candidates CatalogCandidate[]
 
   @@map("import_batches")
 }
@@ -585,7 +591,7 @@ model CatalogCandidate {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
-  importBatch   ImportBatch?    @relation(fields: [importBatchId], references: [id])
+  importBatch ImportBatch? @relation(fields: [importBatchId], references: [id])
 
   @@index([status])
   @@index([importBatchId])

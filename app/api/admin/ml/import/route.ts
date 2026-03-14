@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[ml-import] Error:', error)
     return NextResponse.json(
-      { error: 'Falha na importacao', detail: String(error) },
+      { error: 'Falha na importacao' },
       { status: 500 }
     )
   }

@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Body JSON invalido' }, { status: 400 })
   }
 
+  const pipelineStart = Date.now()
+
   try {
     // ── Mode B: Server-side discovery then import ──────────────────────────
     if (body.discover) {
@@ -89,6 +91,7 @@ export async function POST(req: NextRequest) {
         console.log(`[ml-import-discovery] No products with valid prices to import`)
         return NextResponse.json({
           ok: true,
+          totalDurationMs: Date.now() - pipelineStart,
           discovery: {
             found: allProducts.length,
             withPrice: 0,
@@ -121,6 +124,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         ok: true,
+        totalDurationMs: Date.now() - pipelineStart,
         discovery: {
           found: allProducts.length,
           withPrice: withPrice.length,
@@ -165,6 +169,7 @@ export async function POST(req: NextRequest) {
       console.log(`[ml-import-discovery] No valid products to import after filtering`)
       return NextResponse.json({
         ok: true,
+        totalDurationMs: Date.now() - pipelineStart,
         import: {
           created: 0, updated: 0, skipped: 0, failed: 0, total: 0, durationMs: 0,
         },
@@ -190,6 +195,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      totalDurationMs: Date.now() - pipelineStart,
       import: {
         created: result.created,
         updated: result.updated,
@@ -203,7 +209,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[ml-import-discovery] Error:', error instanceof Error ? error.message : String(error))
     return NextResponse.json(
-      { error: 'Falha na importacao', detail: error instanceof Error ? error.message : String(error) },
+      { error: 'Falha na importacao' },
       { status: 500 }
     )
   }

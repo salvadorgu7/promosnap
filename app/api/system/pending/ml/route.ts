@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('[system/pending/ml] Error:', error)
     return NextResponse.json(
-      { error: 'Falha ao verificar pendencias ML', detail: error instanceof Error ? error.message : String(error) },
+      { error: 'Falha ao verificar pendencias ML' },
       { status: 500 }
     )
   }

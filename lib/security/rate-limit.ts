@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 // ============================================
 
 /** Route type determines the rate limit applied */
-export type RateLimitType = "public" | "search" | "clickout" | "alerts" | "newsletter";
+export type RateLimitType = "public" | "search" | "clickout" | "alerts" | "newsletter" | "admin";
 
 interface RateLimitConfig {
   /** Maximum requests allowed within the window */
@@ -39,6 +39,7 @@ const RATE_LIMITS: Record<RateLimitType, RateLimitConfig> = {
   clickout: { maxRequests: 120, windowMs: 60_000 },    // 120 req/min
   alerts: { maxRequests: 20, windowMs: 60_000 },       // 20 req/min
   newsletter: { maxRequests: 10, windowMs: 60_000 },   // 10 req/min
+  admin: { maxRequests: 30, windowMs: 60_000 },        // 30 req/min (auth-gated)
 };
 
 // ---- In-memory store (per route type) ----

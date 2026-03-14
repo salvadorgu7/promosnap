@@ -119,6 +119,38 @@ export interface SourceCapabilityTruth {
 }
 
 // ---------------------------------------------------------------------------
+// Discovery Types
+// ---------------------------------------------------------------------------
+
+export interface DiscoveredProduct {
+  externalId: string
+  title: string
+  brand?: string
+  category?: string
+  imageUrl?: string
+  currentPrice?: number
+  originalPrice?: number
+  productUrl: string
+  sourceSlug: string
+  discoveredAt: Date
+}
+
+// ---------------------------------------------------------------------------
+// Source Quality Metrics
+// ---------------------------------------------------------------------------
+
+export interface SourceQualityMetrics {
+  /** 0-1 score indicating how fresh/recent the data is */
+  freshness: number
+  /** 0-1 score indicating price accuracy vs marketplace */
+  priceAccuracy: number
+  /** 0-1 score indicating product availability accuracy */
+  availability: number
+  /** 0-1 score indicating completeness of product data (images, specs, etc.) */
+  dataCompleteness: number
+}
+
+// ---------------------------------------------------------------------------
 // Source Adapter Interface
 // ---------------------------------------------------------------------------
 
@@ -191,4 +223,22 @@ export interface SourceAdapter {
    * Optional for backward compatibility.
    */
   getCapabilityTruth?(): SourceCapabilityTruth
+
+  /**
+   * Returns quality metrics for this source's data.
+   * Optional — used for monitoring data quality across adapters.
+   */
+  getQualityMetrics?(): Promise<SourceQualityMetrics>
+
+  /**
+   * Discover trending/highlighted products from this source.
+   * Optional — only for adapters that support discovery pipelines.
+   */
+  discover?(options?: { limit?: number; category?: string }): Promise<DiscoveredProduct[]>
+
+  /**
+   * Hydrate a discovered product with full details (price, availability, specs).
+   * Optional — only for adapters that support two-phase discovery.
+   */
+  hydrateProduct?(product: DiscoveredProduct): Promise<AdapterResult | null>
 }

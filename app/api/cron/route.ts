@@ -1,13 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { captureError, captureEvent, logInfo, logWarn } from '@/lib/monitoring'
+import { timingSafeEqual } from 'crypto'
 
 const CRON_SECRET = process.env.CRON_SECRET
+
+/** Constant-time string comparison to prevent timing attacks */
+function safeCompare(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a, 'utf-8')
+    const bufB = Buffer.from(b, 'utf-8')
+    if (bufA.length !== bufB.length) {
+      // Compare against itself to maintain constant time
+      timingSafeEqual(bufA, bufA)
+      return false
+    }
+    return timingSafeEqual(bufA, bufB)
+  } catch {
+    return false
+  }
+}
 
 export async function GET(req: NextRequest) {
   // Auth: if CRON_SECRET is configured, enforce it. Otherwise allow (dev/preview mode).
   const authHeader = req.headers.get('authorization')
   if (CRON_SECRET) {
-    if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    if (!authHeader || !safeCompare(authHeader, `Bearer ${CRON_SECRET}`)) {
       logWarn('cron', 'Unauthorized cron request rejected')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

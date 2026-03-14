@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('[ml-search] Exception:', error instanceof Error ? error.message : error)
     return NextResponse.json({
-      error: `Falha ao buscar ML: ${error instanceof Error ? error.message : String(error)}`,
+      error: 'Falha ao buscar ML',
       query,
       results: [],
     })

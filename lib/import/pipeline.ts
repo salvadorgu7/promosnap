@@ -4,6 +4,9 @@
 
 import prisma from '@/lib/db/prisma'
 
+/** Maximum number of items allowed per batch import to prevent memory/timeout issues */
+export const MAX_BATCH_SIZE = 100
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface ImportItem {
@@ -90,6 +93,12 @@ export async function runImportPipeline(
   items: ImportItem[],
   options?: { dryRun?: boolean }
 ): Promise<ImportPipelineResult> {
+  // Enforce batch size limit to prevent memory/timeout issues
+  if (items.length > MAX_BATCH_SIZE) {
+    items = items.slice(0, MAX_BATCH_SIZE)
+    console.warn(`[import-pipeline] Batch truncated to ${MAX_BATCH_SIZE} items (received ${items.length})`)
+  }
+
   const start = Date.now()
   const results: ImportItemResult[] = []
   let created = 0, updated = 0, skipped = 0, failed = 0

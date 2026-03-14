@@ -3,12 +3,18 @@ import { validateAdmin } from "@/lib/auth/admin";
 import prisma from "@/lib/db/prisma";
 import { getTopOpportunities, summarizeOpportunities } from "@/lib/opportunity/engine";
 import { findZeroResultSearches } from "@/lib/discovery";
+import { cache } from "@/lib/cache";
+
+const CACHE_KEY = "admin:cockpit";
+const CACHE_TTL = 60; // 60 seconds
 
 export async function GET(req: NextRequest) {
   const denied = validateAdmin(req);
   if (denied) return denied;
 
   try {
+    const cached = await cache.get<Record<string, unknown>>(CACHE_KEY);
+    if (cached) return NextResponse.json(cached);
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -256,7 +262,7 @@ export async function GET(req: NextRequest) {
       discoverySuccess,
     };
 
-    return NextResponse.json({
+    const responseData = {
       opportunities,
       summary,
       weeklyStats: {
@@ -297,7 +303,10 @@ export async function GET(req: NextRequest) {
       catalogHealth,
       revenuePotential,
       importHealth,
-    });
+    };
+
+    await cache.set(CACHE_KEY, responseData, CACHE_TTL);
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("[cockpit] Error:", error);
     return NextResponse.json(

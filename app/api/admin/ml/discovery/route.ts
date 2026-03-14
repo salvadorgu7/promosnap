@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('[ml-discovery-api] Pipeline error:', error)
     return NextResponse.json(
-      { error: 'Falha no pipeline de discovery', detail: error instanceof Error ? error.message : String(error) },
+      { error: 'Falha no pipeline de discovery' },
       { status: 500 }
     )
   }

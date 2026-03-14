@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/security/rate-limit";
 import prisma from "@/lib/db/prisma";
 import { getHotOffers, getBestSellers } from "@/lib/db/queries";
+import { cache } from "@/lib/cache";
+
+const TRENDING_CACHE_TTL = 180; // 3 minutes
 
 // ── Noise filters ────────────────────────────────────────────────────────
 
@@ -46,6 +49,14 @@ export async function GET(request: NextRequest) {
 
   try {
     const limit = Math.min(parseInt(new URL(request.url).searchParams.get("limit") || "20"), 50);
+
+    // Check cache
+    const cacheKey = `trending:${limit}`;
+    const cached = await cache.get<Record<string, unknown>>(cacheKey);
+    if (cached) {
+      const response = NextResponse.json(cached);
+      return withRateLimitHeaders(response, rl);
+    }
 
     // Fetch trending keywords from DB
     const rawKeywords = await prisma.trendingKeyword.findMany({
@@ -134,7 +145,7 @@ export async function GET(request: NextRequest) {
       return true;
     }).slice(0, limit);
 
-    const response = NextResponse.json({
+    const responseData = {
       keywords: enrichedKeywords,
       keywordsByCategory: grouped,
       products,
@@ -143,7 +154,10 @@ export async function GET(request: NextRequest) {
       message: products.length === 0
         ? "Nenhum produto trending encontrado. Importe produtos via ML Discovery para popular o catalogo."
         : undefined,
-    });
+    };
+
+    await cache.set(cacheKey, responseData, TRENDING_CACHE_TTL);
+    const response = NextResponse.json(responseData);
     return withRateLimitHeaders(response, rl);
   } catch (error) {
     console.error("[api/trending] Error:", error instanceof Error ? error.message : error);

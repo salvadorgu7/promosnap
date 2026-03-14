@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import prisma from '@/lib/db/prisma'
+import { cache } from '@/lib/cache'
+import { getAllFlags } from '@/lib/config/feature-flags'
+
+const CACHE_KEY = 'admin:status'
+const CACHE_TTL = 60 // 60 seconds
 
 export async function GET(req: NextRequest) {
   const authError = validateAdmin(req)
   if (authError) return authError
 
   try {
+    const cached = await cache.get<Record<string, unknown>>(CACHE_KEY)
+    if (cached) return NextResponse.json(cached)
     // Service configuration checks
     const services = {
       database: 'ok' as const,
@@ -173,8 +180,64 @@ export async function GET(req: NextRequest) {
       recommendations.push('Nenhum produto novo importado nos ultimos 7 dias.')
     }
 
-    return NextResponse.json({
+    // ── ML discovery pipeline status ─────────────────────────────────────
+    let pipeline: Record<string, unknown> = {
+      method: 'highlights -> products -> products/{id}/items -> import',
+      searchApiBlocked: true,
+      highlightsWorking: false,
+      productsApiWorking: false,
+      productItemsWorking: false,
+      lastDiscoveryRun: null as string | null,
+      lastDiscoveryProducts: 0,
+    }
+    try {
+      const lastDiscovery = await prisma.jobRun.findFirst({
+        where: { jobName: 'discover-import' },
+        orderBy: { startedAt: 'desc' },
+        select: { startedAt: true, status: true, metadata: true, itemsDone: true },
+      })
+      if (lastDiscovery) {
+        pipeline.lastDiscoveryRun = lastDiscovery.startedAt.toISOString()
+        pipeline.lastDiscoveryProducts = lastDiscovery.itemsDone ?? 0
+        // Infer API status from metadata if available
+        const meta = lastDiscovery.metadata as Record<string, unknown> | null
+        if (meta) {
+          const discoveryMs = meta.discoveryMs as number | undefined
+          const productsDiscovered = (meta.created as number ?? 0) + (meta.updated as number ?? 0) + (meta.skipped as number ?? 0)
+          // If discovery ran and found products, the pipeline APIs are working
+          if (discoveryMs && discoveryMs > 0) {
+            pipeline.highlightsWorking = true
+            pipeline.productsApiWorking = true
+          }
+          if (productsDiscovered > 0 || (lastDiscovery.itemsDone ?? 0) > 0) {
+            pipeline.productItemsWorking = true
+          }
+        }
+        // If last run succeeded with items, all stages worked
+        if (lastDiscovery.status === 'SUCCESS' && (lastDiscovery.itemsDone ?? 0) > 0) {
+          pipeline.highlightsWorking = true
+          pipeline.productsApiWorking = true
+          pipeline.productItemsWorking = true
+        }
+      }
+    } catch { /* non-critical */ }
+
+    // ── Feature flags ─────────────────────────────────────────────────────
+    const features = getAllFlags()
+
+    // ── Environment info ──────────────────────────────────────────────────
+    const environment = {
+      nodeEnv: process.env.NODE_ENV ?? 'unknown',
+      vercelEnv: process.env.VERCEL_ENV ?? null,
+      region: process.env.VERCEL_REGION ?? null,
+      deploymentUrl: process.env.VERCEL_URL ?? null,
+    }
+
+    const responseData = {
+      environment,
       services,
+      features,
+      pipeline,
       catalog: {
         products: productCount,
         offers: offerCount,
@@ -211,7 +274,10 @@ export async function GET(req: NextRequest) {
       jobCoverage,
       recommendations,
       timestamp: new Date().toISOString(),
-    })
+    }
+
+    await cache.set(CACHE_KEY, responseData, CACHE_TTL)
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error('[admin/status] Error:', error)
     return NextResponse.json({ error: 'Failed to get status' }, { status: 500 })
