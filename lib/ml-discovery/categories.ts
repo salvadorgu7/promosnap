@@ -72,6 +72,79 @@ export const FALLBACK_CATEGORIES: Record<string, string[]> = {
   'MLB16117':  ['MLB1055'],                         // Mochilas → Celulares (generic popular)
 }
 
+/**
+ * Map ML category IDs to PromoSnap category slugs.
+ * The slug must match a Category.slug in the database.
+ * Products from subcategories inherit the parent's mapping.
+ */
+const ML_TO_PROMOSNAP_SLUG: Record<string, string> = {
+  // Celulares & Tablets
+  'MLB1055':   'celulares',
+  'MLB1659':   'celulares',       // Tablets → celulares
+
+  // Notebooks
+  'MLB1652':   'notebooks',
+
+  // Fones, TVs, Audio
+  'MLB1676':   'audio',           // Fones de Ouvido
+  'MLB1002':   'smart-tvs',       // TVs
+
+  // Gaming
+  'MLB186456': 'gamer',           // Consoles
+  'MLB1132':   'gamer',           // Jogos de Video Game
+
+  // Wearables
+  'MLB352679': 'wearables',       // Smartwatches
+
+  // Informática
+  'MLB1670':   'informatica',     // Monitores
+  'MLB1648':   'informatica',     // Desktop
+  'MLB1714':   'informatica',     // GPUs
+  'MLB1694':   'informatica',     // Processadores
+  'MLB1696':   'informatica',     // RAM
+  'MLB7517':   'informatica',     // SSDs
+  'MLB12119':  'informatica',     // Teclados
+  'MLB4739':   'informatica',     // Mouses
+  'MLB1672':   'informatica',     // Impressoras
+  'MLB1039':   'informatica',     // Cameras
+
+  // Casa & Cozinha
+  'MLB1596':   'casa',            // Ar Condicionado
+  'MLB1576':   'casa',            // Geladeiras
+  'MLB111079': 'casa',            // Micro-ondas
+  'MLB1574':   'casa',            // Aspiradores
+  'MLB110447': 'casa',            // Cafeteiras
+  'MLB1581':   'casa',            // Lavadoras
+
+  // Beleza
+  'MLB1246':   'perfumes',        // Perfumes
+
+  // Moda
+  'MLB99614':  'moda',            // Tenis
+  'MLB16117':  'moda',            // Mochilas
+
+  // Infantil
+  'MLB1430':   'infantil',        // Brinquedos
+}
+
+/**
+ * Resolve an ML category ID (or subcategory parent) to a PromoSnap slug.
+ * Returns undefined if no mapping exists.
+ */
+export function mlCategoryToSlug(mlCategoryId: string): string | undefined {
+  return ML_TO_PROMOSNAP_SLUG[mlCategoryId]
+}
+
+/**
+ * Resolve an ML category ID from an MLProduct.categoryId field.
+ * The MLProduct.categoryId is the leaf subcategory — we walk up to known parents.
+ * Since we only know parent IDs, we try the ID directly first.
+ */
+export function resolveMLCategorySlug(mlCategoryId?: string): string | undefined {
+  if (!mlCategoryId) return undefined
+  return ML_TO_PROMOSNAP_SLUG[mlCategoryId]
+}
+
 /** Get all categories sorted by priority */
 export function getAllCategories(): MLCategory[] {
   return CATEGORY_REGISTRY.map(({ keywords: _k, ...cat }) => cat)

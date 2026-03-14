@@ -279,17 +279,20 @@ export async function runImportPipeline(
         brandsUnknown++
       }
 
-      // Resolve category
+      // Resolve category (auto-create if slug provided but not yet in DB)
       let categoryId: string | null = null
       if (item.categorySlug) {
-        const cat = await prisma.category.findUnique({ where: { slug: item.categorySlug } })
-        if (cat) {
-          categoryId = cat.id
-          catsResolved++
-          categoryCounts[cat.name || item.categorySlug] = (categoryCounts[cat.name || item.categorySlug] || 0) + 1
-        } else {
-          catsUnresolved++
-        }
+        const cat = await prisma.category.upsert({
+          where: { slug: item.categorySlug },
+          create: {
+            name: item.categorySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+            slug: item.categorySlug,
+          },
+          update: {},
+        })
+        categoryId = cat.id
+        catsResolved++
+        categoryCounts[cat.name || item.categorySlug] = (categoryCounts[cat.name || item.categorySlug] || 0) + 1
       } else {
         catsUnresolved++
       }

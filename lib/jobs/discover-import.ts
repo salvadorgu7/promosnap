@@ -5,7 +5,7 @@
 import { runJob, type JobResult } from '@/lib/jobs/runner'
 import { runDiscovery } from '@/lib/ml-discovery'
 import { runImportPipeline, type ImportItem } from '@/lib/import'
-import { getAllCategories } from '@/lib/ml-discovery/categories'
+import { getAllCategories, resolveMLCategorySlug } from '@/lib/ml-discovery/categories'
 
 // ── Mode configuration ──────────────────────────────────────────────────────
 
@@ -125,6 +125,7 @@ export async function discoverAndImport(options?: DiscoverImportOptions): Promis
       availability: p.availability,
       soldQuantity: p.soldQuantity,
       condition: p.condition,
+      categorySlug: resolveMLCategorySlug(p.categoryId),
       sourceSlug: 'mercadolivre',
       discoverySource: 'ml_discovery',
     }))

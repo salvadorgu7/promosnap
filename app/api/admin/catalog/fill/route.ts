@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateAdmin } from "@/lib/auth/admin";
 import { runImportPipeline, type ImportItem } from "@/lib/import";
 import { mlFetch, batchHydrateItems, type HydrateEntry } from "@/lib/ml-discovery/items";
+import { mlCategoryToSlug } from "@/lib/ml-discovery/categories";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 min for Vercel
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
   const maxSubcategories = body.maxSubcategories || 8; // per parent
   const parentCats: string[] = body.categories || PARENT_CATEGORIES;
 
-  const allEntries = new Map<string, HydrateEntry>();
+  const allEntries = new Map<string, HydrateEntry & { mlParentCategory: string }>();
   const categoryStats: { parent: string; subcats: number; items: number }[] = [];
 
   // Phase 1: Get subcategories and fetch highlights (with type hints)
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     // Also fetch parent highlights
     const parentHighlights = await fetchHighlights(parentId);
     for (const entry of parentHighlights) {
-      if (!allEntries.has(entry.id)) allEntries.set(entry.id, { id: entry.id, type: entry.type });
+      if (!allEntries.has(entry.id)) allEntries.set(entry.id, { id: entry.id, type: entry.type, mlParentCategory: parentId });
     }
     parentItemCount += parentHighlights.length;
 
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
       for (const r of results) {
         if (r.status === "fulfilled") {
           for (const entry of r.value) {
-            if (!allEntries.has(entry.id)) allEntries.set(entry.id, { id: entry.id, type: entry.type });
+            if (!allEntries.has(entry.id)) allEntries.set(entry.id, { id: entry.id, type: entry.type, mlParentCategory: parentId });
           }
           parentItemCount += r.value.length;
         }
@@ -162,6 +163,12 @@ export async function POST(req: NextRequest) {
   const affiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID;
   const affiliateWord = process.env.MERCADOLIVRE_AFFILIATE_WORD;
 
+  // Build a map from externalId → mlParentCategory for category resolution
+  const idToParent = new Map<string, string>();
+  for (const entry of allEntries.values()) {
+    idToParent.set(entry.id, entry.mlParentCategory);
+  }
+
   const importItems: ImportItem[] = hydratedProducts.map((p) => {
     let productUrl = p.productUrl;
     if (affiliateId && productUrl) {
@@ -172,6 +179,10 @@ export async function POST(req: NextRequest) {
         productUrl = u.toString();
       } catch { /* keep original */ }
     }
+
+    // Resolve category: try product's own ML categoryId first, then parent category
+    const categorySlug = mlCategoryToSlug(p.categoryId || "") || mlCategoryToSlug(idToParent.get(p.externalId) || "");
+
     return {
       externalId: p.externalId,
       title: p.title,
@@ -181,6 +192,7 @@ export async function POST(req: NextRequest) {
       imageUrl: p.imageUrl,
       isFreeShipping: p.isFreeShipping ?? false,
       availability: p.availability === "out_of_stock" ? "out_of_stock" as const : "in_stock" as const,
+      categorySlug,
       sourceSlug: "mercadolivre",
       discoverySource: "ml_discovery",
     };

@@ -3,6 +3,7 @@ import { validateAdmin } from '@/lib/auth/admin'
 import { runImportPipeline, type ImportItem } from '@/lib/import'
 import { runDiscovery } from '@/lib/ml-discovery'
 import type { MLProduct, DiscoveryMode } from '@/lib/ml-discovery'
+import { resolveMLCategorySlug } from '@/lib/ml-discovery/categories'
 
 export const dynamic = 'force-dynamic'
 
@@ -307,6 +308,7 @@ function mlProductsToImportItems(products: MLProduct[]): ImportItem[] {
     availability: p.availability,
     soldQuantity: p.soldQuantity,
     condition: p.condition,
+    categorySlug: resolveMLCategorySlug(p.categoryId),
     sourceSlug: 'mercadolivre',
     discoverySource: 'ml_discovery',
   }))
