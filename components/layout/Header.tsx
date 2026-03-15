@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Search, Flame, TrendingDown, Trophy, Tag, Menu, X, Zap, Heart,
+  Search, Flame, TrendingDown, Trophy, Tag, Menu, X, Zap, Heart, Smartphone, Laptop, Footprints,
 } from "lucide-react";
 import SearchBar from "@/components/search/SearchBar";
 import NotificationBell from "@/components/engagement/NotificationBell";
@@ -28,9 +28,10 @@ export default function Header() {
 
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-14 gap-4">
-          {/* Logo */}
+          {/* Logo — smaller on mobile to save space */}
           <Link href="/" className="flex-shrink-0 min-w-0">
-            <Logo size="md" />
+            <span className="md:hidden"><Logo size="sm" /></span>
+            <span className="hidden md:inline-flex"><Logo size="md" /></span>
           </Link>
 
           {/* Desktop search */}
@@ -58,8 +59,8 @@ export default function Header() {
 
           {/* Mobile buttons */}
           <div className="flex md:hidden items-center gap-1">
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-lg hover:bg-surface-100 min-w-[44px] min-h-[44px]">
-              <Search className="w-5 h-5 text-surface-600" />
+            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-lg bg-brand-50 hover:bg-brand-100 min-w-[44px] min-h-[44px] transition-colors">
+              <Search className={`w-5 h-5 ${searchOpen ? "text-brand-600" : "text-brand-500"}`} />
             </button>
             <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-surface-100 min-w-[44px] min-h-[44px]">
               {mobileOpen ? <X className="w-5 h-5 text-surface-600" /> : <Menu className="w-5 h-5 text-surface-600" />}
@@ -101,6 +102,23 @@ export default function Header() {
                 </Link>
               );
             })}
+            <div className="h-px bg-surface-200 my-1" />
+            <p className="px-3 pt-1 text-[10px] font-semibold text-text-muted uppercase tracking-wider">Categorias em Destaque</p>
+            <Link href="/categoria/celulares" onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">
+              <Smartphone className="w-4 h-4 text-accent-blue" />
+              <span className="text-sm font-medium">Celulares</span>
+            </Link>
+            <Link href="/categoria/notebooks" onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">
+              <Laptop className="w-4 h-4 text-accent-purple" />
+              <span className="text-sm font-medium">Notebooks</span>
+            </Link>
+            <Link href="/categoria/esportes" onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">
+              <Footprints className="w-4 h-4 text-accent-green" />
+              <span className="text-sm font-medium">Tenis & Esportes</span>
+            </Link>
             <div className="h-px bg-surface-200 my-1" />
             <Link href="/favoritos" onClick={() => setMobileOpen(false)}
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors">

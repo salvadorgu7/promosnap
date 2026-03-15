@@ -79,15 +79,13 @@ export default function MlIntegrationPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [diagResult, setDiagResult] = useState<Record<string, any> | null>(null)
 
-  const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? ''
-
   async function handleTest() {
     setTesting(true)
     setTestResult(null)
     try {
       const res = await fetch('/api/admin/integrations/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'ml' }),
       })
       const data = await res.json()
@@ -103,9 +101,7 @@ export default function MlIntegrationPage() {
     setDiagnosing(true)
     setDiagResult(null)
     try {
-      const res = await fetch('/api/admin/ml/token-check', {
-        headers: { 'x-admin-secret': adminSecret },
-      })
+      const res = await fetch('/api/admin/ml/token-check')
       setDiagResult(await res.json())
     } catch (err) {
       setDiagResult({ error: String(err) })
@@ -127,8 +123,7 @@ export default function MlIntegrationPage() {
 
     try {
       const res = await fetch(
-        `/api/admin/ml/search?q=${encodeURIComponent(q)}&limit=${searchLimit}`,
-        { headers: { 'x-admin-secret': adminSecret } }
+        `/api/admin/ml/search?q=${encodeURIComponent(q)}&limit=${searchLimit}`
       )
       const data = await res.json()
 
@@ -161,7 +156,7 @@ export default function MlIntegrationPage() {
 
       const res = await fetch('/api/admin/ml/import', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(importBody),
       })
       const data = await res.json()

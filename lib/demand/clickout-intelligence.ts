@@ -1,7 +1,9 @@
 /**
  * Clickout Intelligence — understands conversion patterns to prioritize catalog and merchandising.
+ * Uses shared source profiles from lib/config/source-profiles.ts.
  */
 import prisma from "@/lib/db/prisma";
+import { getSourceProfile, getWeightedAvgTicket, getWeightedAvgCommission } from "@/lib/config/source-profiles";
 
 export interface ClickoutIntelligence {
   topConverting: { sourceSlug: string; offerId: string; productName: string; clicks: number }[];
@@ -20,20 +22,6 @@ export interface ClickoutIntelligence {
     avgCommission: number;
   };
 }
-
-const SOURCE_COMMISSION_RATES: Record<string, number> = {
-  "amazon-br": 0.04,
-  "mercadolivre": 0.03,
-  "shopee": 0.025,
-  "magazineluiza": 0.03,
-};
-
-const DEFAULT_AVG_TICKETS: Record<string, number> = {
-  "amazon-br": 180,
-  "mercadolivre": 150,
-  "shopee": 80,
-  "magazineluiza": 120,
-};
 
 export async function getClickoutIntelligence(days: number = 30): Promise<ClickoutIntelligence> {
   const since = new Date();
@@ -144,8 +132,9 @@ export async function getClickoutIntelligence(days: number = 30): Promise<Clicko
     let estimatedMonth = 0;
 
     for (const s of conversionBySource) {
-      const rate = SOURCE_COMMISSION_RATES[s.source] || 0.03;
-      const ticket = DEFAULT_AVG_TICKETS[s.source] || 120;
+      const profile = getSourceProfile(s.source);
+      const rate = profile.commissionRate;
+      const ticket = profile.avgTicket;
       const monthlyClicks = s.clicks;
       const dailyAvg = monthlyClicks / Math.max(days, 1);
       estimatedMonth += monthlyClicks * ticket * rate;
@@ -181,8 +170,8 @@ export async function getClickoutIntelligence(days: number = 30): Promise<Clicko
         today: Math.round(estimatedToday * 100) / 100,
         week: Math.round(estimatedWeek * 100) / 100,
         month: Math.round(estimatedMonth * 100) / 100,
-        avgTicket: 140,
-        avgCommission: 0.033,
+        avgTicket: getWeightedAvgTicket(),
+        avgCommission: getWeightedAvgCommission(),
       },
     };
   } catch {

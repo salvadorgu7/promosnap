@@ -55,19 +55,19 @@
   /* ---- Cards ---- */
   .card {
     @apply bg-white rounded-xl;
-    border: 1px solid #E6EAF2;
+    border: 1px solid #D8DEE9;
     box-shadow:
-      0 1px 2px rgba(0,0,0,0.04),
-      0 2px 8px rgba(0,0,0,0.05),
+      0 1px 2px rgba(0,0,0,0.05),
+      0 2px 8px rgba(0,0,0,0.06),
       0 4px 16px rgba(108,99,255,0.04);
     transition: box-shadow 0.3s cubic-bezier(0.22,1,0.36,1), transform 0.3s cubic-bezier(0.22,1,0.36,1), border-color 0.3s ease;
   }
   .card:hover {
-    border-color: rgba(108,99,255,0.18);
+    border-color: rgba(108,99,255,0.22);
     box-shadow:
-      0 2px 4px rgba(0,0,0,0.05),
-      0 8px 24px rgba(108,99,255,0.10),
-      0 4px 16px rgba(0,0,0,0.06);
+      0 2px 4px rgba(0,0,0,0.06),
+      0 8px 24px rgba(108,99,255,0.12),
+      0 4px 16px rgba(0,0,0,0.07);
     transform: translateY(-1px);
   }
   .card-elevated {
@@ -150,10 +150,11 @@
 
   /* ---- Badges (consistent height: h-6, px-2.5, py-0.5) ---- */
   .badge-hot {
-    @apply inline-flex items-center gap-1 h-6 px-2.5 py-0.5 rounded-md text-xs font-semibold;
-    background: linear-gradient(135deg, rgba(240,68,56,0.12) 0%, rgba(240,68,56,0.06) 100%);
-    color: #D9362B;
-    border: 1px solid rgba(240,68,56,0.20);
+    @apply inline-flex items-center gap-1 h-6 px-2.5 py-0.5 rounded-md text-xs font-bold;
+    background: linear-gradient(135deg, rgba(240,68,56,0.16) 0%, rgba(240,68,56,0.08) 100%);
+    color: #C42B20;
+    border: 1px solid rgba(240,68,56,0.25);
+    box-shadow: 0 1px 3px rgba(240,68,56,0.10);
   }
   .badge-deal {
     @apply inline-flex items-center gap-1 h-6 px-2.5 py-0.5 rounded-md text-xs font-semibold;
@@ -184,11 +185,28 @@
   .price-big {
     @apply font-display font-extrabold text-lg sm:text-xl text-primary-900 tracking-tight;
   }
+  .price-big-prominent {
+    @apply font-display font-extrabold text-xl sm:text-2xl tracking-tight;
+    color: #0A8F4A;
+    letter-spacing: -0.02em;
+  }
   .price-old {
     @apply text-surface-400 line-through text-sm;
   }
+  .price-old-vibrant {
+    @apply line-through text-sm font-medium;
+    color: #C93B3B;
+  }
   .discount-tag {
     @apply font-display font-bold text-accent-green;
+  }
+  .discount-tag-vibrant {
+    @apply font-display font-extrabold;
+    color: #0E9255;
+    background: rgba(18,183,106,0.10);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(18,183,106,0.18);
   }
 
   /* ---- Horizontal rail ---- */

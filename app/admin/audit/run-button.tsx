@@ -12,9 +12,6 @@ export function RunAuditButton() {
     try {
       const res = await fetch("/api/admin/audit/run", {
         method: "POST",
-        headers: {
-          "x-admin-secret": process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "",
-        },
       })
       if (!res.ok) {
         const data = await res.json()

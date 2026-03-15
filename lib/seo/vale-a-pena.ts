@@ -13,7 +13,7 @@ export interface ValeAPenaDef {
 export const VALE_A_PENA_PAGES: Record<string, ValeAPenaDef> = {
   'vale-a-pena-air-fryer': {
     title: 'Air Fryer Vale a Pena?',
-    description: 'Descubra se a air fryer vale a pena em 2025. Analisamos prós, contras, consumo de energia e custo-benefício para ajudar na sua decisão.',
+    description: 'Descubra se a air fryer vale a pena em 2026. Analisamos prós, contras, consumo de energia e custo-benefício para ajudar na sua decisão.',
     intro: 'A air fryer conquistou a cozinha brasileira com a promessa de frituras mais saudáveis e praticidade no dia a dia. Mas será que realmente vale o investimento? Analisamos os pontos positivos e negativos para ajudar você a decidir se a fritadeira elétrica faz sentido para sua rotina.',
     productQuery: 'air fryer fritadeira',
     pros: [
@@ -43,9 +43,9 @@ export const VALE_A_PENA_PAGES: Record<string, ValeAPenaDef> = {
     ],
   },
   'vale-a-pena-ps5': {
-    title: 'PS5 Vale a Pena em 2025?',
-    description: 'Descubra se o PlayStation 5 ainda vale a pena em 2025. Análise completa com prós, contras e alternativas para gamers.',
-    intro: 'Com o PS5 já consolidado no mercado e uma biblioteca de jogos robusta, a pergunta que muitos brasileiros fazem é: ainda vale a pena investir no console da Sony em 2025? Analisamos desempenho, catálogo de jogos, preço e alternativas para ajudar na sua decisão.',
+    title: 'PS5 Vale a Pena em 2026?',
+    description: 'Descubra se o PlayStation 5 ainda vale a pena em 2026. Análise completa com prós, contras e alternativas para gamers.',
+    intro: 'Com o PS5 já consolidado no mercado e uma biblioteca de jogos robusta, a pergunta que muitos brasileiros fazem é: ainda vale a pena investir no console da Sony em 2026? Analisamos desempenho, catálogo de jogos, preço e alternativas para ajudar na sua decisão.',
     productQuery: 'playstation 5 ps5',
     pros: [
       'Catálogo maduro com exclusivos aclamados como God of War Ragnarök, Spider-Man 2 e Final Fantasy XVI',
@@ -60,7 +60,7 @@ export const VALE_A_PENA_PAGES: Record<string, ValeAPenaDef> = {
       'Necessita de assinatura PS Plus para jogar online (R$40-50/mês)',
       'Tamanho grande e design que pode não combinar com todos os ambientes',
     ],
-    verdict: 'O PS5 vale a pena em 2025 para quem é fã dos exclusivos PlayStation e quer a melhor experiência de console. O catálogo está excelente e os preços dos jogos mais antigos já caíram bastante. Porém, se você joga principalmente títulos multiplataforma, um Xbox Series X com Game Pass pode oferecer melhor custo-benefício. Para quem tem orçamento limitado, o PS5 Digital é a opção mais acessível.',
+    verdict: 'O PS5 vale a pena em 2026 para quem é fã dos exclusivos PlayStation e quer a melhor experiência de console. O catálogo está excelente e os preços dos jogos mais antigos já caíram bastante. Porém, se você joga principalmente títulos multiplataforma, um Xbox Series X com Game Pass pode oferecer melhor custo-benefício. Para quem tem orçamento limitado, o PS5 Digital é a opção mais acessível.',
     alternativeQueries: [
       'xbox series x',
       'nintendo switch',
@@ -74,13 +74,13 @@ export const VALE_A_PENA_PAGES: Record<string, ValeAPenaDef> = {
   },
   'vale-a-pena-iphone-15': {
     title: 'iPhone 15 Vale a Pena?',
-    description: 'Descubra se o iPhone 15 vale a pena em 2025. Análise detalhada com prós, contras e comparação com alternativas Android.',
+    description: 'Descubra se o iPhone 15 vale a pena em 2026. Análise detalhada com prós, contras e comparação com alternativas Android.',
     intro: 'O iPhone 15 trouxe mudanças esperadas como a porta USB-C e a Dynamic Island para toda a linha. Mas com o iPhone 16 já disponível, será que o iPhone 15 se tornou uma opção mais inteligente? Analisamos se o modelo anterior oferece o melhor equilíbrio entre preço e funcionalidades.',
     productQuery: 'iphone 15',
     pros: [
       'USB-C finalmente substitui o Lightning, compatível com carregadores universais',
       'Dynamic Island em todos os modelos, trazendo funcionalidade antes exclusiva do Pro',
-      'Chip A16 Bionic ainda muito potente para qualquer aplicativo ou jogo em 2025',
+      'Chip A16 Bionic ainda muito potente para qualquer aplicativo ou jogo em 2026',
       'Câmera de 48MP no modelo padrão com fotos excelentes em diversas condições de luz',
       'Preço mais acessível que o iPhone 16, especialmente em promoções',
     ],
@@ -90,7 +90,7 @@ export const VALE_A_PENA_PAGES: Record<string, ValeAPenaDef> = {
       'Bateria apenas razoável, inferior a muitos Androids na mesma faixa',
       'Preço ainda alto para o mercado brasileiro, mesmo em promoção',
     ],
-    verdict: 'O iPhone 15 vale a pena em 2025 como uma entrada inteligente no ecossistema Apple. Com a chegada do iPhone 16, os preços do 15 caíram e ele continua sendo um excelente smartphone. A tela de 60Hz é o principal ponto negativo, mas se isso não te incomoda, é difícil errar. Para quem quer 120Hz sem pagar pelo Pro, vale considerar alternativas Android como Galaxy S24 ou Pixel 8.',
+    verdict: 'O iPhone 15 vale a pena em 2026 como uma entrada inteligente no ecossistema Apple. Com a chegada do iPhone 16, os preços do 15 caíram e ele continua sendo um excelente smartphone. A tela de 60Hz é o principal ponto negativo, mas se isso não te incomoda, é difícil errar. Para quem quer 120Hz sem pagar pelo Pro, vale considerar alternativas Android como Galaxy S24 ou Pixel 8.',
     alternativeQueries: [
       'galaxy s24',
       'iphone 16',
@@ -195,7 +195,7 @@ export const VALE_A_PENA_PAGES: Record<string, ValeAPenaDef> = {
   },
   'vale-a-pena-nike-air-force': {
     title: 'Nike Air Force 1 Vale a Pena?',
-    description: 'Descubra se o Nike Air Force 1 vale a pena em 2025. Analisamos conforto, durabilidade, estilo e custo-benefício.',
+    description: 'Descubra se o Nike Air Force 1 vale a pena em 2026. Analisamos conforto, durabilidade, estilo e custo-benefício.',
     intro: 'O Nike Air Force 1 é um dos tênis mais icônicos da história. Lançado em 1982 para o basquete, se tornou sinônimo de streetwear e cultura urbana. Mas com preços que variam bastante, vale a pena investir nesse clássico? Analisamos os pontos que importam.',
     productQuery: 'nike air force 1',
     pros: [
@@ -221,7 +221,7 @@ export const VALE_A_PENA_PAGES: Record<string, ValeAPenaDef> = {
   },
   'vale-a-pena-macbook-air-m2': {
     title: 'MacBook Air M2 Vale a Pena?',
-    description: 'Descubra se o MacBook Air M2 vale a pena em 2025. Performance, bateria, preço e comparações com M3 e Windows.',
+    description: 'Descubra se o MacBook Air M2 vale a pena em 2026. Performance, bateria, preço e comparações com M3 e Windows.',
     intro: 'O MacBook Air M2 trouxe o redesign mais significativo do Air em anos, com tela maior, chip Apple Silicon potente e design fino sem ventoinhas. Com a chegada do M3, o preço do M2 caiu bastante. Será que agora é o melhor momento para comprar?',
     productQuery: 'macbook air m2',
     pros: [
@@ -237,10 +237,10 @@ export const VALE_A_PENA_PAGES: Record<string, ValeAPenaDef> = {
       'Armazenamento de 256GB SSD é pouco para muitos usuários',
       'Reparo caro e limitado a assistência Apple',
     ],
-    verdict: 'O MacBook Air M2 vale muito a pena em 2025, especialmente com os descontos atuais após o lançamento do M3. É o notebook ideal para profissionais criativos, estudantes e quem valoriza portabilidade e bateria. A versão com 16GB/512GB é o melhor investimento a longo prazo.',
+    verdict: 'O MacBook Air M2 vale muito a pena em 2026, especialmente com os descontos atuais após o lançamento do M3. É o notebook ideal para profissionais criativos, estudantes e quem valoriza portabilidade e bateria. A versão com 16GB/512GB é o melhor investimento a longo prazo.',
     alternativeQueries: ['macbook air m3', 'notebook dell inspiron', 'lenovo ideapad', 'notebook ate 5000'],
     faqs: [
-      { q: 'MacBook Air M2 ou M3?', a: 'O M3 é ~15-20% mais rápido e tem WiFi 6E, mas custa significativamente mais. O M2 com desconto oferece 90% da experiência por muito menos. Para a maioria dos usuários, o M2 é a escolha inteligente em 2025.' },
+      { q: 'MacBook Air M2 ou M3?', a: 'O M3 é ~15-20% mais rápido e tem WiFi 6E, mas custa significativamente mais. O M2 com desconto oferece 90% da experiência por muito menos. Para a maioria dos usuários, o M2 é a escolha inteligente em 2026.' },
       { q: '8GB de RAM é suficiente?', a: 'Para navegação, Office e uso geral, sim. Para edição de vídeo, desenvolvimento pesado ou muitas abas de navegador, opte por 16GB. A memória unificada do M2 é mais eficiente que RAM DDR convencional.' },
       { q: 'MacBook Air roda jogos?', a: 'Jogos casuais e alguns AAA portados para Apple Silicon rodam bem (Resident Evil, No Mans Sky). Mas não é um notebook para gaming sério — para isso, considere um Windows com GPU dedicada.' },
     ],

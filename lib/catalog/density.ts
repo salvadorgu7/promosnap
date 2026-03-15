@@ -88,6 +88,7 @@ export interface CategoryDensity {
     sources: { slug: string; count: number }[];
     brands: { name: string; count: number }[];
     priceRange: { min: number; max: number; avg: number } | null;
+    clickouts7d: number;
   };
   readiness: {
     densityScore: number;
@@ -241,7 +242,16 @@ export async function getCategoryDensity(
           }
         : null;
 
-    // 10. Calculate scores
+    // 10. Clickouts last 7 days for this category
+    const clickoutRows: { cnt: bigint }[] = await prisma.$queryRaw`
+      SELECT COUNT(*)::bigint AS cnt
+      FROM clickouts c
+      WHERE c."categorySlug" = ${categorySlug}
+        AND c."clickedAt" >= NOW() - INTERVAL '7 days'
+    `;
+    const clickouts7d = Number(clickoutRows[0]?.cnt ?? 0);
+
+    // 11. Calculate scores
 
     // Density: current products vs target (capped at 100)
     const densityScore = Math.min(
@@ -299,6 +309,7 @@ export async function getCategoryDensity(
         sources,
         brands,
         priceRange,
+        clickouts7d,
       },
       readiness: {
         densityScore,
@@ -408,7 +419,6 @@ export async function getCategoryExpansionPlan(categorySlug: string): Promise<{
       ];
 
       for (const tier of priceTiers) {
-        if (tier.from >= min && tier.to <= max) continue;
         try {
           const tierRows: { cnt: bigint }[] = await prisma.$queryRaw`
             SELECT COUNT(DISTINCT p.id)::bigint AS cnt

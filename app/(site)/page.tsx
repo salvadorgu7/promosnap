@@ -1,4 +1,4 @@
-import { Flame, TrendingDown, Trophy, Sparkles, Tag, Star, Search, ArrowRight, Package, Percent, Zap } from "lucide-react";
+import { Flame, TrendingDown, Trophy, Sparkles, Tag, Star, Search, ArrowRight, Package, Percent, Zap, Smartphone, Laptop, Footprints, ChevronRight } from "lucide-react";
 import DailyOpportunities from "@/components/home/DailyOpportunities";
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";
@@ -25,6 +25,18 @@ import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, get
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";
+
+// Priority categories that should always appear first
+const PRIORITY_CATEGORIES = [
+  { slug: "celulares", name: "Celulares", icon: "📲", displayIcon: Smartphone, color: "text-accent-blue", bgColor: "bg-accent-blue/8", borderColor: "border-accent-blue/15" },
+  { slug: "notebooks", name: "Notebooks", icon: "💻", displayIcon: Laptop, color: "text-accent-purple", bgColor: "bg-accent-purple/8", borderColor: "border-accent-purple/15" },
+  { slug: "esportes", name: "Tenis & Esportes", icon: "⚽", displayIcon: Footprints, color: "text-accent-green", bgColor: "bg-accent-green/8", borderColor: "border-accent-green/15" },
+] as const;
+
+const TRENDING_SEARCHES = [
+  "iPhone 15", "Galaxy S24", "Air Fryer", "PS5", "Notebook Gamer",
+  "Fone Bluetooth", "Smart TV 55", "Aspirador Robo",
+];
 
 export const dynamic = "force-dynamic";
 
@@ -99,8 +111,15 @@ export default async function HomePage() {
   // Best deal of the day
   const dealOfTheDay = hotOffers.length > 0 ? hotOffers[0] : null;
 
+  // Sort categories so priority ones come first
+  const prioritySlugs = PRIORITY_CATEGORIES.map(c => c.slug);
+  const sortedCategories = [
+    ...categories.filter((c: any) => prioritySlugs.includes(c.slug)),
+    ...categories.filter((c: any) => !prioritySlugs.includes(c.slug)),
+  ];
+
   // Category rails (top 3 categories with products)
-  const topCategories = categories.slice(0, 3);
+  const topCategories = sortedCategories.slice(0, 5);
   const categoryProducts = await Promise.all(
     topCategories.map(async (c: any) => {
       try {
@@ -108,6 +127,18 @@ export default async function HomePage() {
         return { slug: c.slug, name: c.name, icon: c.icon || "📦", products };
       } catch {
         return { slug: c.slug, name: c.name, icon: c.icon || "📦", products: [] };
+      }
+    })
+  );
+
+  // Priority category products for featured section
+  const priorityCategoryProducts = await Promise.all(
+    PRIORITY_CATEGORIES.map(async (pc) => {
+      try {
+        const { products } = await getProductsByCategory(pc.slug, { limit: 6 });
+        return { ...pc, products };
+      } catch {
+        return { ...pc, products: [] as any[] };
       }
     })
   );
@@ -210,6 +241,43 @@ export default async function HomePage() {
       {/* ===== 2c. RETURN USER GREETING ===== */}
       <ReturnUserGreeting />
 
+      {/* ===== 2d. CATEGORIAS EM DESTAQUE — priority categories with larger cards ===== */}
+      <section id="featured-categories" className="py-6">
+        <div className="max-w-7xl mx-auto px-4">
+          <SectionHeader
+            icon={Sparkles}
+            iconColor="text-brand-500"
+            title="Categorias em Destaque"
+            subtitle="As categorias mais procuradas agora"
+          />
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {PRIORITY_CATEGORIES.map((pc) => {
+              const Icon = pc.displayIcon;
+              const catData = priorityCategoryProducts.find(p => p.slug === pc.slug);
+              const count = catData?.products?.length || 0;
+              return (
+                <Link
+                  key={pc.slug}
+                  href={`/categoria/${pc.slug}`}
+                  className={`card group flex items-center gap-4 p-4 hover:border-brand-500/25 transition-all`}
+                >
+                  <div className={`w-12 h-12 rounded-xl ${pc.bgColor} flex items-center justify-center flex-shrink-0 border ${pc.borderColor}`}>
+                    <Icon className={`w-6 h-6 ${pc.color}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display font-bold text-sm text-text-primary">{pc.name}</h3>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      {count > 0 ? `${count}+ ofertas disponiveis` : "Explorar ofertas"}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-surface-400 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all" />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ===== 3. DEAL OF THE DAY (moved up — hero → deal → carousel for immediate value) ===== */}
       {dealOfTheDay && (
         <section id="deal-of-the-day" className="py-4">
@@ -247,15 +315,43 @@ export default async function HomePage() {
       {/* ===== Empty state if no offers at all ===== */}
       {hotOffers.length === 0 && bestSellers.length === 0 && lowestPrices.length === 0 && (
         <section className="py-10">
-          <div className="max-w-md mx-auto text-center px-4">
-            <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center mx-auto mb-3">
-              <Search className="w-6 h-6 text-brand-500" />
+          <div className="max-w-2xl mx-auto px-4">
+            {/* Search prompt */}
+            <div className="text-center mb-8">
+              <div className="w-14 h-14 rounded-xl bg-brand-50 flex items-center justify-center mx-auto mb-3">
+                <Search className="w-7 h-7 text-brand-500" />
+              </div>
+              <h2 className="font-display font-bold text-lg text-text-primary mb-1">Comece explorando</h2>
+              <p className="text-sm text-text-muted mb-4">Nosso sistema esta coletando e verificando precos. Use a busca para encontrar produtos especificos.</p>
+              <div className="max-w-md mx-auto">
+                <SearchBar large />
+              </div>
             </div>
-            <h2 className="font-display font-bold text-lg text-text-primary mb-1">Estamos preparando as ofertas</h2>
-            <p className="text-sm text-text-muted mb-4">Nosso sistema esta coletando e verificando precos. Use a busca para encontrar produtos especificos.</p>
-            <Link href="/busca" className="btn-primary text-sm px-6 py-2.5 inline-flex items-center gap-2">
-              <Search className="w-4 h-4" /> Buscar produtos
-            </Link>
+
+            {/* Trending searches */}
+            <div className="mb-8">
+              <h3 className="font-display font-semibold text-sm text-text-primary mb-3 text-center">Buscas populares</h3>
+              <div className="flex flex-wrap justify-center gap-2">
+                {TRENDING_SEARCHES.map((tag) => (
+                  <a key={tag} href={`/busca?q=${encodeURIComponent(tag)}`}
+                    className="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-xs text-surface-600 hover:text-brand-600 hover:border-brand-500/30 hover:bg-brand-50 transition-all shadow-sm">
+                    {tag}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Category navigation */}
+            {categories.length > 0 && (
+              <div>
+                <h3 className="font-display font-semibold text-sm text-text-primary mb-3 text-center">Explorar por categoria</h3>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {sortedCategories.slice(0, 8).map((c: any) => (
+                    <CategoryCard key={c.slug} slug={c.slug} name={c.name} icon={c.icon} productCount={c._count?.products || 0} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -279,7 +375,7 @@ export default async function HomePage() {
       {/* ===== 7. IMPORTADOS RECENTEMENTE ===== */}
       {recentlyImported.length > 0 && (
         <div id="recently-imported" className="py-4">
-          <RailSection title="Importados Recentemente" subtitle="Produtos reais dos ultimos 7 dias" icon={Package} iconColor="text-accent-green">
+          <RailSection title="Importados Recentemente" subtitle="Produtos reais dos ultimos 7 dias" href="/ofertas" icon={Package} iconColor="text-accent-green">
             {recentlyImported.map((p) => (
               <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
                 <OfferCard product={p} page="home" railSource="recently-imported" />
@@ -326,7 +422,7 @@ export default async function HomePage() {
       {/* ===== 12. MELHOR CUSTO-BENEFICIO ===== */}
       {bestValue.length > 0 && (
         <div id="best-value" className="py-4">
-          <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" icon={Percent} iconColor="text-accent-purple">
+          <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" href="/ofertas" icon={Percent} iconColor="text-accent-purple">
             {bestValue.map((p) => (
               <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
                 <OfferCard product={p} page="home" railSource="best-value" />
@@ -339,7 +435,7 @@ export default async function HomePage() {
       {/* ===== 13. PRONTOS PARA COMPRAR ===== */}
       {readyForCampaign.length > 0 && (
         <div id="ready-for-campaign" className="section-alt py-4">
-          <RailSection title="Prontos para Comprar" subtitle="Com desconto e link direto para a loja" icon={Star} iconColor="text-accent-blue">
+          <RailSection title="Prontos para Comprar" subtitle="Com desconto e link direto para a loja" href="/ofertas" icon={Star} iconColor="text-accent-blue">
             {readyForCampaign.map((p) => (
               <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
                 <OfferCard product={p} page="home" railSource="ready-for-campaign" />
@@ -352,7 +448,7 @@ export default async function HomePage() {
       <SectionSeparator />
 
       {/* ===== 14. CATEGORIAS ===== */}
-      {categories.length > 0 && (
+      {sortedCategories.length > 0 && (
         <section id="categories" className="py-6">
           <div className="max-w-7xl mx-auto px-4">
             <SectionHeader
@@ -362,7 +458,7 @@ export default async function HomePage() {
               subtitle="Explore por categoria"
             />
             <div className="mt-3 grid grid-cols-4 md:grid-cols-8 gap-2">
-              {categories.map((c: any) => (
+              {sortedCategories.map((c: any) => (
                 <CategoryCard key={c.slug} slug={c.slug} name={c.name} icon={c.icon} productCount={c._count?.products || 0} />
               ))}
             </div>

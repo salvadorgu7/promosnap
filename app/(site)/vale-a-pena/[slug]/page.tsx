@@ -32,8 +32,13 @@ export async function generateMetadata({
   const page = VALE_A_PENA_PAGES[slug];
   if (!page) return buildMetadata({ title: "Página não encontrada" });
 
+  // Ensure title includes year context: "Vale a Pena Comprar X em 2026?"
+  const seoTitle = page.title.includes("2026")
+    ? page.title
+    : page.title.replace(/\?$/, "") + " em 2026?";
+
   return buildMetadata({
-    title: page.title,
+    title: seoTitle.endsWith("?") ? seoTitle : seoTitle,
     description: page.description,
     path: `/vale-a-pena/${slug}`,
   });
@@ -123,7 +128,9 @@ export default async function ValeAPenaPage({
             <Award className="w-5 h-5 text-accent-blue" />
           </div>
           <h1 className="text-3xl font-bold font-display text-text-primary">
-            {page.title}
+            {page.title.includes("2026")
+              ? page.title
+              : page.title.replace(/\?$/, "") + " em 2026?"}
           </h1>
         </div>
         <p className="text-text-secondary leading-relaxed max-w-3xl">

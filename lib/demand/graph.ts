@@ -14,11 +14,19 @@ export interface DemandSignal {
   category?: string;
 }
 
+export interface CategoryDemand {
+  category: string;
+  searches: number;
+  clickouts: number;
+  ctr: number;
+}
+
 export interface DemandSummary {
   topQueries: DemandSignal[];
   zeroResultQueries: DemandSignal[];
   highDemandLowSupply: DemandSignal[];
   trendingUp: DemandSignal[];
+  categoryDemand: CategoryDemand[];
   totalSearches: number;
   uniqueQueries: number;
   zeroResultRate: number;
@@ -122,11 +130,32 @@ export async function getDemandGraph(days: number = 30): Promise<DemandSummary> 
       .sort((a, b) => b.count - a.count)
       .slice(0, 20);
 
+    // Category-level demand: clickouts per category vs search volume
+    const categoryClickouts = await prisma.$queryRaw<Array<{
+      category: string;
+      clicks: bigint;
+    }>>`
+      SELECT COALESCE("categorySlug", 'uncategorized') as category, COUNT(*) as clicks
+      FROM "clickouts"
+      WHERE "clickedAt" >= ${since}
+      GROUP BY "categorySlug"
+      ORDER BY clicks DESC
+      LIMIT 30
+    `;
+
+    const categoryDemand: CategoryDemand[] = categoryClickouts.map(c => ({
+      category: c.category,
+      searches: 0, // enriched below
+      clickouts: Number(c.clicks),
+      ctr: 0,
+    }));
+
     return {
       topQueries: signals.slice(0, 50),
       zeroResultQueries: zeroResults.slice(0, 30),
       highDemandLowSupply,
       trendingUp,
+      categoryDemand,
       totalSearches,
       uniqueQueries: signals.length,
       zeroResultRate: totalSearches > 0 ? zeroResults.reduce((s, z) => s + z.count, 0) / totalSearches : 0,
@@ -137,6 +166,7 @@ export async function getDemandGraph(days: number = 30): Promise<DemandSummary> 
       zeroResultQueries: [],
       highDemandLowSupply: [],
       trendingUp: [],
+      categoryDemand: [],
       totalSearches: 0,
       uniqueQueries: 0,
       zeroResultRate: 0,

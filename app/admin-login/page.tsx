@@ -2,7 +2,8 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Zap, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import LogoIcon from "@/components/ui/LogoIcon";
 
 function LoginForm() {
   const [password, setPassword] = useState("");
@@ -27,7 +28,8 @@ function LoginForm() {
       });
 
       if (res.ok) {
-        const from = searchParams.get("from") || "/admin";
+        const rawFrom = searchParams.get("from") || "/admin";
+        const from = rawFrom.startsWith("/") && !rawFrom.startsWith("//") ? rawFrom : "/admin";
         router.push(from);
         router.refresh();
       } else {
@@ -125,9 +127,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-glow mb-3">
-            <Zap className="w-6 h-6 text-white" strokeWidth={2.5} />
-          </div>
+          <LogoIcon size={48} className="mb-3" />
           <h1 className="font-display font-extrabold text-xl text-surface-900 tracking-tight">
             Promo<span className="text-gradient">Snap</span>
           </h1>

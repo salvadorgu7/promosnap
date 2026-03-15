@@ -16,7 +16,7 @@ export interface ComparisonDef {
 const comparisons: ComparisonDef[] = [
   {
     slug: "iphone-15-vs-galaxy-s24",
-    title: "iPhone 15 vs Galaxy S24: Qual comprar em 2025?",
+    title: "iPhone 15 vs Galaxy S24: Qual Comprar em 2026?",
     description:
       "Comparativo completo entre iPhone 15 e Galaxy S24. Veja preços, câmeras, desempenho e descubra qual é o melhor custo-benefício.",
     intro:
@@ -250,7 +250,7 @@ const comparisons: ComparisonDef[] = [
   },
   {
     slug: "notebook-gamer-vs-desktop-gamer",
-    title: "Notebook Gamer vs Desktop Gamer: Qual montar em 2025?",
+    title: "Notebook Gamer vs Desktop Gamer: Qual montar em 2026?",
     description:
       "Notebook gamer ou PC desktop gamer? Comparamos preço, desempenho, upgrade e portabilidade para o mercado brasileiro.",
     intro:
@@ -391,7 +391,7 @@ const comparisons: ComparisonDef[] = [
       "O Nintendo Switch e ideal para jogos casuais, familias e quem valoriza portabilidade. O PS5 e a escolha certa para quem busca graficos de ponta e jogos AAA. No Brasil, o Switch costuma ser mais acessivel e seus jogos mantem valor de revenda por mais tempo.",
     faqs: [
       {
-        q: "Nintendo Switch vale a pena em 2025?",
+        q: "Nintendo Switch vale a pena em 2026?",
         a: "Sim, o Switch tem uma biblioteca enorme de jogos exclusivos como Zelda, Mario e Pokemon. Mesmo com rumores do sucessor, o catalogo atual justifica a compra, especialmente com precos em queda.",
       },
       {
@@ -469,6 +469,92 @@ const comparisons: ComparisonDef[] = [
       { q: "Qual tem a melhor câmera?", a: "O Galaxy A54 com sensor de 50MP principal e OIS entrega fotos mais estáveis e com melhor processamento noturno. O Moto G84 com 50MP também é competente mas perde em consistência." },
       { q: "Qual tem melhor bateria?", a: "Ambos têm baterias de ~5.000 mAh e duram um dia inteiro. O Moto G84 carrega mais rápido (33W vs 25W)." },
       { q: "Qual receberá mais atualizações?", a: "Samsung promete 4 anos de atualizações de SO e 5 de segurança para o A54. Motorola geralmente oferece 1-2 anos de updates. Samsung leva vantagem clara aqui." },
+    ],
+  },
+  // ---- NEW: Priority category comparisons ----
+  {
+    slug: "iphone-15-vs-galaxy-s23",
+    title: "iPhone 15 vs Galaxy S23: Qual Comprar em 2026?",
+    description:
+      "Comparativo completo entre iPhone 15 e Galaxy S23. Preços atualizados, câmeras, desempenho e qual oferece melhor custo-benefício em 2026.",
+    intro:
+      "Com ambos já fora do ciclo de lançamento, iPhone 15 e Galaxy S23 estão com preços cada vez mais atrativos. A geração anterior da Samsung compete diretamente com o modelo atual da Apple em recursos e preço. Comparamos ofertas reais para ajudar na sua escolha.",
+    productA: { name: "iPhone 15", query: "iphone 15" },
+    productB: { name: "Galaxy S23", query: "galaxy s23" },
+    verdict:
+      "O iPhone 15 oferece USB-C, Dynamic Island e câmera de 48MP, com vantagem em longevidade de software. O Galaxy S23, por ser da geração anterior, costuma ter preços ainda mais baixos e entrega tela de 120Hz que falta no iPhone 15 padrão. Para quem prioriza custo-benefício e tela fluida, o Galaxy S23 é a melhor pedida. Para ecossistema Apple e revenda, o iPhone 15 vence.",
+    faqs: [
+      { q: "Galaxy S23 ainda vale a pena em 2026?", a: "Sim. O Galaxy S23 continua recebendo atualizações de segurança e tem hardware capaz de rodar qualquer app com fluidez. Com a queda de preço, é uma das melhores opções da Samsung." },
+      { q: "Qual tem melhor câmera, iPhone 15 ou Galaxy S23?", a: "O iPhone 15 tem sensor principal de 48MP com processamento de imagem superior em vídeo. O Galaxy S23 tem 50MP e zoom óptico 3x, com vantagem em fotos com zoom. Ambos são excelentes." },
+      { q: "Qual tem melhor tela?", a: "O Galaxy S23 vence com tela Dynamic AMOLED de 120Hz, mais brilhante e fluida. O iPhone 15 tem tela de 60Hz, o que é perceptível ao lado de um 120Hz." },
+    ],
+  },
+  {
+    slug: "redmi-note-13-vs-galaxy-a54",
+    title: "Redmi Note 13 vs Galaxy A54: Qual o Melhor Intermediário em 2026?",
+    description:
+      "Comparativo Redmi Note 13 vs Galaxy A54. Câmera, bateria, atualizações e preços dos intermediários mais buscados no Brasil.",
+    intro:
+      "Redmi Note 13 e Galaxy A54 disputam o trono dos intermediários no Brasil. A Xiaomi aposta em tela AMOLED e preço agressivo, enquanto a Samsung oferece IP67, mais atualizações e marca consolidada. Comparamos preços reais para ajudar na decisão.",
+    productA: { name: "Redmi Note 13", query: "redmi note 13" },
+    productB: { name: "Galaxy A54", query: "galaxy a54" },
+    verdict:
+      "O Redmi Note 13 entrega mais especificações pelo preço, com carregamento rápido de 33W e tela AMOLED de 120Hz por menos. O Galaxy A54 compensa com resistência à água IP67, 4 anos de atualizações e câmera mais consistente. Para quem quer economizar ao máximo, Redmi Note 13. Para segurança e durabilidade, Galaxy A54.",
+    faqs: [
+      { q: "Qual tem melhor câmera?", a: "O Galaxy A54 tem processamento de imagem mais avançado e OIS na câmera principal. O Redmi Note 13 tem boa câmera para o preço, mas perde em fotos noturnas e estabilização." },
+      { q: "Redmi Note 13 tem resistência à água?", a: "O modelo padrão tem apenas proteção contra respingos (IP54). O Galaxy A54 possui IP67 completo, resistindo a submersão." },
+      { q: "Qual dura mais em atualizações?", a: "Samsung promete 4 anos de SO e 5 de segurança. Xiaomi oferece 2-3 anos de atualizações. A Samsung leva vantagem clara em longevidade de software." },
+    ],
+  },
+  {
+    slug: "macbook-air-vs-ideapad",
+    title: "MacBook Air vs Lenovo IdeaPad: Qual Notebook Comprar em 2026?",
+    description:
+      "MacBook Air M2/M3 vs Lenovo IdeaPad. Desempenho, bateria, preço e produtividade comparados para o mercado brasileiro.",
+    intro:
+      "MacBook Air e Lenovo IdeaPad representam abordagens opostas: Apple Silicon premium vs custo-benefício Windows. Enquanto o MacBook Air brilha em eficiência e portabilidade, o IdeaPad oferece preços muito mais acessíveis com hardware competente. Comparamos para ajudar na escolha.",
+    productA: { name: "MacBook Air", query: "macbook air" },
+    productB: { name: "Lenovo IdeaPad", query: "lenovo ideapad" },
+    verdict:
+      "O MacBook Air é superior em bateria, desempenho por watt e qualidade de tela, mas custa significativamente mais no Brasil. O Lenovo IdeaPad oferece boa performance para trabalho e estudo por metade do preço, com a flexibilidade do Windows. Para estudantes e profissionais com orçamento limitado, o IdeaPad é a escolha racional. Para quem pode investir mais e valoriza portabilidade, o MacBook Air compensa.",
+    faqs: [
+      { q: "MacBook Air ou IdeaPad para programação?", a: "O MacBook Air com M2/M3 é excelente para desenvolvimento, especialmente mobile (Swift/iOS). O IdeaPad atende bem para desenvolvimento web e Python. Para desenvolvimento .NET ou jogos, o Windows do IdeaPad tem mais compatibilidade." },
+      { q: "Qual tem melhor tela?", a: "O MacBook Air tem tela Liquid Retina com calibração de cores profissional. O IdeaPad costuma ter telas IPS Full HD decentes, mas inferiores em brilho e precisão de cor." },
+      { q: "Quanto custa cada um no Brasil?", a: "O MacBook Air parte de R$8.000-10.000, enquanto o IdeaPad começa em R$2.500-3.500 com configurações para trabalho. A diferença de preço é significativa." },
+    ],
+  },
+  {
+    slug: "dell-inspiron-vs-asus-vivobook",
+    title: "Dell Inspiron vs ASUS VivoBook: Qual Notebook Escolher em 2026?",
+    description:
+      "Comparativo Dell Inspiron vs ASUS VivoBook. Construção, desempenho, preço e assistência técnica comparados.",
+    intro:
+      "Dell Inspiron e ASUS VivoBook são duas das linhas de notebooks mais populares no Brasil para trabalho e estudo. Ambas oferecem configurações variadas em faixas de preço semelhantes, mas diferem em construção, teclado e suporte técnico. Comparamos preços e recursos para ajudar na decisão.",
+    productA: { name: "Dell Inspiron", query: "dell inspiron" },
+    productB: { name: "ASUS VivoBook", query: "asus vivobook" },
+    verdict:
+      "O Dell Inspiron se destaca pela qualidade de construção robusta e assistência técnica excelente no Brasil, ideal para uso corporativo. O ASUS VivoBook geralmente oferece especificações superiores pelo mesmo preço, com designs mais modernos e leves. Para quem precisa de suporte confiável, Dell. Para melhor custo-benefício em hardware, ASUS.",
+    faqs: [
+      { q: "Qual tem melhor assistência técnica no Brasil?", a: "A Dell tem rede de assistência ampla e renomada no Brasil, com opções de suporte on-site. A ASUS melhorou bastante mas ainda fica atrás em cobertura e agilidade." },
+      { q: "Qual é mais leve e portátil?", a: "O ASUS VivoBook costuma ser mais leve e fino, especialmente nas versões OLED. O Dell Inspiron prioriza robustez, sendo ligeiramente mais pesado em geral." },
+      { q: "Qual dura mais?", a: "Ambos são duráveis para uso normal. O Dell Inspiron tem reputação de maior longevidade em ambientes corporativos. O VivoBook pode ter peças de reposição mais difíceis no Brasil." },
+    ],
+  },
+  {
+    slug: "nike-revolution-vs-adidas-duramo",
+    title: "Nike Revolution vs Adidas Duramo: Qual o Melhor Tênis de Corrida Barato?",
+    description:
+      "Comparativo Nike Revolution vs Adidas Duramo. Amortecimento, durabilidade, conforto e preço dos tênis de corrida entry-level.",
+    intro:
+      "Nike Revolution e Adidas Duramo são os tênis de corrida mais acessíveis das duas maiores marcas esportivas. Ambos custam entre R$200-350 e são indicados para iniciantes na corrida ou uso casual. Comparamos conforto, durabilidade e preço para ajudar na escolha.",
+    productA: { name: "Nike Revolution", query: "nike revolution" },
+    productB: { name: "Adidas Duramo", query: "adidas duramo" },
+    verdict:
+      "O Nike Revolution oferece design mais moderno e leveza, sendo excelente para caminhadas e corridas leves. O Adidas Duramo se destaca pelo amortecimento Lightmotion mais responsivo e melhor aderência em terrenos variados. Ambos são ótimas opções de entrada. Em promoções, o mais barato entre os dois é a melhor escolha — a diferença de performance é marginal.",
+    faqs: [
+      { q: "Qual é melhor para iniciantes na corrida?", a: "Ambos são adequados para iniciantes que correm até 5km. O Duramo tem leve vantagem em amortecimento, enquanto o Revolution é mais leve. Para distâncias maiores, considere modelos intermediários." },
+      { q: "Qual dura mais?", a: "Ambos duram entre 400-600km de corrida. O Adidas Duramo tende a manter a sola por mais tempo, enquanto o Nike Revolution pode desgastar mais rápido em asfalto." },
+      { q: "Servem para academia?", a: "Sim, ambos funcionam bem para musculação e exercícios gerais. Para treinos com saltos ou movimentos laterais intensos, um tênis de cross-training seria mais indicado." },
     ],
   },
 ];

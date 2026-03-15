@@ -23,7 +23,21 @@ export function productSchema(product: { name: string; description?: string; ima
     brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
     offers: product.offers.length === 1
       ? { '@type': 'Offer', price: product.offers[0].price, priceCurrency: product.offers[0].currency || 'BRL', url: product.offers[0].url, seller: { '@type': 'Organization', name: product.offers[0].seller }, availability: `https://schema.org/${product.offers[0].availability}` }
-      : { '@type': 'AggregateOffer', lowPrice: Math.min(...product.offers.map(o => o.price)), highPrice: Math.max(...product.offers.map(o => o.price)), priceCurrency: 'BRL', offerCount: product.offers.length },
+      : {
+          '@type': 'AggregateOffer',
+          lowPrice: Math.min(...product.offers.map(o => o.price)),
+          highPrice: Math.max(...product.offers.map(o => o.price)),
+          priceCurrency: 'BRL',
+          offerCount: product.offers.length,
+          offers: product.offers.slice(0, 10).map(o => ({
+            '@type': 'Offer',
+            price: o.price,
+            priceCurrency: o.currency || 'BRL',
+            url: o.url,
+            seller: { '@type': 'Organization', name: o.seller },
+            availability: `https://schema.org/${o.availability}`,
+          })),
+        },
   }
 }
 

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   // Validate webhook token if configured
   if (WEBHOOK_SECRET) {
-    const token = req.headers.get('x-webhook-token') || req.nextUrl.searchParams.get('token')
+    const token = req.headers.get('x-webhook-token')
     if (token !== WEBHOOK_SECRET) {
       console.warn('[webhook:ml] Unauthorized request — invalid or missing token')
       return NextResponse.json({ ok: false }, { status: 401 })

@@ -98,8 +98,8 @@ export async function generateMetadata({
   const name = category?.name || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return buildMetadata({
-    title: `${name} - Melhores Ofertas`,
-    description: `Compare preços e encontre as melhores ofertas de ${name}. Histórico de preços, cupons e frete grátis.`,
+    title: `Melhores Ofertas de ${name} \u2014 Pre\u00e7os Atualizados`,
+    description: `Compare pre\u00e7os e encontre as melhores ofertas de ${name} em 2026. Hist\u00f3rico de pre\u00e7os, cupons, frete gr\u00e1tis e descontos reais atualizados.`,
     path: `/categoria/${slug}`,
   });
 }

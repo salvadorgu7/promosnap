@@ -17,12 +17,10 @@ import {
   FileText,
   Mail,
   DollarSign,
-  Lightbulb,
   Target,
   Brain,
   Gift,
   SearchX,
-  MailCheck,
   HeartPulse,
   ShieldCheck,
   Shield,
@@ -33,11 +31,8 @@ import {
   ShieldAlert,
   Radio,
   Image,
-  Pencil,
-  Gem,
   ShoppingBag,
   Play,
-  RefreshCw,
   Plug,
   Search,
 } from "lucide-react";
@@ -54,7 +49,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-// Primary nav groups — essential operational items
+// Primary nav groups — streamlined, no duplicates
 const navGroups: NavGroup[] = [
   {
     title: "Principal",
@@ -62,7 +57,6 @@ const navGroups: NavGroup[] = [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/setup", label: "Setup", icon: Settings },
       { href: "/admin/health", label: "Health", icon: HeartPulse },
-      { href: "/admin/sourcing", label: "Sourcing", icon: Package },
     ],
   },
   {
@@ -71,8 +65,8 @@ const navGroups: NavGroup[] = [
       { href: "/admin/produtos", label: "Produtos", icon: Package },
       { href: "/admin/ofertas", label: "Ofertas", icon: Tag },
       { href: "/admin/fontes", label: "Fontes", icon: Store },
-      { href: "/admin/imports", label: "Import", icon: Upload },
       { href: "/admin/ingestao", label: "Ingestao", icon: Upload },
+      { href: "/admin/sourcing", label: "Sourcing", icon: Package },
       { href: "/admin/banners", label: "Banners", icon: Image },
       { href: "/admin/catalog-density", label: "Densidade", icon: BarChart3 },
     ],
@@ -83,7 +77,6 @@ const navGroups: NavGroup[] = [
       { href: "/admin/attribution", label: "Attribution", icon: Target },
       { href: "/admin/monetizacao", label: "Monetizacao", icon: DollarSign },
       { href: "/admin/analytics", label: "Analytics", icon: Activity },
-      { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
       { href: "/admin/seo", label: "SEO", icon: Globe },
       { href: "/admin/amazon", label: "Amazon", icon: ShoppingBag },
     ],
@@ -92,17 +85,18 @@ const navGroups: NavGroup[] = [
     title: "Growth",
     items: [
       { href: "/admin/growth-ops", label: "Growth & Ops", icon: Rocket },
-      { href: "/admin/growth", label: "Growth", icon: TrendingUp },
-      { href: "/admin/query-intelligence", label: "Query Intelligence", icon: Search },
+      { href: "/admin/query-intelligence", label: "Query Intel", icon: Search },
       { href: "/admin/tendencias", label: "Tendencias", icon: TrendingUp },
       { href: "/admin/email", label: "Email", icon: Mail },
       { href: "/admin/alertas", label: "Alertas", icon: Bell },
-      { href: "/admin/habit-loops", label: "Habit Loops", icon: Brain },
+      { href: "/admin/referrals", label: "Referrals", icon: Gift },
+      { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
     ],
   },
   {
-    title: "Fontes",
+    title: "Integracoes",
     items: [
+      { href: "/admin/integrations", label: "Integracoes", icon: Plug },
       { href: "/admin/multi-source", label: "Multi-Source", icon: Store },
     ],
   },
@@ -121,15 +115,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Experimental items — collapsed by default (only genuinely useful extras)
+// Advanced items — collapsed by default
 const experimentalItems: NavItem[] = [
   { href: "/admin/cockpit", label: "Cockpit", icon: Gauge },
   { href: "/admin/catalog-quality", label: "Qualidade", icon: Gauge },
   { href: "/admin/catalog-intelligence", label: "Intelligence", icon: Brain },
+  { href: "/admin/catalog-governance", label: "Governance", icon: ShieldCheck },
   { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
   { href: "/admin/seo-gaps", label: "SEO Gaps", icon: SearchX },
   { href: "/admin/automation", label: "Automacao", icon: Zap },
   { href: "/admin/rate-limits", label: "Rate Limits", icon: ShieldAlert },
+  { href: "/admin/performance", label: "Performance", icon: Activity },
+  { href: "/admin/artigos", label: "Artigos", icon: FileText },
+  { href: "/admin/audit", label: "Audit", icon: ClipboardCheck },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

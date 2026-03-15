@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Star, ShieldCheck, Store, Truck, Flame as FireIcon } from "lucide-react";
+import { ExternalLink, Star, ShieldCheck, Store, Truck, Flame as FireIcon, ThumbsUp } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import FavoriteButton from "@/components/ui/FavoriteButton";
@@ -113,10 +113,12 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
       {/* Content */}
       <div className="flex-1 flex flex-col px-1.5 pt-1.5 pb-2">
         <div className="flex items-center gap-1 text-[11px] text-text-muted mb-1 flex-wrap">
-          <span className="font-medium">{bestOffer.sourceName}</span>
+          <span className="inline-flex items-center gap-0.5 font-semibold text-text-secondary">
+            <Store className="h-2.5 w-2.5" />
+            {bestOffer.sourceName}
+          </span>
           {product.offersCount > 1 && (
             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-surface-100 text-[9px] font-medium text-text-muted">
-              <Store className="h-2.5 w-2.5" />
               {product.offersCount} lojas
             </span>
           )}
@@ -124,6 +126,12 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
             <ShippingBadge freeShipping compact />
           )}
           <TrustBadge score={bestOffer.offerScore} />
+          {bestOffer.offerScore > 70 && (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-accent-green/10 text-[10px] font-semibold text-accent-green border border-accent-green/15">
+              <ThumbsUp className="h-2.5 w-2.5" />
+              Boa oferta
+            </span>
+          )}
           {product.popularityScore > 60 && (
             <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-accent-orange">
               <FireIcon className="h-2.5 w-2.5" />
@@ -146,19 +154,19 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
 
         {/* Price block */}
         <div className="mt-auto pt-2">
-          <div className="flex items-end gap-1.5">
+          <div className="flex items-center gap-1.5">
             {bestOffer.originalPrice && bestOffer.originalPrice > bestOffer.price && (
-              <span className="price-old">{formatPrice(bestOffer.originalPrice)}</span>
+              <span className="price-old-vibrant">{formatPrice(bestOffer.originalPrice)}</span>
             )}
             {discount && discount > 0 && (
-              <span className={`font-display font-bold ${
+              <span className={`font-display font-extrabold ${
                 isHotDiscount
-                  ? "text-sm text-accent-red bg-accent-red/10 px-1.5 py-0.5 rounded-md border border-accent-red/15"
-                  : "text-xs discount-tag"
+                  ? "text-sm text-white bg-gradient-to-r from-accent-red to-red-600 px-2 py-0.5 rounded-md shadow-sm"
+                  : "text-xs discount-tag-vibrant"
               }`}>-{discount}%</span>
             )}
           </div>
-          <div className="price-big mt-0.5">{formatPrice(bestOffer.price)}</div>
+          <div className="price-big-prominent mt-0.5">{formatPrice(bestOffer.price)}</div>
           {bestOffer.price > 100 && (
             <p className="text-[10px] text-text-muted mt-0.5">
               ou 12x de {formatPrice(bestOffer.price / 12)}

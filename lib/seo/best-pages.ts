@@ -41,7 +41,7 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
     query: { categories: ['notebooks'] },
     faqs: [
       { q: 'Qual a diferença entre notebook e ultrabook?', a: 'Ultrabooks são notebooks mais finos e leves, geralmente com SSDs e processadores de baixo consumo. São ideais para portabilidade, enquanto notebooks tradicionais oferecem mais desempenho por preço menor.' },
-      { q: 'Quanto de RAM é recomendado em 2025?', a: 'Para uso básico, 8GB é suficiente. Para multitarefa e edição de fotos, 16GB. Para edição de vídeo ou jogos, 32GB é o ideal.' },
+      { q: 'Quanto de RAM é recomendado em 2026?', a: 'Para uso básico, 8GB é suficiente. Para multitarefa e edição de fotos, 16GB. Para edição de vídeo ou jogos, 32GB é o ideal.' },
       { q: 'Os preços incluem frete?', a: 'Indicamos quando o frete é grátis com o badge correspondente. O preço final pode variar com o frete dependendo da sua região.' },
       { q: 'Como funciona a garantia de notebooks online?', a: 'Notebooks comprados em marketplaces como Amazon e Mercado Livre contam com garantia do fabricante. Verifique se o vendedor é oficial ou autorizado.' },
     ],
@@ -52,7 +52,7 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
     intro: 'Notebooks gamer exigem um investimento maior, por isso é essencial encontrar o melhor preço. Comparamos os principais modelos com GPU dedicada, tela de alta taxa de atualização e refrigeração eficiente para você jogar sem lag.',
     query: { categories: ['notebooks'], keywords: ['gamer', 'gaming'] },
     faqs: [
-      { q: 'Qual placa de vídeo mínima para jogos em 2025?', a: 'Para jogos em Full HD com qualidade média-alta, uma RTX 4050 ou equivalente é o mínimo recomendado. Para 1440p, considere RTX 4060 ou superior.' },
+      { q: 'Qual placa de vídeo mínima para jogos em 2026?', a: 'Para jogos em Full HD com qualidade média-alta, uma RTX 4050 ou equivalente é o mínimo recomendado. Para 1440p, considere RTX 4060 ou superior.' },
       { q: 'Tela de 144Hz faz diferença em notebook gamer?', a: 'Sim, a diferença é perceptível em jogos competitivos como FPS e corrida. Para jogos casuais e RPGs, 60Hz já é suficiente.' },
       { q: 'Notebook gamer serve para trabalho?', a: 'Sim, notebooks gamer são excelentes para edição de vídeo, modelagem 3D e outras tarefas pesadas, graças à GPU dedicada e ao processador potente.' },
     ],
@@ -263,7 +263,7 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
     intro: 'Encontrar um tênis bom e barato é possível se você souber onde procurar. Reunimos os modelos com melhor relação preço-qualidade, comparando amortecimento, durabilidade e conforto em cada faixa de preço.',
     query: { categories: ['tenis'], keywords: ['custo beneficio', 'barato', 'promoção'] },
     faqs: [
-      { q: 'Quanto custa um bom tênis em 2025?', a: 'Na faixa de R$150-300 você encontra tênis de boa qualidade para uso casual. Para corrida, a partir de R$250 já existem modelos com amortecimento decente.' },
+      { q: 'Quanto custa um bom tênis em 2026?', a: 'Na faixa de R$150-300 você encontra tênis de boa qualidade para uso casual. Para corrida, a partir de R$250 já existem modelos com amortecimento decente.' },
       { q: 'Tênis barato vale a pena?', a: 'Modelos entry-level de grandes marcas (Nike Revolution, Adidas Duramo, Puma Softride) são baratos e confiáveis. Evite marcas desconhecidas sem avaliações.' },
       { q: 'Onde encontrar os melhores descontos em tênis?', a: 'O PromoSnap monitora preços em Amazon, Mercado Livre, Shopee e Magazine Luiza. Datas como Black Friday, Dia do Consumidor e trocas de coleção oferecem os maiores descontos.' },
     ],
@@ -274,7 +274,7 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
     intro: 'A faixa até R$ 1.500 concentra os smartphones com melhor custo-benefício do mercado brasileiro. Comparamos modelos de Samsung, Motorola, Xiaomi e mais para ajudar você a escolher o celular ideal nesse orçamento.',
     query: { categories: ['celulares'], keywords: ['até 1500', 'intermediário', 'custo benefício'] },
     faqs: [
-      { q: 'Qual o melhor celular até R$ 1.500 em 2025?', a: 'Galaxy A54, Motorola Moto G84 e Xiaomi Redmi Note 13 Pro são as melhores opções nessa faixa, cada um com pontos fortes em câmera, bateria ou desempenho.' },
+      { q: 'Qual o melhor celular até R$ 1.500 em 2026?', a: 'Galaxy A54, Motorola Moto G84 e Xiaomi Redmi Note 13 Pro são as melhores opções nessa faixa, cada um com pontos fortes em câmera, bateria ou desempenho.' },
       { q: 'Celular até R$ 1.500 roda jogos?', a: 'Sim, modelos com Snapdragon 695 ou superior rodam a maioria dos jogos com qualidade média. Para jogos pesados em alta qualidade, considere a faixa acima de R$ 2.000.' },
       { q: 'Vale esperar promoção ou comprar agora?', a: 'Use o histórico de preços do PromoSnap para verificar. Se o preço atual está abaixo da média dos últimos 30 dias, é uma boa hora para comprar.' },
     ],

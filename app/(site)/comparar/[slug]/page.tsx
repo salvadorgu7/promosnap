@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, Award, ChevronDown, ExternalLink, Scale, Truck, Star, Package } from "lucide-react";
+import { ArrowRight, Award, ChevronDown, ExternalLink, Scale, Truck, Star, Package, Trophy, Zap } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import ComparisonTracker from "@/components/seo/ComparisonTracker";
 import Breadcrumb from "@/components/ui/Breadcrumb";
@@ -28,8 +28,11 @@ export async function generateMetadata({
   const def = COMPARISONS[slug];
   if (!def) return buildMetadata({ title: "Comparativo" });
 
+  // Build SEO title: "ProductA vs ProductB: Qual Comprar em 2026? | PromoSnap"
+  const seoTitle = `${def.productA.name} vs ${def.productB.name}: Qual Comprar em 2026?`;
+
   return buildMetadata({
-    title: def.title,
+    title: seoTitle,
     description: def.description,
     path: `/comparar/${slug}`,
   });
@@ -61,6 +64,38 @@ function faqPageSchema(def: ComparisonDef) {
         text: faq.a,
       },
     })),
+  };
+}
+
+function comparisonProductSchema(
+  product: { name: string; query: string },
+  offers: ProductCard[],
+  slug: string
+) {
+  const best = offers[0];
+  if (!best) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    image: best.imageUrl || undefined,
+    description: `Compare preços de ${product.name} nas melhores lojas do Brasil.`,
+    offers:
+      offers.length === 1
+        ? {
+            "@type": "Offer",
+            price: best.bestOffer.price,
+            priceCurrency: "BRL",
+            url: `${process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br"}/comparar/${slug}`,
+            availability: "https://schema.org/InStock",
+          }
+        : {
+            "@type": "AggregateOffer",
+            lowPrice: Math.min(...offers.map((o) => o.bestOffer.price)),
+            highPrice: Math.max(...offers.map((o) => o.bestOffer.price)),
+            priceCurrency: "BRL",
+            offerCount: offers.reduce((acc, o) => acc + o.offersCount, 0),
+          },
   };
 }
 
@@ -178,12 +213,12 @@ function ProductSideCard({
         href={best.bestOffer.affiliateUrl}
         target="_blank"
         rel="noopener noreferrer nofollow"
-        className="flex items-center justify-center gap-2 w-full h-10 rounded-lg
+        className="flex items-center justify-center gap-2 w-full h-12 rounded-lg
                    bg-gradient-to-r from-accent-blue to-brand-500 text-white
-                   text-sm font-semibold hover:shadow-glow transition-all"
+                   text-sm font-bold hover:shadow-glow hover:scale-[1.02] transition-all shadow-md"
       >
         Ver melhor oferta
-        <ExternalLink className="w-3.5 h-3.5" />
+        <ExternalLink className="w-4 h-4" />
       </a>
     </div>
   );
@@ -254,6 +289,28 @@ export default async function CompararPage({
           __html: JSON.stringify(faqPageSchema(def)),
         }}
       />
+      {/* Product schema for Product A */}
+      {(() => {
+        const schema = comparisonProductSchema(def.productA, productsA, slug);
+        if (!schema) return null;
+        return (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          />
+        );
+      })()}
+      {/* Product schema for Product B */}
+      {(() => {
+        const schema = comparisonProductSchema(def.productB, productsB, slug);
+        if (!schema) return null;
+        return (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          />
+        );
+      })()}
 
       <Breadcrumb
         items={[
@@ -277,15 +334,74 @@ export default async function CompararPage({
         </p>
       </div>
 
+      {/* Conclusao Rapida — quick decision summary */}
+      {bestA && bestB && (
+        <div className="rounded-xl border-2 border-accent-orange/30 bg-gradient-to-r from-accent-orange/5 to-amber-50 p-5 md:p-6 mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="w-5 h-5 text-accent-orange" />
+            <h2 className="text-lg font-bold font-display text-text-primary">
+              Conclusao Rapida
+            </h2>
+          </div>
+          <p className="text-sm text-text-secondary leading-relaxed mb-4">
+            {bestA.bestOffer.price <= bestB.bestOffer.price ? (
+              <>
+                O <strong>{def.productA.name}</strong> esta mais barato agora por{" "}
+                <strong className="text-accent-green">{formatPrice(bestA.bestOffer.price)}</strong>
+                {bestB.bestOffer.price > bestA.bestOffer.price && (
+                  <>, economizando{" "}
+                  <strong>{formatPrice(bestB.bestOffer.price - bestA.bestOffer.price)}</strong> em relacao ao {def.productB.name}</>
+                )}.
+              </>
+            ) : (
+              <>
+                O <strong>{def.productB.name}</strong> esta mais barato agora por{" "}
+                <strong className="text-accent-green">{formatPrice(bestB.bestOffer.price)}</strong>
+                {bestA.bestOffer.price > bestB.bestOffer.price && (
+                  <>, economizando{" "}
+                  <strong>{formatPrice(bestA.bestOffer.price - bestB.bestOffer.price)}</strong> em relacao ao {def.productA.name}</>
+                )}.
+              </>
+            )}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <a
+              href={bestA.bestOffer.price <= bestB.bestOffer.price ? bestA.bestOffer.affiliateUrl : bestB.bestOffer.affiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
+                         bg-accent-orange text-white text-sm font-bold hover:bg-accent-orange/90 transition-all shadow-md"
+            >
+              <Trophy className="w-4 h-4" />
+              Ver melhor preco ({formatPrice(Math.min(bestA.bestOffer.price, bestB.bestOffer.price))})
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Side-by-side cards */}
       <div className="flex flex-col md:flex-row gap-4 mb-10">
-        <ProductSideCard label={def.productA.name} products={productsA} />
+        <div className="flex-1 relative">
+          {bestA && bestB && bestA.bestOffer.price <= bestB.bestOffer.price && (
+            <div className="absolute -top-3 left-4 z-10 flex items-center gap-1 px-3 py-1 rounded-full bg-accent-green text-white text-xs font-bold shadow-md">
+              <Trophy className="w-3 h-3" /> Melhor Preco
+            </div>
+          )}
+          <ProductSideCard label={def.productA.name} products={productsA} />
+        </div>
         <div className="flex items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-surface-100 flex items-center justify-center text-text-muted font-bold text-sm">
             VS
           </div>
         </div>
-        <ProductSideCard label={def.productB.name} products={productsB} />
+        <div className="flex-1 relative">
+          {bestA && bestB && bestB.bestOffer.price < bestA.bestOffer.price && (
+            <div className="absolute -top-3 left-4 z-10 flex items-center gap-1 px-3 py-1 rounded-full bg-accent-green text-white text-xs font-bold shadow-md">
+              <Trophy className="w-3 h-3" /> Melhor Preco
+            </div>
+          )}
+          <ProductSideCard label={def.productB.name} products={productsB} />
+        </div>
       </div>
 
       {/* Specs comparison table */}

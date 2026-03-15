@@ -8,6 +8,7 @@ import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { getProductsByCategory, searchListings } from "@/lib/db/queries";
 import { BEST_PAGES, BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
 import { COMPARISON_LIST } from "@/lib/seo/comparisons";
+import { getBaseUrl } from "@/lib/seo/url";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -24,8 +25,13 @@ export async function generateMetadata({
   const page = BEST_PAGES[slug];
   if (!page) return buildMetadata({ title: "Página não encontrada" });
 
+  // Ensure title includes year: "Melhores X de 2026"
+  const seoTitle = page.title.includes("2026")
+    ? page.title
+    : `${page.title} de 2026`;
+
   return buildMetadata({
-    title: page.title,
+    title: seoTitle,
     description: page.description,
     path: `/melhores/${slug}`,
   });
@@ -117,6 +123,26 @@ export default async function MelhoresPage({
           }),
         }}
       />
+      {/* ItemList schema for product rankings */}
+      {products.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              name: `${page.title} de 2026`,
+              numberOfItems: products.length,
+              itemListElement: products.slice(0, 10).map((p, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                name: p.name,
+                url: `${getBaseUrl()}/produto/${p.slug}`,
+              })),
+            }),
+          }}
+        />
+      )}
 
       <Breadcrumb
         items={[
@@ -133,7 +159,7 @@ export default async function MelhoresPage({
             <Award className="w-5 h-5 text-accent-blue" />
           </div>
           <h1 className="text-3xl font-bold font-display text-text-primary">
-            {page.title}
+            {page.title.includes("2026") ? page.title : `${page.title} de 2026`}
           </h1>
         </div>
         <p className="text-text-secondary leading-relaxed max-w-3xl">

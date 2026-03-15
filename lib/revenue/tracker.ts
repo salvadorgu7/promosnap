@@ -1,17 +1,9 @@
 /**
  * Revenue Tracker — estimates revenue from clickout data with real per-source rates.
- * Replaces the hardcoded attribution estimates with data-driven calculations.
+ * Uses shared source profiles from lib/config/source-profiles.ts.
  */
 import prisma from "@/lib/db/prisma";
-
-const SOURCE_PROFILES: Record<string, { avgTicket: number; commissionRate: number; conversionRate: number }> = {
-  "amazon-br": { avgTicket: 180, commissionRate: 0.04, conversionRate: 0.08 },
-  "mercadolivre": { avgTicket: 150, commissionRate: 0.03, conversionRate: 0.06 },
-  "shopee": { avgTicket: 80, commissionRate: 0.025, conversionRate: 0.05 },
-  "magazineluiza": { avgTicket: 120, commissionRate: 0.03, conversionRate: 0.05 },
-};
-
-const DEFAULT_PROFILE = { avgTicket: 120, commissionRate: 0.03, conversionRate: 0.06 };
+import { getSourceProfile } from "@/lib/config/source-profiles";
 
 export interface RevenueEstimate {
   period: string;
@@ -49,7 +41,7 @@ export async function estimateRevenue(days: number = 30): Promise<RevenueEstimat
     let totalRevenue = 0;
 
     const sourceBreakdown = bySource.map(s => {
-      const profile = SOURCE_PROFILES[s.source_slug] || DEFAULT_PROFILE;
+      const profile = getSourceProfile(s.source_slug);
       const clicks = Number(s.clicks);
       const conversions = Math.round(clicks * profile.conversionRate);
       const gmv = conversions * profile.avgTicket;

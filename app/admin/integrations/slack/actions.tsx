@@ -13,7 +13,7 @@ export function SlackActions() {
     try {
       const res = await fetch('/api/admin/integrations/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'slack', action }),
       })
       const data = await res.json()
