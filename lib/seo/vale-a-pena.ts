@@ -193,6 +193,58 @@ export const VALE_A_PENA_PAGES: Record<string, ValeAPenaDef> = {
       { q: 'A bateria do Galaxy S24 dura o dia todo?', a: 'Para uso moderado (redes sociais, mensagens, fotos), sim. Para uso pesado (jogos, streaming, navegação constante), provavelmente precisará de uma carga parcial à tarde. O carregamento de 25W leva cerca de 1h15 para carga completa.' },
     ],
   },
+  'vale-a-pena-nike-air-force': {
+    title: 'Nike Air Force 1 Vale a Pena?',
+    description: 'Descubra se o Nike Air Force 1 vale a pena em 2025. Analisamos conforto, durabilidade, estilo e custo-benefício.',
+    intro: 'O Nike Air Force 1 é um dos tênis mais icônicos da história. Lançado em 1982 para o basquete, se tornou sinônimo de streetwear e cultura urbana. Mas com preços que variam bastante, vale a pena investir nesse clássico? Analisamos os pontos que importam.',
+    productQuery: 'nike air force 1',
+    pros: [
+      'Design atemporal que nunca sai de moda',
+      'Combina com praticamente qualquer visual',
+      'Durabilidade excelente — couro resistente e solado robusto',
+      'Disponível em centenas de colorways e colaborações',
+      'Valor de revenda mantém-se bem em edições limitadas',
+    ],
+    cons: [
+      'Pode ser pesado para uso prolongado comparado a tênis com tecnologia moderna',
+      'Versão branca suja facilmente e exige manutenção',
+      'Amortecimento básico comparado a tênis de corrida modernos',
+      'Preço no Brasil pode ser inflado em comparação ao exterior',
+    ],
+    verdict: 'O Nike Air Force 1 vale a pena como tênis casual e de estilo. É um investimento seguro em moda que dura anos. Para atividades físicas ou longas caminhadas, existem opções mais confortáveis. O melhor momento para comprar é em promoções sazonais, quando o preço cai significativamente.',
+    alternativeQueries: ['adidas superstar', 'new balance 574', 'puma suede', 'nike dunk low'],
+    faqs: [
+      { q: 'O Air Force 1 é confortável para o dia todo?', a: 'Para uso casual e caminhadas moderadas, sim. Para ficar de pé o dia todo ou caminhar longas distâncias, modelos com tecnologia de amortecimento moderna (como Ultraboost ou React) são mais indicados.' },
+      { q: 'Qual a diferença entre Air Force 1 07 e outros modelos?', a: 'O "07" é a versão atualizada mais comum, com pequenas melhorias no material e acabamento. Existem versões Low, Mid e High, além de colaborações especiais e materiais premium.' },
+      { q: 'Como conservar o Air Force 1 branco?', a: 'Limpe regularmente com escova macia e sabão neutro. Use spray impermeabilizante antes do primeiro uso. Evite máquina de lavar e seque à sombra.' },
+    ],
+  },
+  'vale-a-pena-macbook-air-m2': {
+    title: 'MacBook Air M2 Vale a Pena?',
+    description: 'Descubra se o MacBook Air M2 vale a pena em 2025. Performance, bateria, preço e comparações com M3 e Windows.',
+    intro: 'O MacBook Air M2 trouxe o redesign mais significativo do Air em anos, com tela maior, chip Apple Silicon potente e design fino sem ventoinhas. Com a chegada do M3, o preço do M2 caiu bastante. Será que agora é o melhor momento para comprar?',
+    productQuery: 'macbook air m2',
+    pros: [
+      'Performance excelente para uso profissional e criativo',
+      'Bateria que dura até 18 horas de uso real',
+      'Tela Liquid Retina de 13.6" com brilho impressionante',
+      'Silencioso — sem ventoinha, sem ruído',
+      'macOS otimizado com integração ao ecossistema Apple',
+    ],
+    cons: [
+      'Preço ainda alto no Brasil comparado a notebooks Windows similares',
+      'Apenas 8GB de RAM na versão base (pode ser limitante)',
+      'Armazenamento de 256GB SSD é pouco para muitos usuários',
+      'Reparo caro e limitado a assistência Apple',
+    ],
+    verdict: 'O MacBook Air M2 vale muito a pena em 2025, especialmente com os descontos atuais após o lançamento do M3. É o notebook ideal para profissionais criativos, estudantes e quem valoriza portabilidade e bateria. A versão com 16GB/512GB é o melhor investimento a longo prazo.',
+    alternativeQueries: ['macbook air m3', 'notebook dell inspiron', 'lenovo ideapad', 'notebook ate 5000'],
+    faqs: [
+      { q: 'MacBook Air M2 ou M3?', a: 'O M3 é ~15-20% mais rápido e tem WiFi 6E, mas custa significativamente mais. O M2 com desconto oferece 90% da experiência por muito menos. Para a maioria dos usuários, o M2 é a escolha inteligente em 2025.' },
+      { q: '8GB de RAM é suficiente?', a: 'Para navegação, Office e uso geral, sim. Para edição de vídeo, desenvolvimento pesado ou muitas abas de navegador, opte por 16GB. A memória unificada do M2 é mais eficiente que RAM DDR convencional.' },
+      { q: 'MacBook Air roda jogos?', a: 'Jogos casuais e alguns AAA portados para Apple Silicon rodam bem (Resident Evil, No Mans Sky). Mas não é um notebook para gaming sério — para isso, considere um Windows com GPU dedicada.' },
+    ],
+  },
 }
 
 export const VALE_A_PENA_SLUGS = Object.keys(VALE_A_PENA_PAGES)

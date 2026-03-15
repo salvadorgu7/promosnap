@@ -234,6 +234,62 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
       { q: 'JBL ou concorrentes: qual marca escolher?', a: 'JBL lidera em popularidade e custo-beneficio no Brasil. Sony oferece graves mais potentes, Harman Kardon tem design premium e som refinado, e Marshall agrada quem busca estetica vintage.' },
     ],
   },
+  'melhores-tenis-corrida': {
+    title: 'Melhores Tênis de Corrida',
+    description: 'Os melhores tênis de corrida com preços comparados. Nike, Adidas, Asics, New Balance e mais com descontos reais.',
+    intro: 'Escolher o tênis de corrida certo impacta diretamente seu desempenho e conforto. Comparamos os principais modelos de marcas como Nike, Adidas, Asics e New Balance, analisando amortecimento, durabilidade, peso e preço para você encontrar o par ideal.',
+    query: { categories: ['tenis'], keywords: ['corrida', 'running'] },
+    faqs: [
+      { q: 'Qual o melhor tênis de corrida para iniciantes?', a: 'Para iniciantes, modelos com bom amortecimento e estabilidade são ideais. Nike Revolution, Asics Gel-Contend e Adidas Duramo são ótimas opções com preço acessível.' },
+      { q: 'Tênis de corrida precisa ser trocado a cada quantos km?', a: 'A recomendação é trocar entre 500-800km de uso. O amortecimento perde eficiência gradualmente, aumentando o risco de lesões.' },
+      { q: 'Qual a diferença entre tênis neutro e estável?', a: 'Tênis neutros são para pisada neutra ou supinada, com amortecimento uniforme. Tênis estáveis têm suporte extra no arco para corredores com pisada pronada.' },
+      { q: 'Nike ou Asics para corrida?', a: 'Asics é referência em amortecimento e durabilidade para corridas longas. Nike lidera em leveza e design para corridas rápidas. Ambas são excelentes — depende do seu estilo.' },
+    ],
+  },
+  'melhores-tenis-casual': {
+    title: 'Melhores Tênis Casual',
+    description: 'Os melhores tênis casual com preços comparados. Nike Air Force, Adidas Superstar, New Balance 574 e mais com descontos.',
+    intro: 'Tênis casual combinam estilo e conforto para o dia a dia. Selecionamos os modelos mais desejados de Nike, Adidas, New Balance e Puma com preços verificados em múltiplas lojas para você encontrar o melhor negócio.',
+    query: { categories: ['tenis'], keywords: ['casual', 'lifestyle'] },
+    faqs: [
+      { q: 'Qual o tênis casual mais versátil?', a: 'Nike Air Force 1, Adidas Stan Smith e New Balance 574 são os modelos mais versáteis, combinando com praticamente qualquer look casual.' },
+      { q: 'Tênis branco como conservar?', a: 'Limpe regularmente com escova macia e sabão neutro. Use protetor impermeabilizante e evite máquina de lavar. Guarde em local seco e arejado.' },
+      { q: 'Qual marca tem melhor custo-benefício em tênis casual?', a: 'Puma e New Balance oferecem excelente custo-benefício na faixa de R$200-400. Nike e Adidas cobram premium pela marca mas têm mais modelos icônicos.' },
+    ],
+  },
+  'melhores-tenis-custo-beneficio': {
+    title: 'Melhores Tênis Custo-Benefício',
+    description: 'Tênis com melhor custo-benefício do mercado. Compare preços e encontre o par ideal sem estourar o orçamento.',
+    intro: 'Encontrar um tênis bom e barato é possível se você souber onde procurar. Reunimos os modelos com melhor relação preço-qualidade, comparando amortecimento, durabilidade e conforto em cada faixa de preço.',
+    query: { categories: ['tenis'], keywords: ['custo beneficio', 'barato', 'promoção'] },
+    faqs: [
+      { q: 'Quanto custa um bom tênis em 2025?', a: 'Na faixa de R$150-300 você encontra tênis de boa qualidade para uso casual. Para corrida, a partir de R$250 já existem modelos com amortecimento decente.' },
+      { q: 'Tênis barato vale a pena?', a: 'Modelos entry-level de grandes marcas (Nike Revolution, Adidas Duramo, Puma Softride) são baratos e confiáveis. Evite marcas desconhecidas sem avaliações.' },
+      { q: 'Onde encontrar os melhores descontos em tênis?', a: 'O PromoSnap monitora preços em Amazon, Mercado Livre, Shopee e Magazine Luiza. Datas como Black Friday, Dia do Consumidor e trocas de coleção oferecem os maiores descontos.' },
+    ],
+  },
+  'melhores-celulares-ate-1500': {
+    title: 'Melhores Celulares até R$ 1.500',
+    description: 'Os melhores celulares até R$ 1.500 com preços comparados. Smartphones intermediários com melhor custo-benefício.',
+    intro: 'A faixa até R$ 1.500 concentra os smartphones com melhor custo-benefício do mercado brasileiro. Comparamos modelos de Samsung, Motorola, Xiaomi e mais para ajudar você a escolher o celular ideal nesse orçamento.',
+    query: { categories: ['celulares'], keywords: ['até 1500', 'intermediário', 'custo benefício'] },
+    faqs: [
+      { q: 'Qual o melhor celular até R$ 1.500 em 2025?', a: 'Galaxy A54, Motorola Moto G84 e Xiaomi Redmi Note 13 Pro são as melhores opções nessa faixa, cada um com pontos fortes em câmera, bateria ou desempenho.' },
+      { q: 'Celular até R$ 1.500 roda jogos?', a: 'Sim, modelos com Snapdragon 695 ou superior rodam a maioria dos jogos com qualidade média. Para jogos pesados em alta qualidade, considere a faixa acima de R$ 2.000.' },
+      { q: 'Vale esperar promoção ou comprar agora?', a: 'Use o histórico de preços do PromoSnap para verificar. Se o preço atual está abaixo da média dos últimos 30 dias, é uma boa hora para comprar.' },
+    ],
+  },
+  'melhores-notebooks-ate-3000': {
+    title: 'Melhores Notebooks até R$ 3.000',
+    description: 'Os melhores notebooks até R$ 3.000 com preços comparados. Notebooks para trabalho e estudo com custo-benefício.',
+    intro: 'Notebooks até R$ 3.000 são a escolha mais popular para estudantes e profissionais. Comparamos modelos de Lenovo, Acer, Samsung e Dell que oferecem bom desempenho, tela decente e SSD nessa faixa de preço.',
+    query: { categories: ['notebooks'], keywords: ['até 3000', 'estudar', 'trabalho'] },
+    faqs: [
+      { q: 'Qual o melhor notebook até R$ 3.000 para estudar?', a: 'Lenovo IdeaPad e Acer Aspire lideram nessa faixa. Priorize modelos com 8GB RAM, SSD de 256GB e processador Intel i5 ou Ryzen 5.' },
+      { q: 'Notebook com SSD faz diferença?', a: 'Sim, enorme. Um SSD torna o notebook até 5x mais rápido no boot e abertura de programas comparado a HD mecânico. É o upgrade mais impactante nessa faixa.' },
+      { q: 'Tela IPS ou TN nessa faixa de preço?', a: 'Sempre prefira IPS quando disponível. Telas TN têm cores desbotadas e ângulos de visão ruins. Muitos notebooks até R$ 3.000 já oferecem IPS Full HD.' },
+    ],
+  },
 }
 
 export const BEST_PAGE_SLUGS = Object.keys(BEST_PAGES)

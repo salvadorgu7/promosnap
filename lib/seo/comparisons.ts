@@ -430,6 +430,47 @@ const comparisons: ComparisonDef[] = [
       },
     ],
   },
+  {
+    slug: "nike-air-max-vs-adidas-ultraboost",
+    title: "Nike Air Max vs Adidas Ultraboost: Qual o Melhor Tênis?",
+    description: "Comparativo entre Nike Air Max e Adidas Ultraboost. Conforto, amortecimento, preço e estilo comparados lado a lado.",
+    intro: "Nike Air Max e Adidas Ultraboost são dois dos tênis mais populares e desejados do mercado. Enquanto o Air Max aposta em design icônico e amortecimento Air, o Ultraboost oferece conforto superior com tecnologia Boost. Comparamos preços em dezenas de lojas para ajudar na sua escolha.",
+    productA: { name: "Nike Air Max", query: "nike air max" },
+    productB: { name: "Adidas Ultraboost", query: "adidas ultraboost" },
+    verdict: "O Nike Air Max é imbatível em estilo urbano e variedade de cores, ideal para uso casual. O Adidas Ultraboost oferece amortecimento superior e é a melhor opção para quem caminha muito ou quer conforto o dia todo. Em preço, o Air Max costuma ter mais promoções no Brasil.",
+    faqs: [
+      { q: "Qual é mais confortável para uso diário?", a: "O Ultraboost leva vantagem em conforto geral graças à entressola Boost, que retorna energia a cada passo. O Air Max é confortável mas o foco é mais visual." },
+      { q: "Qual dura mais?", a: "Ambos têm boa durabilidade. O Ultraboost tende a manter o amortecimento por mais tempo, enquanto o Air Max pode perder a câmara de ar após uso intenso prolongado." },
+      { q: "Qual tem melhor custo-benefício?", a: "Em promoção, o Nike Air Max costuma ficar na faixa de R$350-500 enquanto o Ultraboost fica entre R$500-800. Para custo-benefício puro, o Air Max é mais acessível." },
+    ],
+  },
+  {
+    slug: "new-balance-574-vs-nike-air-force-1",
+    title: "New Balance 574 vs Nike Air Force 1: Qual Escolher?",
+    description: "Comparativo entre New Balance 574 e Nike Air Force 1. Dois clássicos do streetwear com preços comparados.",
+    intro: "New Balance 574 e Nike Air Force 1 são dois ícones do streetwear que nunca saem de moda. O 574 traz conforto retrô com estilo casual, enquanto o Air Force 1 é sinônimo de cultura urbana. Ambos são versáteis e combinam com tudo.",
+    productA: { name: "New Balance 574", query: "new balance 574" },
+    productB: { name: "Nike Air Force 1", query: "nike air force 1" },
+    verdict: "O Nike Air Force 1 é a escolha para quem busca um visual mais urbano e moderno, especialmente na versão branca. O New Balance 574 oferece mais conforto para caminhadas e tem um estilo retrô que combina bem com looks mais descontraídos. Ambos são excelentes investimentos.",
+    faqs: [
+      { q: "Qual é mais versátil para combinar roupas?", a: "O Air Force 1 branco é provavelmente o tênis mais versátil que existe — combina com absolutamente tudo. O 574 é mais casual e funciona melhor com jeans e calças mais relaxadas." },
+      { q: "Qual compensa mais no preço?", a: "O New Balance 574 costuma ser encontrado por R$300-450, enquanto o Air Force 1 varia de R$400-600. Em promoções, ambos chegam a preços bem atrativos." },
+    ],
+  },
+  {
+    slug: "galaxy-a54-vs-moto-g84",
+    title: "Galaxy A54 vs Moto G84: Qual o Melhor Intermediário?",
+    description: "Comparativo entre Galaxy A54 e Motorola Moto G84. Câmera, bateria, desempenho e preço dos intermediários mais populares.",
+    intro: "Galaxy A54 e Moto G84 disputam o título de melhor intermediário no Brasil. Ambos custam entre R$1.200 e R$1.800 e oferecem câmeras competentes, baterias generosas e telas AMOLED. A escolha depende de suas prioridades.",
+    productA: { name: "Galaxy A54", query: "galaxy a54" },
+    productB: { name: "Moto G84", query: "moto g84" },
+    verdict: "O Galaxy A54 tem câmera superior, resistência à água IP67 e mais atualizações de software garantidas. O Moto G84 oferece Android mais limpo, carregamento mais rápido e geralmente custa menos. Para a maioria dos usuários, o Galaxy A54 é a aposta mais segura.",
+    faqs: [
+      { q: "Qual tem a melhor câmera?", a: "O Galaxy A54 com sensor de 50MP principal e OIS entrega fotos mais estáveis e com melhor processamento noturno. O Moto G84 com 50MP também é competente mas perde em consistência." },
+      { q: "Qual tem melhor bateria?", a: "Ambos têm baterias de ~5.000 mAh e duram um dia inteiro. O Moto G84 carrega mais rápido (33W vs 25W)." },
+      { q: "Qual receberá mais atualizações?", a: "Samsung promete 4 anos de atualizações de SO e 5 de segurança para o A54. Motorola geralmente oferece 1-2 anos de updates. Samsung leva vantagem clara aqui." },
+    ],
+  },
 ];
 
 export const COMPARISONS: Record<string, ComparisonDef> = Object.fromEntries(

@@ -73,6 +73,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/imports", label: "Import", icon: Upload },
       { href: "/admin/ingestao", label: "Ingestao", icon: Upload },
       { href: "/admin/banners", label: "Banners", icon: Image },
+      { href: "/admin/catalog-density", label: "Densidade", icon: BarChart3 },
     ],
   },
   {

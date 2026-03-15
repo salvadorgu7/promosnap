@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SlidersHorizontal, Brain, TrendingDown, Truck, Scale, Award } from "lucide-react";
+import { SlidersHorizontal, Brain, TrendingDown, Truck, Scale, Award, Flame, Tag, BadgePercent } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
@@ -312,6 +312,137 @@ export default async function CategoriaPage({
           ctaHref="/ofertas"
         />
       )}
+
+      {/* Oportunidades Imperdiveis — top deals by offerScore */}
+      {products.length >= 3 && (() => {
+        const topDeals = [...products]
+          .sort((a, b) => b.bestOffer.offerScore - a.bestOffer.offerScore)
+          .slice(0, 5);
+        return (
+          <section className="mt-10">
+            <h2 className="text-lg font-bold font-display text-text-primary mb-4 flex items-center gap-2">
+              <Flame className="w-5 h-5 text-accent-orange" /> Oportunidades Imperdiveis em {name}
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
+              {topDeals.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/produto/${p.slug}`}
+                  className="card p-0 overflow-hidden flex-shrink-0 w-[220px] sm:w-[240px] snap-start group hover:border-accent-orange/40 transition-colors"
+                >
+                  {p.imageUrl && (
+                    <div className="relative h-40 bg-surface-100 flex items-center justify-center overflow-hidden">
+                      <img
+                        src={p.imageUrl}
+                        alt={p.name}
+                        className="max-h-full max-w-full object-contain p-2 group-hover:scale-105 transition-transform"
+                        loading="lazy"
+                      />
+                      <span className="absolute top-2 left-2 bg-accent-orange text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        Score {p.bestOffer.offerScore}
+                      </span>
+                    </div>
+                  )}
+                  <div className="p-3">
+                    <p className="text-xs font-semibold text-text-primary line-clamp-2 leading-tight group-hover:text-accent-orange transition-colors">
+                      {p.name}
+                    </p>
+                    {p.brand && (
+                      <p className="text-[10px] text-text-muted mt-1">{p.brand}</p>
+                    )}
+                    <div className="flex items-baseline gap-1.5 mt-2">
+                      <span className="text-base font-extrabold text-accent-green">
+                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.bestOffer.price)}
+                      </span>
+                      {p.bestOffer.discount && p.bestOffer.discount > 0 && (
+                        <span className="text-[10px] font-semibold text-accent-green bg-accent-green/10 px-1.5 py-0.5 rounded">
+                          -{p.bestOffer.discount}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* Faixas de Preco — price range navigation */}
+      {products.length >= 5 && (() => {
+        const priceRanges = [
+          { label: "Ate R$ 500", min: 0, max: 500 },
+          { label: "R$ 500 - R$ 1.000", min: 500, max: 1000 },
+          { label: "R$ 1.000 - R$ 2.000", min: 1000, max: 2000 },
+          { label: "R$ 2.000 - R$ 5.000", min: 2000, max: 5000 },
+          { label: "Acima de R$ 5.000", min: 5000, max: Infinity },
+        ];
+        const ranges = priceRanges
+          .map((r) => ({
+            ...r,
+            count: products.filter(
+              (p) => p.bestOffer.price >= r.min && p.bestOffer.price < r.max
+            ).length,
+          }))
+          .filter((r) => r.count > 0);
+        if (ranges.length < 2) return null;
+        return (
+          <section className="mt-10">
+            <h2 className="text-lg font-bold font-display text-text-primary mb-4 flex items-center gap-2">
+              <BadgePercent className="w-5 h-5 text-accent-blue" /> Faixas de Preco
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {ranges.map((r) => (
+                <Link
+                  key={r.label}
+                  href={`/busca?q=${encodeURIComponent(name)}&minPrice=${r.min}${r.max < Infinity ? `&maxPrice=${r.max}` : ""}`}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-100 hover:bg-accent-blue/10 hover:border-accent-blue/30 border border-transparent text-sm font-medium text-text-secondary hover:text-accent-blue transition-colors"
+                >
+                  <span>{r.label}</span>
+                  <span className="text-[10px] bg-surface-200 text-text-muted px-1.5 py-0.5 rounded-full font-semibold">
+                    {r.count}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* Marcas Populares — brand distribution */}
+      {products.length >= 3 && (() => {
+        const brandMap = new Map<string, number>();
+        for (const p of products) {
+          if (p.brand) {
+            brandMap.set(p.brand, (brandMap.get(p.brand) || 0) + 1);
+          }
+        }
+        const topBrands = [...brandMap.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6);
+        if (topBrands.length < 2) return null;
+        return (
+          <section className="mt-10">
+            <h2 className="text-lg font-bold font-display text-text-primary mb-4 flex items-center gap-2">
+              <Tag className="w-5 h-5 text-accent-purple" /> Marcas Populares
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {topBrands.map(([brandName, count]) => (
+                <Link
+                  key={brandName}
+                  href={`/marca/${brandName.toLowerCase().replace(/\s+/g, "-")}`}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-100 hover:bg-accent-purple/10 hover:border-accent-purple/30 border border-transparent text-sm font-medium text-text-secondary hover:text-accent-purple transition-colors"
+                >
+                  <span>{brandName}</span>
+                  <span className="text-[10px] bg-surface-200 text-text-muted px-1.5 py-0.5 rounded-full font-semibold">
+                    {count}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Category Hub — cross-links to guides, comparisons, rankings */}
       <div className="mt-8">
