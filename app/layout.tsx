@@ -31,12 +31,20 @@ export const metadata: Metadata = {
     title: "PromoSnap — Ofertas reais, preco de verdade",
     description:
       "Encontre as melhores ofertas, compare precos e economize de verdade.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "PromoSnap" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "PromoSnap",
     description:
       "Ofertas reais, preco de verdade. Compare precos e economize.",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
   },
   robots: {
     index: true,
@@ -53,7 +61,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#4f46e5",
+  themeColor: "#9333EA",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

@@ -41,6 +41,7 @@ import {
   Plug,
   Search,
 } from "lucide-react";
+import LogoIcon from "@/components/ui/LogoIcon";
 
 interface NavItem {
   href: string;
@@ -137,9 +138,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="w-56 border-r border-surface-200 bg-white flex flex-col" style={{ background: "linear-gradient(180deg, #ffffff 0%, #FAFBFF 100%)" }}>
         <div className="p-4 border-b border-surface-200">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-sm">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
+            <LogoIcon size={32} />
             <div>
               <span className="text-sm font-bold font-display text-text-primary">PromoSnap</span>
               <span className="block text-[10px] text-text-muted uppercase tracking-wider">Admin</span>

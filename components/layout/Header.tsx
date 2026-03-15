@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import SearchBar from "@/components/search/SearchBar";
 import NotificationBell from "@/components/engagement/NotificationBell";
+import Logo from "@/components/ui/Logo";
 
 const NAV_ITEMS = [
   { href: "/ofertas", label: "Ofertas", icon: Flame, color: "text-accent-red" },
@@ -28,13 +29,8 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-14 gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-1.5 flex-shrink-0 min-w-0">
-            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <Zap className="w-4 h-4 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
-            </div>
-            <span className="font-display font-extrabold text-lg md:text-xl tracking-tight text-surface-900 truncate">
-              Promo<span className="text-gradient">Snap</span>
-            </span>
+          <Link href="/" className="flex-shrink-0 min-w-0">
+            <Logo size="md" />
           </Link>
 
           {/* Desktop search */}

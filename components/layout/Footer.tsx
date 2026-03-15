@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Zap, Send, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Send, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import Logo from "@/components/ui/Logo";
 
 const LINKS = {
   Navegacao: [
@@ -158,14 +159,8 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-3 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center group-hover:shadow-glow transition-shadow duration-300 shadow-sm"
-              >
-                <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-              </div>
-              <span className="font-display font-extrabold text-lg tracking-tight text-surface-900">
-                Promo<span className="text-gradient">Snap</span>
-              </span>
+            <Link href="/" className="inline-flex mb-3 group">
+              <Logo size="md" />
             </Link>
             <p className="text-sm text-text-muted leading-relaxed mb-3">
               Ofertas reais, preco de verdade. Compare precos, acompanhe historico e encontre os melhores descontos do Brasil.
