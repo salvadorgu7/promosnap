@@ -112,6 +112,13 @@ const CATEGORY_QUERIES: Record<string, string[]> = {
     "aspirador wap",
     "aspirador sem fio",
   ],
+  tenis: [
+    "tenis nike",
+    "tenis adidas",
+    "tenis new balance",
+    "tenis corrida masculino",
+    "tenis casual feminino",
+  ],
   perfumes: [
     "perfume masculino importado",
     "perfume feminino",

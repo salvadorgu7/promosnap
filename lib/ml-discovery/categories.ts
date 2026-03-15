@@ -120,7 +120,7 @@ const ML_TO_PROMOSNAP_SLUG: Record<string, string> = {
   'MLB1246':   'perfumes',        // Perfumes
 
   // Moda
-  'MLB99614':  'moda',            // Tenis
+  'MLB99614':  'tenis',           // Tenis
   'MLB16117':  'moda',            // Mochilas
 
   // Infantil
