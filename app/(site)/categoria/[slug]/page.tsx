@@ -11,6 +11,16 @@ import { BEST_PAGES } from "@/lib/seo/best-pages";
 import { COMPARISON_LIST } from "@/lib/seo/comparisons";
 import { OFFER_PAGES } from "@/lib/seo/offer-pages";
 import CategoryHub from "@/components/seo/CategoryHub";
+import prisma from "@/lib/db/prisma";
+
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const categories = await prisma.category.findMany({
+    select: { slug: true },
+  });
+  return categories.map((c) => ({ slug: c.slug }));
+}
 
 function buildCategoryRelatedSearches(
   categorySlug: string,
@@ -185,41 +195,41 @@ export default async function CategoriaPage({
         const avgScore = Math.round(products.reduce((sum, p) => sum + p.bestOffer.offerScore, 0) / products.length);
         return (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <div className="card p-3 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center flex-shrink-0">
-                <Brain className="w-4 h-4 text-accent-blue" />
+            <div className="card p-3 border-l-2 border-l-accent-blue flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-accent-blue/10 flex items-center justify-center flex-shrink-0">
+                <Brain className="w-4.5 h-4.5 text-accent-blue" />
               </div>
               <div>
-                <p className="text-xs text-text-muted">Score medio</p>
-                <p className="text-sm font-bold text-text-primary">{avgScore}/100</p>
+                <p className="text-[11px] text-text-muted uppercase tracking-wide">Score medio</p>
+                <p className="text-base font-extrabold text-text-primary">{avgScore}<span className="text-xs font-normal text-text-muted">/100</span></p>
               </div>
             </div>
-            <div className="card p-3 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-accent-green/10 flex items-center justify-center flex-shrink-0">
-                <TrendingDown className="w-4 h-4 text-accent-green" />
+            <div className="card p-3 border-l-2 border-l-accent-green flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-accent-green/10 flex items-center justify-center flex-shrink-0">
+                <TrendingDown className="w-4.5 h-4.5 text-accent-green" />
               </div>
               <div>
-                <p className="text-xs text-text-muted">Com desconto</p>
-                <p className="text-sm font-bold text-text-primary">{withDiscount} produtos</p>
+                <p className="text-[11px] text-text-muted uppercase tracking-wide">Com desconto</p>
+                <p className="text-base font-extrabold text-accent-green">{withDiscount}</p>
               </div>
             </div>
-            <div className="card p-3 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-accent-purple/10 flex items-center justify-center flex-shrink-0">
-                <Truck className="w-4 h-4 text-accent-purple" />
+            <div className="card p-3 border-l-2 border-l-accent-purple flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-accent-purple/10 flex items-center justify-center flex-shrink-0">
+                <Truck className="w-4.5 h-4.5 text-accent-purple" />
               </div>
               <div>
-                <p className="text-xs text-text-muted">Frete gratis</p>
-                <p className="text-sm font-bold text-text-primary">{withFreeShipping} produtos</p>
+                <p className="text-[11px] text-text-muted uppercase tracking-wide">Frete gratis</p>
+                <p className="text-base font-extrabold text-accent-purple">{withFreeShipping}</p>
               </div>
             </div>
-            <div className="card p-3 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-accent-orange/10 flex items-center justify-center flex-shrink-0">
-                <SlidersHorizontal className="w-4 h-4 text-accent-orange" />
+            <div className="card p-3 border-l-2 border-l-accent-orange flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-accent-orange/10 flex items-center justify-center flex-shrink-0">
+                <SlidersHorizontal className="w-4.5 h-4.5 text-accent-orange" />
               </div>
               <div>
-                <p className="text-xs text-text-muted">Faixa de preco</p>
-                <p className="text-[11px] font-bold text-text-primary">
-                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(minPrice)} - {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(maxPrice)}
+                <p className="text-[11px] text-text-muted uppercase tracking-wide">Faixa de preco</p>
+                <p className="text-xs font-bold text-text-primary">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(minPrice)} — {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(maxPrice)}
                 </p>
               </div>
             </div>

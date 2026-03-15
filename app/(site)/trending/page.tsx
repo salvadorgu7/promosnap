@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TrendingUp, ExternalLink, Hash } from "lucide-react";
+import { TrendingUp, ExternalLink, Hash, Search, Flame } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
 import { buildMetadata } from "@/lib/seo/metadata";
 import prisma from "@/lib/db/prisma";
@@ -97,12 +97,25 @@ export default async function TrendingPage() {
           ))}
         </div>
       ) : (
-        <EmptyState
-          title="Nenhuma tendencia disponivel"
-          description="Estamos coletando dados de tendencias. Volte em breve!"
-          ctaLabel="Ir para Home"
-          ctaHref="/"
-        />
+        <div className="max-w-lg mx-auto text-center py-10">
+          <div className="w-14 h-14 rounded-xl bg-accent-orange/10 flex items-center justify-center mx-auto mb-4">
+            <TrendingUp className="w-7 h-7 text-accent-orange" />
+          </div>
+          <h2 className="font-display font-bold text-xl text-text-primary mb-2">
+            Tendencias em atualizacao
+          </h2>
+          <p className="text-sm text-text-muted mb-6">
+            Nosso sistema coleta as buscas mais populares do Brasil periodicamente. Os dados serao exibidos assim que a proxima coleta for concluida.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link href="/busca" className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-2">
+              <Search className="w-4 h-4" /> Buscar produtos
+            </Link>
+            <Link href="/ofertas" className="btn-secondary text-sm px-5 py-2.5 inline-flex items-center gap-2">
+              <Flame className="w-4 h-4" /> Ver ofertas
+            </Link>
+          </div>
+        </div>
       )}
     </div>
   );

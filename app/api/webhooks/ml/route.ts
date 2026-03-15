@@ -17,6 +17,8 @@ export async function POST(req: NextRequest) {
       console.warn('[webhook:ml] Unauthorized request — invalid or missing token')
       return NextResponse.json({ ok: false }, { status: 401 })
     }
+  } else {
+    console.warn('[webhook:ml] ML_WEBHOOK_SECRET not configured — accepting request without token validation')
   }
 
   try {

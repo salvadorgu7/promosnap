@@ -19,6 +19,7 @@ import ReturnUserGreeting from "@/components/home/ReturnUserGreeting";
 import SmartSuggestions from "@/components/home/SmartSuggestions";
 import AmazonPromo from "@/components/home/AmazonPromo";
 import FirstSaleBanner from "@/components/home/FirstSaleBanner";
+import EmailCapture from "@/components/engagement/EmailCapture";
 import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/seo/JsonLd";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
@@ -144,12 +145,12 @@ export default async function HomePage() {
             </div>
 
             <h1 className="font-display font-extrabold text-3xl md:text-5xl text-surface-900 tracking-tight leading-[1.1]">
-              O melhor preço com{" "}
-              <span className="text-gradient">contexto real</span>
+              Economize de verdade com{" "}
+              <span className="text-gradient">dados reais</span>
             </h1>
 
             <p className="mt-2 text-surface-500 text-base max-w-lg mx-auto">
-              Compare preços entre lojas, veja o histórico de 90 dias e saiba se o desconto vale a pena.
+              Compare precos entre Amazon, Mercado Livre, Shopee e Shein. Historico de 90 dias para voce saber se o desconto e real.
             </p>
 
             <div className="mt-6 max-w-xl mx-auto">
@@ -170,19 +171,19 @@ export default async function HomePage() {
           <div className="mt-8 flex flex-wrap justify-center gap-6 text-center">
             <div>
               <div className="font-display font-extrabold text-xl text-accent-blue">
-                {stats.activeOffers > 0 ? formatNumber(stats.activeOffers) : "100+"}
+                {stats.activeOffers > 0 ? formatNumber(stats.activeOffers) : "—"}
               </div>
               <div className="text-[11px] text-text-muted">Ofertas ativas</div>
             </div>
             <div>
               <div className="font-display font-extrabold text-xl text-accent-green">
-                {stats.listings > 0 ? formatNumber(stats.listings) : "107"}
+                {stats.listings > 0 ? formatNumber(stats.listings) : "—"}
               </div>
-              <div className="text-[11px] text-text-muted">Produtos</div>
+              <div className="text-[11px] text-text-muted">Produtos monitorados</div>
             </div>
             <div>
               <div className="font-display font-extrabold text-xl text-accent-orange">
-                {stats.brands > 0 ? stats.brands : "30+"}
+                {stats.brands > 0 ? stats.brands : "—"}
               </div>
               <div className="text-[11px] text-text-muted">Marcas</div>
             </div>
@@ -190,7 +191,7 @@ export default async function HomePage() {
               <div className="font-display font-extrabold text-xl text-accent-green">
                 {stats.sources}
               </div>
-              <div className="text-[11px] text-text-muted">Lojas</div>
+              <div className="text-[11px] text-text-muted">Lojas comparadas</div>
             </div>
           </div>
         </div>
@@ -213,6 +214,10 @@ export default async function HomePage() {
       {dealOfTheDay && (
         <section id="deal-of-the-day" className="py-4">
           <div className="max-w-7xl mx-auto px-4">
+            <div className="mb-2 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-accent-orange" />
+              <span className="text-xs font-semibold text-accent-orange uppercase tracking-wide">Oferta destaque do dia</span>
+            </div>
             <DealOfTheDay
               product={{
                 id: dealOfTheDay.id,
@@ -237,6 +242,22 @@ export default async function HomePage() {
         <div id="carousel" className="section-energy">
           <OfferCarousel offers={hotOffers.slice(0, 5)} />
         </div>
+      )}
+
+      {/* ===== Empty state if no offers at all ===== */}
+      {hotOffers.length === 0 && bestSellers.length === 0 && lowestPrices.length === 0 && (
+        <section className="py-10">
+          <div className="max-w-md mx-auto text-center px-4">
+            <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center mx-auto mb-3">
+              <Search className="w-6 h-6 text-brand-500" />
+            </div>
+            <h2 className="font-display font-bold text-lg text-text-primary mb-1">Estamos preparando as ofertas</h2>
+            <p className="text-sm text-text-muted mb-4">Nosso sistema esta coletando e verificando precos. Use a busca para encontrar produtos especificos.</p>
+            <Link href="/busca" className="btn-primary text-sm px-6 py-2.5 inline-flex items-center gap-2">
+              <Search className="w-4 h-4" /> Buscar produtos
+            </Link>
+          </div>
+        </section>
       )}
 
       {/* ===== 5. AMAZON PROMO ===== */}
@@ -411,6 +432,13 @@ export default async function HomePage() {
           <CategoryRail key={c.slug} title={c.name} slug={c.slug} icon={c.icon} products={c.products} />
         ))}
       </div>
+
+      {/* ===== 18b. EMAIL CAPTURE ===== */}
+      <section id="email-capture" className="py-6">
+        <div className="max-w-7xl mx-auto px-4 max-w-xl">
+          <EmailCapture context="homepage" />
+        </div>
+      </section>
 
       {/* ===== 19. RECENTLY VIEWED ===== */}
       <RecentlyViewedRail />

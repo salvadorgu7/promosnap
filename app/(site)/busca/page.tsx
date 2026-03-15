@@ -377,11 +377,11 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
         <div className="flex-1 min-w-0">
           {/* Sort pills */}
           {query && (
-            <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-surface-100 border border-surface-200 flex-wrap gap-2">
-              <div className="flex items-center gap-2 text-sm text-text-muted">
-                <ArrowUpDown className="h-3.5 w-3.5" /> Ordenar:
+            <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-white border border-surface-200 shadow-sm flex-wrap gap-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+                <ArrowUpDown className="h-3.5 w-3.5 text-brand-500" /> Ordenar por:
               </div>
-              <div className="flex gap-1 flex-wrap">
+              <div className="flex gap-1.5 flex-wrap">
                 {SORT_OPTIONS.map((opt) => (
                   <Link
                     key={opt.value}
@@ -404,28 +404,37 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             const bestDeal = products.reduce((best, p) => p.bestOffer.offerScore > best.bestOffer.offerScore ? p : best, products[0]);
             const cheapest = products.reduce((best, p) => p.bestOffer.price < best.bestOffer.price ? p : best, products[0]);
             const withDiscount = products.filter(p => p.bestOffer.discount && p.bestOffer.discount > 0).length;
+            const withFreeShipping = products.filter(p => p.bestOffer.isFreeShipping).length;
             return (
-              <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r from-brand-50/50 to-accent-blue/5 border border-brand-500/10 flex-wrap">
-                <div className="flex items-center gap-1.5 text-xs">
+              <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-brand-50/60 to-accent-blue/5 border border-brand-500/15">
+                <div className="flex items-center gap-1.5 text-xs mb-2">
                   <Brain className="w-3.5 h-3.5 text-brand-500" />
-                  <span className="font-semibold text-text-primary">Inteligencia:</span>
+                  <span className="font-semibold text-text-primary">Resumo inteligente</span>
+                  <span className="text-text-muted">— {total} resultados analisados</span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-[11px] text-text-secondary">
-                  <Sparkles className="w-3 h-3 text-accent-orange" />
-                  Melhor oferta: <Link href={`/produto/${bestDeal.slug}`} className="font-semibold text-accent-blue hover:underline truncate max-w-[180px]">{bestDeal.name}</Link>
-                  <span className="text-accent-green font-bold">(score {bestDeal.bestOffer.offerScore})</span>
-                </span>
-                {cheapest.id !== bestDeal.id && (
-                  <span className="inline-flex items-center gap-1 text-[11px] text-text-secondary">
-                    <TrendingDown className="w-3 h-3 text-accent-green" />
-                    Mais barato: <span className="font-bold text-accent-green">{formatPrice(cheapest.bestOffer.price)}</span>
-                  </span>
-                )}
-                {withDiscount > 0 && (
-                  <span className="text-[11px] text-text-muted">
-                    {withDiscount} com desconto
-                  </span>
-                )}
+                <div className="flex items-center gap-4 flex-wrap">
+                  <Link href={`/produto/${bestDeal.slug}`} className="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-brand-600 transition-colors">
+                    <Sparkles className="w-3.5 h-3.5 text-accent-orange flex-shrink-0" />
+                    <span>Melhor oferta: <span className="font-semibold text-accent-blue">{bestDeal.name.length > 30 ? bestDeal.name.slice(0, 30) + "..." : bestDeal.name}</span></span>
+                    <span className="px-1.5 py-0.5 rounded bg-accent-green/10 text-accent-green text-[10px] font-bold">{bestDeal.bestOffer.offerScore}</span>
+                  </Link>
+                  {cheapest.id !== bestDeal.id && (
+                    <span className="inline-flex items-center gap-1 text-xs text-text-secondary">
+                      <TrendingDown className="w-3.5 h-3.5 text-accent-green flex-shrink-0" />
+                      A partir de <span className="font-bold text-accent-green">{formatPrice(cheapest.bestOffer.price)}</span>
+                    </span>
+                  )}
+                  {withDiscount > 0 && (
+                    <span className="text-xs text-text-muted">
+                      {withDiscount} com desconto
+                    </span>
+                  )}
+                  {withFreeShipping > 0 && (
+                    <span className="text-xs text-text-muted">
+                      {withFreeShipping} com frete gratis
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })()}

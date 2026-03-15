@@ -1,15 +1,15 @@
-import { MetadataRoute } from "next";
-import { getBaseUrl } from "@/lib/seo/url";
-
-const APP_URL = getBaseUrl();
+import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br";
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: ["/admin/", "/api/"],
-    },
-    sitemap: `${APP_URL}/sitemap.xml`,
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/admin", "/admin-login", "/api/admin", "/api/cron"],
+      },
+    ],
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

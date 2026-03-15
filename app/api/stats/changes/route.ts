@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateAdmin } from "@/lib/auth/admin";
 import prisma from "@/lib/db/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const authError = validateAdmin(req);
+  if (authError) return authError;
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

@@ -15,7 +15,7 @@ import {
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import PriceChart from "@/components/charts/PriceChartLazy";
 import OfferCard from "@/components/cards/OfferCard";
-import MobileCTA from "@/components/product/MobileCTA";
+import MobileProductActions from "@/components/product/MobileProductActions";
 import ShareButtons from "@/components/product/ShareButtons";
 import PriceAlertForm from "@/components/product/PriceAlertForm";
 import SavingsBlock from "@/components/product/SavingsBlock";
@@ -36,6 +36,9 @@ import ContinueExploring from "@/components/product/ContinueExploring";
 import AmazonAlternative from "@/components/product/AmazonAlternative";
 import RelatedContent from "@/components/seo/RelatedContent";
 import { getRelatedLinks } from "@/lib/seo/internal-links";
+import UrgencySignals from "@/components/product/UrgencySignals";
+import CommercialCTA from "@/components/product/CommercialCTA";
+import PriceDropAlert from "@/components/engagement/PriceDropAlert";
 import WhyHighlighted from "@/components/product/WhyHighlighted";
 import CanonicalView from "@/components/product/CanonicalView";
 import MiniCluster from "@/components/product/MiniCluster";
@@ -381,6 +384,15 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             )}
           </div>
 
+          {/* Price drop alert — returning visitor notification */}
+          {bestOffer && (
+            <PriceDropAlert
+              productSlug={slug}
+              productName={product.name}
+              currentPrice={bestPrice}
+            />
+          )}
+
           {/* Category insights badges */}
           {categoryInsight && categoryInsight.badges.length > 0 && (
             <CategoryInsightsComponent insight={categoryInsight} />
@@ -484,7 +496,29 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                   <ExternalLink className="h-4 w-4" /> Ver Oferta
                 </a>
               </div>
+              {/* Urgency signals */}
+              <UrgencySignals
+                priceDropPercent={discount ?? undefined}
+                isAllTimeLow={priceStats ? bestPrice <= priceStats.allTimeMin : undefined}
+                offerScore={bestOffer.offerScore}
+                daysAtCurrentPrice={undefined}
+              />
             </div>
+          )}
+
+          {/* Commercial CTA — enhanced secondary CTA */}
+          {bestOffer && (
+            <CommercialCTA
+              affiliateUrl={bestOffer.affiliateUrl}
+              offerId={bestOffer.id}
+              price={bestPrice}
+              originalPrice={bestOffer.originalPrice ?? undefined}
+              sourceName={bestOffer.sourceName}
+              sourceSlug={bestOffer.sourceSlug}
+              freeShipping={bestOffer.isFreeShipping}
+              installments={showInstallment ? `${installmentCount}x de ${formatPrice(installmentValue)}` : undefined}
+              productSlug={slug}
+            />
           )}
 
           {/* Trust signals strip */}
@@ -826,13 +860,15 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         title="Conteudo Relacionado"
       />
 
-      {/* Sticky mobile CTA */}
+      {/* Sticky mobile actions bar */}
       {bestOffer && (
-        <MobileCTA
-          price={bestPrice}
-          affiliateUrl={bestOffer.affiliateUrl}
-          sourceName={bestOffer.sourceName}
+        <MobileProductActions
           offerId={bestOffer.id}
+          price={bestPrice}
+          sourceName={bestOffer.sourceName}
+          productSlug={slug}
+          productName={product.name}
+          discount={discount ?? undefined}
         />
       )}
     </div>

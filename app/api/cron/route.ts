@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { captureError, captureEvent, logInfo, logWarn } from '@/lib/monitoring'
+import { rateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
 import { timingSafeEqual } from 'crypto'
 
 const CRON_SECRET = process.env.CRON_SECRET
@@ -30,6 +31,9 @@ export async function GET(req: NextRequest) {
     }
   } else {
     logWarn('cron', 'CRON_SECRET not configured — running in open mode (dev/preview)')
+    // Rate limit open mode to prevent abuse
+    const rl = rateLimit(req, 'admin')
+    if (!rl.success) return rateLimitResponse(rl)
   }
 
   // Support running a subset of jobs via ?jobs=compute-scores,check-alerts
