@@ -60,7 +60,7 @@ const emptyManualItem = (): ManualItem => ({
 });
 
 export default function AdminIngestaoPage() {
-  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed">("search");
+  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed">("seed");
 
   // ID mode state
   const [rawInput, setRawInput] = useState("");
@@ -243,11 +243,11 @@ export default function AdminIngestaoPage() {
       {/* Mode tabs */}
       <div className="flex gap-1 bg-surface-100 rounded-lg p-1 w-fit flex-wrap">
         {([
+          { key: "seed", icon: Sparkles, label: "Seed \u2728" },
+          { key: "manual", icon: PenLine, label: "Manual" },
           { key: "search", icon: Search, label: "Busca" },
           { key: "trends", icon: TrendingUp, label: "Tendencias" },
           { key: "ids", icon: Upload, label: "Por IDs" },
-          { key: "seed", icon: Sparkles, label: "Seed" },
-          { key: "manual", icon: PenLine, label: "Manual" },
         ] as const).map(({ key, icon: Icon, label }) => (
           <button
             key={key}
@@ -263,6 +263,22 @@ export default function AdminIngestaoPage() {
           </button>
         ))}
       </div>
+
+      {/* API warning banner — shown on modes that depend on ML API */}
+      {(mode === "search" || mode === "trends" || mode === "ids") && (
+        <div className="card p-4 border-amber-200 bg-amber-50 space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">API do ML bloqueada</p>
+              <p className="text-xs text-amber-700 mt-1">
+                O Mercado Livre exige OAuth completo (login do usuario) para busca e consulta de produtos.
+                Use a aba <strong>Seed</strong> para importar 20 produtos populares instantaneamente, ou a aba <strong>Manual</strong> para colar dados de produtos.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SEARCH MODE */}
       {mode === "search" && (
