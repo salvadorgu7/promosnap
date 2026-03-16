@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X, Sparkles, ClipboardPaste } from "lucide-react";
+import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X, Sparkles, ClipboardPaste, MessageCircle } from "lucide-react";
 
 interface IngestResult {
   mode?: string;
@@ -55,12 +55,112 @@ function extractMlIds(input: string): string[] {
   return Array.from(ids);
 }
 
+interface ParsedWhatsAppProduct {
+  title: string;
+  price: number;
+  url: string;
+  coupon?: string;
+  originalText: string;
+}
+
+function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
+  const products: ParsedWhatsAppProduct[] = [];
+
+  // Split into message blocks — each product message typically has a URL
+  // Strategy: find all URLs first, then work backwards to find title + price
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+  // Collect blocks: a "block" is a group of lines that form one product message
+  // We detect block boundaries by looking for time stamps (HH:MM) or sender changes
+  const blocks: string[][] = [];
+  let currentBlock: string[] = [];
+
+  for (const line of lines) {
+    // Skip phone numbers, timestamps, sender names, "Encaminhada", etc
+    if (/^\+55\s/.test(line)) continue;
+    if (/^\d{1,2}:\d{2}$/.test(line)) {
+      if (currentBlock.length > 0) {
+        blocks.push(currentBlock);
+        currentBlock = [];
+      }
+      continue;
+    }
+    if (/^(Adm|TEM|Hoje|Você|Encaminhada|Promos do dia)/.test(line)) {
+      if (currentBlock.length > 0 && currentBlock.some(l => /https?:\/\//.test(l))) {
+        blocks.push(currentBlock);
+        currentBlock = [];
+      }
+      continue;
+    }
+    if (/^tempromo\.app\.br$/.test(line)) continue;
+    currentBlock.push(line);
+  }
+  if (currentBlock.length > 0) blocks.push(currentBlock);
+
+  // Now parse each block
+  for (const block of blocks) {
+    const fullText = block.join('\n');
+
+    // Extract URL
+    const urlMatch = fullText.match(/https?:\/\/[^\s_]+/);
+    if (!urlMatch) continue;
+    const url = urlMatch[0];
+
+    // Extract price — look for R$ pattern
+    const priceMatch = fullText.match(/R\$\s*([\d.,]+)/);
+    if (!priceMatch) continue;
+    const priceStr = priceMatch[1].replace(/\./g, '').replace(',', '.');
+    const price = parseFloat(priceStr);
+    if (isNaN(price) || price <= 0) continue;
+
+    // Extract title — the longest line that's not a URL, price line, or instruction
+    // Also try the meta title pattern "Product Name - Tem Promô"
+    let title = '';
+
+    // Look for the line that's the product title (usually the most descriptive, longest line)
+    const titleCandidates = block.filter(l =>
+      !l.startsWith('http') &&
+      !/^R\$/.test(l) &&
+      !/^Use o cupom/.test(l) &&
+      !/^Compre aqui/.test(l) &&
+      !/^(Voltou|BAIXOU|Menos|Últimas|Combo|Linha|Tem o|Nike por|540G|3 Litros|18 Mil|SB Dunk)/.test(l) &&
+      !l.includes('tempromo.app.br') &&
+      l.length > 5
+    );
+
+    // Prefer lines ending with " - Tem Promô" (meta title from link preview)
+    const metaTitle = titleCandidates.find(l => l.includes(' - Tem Promô'));
+    if (metaTitle) {
+      title = metaTitle.replace(/ - Tem Promô$/, '').trim();
+    } else if (titleCandidates.length > 0) {
+      // Pick the longest candidate that looks like a product name
+      title = titleCandidates.sort((a, b) => b.length - a.length)[0];
+    }
+
+    if (!title || title.length < 3) continue;
+
+    // Clean up title — remove trailing junk
+    title = title
+      .replace(/ - Tem Promô$/i, '')
+      .replace(/\s*\.\.\.$/, '')
+      .trim();
+
+    // Extract coupon if present
+    const couponMatch = fullText.match(/cupom:\s*(\S+)/i);
+    const coupon = couponMatch ? couponMatch[1] : undefined;
+
+    products.push({ title, price, url, coupon, originalText: fullText.slice(0, 200) });
+  }
+
+  return products;
+}
+
 const emptyManualItem = (): ManualItem => ({
   title: "", price: "", url: "", imageUrl: "", originalPrice: "",
 });
 
 export default function AdminIngestaoPage() {
-  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed" | "json">("seed");
+  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed" | "json" | "whatsapp">("seed");
 
   // ID mode state
   const [rawInput, setRawInput] = useState("");
@@ -82,6 +182,11 @@ export default function AdminIngestaoPage() {
   const [jsonInput, setJsonInput] = useState("");
   const [jsonParsedCount, setJsonParsedCount] = useState<number | null>(null);
   const [jsonParseError, setJsonParseError] = useState<string | null>(null);
+
+  // WhatsApp mode state
+  const [whatsappInput, setWhatsappInput] = useState("");
+  const [whatsappProducts, setWhatsappProducts] = useState<ParsedWhatsAppProduct[]>([]);
+  const [whatsappSelected, setWhatsappSelected] = useState<Set<number>>(new Set());
 
   // Shared state
   const [isRunning, setIsRunning] = useState(false);
@@ -261,12 +366,60 @@ export default function AdminIngestaoPage() {
     }
   }
 
+  function handleWhatsappParse(input: string) {
+    setWhatsappInput(input);
+    if (!input.trim()) {
+      setWhatsappProducts([]);
+      setWhatsappSelected(new Set());
+      return;
+    }
+    const parsed = parseWhatsAppText(input);
+    setWhatsappProducts(parsed);
+    // Select all by default
+    setWhatsappSelected(new Set(parsed.map((_, i) => i)));
+  }
+
+  function toggleWhatsappItem(index: number) {
+    setWhatsappSelected((prev) => {
+      const next = new Set(prev);
+      next.has(index) ? next.delete(index) : next.add(index);
+      return next;
+    });
+  }
+
+  async function handleIngestWhatsapp() {
+    const selected = whatsappProducts.filter((_, i) => whatsappSelected.has(i));
+    if (selected.length === 0) return;
+
+    setIsRunning(true); setResult(null); setError(null);
+    try {
+      const res = await fetch("/api/admin/ingest", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: selected.map((p) => ({
+            title: p.title,
+            price: p.price,
+            url: p.url,
+          })),
+        }),
+      });
+      const data = await res.json();
+      res.ok ? setResult(data) : setError(data);
+    } catch (err: any) {
+      setError({ error: err.message || "Erro de rede" });
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
   function handleClear() {
     setRawInput(""); setSearchQuery("");
     setParsedIds([]); setInvalidLines([]);
     setIsParsed(false); setResult(null); setError(null);
     setManualItems([emptyManualItem()]);
     setJsonInput(""); setJsonParsedCount(null); setJsonParseError(null);
+    setWhatsappInput(""); setWhatsappProducts([]); setWhatsappSelected(new Set());
   }
 
   function updateManualItem(index: number, field: keyof ManualItem, value: string) {
@@ -300,6 +453,7 @@ export default function AdminIngestaoPage() {
       <div className="flex gap-1 bg-surface-100 rounded-lg p-1 w-fit flex-wrap">
         {([
           { key: "seed", icon: Sparkles, label: "Seed \u2728" },
+          { key: "whatsapp", icon: MessageCircle, label: "WhatsApp" },
           { key: "json", icon: ClipboardPaste, label: "Cola JSON" },
           { key: "manual", icon: PenLine, label: "Manual" },
           { key: "search", icon: Search, label: "Busca" },
@@ -540,6 +694,118 @@ export default function AdminIngestaoPage() {
               <><Sparkles className="h-4 w-4" /> Importar 20 Produtos Populares</>
             )}
           </button>
+        </div>
+      )}
+
+      {/* WHATSAPP MODE */}
+      {mode === "whatsapp" && (
+        <div className="card p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              <MessageCircle className="inline h-4 w-4 mr-1.5 -mt-0.5 text-green-500" />
+              Importar do WhatsApp
+            </label>
+            <p className="text-xs text-text-muted">
+              Cole o texto copiado de um grupo de promos do WhatsApp. O parser extrai titulo, preco e link automaticamente.
+            </p>
+          </div>
+
+          <div className="p-3 bg-green-50 rounded-lg flex items-start gap-2">
+            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-green-700">
+              <strong>Funciona com qualquer grupo de promos!</strong> Basta copiar as mensagens e colar aqui.
+              Suporta formatos como &quot;Tem Promo&quot;, links do ML, Amazon, etc.
+            </p>
+          </div>
+
+          <textarea
+            value={whatsappInput}
+            onChange={(e) => handleWhatsappParse(e.target.value)}
+            placeholder={"Cole aqui o texto do WhatsApp...\n\nExemplo:\nCamiseta Nike Sportswear - Tem Promô\nR$ 69,34\nCompre aqui: https://tempromo.app.br/p/xxx"}
+            className="w-full h-48 px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-green-500/30 font-mono resize-y"
+          />
+
+          {whatsappProducts.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-text-primary">
+                  {whatsappProducts.length} {whatsappProducts.length === 1 ? "produto encontrado" : "produtos encontrados"}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setWhatsappSelected(new Set(whatsappProducts.map((_, i) => i)))}
+                    className="text-xs text-accent-blue hover:underline"
+                  >
+                    Selecionar todos
+                  </button>
+                  <button
+                    onClick={() => setWhatsappSelected(new Set())}
+                    className="text-xs text-text-muted hover:underline"
+                  >
+                    Limpar selecao
+                  </button>
+                </div>
+              </div>
+
+              <div className="max-h-80 overflow-y-auto space-y-2">
+                {whatsappProducts.map((product, i) => (
+                  <label
+                    key={i}
+                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                      whatsappSelected.has(i)
+                        ? "border-green-300 bg-green-50"
+                        : "border-surface-200 bg-white hover:bg-surface-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={whatsappSelected.has(i)}
+                      onChange={() => toggleWhatsappItem(i)}
+                      className="mt-1 rounded border-surface-300 text-green-500 focus:ring-green-500/30"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-text-primary truncate">{product.title}</p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-sm font-bold text-accent-green">
+                          R$ {product.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </span>
+                        {product.coupon && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-accent-orange/10 text-accent-orange font-medium">
+                            Cupom: {product.coupon}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-muted mt-1 truncate">{product.url}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {whatsappInput.trim() && whatsappProducts.length === 0 && (
+            <div className="flex items-center gap-2 text-amber-500 text-xs">
+              <AlertTriangle className="h-4 w-4" />
+              Nenhum produto encontrado. Verifique se o texto contem titulo, preco (R$) e link.
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleIngestWhatsapp}
+              disabled={whatsappSelected.size === 0 || isRunning}
+              className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-2 disabled:opacity-50 bg-green-600 hover:bg-green-700"
+            >
+              {isRunning ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</>
+              ) : (
+                <><Upload className="h-4 w-4" /> Importar {whatsappSelected.size} {whatsappSelected.size === 1 ? "produto" : "produtos"}</>
+              )}
+            </button>
+            <button onClick={handleClear} className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5 text-text-muted">
+              <Trash2 className="h-4 w-4" /> Limpar
+            </button>
+          </div>
         </div>
       )}
 
