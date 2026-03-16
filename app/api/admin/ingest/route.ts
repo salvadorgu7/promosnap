@@ -327,6 +327,7 @@ export async function DELETE(request: NextRequest) {
     currentPrice: p.currentPrice,
     productUrl: p.productUrl,
     imageUrl: p.imageUrl,
+    categorySlug: p.category,
     availability: 'in_stock' as const,
     sourceSlug: 'mercadolivre',
     discoverySource: 'seed_import',

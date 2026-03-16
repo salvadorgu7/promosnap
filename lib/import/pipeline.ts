@@ -171,7 +171,25 @@ function validateItem(item: ImportItem): string | null {
   if (!item.externalId) return 'Missing externalId'
   if (!item.title || item.title.trim().length < 3) return 'Title too short or missing'
   if (!item.currentPrice || item.currentPrice <= 0) return 'Invalid price'
+  if (item.currentPrice > 500_000) return 'Price suspiciously high (>R$500k)'
   if (!item.productUrl) return 'Missing productUrl'
+  try {
+    const url = new URL(item.productUrl)
+    if (!['http:', 'https:'].includes(url.protocol)) return 'Invalid URL protocol'
+  } catch {
+    return 'Invalid productUrl format'
+  }
+  if (item.imageUrl) {
+    try {
+      const imgUrl = new URL(item.imageUrl)
+      if (!['http:', 'https:'].includes(imgUrl.protocol)) {
+        // Clear invalid image URL silently — not a fatal error
+        item.imageUrl = undefined
+      }
+    } catch {
+      item.imageUrl = undefined
+    }
+  }
   if (!item.sourceSlug) return 'Missing sourceSlug'
   return null
 }

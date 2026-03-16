@@ -17,6 +17,7 @@ interface IngestResult {
   searchErrors?: string[];
   invalidIds?: string[];
   errors?: string[];
+  categories?: string[];
 }
 
 interface IngestError {
@@ -1043,9 +1044,18 @@ export default function AdminIngestaoPage() {
           )}
 
           {result.mode === "seed" && (
-            <p className="text-sm text-text-secondary">
-              Seed de produtos populares importado com sucesso!
-            </p>
+            <div>
+              <p className="text-sm text-text-secondary mb-2">
+                Seed de produtos populares importado com sucesso!
+              </p>
+              {result.categories && result.categories.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {result.categories.map((c) => (
+                    <span key={c} className="inline-block px-2 py-0.5 rounded bg-brand-100 text-xs text-brand-700 font-medium">{c}</span>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
