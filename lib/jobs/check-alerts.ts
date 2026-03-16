@@ -9,7 +9,8 @@ export async function checkAlerts(): Promise<JobResult> {
 
     const emailEnabled = isEmailConfigured();
     if (!emailEnabled) {
-      ctx.log('Email not configured (RESEND_API_KEY missing) — alerts will be marked but not emailed');
+      ctx.log('Email not configured (RESEND_API_KEY missing) — skipping alert check (alerts wont be consumed without notification)');
+      return { itemsTotal: 0, itemsDone: 0, metadata: { checked: 0, triggered: 0, emailed: 0, emailFailed: 0, skipped: 'email_not_configured' } };
     }
 
     const alerts = await prisma.priceAlert.findMany({

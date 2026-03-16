@@ -53,7 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/categorias", label: "Categorias", icon: Tag },
       { href: "/marcas", label: "Marcas", icon: Award },
       { href: "/cupons", label: "Cupons", icon: Ticket },
-      { href: "/comparar", label: "Comparar", icon: GitCompareArrows },
+      { href: "/lojas", label: "Lojas", icon: GitCompareArrows },
     ],
   },
   {
@@ -79,7 +79,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("promosnap_favorites");
+      const stored = localStorage.getItem("ps_favorites");
       if (stored) {
         const parsed = JSON.parse(stored);
         setFavCount(Array.isArray(parsed) ? parsed.length : 0);
@@ -90,7 +90,7 @@ export default function Sidebar() {
 
     const handleStorage = () => {
       try {
-        const stored = localStorage.getItem("promosnap_favorites");
+        const stored = localStorage.getItem("ps_favorites");
         if (stored) {
           const parsed = JSON.parse(stored);
           setFavCount(Array.isArray(parsed) ? parsed.length : 0);

@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
+import { safeCompare } from "@/lib/auth/admin";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export async function POST(req: NextRequest) {
+  // Rate limit: prevent brute-force login attempts
+  const rl = rateLimit(req, "admin");
+  if (!rl.success) {
+    return rateLimitResponse(rl);
+  }
+
   try {
     const { password } = await req.json();
     const secret = process.env.ADMIN_SECRET;
@@ -13,7 +21,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!password || password !== secret) {
+    if (!password || !safeCompare(password, secret)) {
       return NextResponse.json({ error: "Senha incorreta" }, { status: 401 });
     }
 

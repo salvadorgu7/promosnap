@@ -2,7 +2,6 @@ import { ImageResponse } from "next/og";
 import { getProductBySlug } from "@/lib/db/queries";
 import { formatPrice } from "@/lib/utils";
 
-export const runtime = "edge";
 export const alt = "PromoSnap - Produto";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

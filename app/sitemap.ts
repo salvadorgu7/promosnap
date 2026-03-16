@@ -29,16 +29,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${APP_URL}/categorias`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${APP_URL}/marcas`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${APP_URL}/indicar`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
-    { url: `${APP_URL}/minha-conta`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
     { url: `${APP_URL}/politica-privacidade`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
     { url: `${APP_URL}/termos`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
     { url: `${APP_URL}/transparencia`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${APP_URL}/lojas`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${APP_URL}/trending`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${APP_URL}/favoritos`, lastModified: now, changeFrequency: "daily", priority: 0.5 },
     { url: `${APP_URL}/preco-hoje`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${APP_URL}/radar`, lastModified: now, changeFrequency: "daily", priority: 0.5 },
-    { url: `${APP_URL}/descobrir`, lastModified: now, changeFrequency: "daily", priority: 0.6 },
   ];
 
   // Dynamic pages from DB (graceful fallback if DB unavailable)

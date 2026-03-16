@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
+import { timingSafeEqual, createHash } from "crypto";
 
 /**
  * Timing-safe string comparison to prevent timing attacks.
  */
-function safeCompare(a: string, b: string): boolean {
+export function safeCompare(a: string, b: string): boolean {
   try {
     if (a.length !== b.length) {
       // Compare against self to maintain constant time, then return false
@@ -20,8 +20,8 @@ function safeCompare(a: string, b: string): boolean {
 
 /**
  * Validates admin access via:
- * 1. admin-auth cookie (same as middleware — SHA256 of ADMIN_SECRET)
- * 2. x-admin-secret header (timing-safe comparison)
+ * 1. x-admin-secret header (timing-safe comparison)
+ * 2. admin-auth cookie (SHA256 hash of ADMIN_SECRET, verified here)
  *
  * Query param ?secret= was REMOVED for security (leaks in logs/referrer/history).
  * Returns null if authorized, or a 401 NextResponse if not.
@@ -30,25 +30,19 @@ export function validateAdmin(req: NextRequest): NextResponse | null {
   const secret = process.env.ADMIN_SECRET;
   if (!secret) return null; // No secret configured = open (dev mode)
 
-  // Method 1: Cookie-based auth (same hash as middleware)
-  const cookie = req.cookies.get("admin-auth")?.value;
-  if (cookie) {
-    // Cookie is SHA256 of secret — we can't verify here without async crypto
-    // But if cookie is present, middleware already validated it for /admin routes
-    // For API routes, also check the header below
-  }
-
-  // Method 2: Header-based auth (timing-safe)
+  // Method 1: Header-based auth (timing-safe)
   const headerSecret = req.headers.get("x-admin-secret");
   if (headerSecret && safeCompare(headerSecret, secret)) {
     return null; // Authorized via header
   }
 
-  // Method 3: Cookie-based auth for browser requests from admin UI
+  // Method 2: Cookie-based auth — verify SHA256 hash matches
+  const cookie = req.cookies.get("admin-auth")?.value;
   if (cookie) {
-    // Accept cookie auth for admin UI AJAX requests
-    // The cookie was already validated by middleware for /admin/* pages
-    return null;
+    const expectedHash = createHash("sha256").update(secret).digest("hex");
+    if (safeCompare(cookie, expectedHash)) {
+      return null; // Authorized via valid cookie
+    }
   }
 
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

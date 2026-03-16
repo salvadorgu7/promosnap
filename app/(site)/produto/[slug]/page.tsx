@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ExternalLink,
   ShoppingCart,
@@ -307,12 +308,15 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         {/* Left column: Image + contextual nav */}
         <div className="lg:col-span-1 space-y-4">
           {/* Product image */}
-          <div className="card aspect-square flex items-center justify-center p-8 overflow-hidden image-container">
+          <div className="card aspect-square relative flex items-center justify-center p-8 overflow-hidden image-container">
             {product.imageUrl ? (
-              <img
+              <Image
                 src={product.imageUrl}
                 alt={product.name}
-                className="w-full h-full object-contain drop-shadow-sm"
+                fill
+                className="object-contain drop-shadow-sm p-4"
+                sizes="(max-width: 1024px) 100vw, 33vw"
+                priority
               />
             ) : (
               <ShoppingCart className="h-24 w-24 text-surface-300" />

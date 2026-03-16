@@ -52,24 +52,29 @@ export async function updatePrices(): Promise<JobResult> {
 
     for (let i = 0; i < staleOffers.length; i += BATCH_SIZE) {
       const batch = staleOffers.slice(i, i + BATCH_SIZE);
+      const toDeactivate: string[] = [];
 
       for (const offer of batch) {
         if (offer.lastSeenAt < deactivateThreshold) {
-          try {
-            await prisma.offer.update({
-              where: { id: offer.id },
-              data: { isActive: false },
-            });
-            deactivated++;
-            ctx.log(`Deactivated offer ${offer.id} (last seen ${offer.lastSeenAt.toISOString()})`);
-          } catch {
-            // Offer may have been deleted — skip gracefully
-          }
+          toDeactivate.push(offer.id);
         } else {
           needsUpdate++;
-          ctx.log(`Offer ${offer.id} needs update (last seen ${offer.lastSeenAt.toISOString()})`);
         }
         processed++;
+      }
+
+      // Batch deactivate in a single query
+      if (toDeactivate.length > 0) {
+        try {
+          const result = await prisma.offer.updateMany({
+            where: { id: { in: toDeactivate } },
+            data: { isActive: false },
+          });
+          deactivated += result.count;
+          ctx.log(`Batch deactivated ${result.count} offers`);
+        } catch {
+          // Some offers may have been deleted — skip gracefully
+        }
       }
 
       await ctx.updateProgress(processed, staleOffers.length);
