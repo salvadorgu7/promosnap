@@ -133,6 +133,40 @@ function generateSlug(title: string, suffix: string): string {
   return truncated + '-' + suffix
 }
 
+/** Compute a basic offer score (0–100) for ranking purposes */
+function computeOfferScore(item: ImportItem): number {
+  let score = 0
+
+  // Discount component (up to 35 pts)
+  if (item.originalPrice && item.originalPrice > item.currentPrice) {
+    const discount = (item.originalPrice - item.currentPrice) / item.originalPrice
+    score += Math.min(discount * 100, 40) * 0.875
+  }
+
+  // Price attractiveness — lower price = more appealing for impulse buys (up to 15 pts)
+  if (item.currentPrice < 200) score += 15
+  else if (item.currentPrice < 500) score += 12
+  else if (item.currentPrice < 1500) score += 8
+  else score += 4
+
+  // Free shipping bonus (10 pts)
+  if (item.isFreeShipping) score += 10
+
+  // Has image (5 pts)
+  if (item.imageUrl) score += 5
+
+  // In stock (5 pts)
+  if (item.availability === 'in_stock') score += 5
+
+  // Freshness bonus — newly imported (10 pts)
+  score += 10
+
+  // Base score for having valid data (up to 20 pts)
+  score += 20
+
+  return Math.min(100, Math.round(score))
+}
+
 function validateItem(item: ImportItem): string | null {
   if (!item.externalId) return 'Missing externalId'
   if (!item.title || item.title.trim().length < 3) return 'Title too short or missing'
@@ -212,7 +246,7 @@ export async function runImportPipeline(
       // Check existing listing
       const existing = await prisma.listing.findUnique({
         where: { sourceId_externalId: { sourceId: source.id, externalId: item.externalId } },
-        include: { offers: { where: { isActive: true }, orderBy: { createdAt: 'desc' }, take: 1 } },
+        include: { offers: { where: { isActive: true }, orderBy: { createdAt: 'desc' }, take: 1, select: { id: true, currentPrice: true, offerScore: true } } },
       })
 
       if (existing) {
@@ -260,6 +294,17 @@ export async function runImportPipeline(
           }
 
           const lastOffer = existing.offers[0]
+          const newOfferScore = computeOfferScore(item)
+
+          // Backfill offerScore if it's 0 (legacy data)
+          if (lastOffer && lastOffer.offerScore === 0 && newOfferScore > 0) {
+            await prisma.offer.update({
+              where: { id: lastOffer.id },
+              data: { offerScore: newOfferScore, lastSeenAt: new Date() },
+            })
+            productUpdate.importedAt = new Date()
+          }
+
           if (lastOffer && lastOffer.currentPrice !== item.currentPrice) {
             await prisma.offer.update({
               where: { id: lastOffer.id },
@@ -267,6 +312,7 @@ export async function runImportPipeline(
                 currentPrice: item.currentPrice,
                 originalPrice: item.originalPrice ?? null,
                 isFreeShipping: item.isFreeShipping ?? false,
+                offerScore: newOfferScore,
                 lastSeenAt: new Date(),
               },
             })
@@ -446,6 +492,7 @@ export async function runImportPipeline(
         console.warn(`[import-pipeline] product "${cleanTitle}" has no valid affiliate URL`)
         noAffiliateUrl++
       }
+      const offerScore = computeOfferScore(item)
       const offer = await prisma.offer.create({
         data: {
           listingId: listing.id,
@@ -454,6 +501,7 @@ export async function runImportPipeline(
           isFreeShipping: item.isFreeShipping ?? false,
           affiliateUrl,
           isActive: true,
+          offerScore,
         },
       })
 
