@@ -10,7 +10,8 @@ export async function GET() {
       status: report.status,
       timestamp: report.timestamp,
     })
-  } catch {
+  } catch (err) {
+    console.error('[health] Check failed:', err instanceof Error ? err.message : err)
     return NextResponse.json(
       { status: 'critical', timestamp: new Date().toISOString() },
       { status: 503 }

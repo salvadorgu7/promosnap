@@ -4,6 +4,7 @@ import OfferCard from "@/components/cards/OfferCard";
 import EmptyState from "@/components/ui/EmptyState";
 import RelatedSearches from "@/components/ui/RelatedSearches";
 import ZeroResultActions from "@/components/search/ZeroResultActions";
+import SpellSuggestion from "@/components/search/SpellSuggestion";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { searchListings } from "@/lib/db/queries";
 import { formatPrice } from "@/lib/utils";
@@ -120,7 +121,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
   const params = await searchParams;
   const query = params.q || "";
   const sort = params.sort || "relevance";
-  const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
+  const page = Math.min(500, Math.max(1, parseInt(params.page || "1", 10) || 1));
   const minPrice = params.minPrice ? parseFloat(params.minPrice) : undefined;
   const maxPrice = params.maxPrice ? parseFloat(params.maxPrice) : undefined;
   const source = params.source || undefined;
@@ -506,6 +507,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                 ctaLabel="Limpar filtros"
                 ctaHref={`/busca?q=${encodeURIComponent(query)}`}
               />
+              <SpellSuggestion query={query} />
               <ZeroResultActions query={query} />
             </>
           ) : (

@@ -60,3 +60,26 @@ export function TableRowSkeleton({ cols = 5 }: { cols?: number }) {
     </tr>
   );
 }
+
+export function RailSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="py-4">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center gap-2.5 mb-3">
+          <Skeleton className="w-8 h-8 rounded-lg" />
+          <div>
+            <Skeleton className="h-5 w-36 rounded-md" />
+            <Skeleton className="h-3 w-52 rounded-md mt-1" />
+          </div>
+        </div>
+        <div className="flex gap-3 overflow-hidden">
+          {Array.from({ length: count }).map((_, i) => (
+            <div key={i} className="rail-card flex-shrink-0">
+              <OfferCardSkeleton />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

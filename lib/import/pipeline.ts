@@ -156,6 +156,10 @@ function computeOfferScore(item: ImportItem): number {
 function validateItem(item: ImportItem): string | null {
   if (!item.externalId) return 'Missing externalId'
   if (!item.title || item.title.trim().length < 3) return 'Title too short or missing'
+  if (item.title.length > 500) {
+    item.title = item.title.slice(0, 500)
+    console.warn(`[import-pipeline] title truncated for ${item.externalId}`)
+  }
   if (!item.currentPrice || item.currentPrice <= 0) return 'Invalid price'
   if (item.currentPrice > 500_000) return 'Price suspiciously high (>R$500k)'
   if (!item.productUrl) return 'Missing productUrl'

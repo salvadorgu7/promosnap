@@ -1,0 +1,27 @@
+export default function CategoriaLoading() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-6 animate-pulse">
+      {/* Breadcrumb */}
+      <div className="flex gap-2 mb-4">
+        <div className="h-3 bg-surface-100 rounded w-16" />
+        <div className="h-3 bg-surface-100 rounded w-24" />
+      </div>
+      {/* Header */}
+      <div className="h-8 bg-surface-100 rounded w-48 mb-2" />
+      <div className="h-4 bg-surface-100 rounded w-64 mb-6" />
+      {/* Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="bg-surface-100 rounded-lg overflow-hidden">
+            <div className="aspect-square bg-surface-200" />
+            <div className="p-3 space-y-2">
+              <div className="h-3 bg-surface-200 rounded w-full" />
+              <div className="h-3 bg-surface-200 rounded w-3/4" />
+              <div className="h-5 bg-surface-200 rounded w-1/2 mt-2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

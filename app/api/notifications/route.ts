@@ -13,7 +13,8 @@ export async function GET(req: NextRequest) {
   try {
     const notifications = await generateNotificationsForProducts(ids);
     return NextResponse.json(notifications);
-  } catch {
+  } catch (err) {
+    console.error('[notifications] Failed to generate:', err instanceof Error ? err.message : err)
     return NextResponse.json([]);
   }
 }

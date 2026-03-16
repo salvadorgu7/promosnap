@@ -18,7 +18,11 @@ function getMLEnv(key: string): string | undefined {
 }
 
 function getMLRedirectUri(): string | undefined {
-  return process.env.ML_REDIRECT_URI || process.env.MERCADOLIVRE_REDIRECT_URI || undefined
+  const explicit = process.env.ML_REDIRECT_URI || process.env.MERCADOLIVRE_REDIRECT_URI
+  if (explicit) return explicit
+  // Auto-detect from NEXT_PUBLIC_APP_URL or VERCEL_URL
+  const base = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
+  return base ? `${base}/api/admin/ml/callback` : undefined
 }
 
 const REQUIRED_ENV_KEYS = ['ML_CLIENT_ID', 'ML_CLIENT_SECRET'] as const

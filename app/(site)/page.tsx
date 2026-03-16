@@ -1,4 +1,5 @@
 import { Flame, TrendingDown, Trophy, Sparkles, Tag, Star, Search, ArrowRight, Package, Percent, Zap, Smartphone, Laptop, Footprints, ChevronRight } from "lucide-react";
+import nextDynamic from "next/dynamic";
 import DailyOpportunities from "@/components/home/DailyOpportunities";
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";
@@ -7,19 +8,21 @@ import OfferCard from "@/components/cards/OfferCard";
 import CategoryCard from "@/components/cards/CategoryCard";
 import TrendingTags from "@/components/home/TrendingTags";
 import DealOfTheDay from "@/components/home/DealOfTheDay";
-import RecentlyViewedRail from "@/components/home/RecentlyViewedRail";
 import Newsletter from "@/components/home/Newsletter";
 import CategoryRail from "@/components/home/CategoryRail";
 import OfferCarousel from "@/components/home/OfferCarousel";
-import SinceLastVisit from "@/components/home/SinceLastVisit";
-import PersonalizedRails from "@/components/home/PersonalizedRails";
 import SocialProof from "@/components/home/SocialProof";
 import RadarBanner from "@/components/home/RadarBanner";
 import ReturnUserGreeting from "@/components/home/ReturnUserGreeting";
-import SmartSuggestions from "@/components/home/SmartSuggestions";
 import AmazonPromo from "@/components/home/AmazonPromo";
 import FirstSaleBanner from "@/components/home/FirstSaleBanner";
 import EmailCapture from "@/components/engagement/EmailCapture";
+
+// Lazy-load below-fold client components for faster initial load
+const PersonalizedRails = nextDynamic(() => import("@/components/home/PersonalizedRails"));
+const SinceLastVisit = nextDynamic(() => import("@/components/home/SinceLastVisit"));
+const RecentlyViewedRail = nextDynamic(() => import("@/components/home/RecentlyViewedRail"));
+const SmartSuggestions = nextDynamic(() => import("@/components/home/SmartSuggestions"));
 import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/seo/JsonLd";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
@@ -366,7 +369,7 @@ export default async function HomePage() {
         <div id="hot-offers" className="section-alt py-4">
           <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
             {hotOffers.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
+              <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="hot-offers" />
               </div>
             ))}
@@ -379,7 +382,7 @@ export default async function HomePage() {
         <div id="recently-imported" className="py-4">
           <RailSection title="Promoções Fresquinhas" subtitle="Acabaram de chegar — ultimos 7 dias" href="/ofertas" icon={Sparkles} iconColor="text-accent-green">
             {recentlyImported.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
+              <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="recently-imported" />
               </div>
             ))}
@@ -400,7 +403,7 @@ export default async function HomePage() {
         <div id="lowest-prices" className="py-4">
           <RailSection title="Menor Preco Historico" subtitle="Nunca estiveram tao baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
             {lowestPrices.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
+              <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="lowest-prices" />
               </div>
             ))}
@@ -413,7 +416,7 @@ export default async function HomePage() {
         <div id="best-sellers" className="section-alt py-4">
           <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
             {bestSellers.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
+              <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="best-sellers" />
               </div>
             ))}
@@ -426,7 +429,7 @@ export default async function HomePage() {
         <div id="best-value" className="py-4">
           <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" href="/ofertas" icon={Percent} iconColor="text-accent-purple">
             {bestValue.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
+              <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="best-value" />
               </div>
             ))}
@@ -439,7 +442,7 @@ export default async function HomePage() {
         <div id="ready-for-campaign" className="section-alt py-4">
           <RailSection title="Prontos para Comprar" subtitle="Com desconto e link direto para a loja" href="/ofertas" icon={Star} iconColor="text-accent-blue">
             {readyForCampaign.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
+              <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="ready-for-campaign" />
               </div>
             ))}
