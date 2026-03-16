@@ -300,6 +300,11 @@ export default function AdminIngestaoPage() {
   const [result, setResult] = useState<IngestResult | null>(null);
   const [error, setError] = useState<IngestError | null>(null);
 
+  // Fix URLs state
+  const [fixUrlsResult, setFixUrlsResult] = useState<{ badOffers: number; items?: Array<{ offerId: string; currentUrl: string; productName: string }> } | null>(null);
+  const [fixUrlsRunning, setFixUrlsRunning] = useState(false);
+  const [fixUrlsMessage, setFixUrlsMessage] = useState<string | null>(null);
+
   function handleParse() {
     const lines = rawInput.split(/[\n,]+/).map((l) => l.trim()).filter(Boolean);
     const ids: string[] = [];
@@ -1176,6 +1181,74 @@ export default function AdminIngestaoPage() {
           )}
         </div>
       )}
+
+      {/* Fix URLs tool */}
+      <div className="card p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary">Corrigir URLs de concorrentes</h3>
+            <p className="text-xs text-text-muted">Detecta e corrige ofertas com links de tempromo, pelando, etc.</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                setFixUrlsRunning(true);
+                setFixUrlsMessage(null);
+                try {
+                  const res = await fetch("/api/admin/fix-urls");
+                  const data = await res.json();
+                  setFixUrlsResult(data);
+                } catch { setFixUrlsMessage("Erro ao verificar URLs"); }
+                setFixUrlsRunning(false);
+              }}
+              disabled={fixUrlsRunning}
+              className="px-3 py-1.5 rounded-lg bg-surface-100 text-sm font-medium text-text-secondary hover:bg-surface-200 transition-colors disabled:opacity-50"
+            >
+              {fixUrlsRunning ? "Verificando..." : "Verificar"}
+            </button>
+            {fixUrlsResult && fixUrlsResult.badOffers > 0 && (
+              <button
+                onClick={async () => {
+                  setFixUrlsRunning(true);
+                  try {
+                    const res = await fetch("/api/admin/fix-urls", { method: "POST" });
+                    const data = await res.json();
+                    setFixUrlsMessage(data.message || `${data.fixed} ofertas corrigidas`);
+                    setFixUrlsResult(null);
+                  } catch { setFixUrlsMessage("Erro ao corrigir URLs"); }
+                  setFixUrlsRunning(false);
+                }}
+                disabled={fixUrlsRunning}
+                className="px-3 py-1.5 rounded-lg bg-accent-red text-white text-sm font-medium hover:bg-accent-red/90 transition-colors disabled:opacity-50"
+              >
+                Corrigir {fixUrlsResult.badOffers} URLs
+              </button>
+            )}
+          </div>
+        </div>
+        {fixUrlsResult && (
+          <div className="text-xs">
+            {fixUrlsResult.badOffers === 0 ? (
+              <p className="text-accent-green font-medium">Nenhuma URL de concorrente encontrada!</p>
+            ) : (
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {fixUrlsResult.items?.slice(0, 20).map((item) => (
+                  <div key={item.offerId} className="flex items-center gap-2 py-1 border-b border-surface-100">
+                    <span className="text-text-primary font-medium truncate flex-1">{item.productName}</span>
+                    <span className="text-red-500 font-mono text-[10px] truncate max-w-[200px]">{item.currentUrl}</span>
+                  </div>
+                ))}
+                {(fixUrlsResult.items?.length || 0) > 20 && (
+                  <p className="text-text-muted">... e mais {fixUrlsResult.badOffers - 20}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        {fixUrlsMessage && (
+          <p className="text-xs font-medium text-accent-green">{fixUrlsMessage}</p>
+        )}
+      </div>
 
       {/* Results */}
       {result && (
