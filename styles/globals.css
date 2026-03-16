@@ -219,6 +219,25 @@
   .rail > * { @apply snap-start flex-shrink-0 h-auto; }
   .rail > * > .card { @apply h-full; }
 
+  /* Scroll affordance — right edge fade gradient */
+  .rail-fade {
+    @apply relative;
+  }
+  .rail-fade::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 1rem;
+    width: 2.5rem;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.85));
+    z-index: 1;
+  }
+  .section-alt .rail-fade::after {
+    background: linear-gradient(to right, transparent, rgba(246,247,251,0.92));
+  }
+
   /* ---- Shimmer loading ---- */
   .shimmer {
     @apply bg-surface-200/60;

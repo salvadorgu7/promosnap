@@ -81,8 +81,8 @@ function SectionHeader({
 
 function SectionSeparator() {
   return (
-    <div className="section-separator max-w-7xl mx-auto px-4">
-      <div className="h-px bg-gradient-to-r from-transparent via-surface-200 to-transparent" />
+    <div className="section-separator max-w-7xl mx-auto px-4 py-2">
+      <div className="h-px bg-gradient-to-r from-transparent via-surface-300/60 to-transparent" />
     </div>
   );
 }
@@ -250,7 +250,7 @@ export default async function HomePage() {
             title="Categorias em Destaque"
             subtitle="As categorias mais procuradas agora"
           />
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
             {PRIORITY_CATEGORIES.map((pc) => {
               const Icon = pc.displayIcon;
               const catData = priorityCategoryProducts.find(p => p.slug === pc.slug);

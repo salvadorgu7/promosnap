@@ -51,7 +51,9 @@ export default function RailSection({ title, subtitle, href, icon: Icon, iconCol
             </Link>
           )}
         </div>
-        <div className="rail">{children}</div>
+        <div className="rail-fade">
+          <div className="rail">{children}</div>
+        </div>
       </div>
     </section>
   );
