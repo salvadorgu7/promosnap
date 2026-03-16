@@ -11,7 +11,7 @@ import { getFallbackImage, isValidImageUrl } from "@/lib/images"
 // ---------------------------------------------------------------------------
 
 const FALLBACK_ICONS: Record<ImageType, typeof Package> = {
-  product: Package,
+  product: ImageOff,
   brand: Tag,
   category: Tag,
   article: Newspaper,
@@ -81,13 +81,13 @@ export default function SafeImage({
 
     return (
       <div
-        className={`flex flex-col items-center justify-center gap-2 image-container ${className}`}
+        className={`flex flex-col items-center justify-center gap-1.5 image-container bg-gradient-to-br from-surface-50 to-surface-100 rounded-lg ${className}`}
         style={!fill ? { width: width ?? "100%", height: height ?? "100%" } : undefined}
       >
-        <div className="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center">
-          <FallbackIcon className="w-6 h-6 text-surface-300" />
+        <div className="w-10 h-10 rounded-lg bg-surface-200/50 flex items-center justify-center">
+          <FallbackIcon className="w-5 h-5 text-surface-300" />
         </div>
-        <span className="text-[10px] text-surface-300 font-medium">{fallbackLabel}</span>
+        <span className="text-[9px] text-surface-300 font-medium tracking-wide uppercase">{fallbackLabel}</span>
       </div>
     )
   }

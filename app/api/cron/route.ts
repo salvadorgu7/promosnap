@@ -57,6 +57,8 @@ export async function GET(req: NextRequest) {
     ['cleanup', () => import('@/lib/jobs/cleanup').then(m => m.cleanupData())],
     // check-alerts: VALUE — triggers price alerts and sends emails
     ['check-alerts', () => import('@/lib/jobs/check-alerts').then(m => m.checkAlerts())],
+    // backfill-images: HYGIENE — heals products missing images from listings/ML API
+    ['backfill-images', () => import('@/lib/jobs/backfill-images').then(m => m.backfillImages())],
     // sitemap: SUPPORT — regenerates XML sitemap
     ['sitemap', () => import('@/lib/jobs/generate-sitemap').then(m => m.generateSitemap())],
   ]

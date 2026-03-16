@@ -456,6 +456,15 @@ export async function runImportPipeline(
         })
       }
 
+      // Auto-heal: backfill product image from listing if product has none
+      if (dbProduct && !dbProduct.imageUrl && item.imageUrl) {
+        await prisma.product.update({
+          where: { id: dbProduct.id },
+          data: { imageUrl: item.imageUrl },
+        })
+        dbProduct = { ...dbProduct, imageUrl: item.imageUrl }
+      }
+
       // Create listing
       const listing = await prisma.listing.create({
         data: {
