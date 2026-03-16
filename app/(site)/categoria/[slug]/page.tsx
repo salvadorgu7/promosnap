@@ -16,10 +16,15 @@ import prisma from "@/lib/db/prisma";
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  const categories = await prisma.category.findMany({
-    select: { slug: true },
-  });
-  return categories.map((c) => ({ slug: c.slug }));
+  try {
+    const categories = await prisma.category.findMany({
+      select: { slug: true },
+    });
+    return categories.map((c) => ({ slug: c.slug }));
+  } catch (err) {
+    console.warn('[build] generateStaticParams: DB unreachable, skipping static generation', err instanceof Error ? err.message : err);
+    return [];
+  }
 }
 
 function buildCategoryRelatedSearches(
