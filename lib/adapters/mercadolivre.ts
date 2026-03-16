@@ -250,8 +250,10 @@ async function scrapeMLProduct(url: string): Promise<AdapterResult | null> {
       'Accept': 'text/html,application/xhtml+xml',
       'Accept-Language': 'pt-BR,pt;q=0.9',
     },
+    redirect: 'follow',
   })
 
+  console.log(`[ML] scrape product response: ${res.status} ${res.url}`)
   if (!res.ok) return null
 
   const html = await res.text()
@@ -470,31 +472,42 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       }
     }
 
-    // Attempt 5: scrape ML product page as last resort
+    // Attempt 5: scrape ML product page (try multiple URL formats)
     if (!res) {
-      try {
-        // Try direct product URL format
-        const productPageUrl = `https://www.mercadolivre.com.br/p/${externalId}`
-        const scraped = await scrapeMLProduct(productPageUrl)
-        if (scraped) {
-          console.log(`[ML] getProduct(${externalId}) resolved via scrape fallback`)
-          return scraped
+      // MLB4492838717 → produto.mercadolivre.com.br/MLB-4492838717 (listing URL)
+      const dashId = externalId.replace(/^(MLB)(\d)/, '$1-$2')
+      const productUrls = [
+        `https://produto.mercadolivre.com.br/${dashId}`,
+        `https://www.mercadolivre.com.br/p/${externalId}`,
+      ]
+      for (const pUrl of productUrls) {
+        try {
+          const scraped = await scrapeMLProduct(pUrl)
+          if (scraped) {
+            console.log(`[ML] getProduct(${externalId}) resolved via scrape: ${pUrl}`)
+            return scraped
+          }
+        } catch (e) {
+          lastErr = `scrape(${pUrl}: ${e instanceof Error ? e.message : e})`
+          console.warn(`[ML] scrape fallback failed for ${pUrl}:`, e instanceof Error ? e.message : e)
         }
-      } catch (e) {
-        console.warn(`[ML] scrape fallback failed:`, e instanceof Error ? e.message : e)
       }
     }
 
-    // Attempt 6: search by ID via web scrape
+    // Attempt 6: search by ID via web scrape (most reliable — uses listing page)
     if (!res) {
       try {
-        const scraped = await scrapeMLSearch(externalId, 1)
-        const match = scraped.find(s => s.externalId === externalId)
-        if (match) {
-          console.log(`[ML] getProduct(${externalId}) resolved via search scrape`)
+        const scraped = await scrapeMLSearch(externalId, 5)
+        console.log(`[ML] getProduct(${externalId}) search scrape returned ${scraped.length} results`)
+        if (scraped.length > 0) {
+          // Try exact match first, then return first result
+          const match = scraped.find(s => s.externalId === externalId) || scraped[0]
+          console.log(`[ML] getProduct(${externalId}) resolved via search scrape → ${match.externalId}`)
           return match
         }
+        lastErr = `searchScrape(0 results)`
       } catch (e) {
+        lastErr = `searchScrape(${e instanceof Error ? e.message : e})`
         console.warn(`[ML] search scrape fallback failed:`, e instanceof Error ? e.message : e)
       }
     }
