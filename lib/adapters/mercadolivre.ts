@@ -158,6 +158,130 @@ function mlItemToAdapterResult(item: MLItemResponse): AdapterResult {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Web scraping fallback — parses JSON-LD from ML listing pages
+// ---------------------------------------------------------------------------
+
+interface MLJsonLdProduct {
+  '@type': string
+  name: string
+  image: string
+  brand?: { name: string }
+  aggregateRating?: { ratingCount: number; ratingValue: number }
+  offers?: {
+    price: number
+    priceCurrency: string
+    url: string
+    availability?: string
+  }
+}
+
+async function scrapeMLSearch(query: string, limit: number): Promise<AdapterResult[]> {
+  const searchUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(query.replace(/\s+/g, '-'))}`
+  console.log(`[ML] scrape fallback: ${searchUrl}`)
+
+  const res = await fetch(searchUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml',
+      'Accept-Language': 'pt-BR,pt;q=0.9',
+    },
+  })
+
+  if (!res.ok) {
+    throw new Error(`[ML] scrape failed: ${res.status}`)
+  }
+
+  const html = await res.text()
+
+  // Extract JSON-LD structured data
+  const ldMatch = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/)
+  if (!ldMatch) {
+    console.warn('[ML] scrape: no JSON-LD found')
+    return []
+  }
+
+  try {
+    // Decode unicode escapes (\u002F → /)
+    const jsonStr = ldMatch[1].replace(/\\u002F/g, '/')
+    const ld = JSON.parse(jsonStr)
+    const graph: MLJsonLdProduct[] = ld['@graph'] || (Array.isArray(ld) ? ld : [ld])
+
+    const products = graph.filter((item) => item['@type'] === 'Product')
+    console.log(`[ML] scrape: found ${products.length} products in JSON-LD`)
+
+    return products.slice(0, limit).map((p): AdapterResult => {
+      // Extract MLB ID from URL like .../p/MLB62112970
+      const urlMatch = p.offers?.url?.match(/MLB\d+/)
+      const externalId = urlMatch ? urlMatch[0] : `SCRAPE_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+
+      const affiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID
+      const mattWord = process.env.MERCADOLIVRE_AFFILIATE_WORD
+      let affiliateUrl: string | undefined
+      if (affiliateId && p.offers?.url) {
+        affiliateUrl = `${p.offers.url}?matt_tool=${affiliateId}${mattWord ? `&matt_word=${mattWord}` : ''}`
+      }
+
+      return {
+        externalId,
+        title: p.name,
+        productUrl: p.offers?.url || searchUrl,
+        affiliateUrl,
+        currentPrice: p.offers?.price ?? 0,
+        originalPrice: undefined,
+        currency: p.offers?.priceCurrency || 'BRL',
+        availability: p.offers?.availability?.includes('InStock') ? 'in_stock' : 'in_stock',
+        imageUrl: p.image?.replace(/\\u002F/g, '/') || '',
+        isFreeShipping: false,
+      }
+    })
+  } catch (err) {
+    console.error('[ML] scrape JSON-LD parse error:', err)
+    return []
+  }
+}
+
+async function scrapeMLProduct(url: string): Promise<AdapterResult | null> {
+  console.log(`[ML] scrape product: ${url}`)
+
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml',
+      'Accept-Language': 'pt-BR,pt;q=0.9',
+    },
+  })
+
+  if (!res.ok) return null
+
+  const html = await res.text()
+  const ldMatch = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/)
+  if (!ldMatch) return null
+
+  try {
+    const jsonStr = ldMatch[1].replace(/\\u002F/g, '/')
+    const ld = JSON.parse(jsonStr)
+    const product = ld['@type'] === 'Product' ? ld : (ld['@graph'] || []).find((x: MLJsonLdProduct) => x['@type'] === 'Product')
+    if (!product) return null
+
+    const urlMatch = product.offers?.url?.match(/MLB\d+/) || url.match(/MLB\d+/)
+    const externalId = urlMatch ? urlMatch[0] : ''
+
+    return {
+      externalId,
+      title: product.name,
+      productUrl: product.offers?.url || url,
+      currentPrice: product.offers?.price ?? 0,
+      currency: product.offers?.priceCurrency || 'BRL',
+      availability: 'in_stock',
+      imageUrl: product.image?.replace(/\\u002F/g, '/') || '',
+      isFreeShipping: false,
+    }
+  } catch {
+    return null
+  }
+}
+
 // ============================================================================
 // Adapter
 // ============================================================================
@@ -260,9 +384,15 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
         }
       }
 
-      // All attempts failed
+      // All API attempts failed — try web scraping fallback
       if (!res) {
-        throw new Error(`ML API busca falhou em todas as tentativas. Último erro: ${lastErr}`)
+        console.warn(`[ML] all API attempts failed (${lastErr}), trying web scrape fallback...`)
+        const scraped = await scrapeMLSearch(query, limit)
+        if (scraped.length > 0) {
+          console.log(`[ML] search("${query}") → ${scraped.length} results via scrape`)
+          return scraped
+        }
+        throw new Error(`ML API e scrape falharam. Último erro API: ${lastErr}`)
       }
 
       const data: MLSearchResponse = await res.json()
@@ -340,21 +470,32 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       }
     }
 
-    // Attempt 5: search by ID as last resort
+    // Attempt 5: scrape ML product page as last resort
     if (!res) {
       try {
-        const searchUrl = `${ML_API_BASE}/sites/${ML_SITE}/search?q=${externalId}&limit=1`
-        const searchRes = await fetch(searchUrl, { headers: { ...ML_BASE_HEADERS } })
-        if (searchRes.ok) {
-          const searchData: MLSearchResponse = await searchRes.json()
-          const match = searchData.results.find(r => r.id === externalId)
-          if (match) {
-            console.log(`[ML] getProduct(${externalId}) resolved via search fallback`)
-            return mlToAdapterResult(match)
-          }
+        // Try direct product URL format
+        const productPageUrl = `https://www.mercadolivre.com.br/p/${externalId}`
+        const scraped = await scrapeMLProduct(productPageUrl)
+        if (scraped) {
+          console.log(`[ML] getProduct(${externalId}) resolved via scrape fallback`)
+          return scraped
         }
       } catch (e) {
-        console.warn(`[ML] search fallback failed:`, e instanceof Error ? e.message : e)
+        console.warn(`[ML] scrape fallback failed:`, e instanceof Error ? e.message : e)
+      }
+    }
+
+    // Attempt 6: search by ID via web scrape
+    if (!res) {
+      try {
+        const scraped = await scrapeMLSearch(externalId, 1)
+        const match = scraped.find(s => s.externalId === externalId)
+        if (match) {
+          console.log(`[ML] getProduct(${externalId}) resolved via search scrape`)
+          return match
+        }
+      } catch (e) {
+        console.warn(`[ML] search scrape fallback failed:`, e instanceof Error ? e.message : e)
       }
     }
 
