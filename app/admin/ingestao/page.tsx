@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X } from "lucide-react";
+import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X, Sparkles } from "lucide-react";
 
 interface IngestResult {
   mode?: string;
@@ -60,7 +60,7 @@ const emptyManualItem = (): ManualItem => ({
 });
 
 export default function AdminIngestaoPage() {
-  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual">("search");
+  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed">("search");
 
   // ID mode state
   const [rawInput, setRawInput] = useState("");
@@ -157,6 +157,24 @@ export default function AdminIngestaoPage() {
     }
   }
 
+  async function handleIngestSeed() {
+    setIsRunning(true); setResult(null); setError(null);
+
+    try {
+      const res = await fetch("/api/admin/ingest", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count: 20 }),
+      });
+      const data = await res.json();
+      res.ok ? setResult(data) : setError(data);
+    } catch (err: any) {
+      setError({ error: err.message || "Erro de rede" });
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
   async function handleIngestManual() {
     const validItems = manualItems.filter(
       (i) => i.title.trim() && i.price.trim() && i.url.trim()
@@ -228,6 +246,7 @@ export default function AdminIngestaoPage() {
           { key: "search", icon: Search, label: "Busca" },
           { key: "trends", icon: TrendingUp, label: "Tendencias" },
           { key: "ids", icon: Upload, label: "Por IDs" },
+          { key: "seed", icon: Sparkles, label: "Seed" },
           { key: "manual", icon: PenLine, label: "Manual" },
         ] as const).map(({ key, icon: Icon, label }) => (
           <button
@@ -407,6 +426,50 @@ export default function AdminIngestaoPage() {
         </div>
       )}
 
+      {/* SEED MODE */}
+      {mode === "seed" && (
+        <div className="card p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              <Sparkles className="inline h-4 w-4 mr-1.5 -mt-0.5 text-accent-orange" />
+              Importar Produtos Populares (Seed)
+            </label>
+            <p className="text-sm text-text-muted">
+              Importa 20 produtos reais e populares do Mercado Livre instantaneamente.
+              Inclui smartphones, smartwatches, tablets, air fryers e PlayStation.
+            </p>
+          </div>
+
+          <div className="p-3 bg-green-50 rounded-lg flex items-start gap-2">
+            <CheckCircle className="h-4 w-4 text-accent-green mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-green-700">
+              <strong>Funciona sempre!</strong> Usa dados pre-carregados — nao depende da API do ML nem de scraping.
+              Ideal para popular o site rapidamente.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {["smartphone", "smartwatch", "tablet", "airfryer", "playstation"].map((cat) => (
+              <span key={cat} className="inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-accent-orange/10 text-xs font-medium text-accent-orange">
+                {cat}
+              </span>
+            ))}
+          </div>
+
+          <button
+            onClick={handleIngestSeed}
+            disabled={isRunning}
+            className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-2 disabled:opacity-50 bg-accent-orange hover:bg-accent-orange/90"
+          >
+            {isRunning ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Importando seed...</>
+            ) : (
+              <><Sparkles className="h-4 w-4" /> Importar 20 Produtos Populares</>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* MANUAL MODE */}
       {mode === "manual" && (
         <div className="card p-5 space-y-4">
@@ -569,6 +632,12 @@ export default function AdminIngestaoPage() {
 
           {result.mode === "manual" && (
             <p className="text-sm text-text-secondary">Entrada manual</p>
+          )}
+
+          {result.mode === "seed" && (
+            <p className="text-sm text-text-secondary">
+              Seed de produtos populares importado com sucesso!
+            </p>
           )}
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">

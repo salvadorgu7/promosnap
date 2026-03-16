@@ -4,6 +4,7 @@ import { MercadoLivreSourceAdapter } from '@/lib/adapters/mercadolivre'
 import { runImportPipeline, type ImportItem } from '@/lib/import'
 import { rateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
 import { getMLAppToken } from '@/lib/ml-auth'
+import { SEED_PRODUCTS } from '@/lib/seed-products'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -298,5 +299,52 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (err) {
     return NextResponse.json({ error: 'Erro interno ao processar trends' }, { status: 500 })
+  }
+}
+
+// ─── DELETE /api/admin/ingest ───────────────────────────────────────────────
+// Seed import: imports pre-scraped popular products (always works!)
+// Body: { count?: number }
+
+export async function DELETE(request: NextRequest) {
+  const denied = validateAdmin(request)
+  if (denied) return denied
+
+  const rl = rateLimit(request, 'public')
+  if (!rl.success) return rateLimitResponse(rl)
+
+  let body: { count?: number } = {}
+  try {
+    body = await request.json()
+  } catch { /* empty body ok */ }
+
+  const count = Math.min(body.count || 20, SEED_PRODUCTS.length)
+  const selected = SEED_PRODUCTS.slice(0, count)
+
+  const items: ImportItem[] = selected.map((p) => ({
+    externalId: p.externalId,
+    title: p.title,
+    currentPrice: p.currentPrice,
+    productUrl: p.productUrl,
+    imageUrl: p.imageUrl,
+    availability: 'in_stock' as const,
+    sourceSlug: 'mercadolivre',
+    discoverySource: 'seed_import',
+  }))
+
+  try {
+    const result = await runImportPipeline(items)
+    return NextResponse.json({
+      mode: 'seed',
+      fetched: items.length,
+      created: result.created,
+      updated: result.updated,
+      skipped: result.skipped,
+      failed: result.failed,
+      durationMs: result.durationMs,
+      categories: [...new Set(selected.map(p => p.category))],
+    })
+  } catch (err) {
+    return NextResponse.json({ error: 'Erro interno ao processar seed' }, { status: 500 })
   }
 }
