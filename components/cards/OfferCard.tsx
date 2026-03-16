@@ -190,25 +190,33 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
 
         {/* CTA */}
         {hasDirectLink ? (
-          <a
-            href={ctaUrl}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            aria-label={`${ctaLabel} - ${product.name}`}
-            onClick={() => analytics.offerClick({
-              offerId: bestOffer.offerId || "",
-              productId: product.id,
-              store: bestOffer.sourceName,
-              price: bestOffer.price,
-            })}
-            className={`btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold touch-target ${
-              bestOffer.offerScore >= 80 ? "animate-pulse-subtle" : ""
-            }`}
-          >
-            {bestOffer.offerScore >= 80 && <Zap className="w-3 h-3" />}
-            {ctaLabel}
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          <div className="mt-2 space-y-1">
+            <a
+              href={ctaUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              aria-label={`${ctaLabel} - ${product.name}`}
+              onClick={() => analytics.offerClick({
+                offerId: bestOffer.offerId || "",
+                productId: product.id,
+                store: bestOffer.sourceName,
+                price: bestOffer.price,
+              })}
+              className={`btn-offer h-9 sm:h-8 text-xs font-semibold touch-target ${
+                bestOffer.offerScore >= 80 ? "animate-pulse-subtle" : ""
+              }`}
+            >
+              {bestOffer.offerScore >= 80 && <Zap className="w-3 h-3" />}
+              {ctaLabel}
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            {discount && discount >= 20 && (
+              <p className="text-[9px] text-center text-text-muted flex items-center justify-center gap-0.5">
+                <Clock className="w-2.5 h-2.5" />
+                Preco pode mudar a qualquer momento
+              </p>
+            )}
+          </div>
         ) : (
           <Link
             href={`/produto/${product.slug}`}

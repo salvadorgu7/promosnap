@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Bell, Heart, Share2 } from "lucide-react";
+import { ExternalLink, Heart, Share2, ShieldCheck, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logger } from "@/lib/logger"
 
@@ -11,6 +11,7 @@ interface MobileProductActionsProps {
   productSlug: string;
   productName: string;
   discount?: number;
+  offerScore?: number;
 }
 
 export default function MobileProductActions({
@@ -20,6 +21,7 @@ export default function MobileProductActions({
   productSlug,
   productName,
   discount,
+  offerScore = 0,
 }: MobileProductActionsProps) {
   const [isFavorited, setIsFavorited] = useState(false);
 
@@ -61,9 +63,21 @@ export default function MobileProductActions({
 
   const clickoutUrl = `/api/clickout/${offerId}?page=product&product=${productSlug}&origin=mobile_bar`;
 
+  const isGreatDeal = offerScore >= 80 || (discount && discount >= 30);
+  const ctaLabel = offerScore >= 80 ? "Aproveitar Agora" : discount && discount >= 30 ? "Garantir Oferta" : "Comprar";
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-surface-200 px-4 py-3 safe-bottom">
-      <div className="flex items-center gap-2">
+    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-surface-200 safe-bottom shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+      {/* Urgency strip for great deals */}
+      {isGreatDeal && (
+        <div className="bg-gradient-to-r from-accent-green/10 to-green-50 px-4 py-1 flex items-center justify-center gap-1.5">
+          <Zap className="w-3 h-3 text-accent-green" />
+          <span className="text-[10px] font-semibold text-accent-green">
+            {discount && discount >= 30 ? `${discount}% OFF — preco pode mudar a qualquer momento` : "Oportunidade verificada"}
+          </span>
+        </div>
+      )}
+      <div className="flex items-center gap-2 px-4 py-3">
         {/* Price */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
@@ -71,18 +85,21 @@ export default function MobileProductActions({
               R$ {price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </span>
             {discount && discount > 0 && (
-              <span className="text-xs font-bold text-accent-green bg-green-50 px-1.5 py-0.5 rounded">
+              <span className="text-xs font-bold text-white bg-accent-red px-1.5 py-0.5 rounded">
                 -{discount}%
               </span>
             )}
           </div>
-          <p className="text-[10px] text-text-muted truncate">{sourceName}</p>
+          <p className="text-[10px] text-text-muted truncate flex items-center gap-1">
+            <ShieldCheck className="w-2.5 h-2.5 text-accent-green" />
+            Compra segura via {sourceName}
+          </p>
         </div>
 
         {/* Actions */}
         <button
           onClick={toggleFavorite}
-          className={`p-2.5 rounded-lg border transition-colors ${
+          className={`p-2 rounded-lg border transition-colors ${
             isFavorited
               ? "bg-red-50 border-red-200 text-accent-red"
               : "bg-surface-50 border-surface-200 text-text-muted"
@@ -93,20 +110,25 @@ export default function MobileProductActions({
 
         <button
           onClick={handleShare}
-          className="p-2.5 rounded-lg border border-surface-200 bg-surface-50 text-text-muted"
+          className="p-2 rounded-lg border border-surface-200 bg-surface-50 text-text-muted"
         >
           <Share2 className="w-4 h-4" />
         </button>
 
-        {/* Buy CTA */}
+        {/* Buy CTA — larger and more prominent */}
         <a
           href={clickoutUrl}
           target="_blank"
           rel="noopener noreferrer nofollow"
-          className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-accent-green text-white text-sm font-bold hover:bg-green-600 transition-colors shadow-sm"
+          className={`flex items-center gap-1.5 px-5 py-3 rounded-xl text-white text-sm font-bold transition-all shadow-lg ${
+            isGreatDeal
+              ? "bg-gradient-to-r from-accent-green to-green-600 shadow-green-200"
+              : "bg-accent-green hover:bg-green-600"
+          }`}
         >
-          <ExternalLink className="w-4 h-4" />
-          Comprar
+          {isGreatDeal && <Zap className="w-4 h-4" />}
+          {ctaLabel}
+          <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
     </div>

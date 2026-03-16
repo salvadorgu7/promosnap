@@ -75,6 +75,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={`${inter.variable} ${plusJakarta.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "PromoSnap",
+              url: "https://promosnap.com.br",
+              logo: "https://promosnap.com.br/icon-512x512.png",
+              description: "Comparador de precos inteligente do Brasil",
+              sameAs: [],
+            }),
+          }}
+        />
+      </head>
       <body className="min-h-screen font-sans antialiased">
         <GoogleAnalytics />
         {children}

@@ -36,6 +36,32 @@ function appendAffiliateParams(url: string, sourceSlug: string): string {
       const tag = process.env.AMAZON_AFFILIATE_TAG || process.env.AMAZON_PARTNER_TAG || "promosnap-20";
       if (tag && !parsed.searchParams.has("tag")) {
         parsed.searchParams.set("tag", tag);
+        if (!parsed.searchParams.has("linkCode")) {
+          parsed.searchParams.set("linkCode", "ll1");
+        }
+      }
+    }
+
+    // Shopee
+    if (
+      sourceSlug === "shopee" ||
+      parsed.hostname.includes("shopee.com.br")
+    ) {
+      const afId = process.env.SHOPEE_AFFILIATE_ID;
+      if (afId && !parsed.searchParams.has("af_id")) {
+        parsed.searchParams.set("af_id", afId);
+      }
+    }
+
+    // Magazine Luiza
+    if (
+      sourceSlug === "magalu" || sourceSlug === "magazine-luiza" ||
+      parsed.hostname.includes("magazineluiza.com.br") ||
+      parsed.hostname.includes("magalu.com.br")
+    ) {
+      const partnerId = process.env.MAGALU_PARTNER_ID;
+      if (partnerId && !parsed.searchParams.has("partner_id")) {
+        parsed.searchParams.set("partner_id", partnerId);
       }
     }
 

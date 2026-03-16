@@ -181,6 +181,15 @@ function validateItem(item: ImportItem): string | null {
     }
   }
   if (!item.sourceSlug) return 'Missing sourceSlug'
+  // Normalize originalPrice: must be > currentPrice, otherwise discard
+  if (item.originalPrice && item.originalPrice <= item.currentPrice) {
+    item.originalPrice = undefined
+  }
+  // Normalize price to 2 decimal places
+  item.currentPrice = Math.round(item.currentPrice * 100) / 100
+  if (item.originalPrice) {
+    item.originalPrice = Math.round(item.originalPrice * 100) / 100
+  }
   return null
 }
 

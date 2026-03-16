@@ -83,6 +83,45 @@ export function getRelatedLinks(opts: {
     }
   }
 
+  // Ensure at least one "melhores" link for the product's category (fallback)
+  if (categorySlug && !links.some((l) => l.type === "best")) {
+    for (const [slug, page] of Object.entries(BEST_PAGES)) {
+      if (links.length >= limit) break;
+      if (page.query?.categories?.includes(categorySlug)) {
+        links.push({
+          href: `/melhores/${slug}`,
+          label: page.title,
+          type: "best",
+        });
+      }
+    }
+    // If still no curated "melhores" page, add a generic search-based link
+    if (!links.some((l) => l.type === "best") && links.length < limit) {
+      const catLabel = categorySlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      links.push({
+        href: `/busca?q=melhores+${encodeURIComponent(catLabel)}`,
+        label: `Melhores ${catLabel}`,
+        type: "search",
+      });
+    }
+  }
+
+  // Ensure at least one comparison link for the product's category (fallback)
+  if (categorySlug && !links.some((l) => l.type === "comparison") && links.length < limit) {
+    const catName = categorySlug.replace(/-/g, " ");
+    for (const comp of COMPARISON_LIST) {
+      if (links.length >= limit) break;
+      const compText = `${comp.productA.name} ${comp.productB.name}`.toLowerCase();
+      if (compText.includes(catName)) {
+        links.push({
+          href: `/comparar/${comp.slug}`,
+          label: comp.title,
+          type: "comparison",
+        });
+      }
+    }
+  }
+
   // Always add category if available
   if (categorySlug && links.length < limit) {
     links.push({

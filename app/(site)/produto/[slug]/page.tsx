@@ -12,6 +12,7 @@ import {
   Package,
   Share2,
   Tag,
+  Users,
 } from "lucide-react";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import PriceChart from "@/components/charts/PriceChartLazy";
@@ -137,6 +138,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         reviewsCount: listing.reviewsCount,
         affiliateUrl: offer.affiliateUrl || "#",
         offerScore: offer.offerScore,
+        lastSeenAt: offer.lastSeenAt,
       }))
     )
     .sort((a, b) => a.price - b.price);
@@ -232,6 +234,33 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
   const specs = product.specsJson as Record<string, string> | null;
 
   const productUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br"}/produto/${slug}`;
+
+  // Last-updated relative time
+  const lastSeenLabel = (() => {
+    if (!bestOffer?.lastSeenAt) return null;
+    const diffMs = Date.now() - new Date(bestOffer.lastSeenAt).getTime();
+    const diffHours = Math.floor(diffMs / 3600000);
+    if (diffHours < 1) return "Atualizado agora";
+    if (diffHours < 24) return `Atualizado ha ${diffHours}h`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 0) return "Atualizado hoje";
+    if (diffDays === 1) return "Atualizado ontem";
+    return `Atualizado ha ${diffDays} dias`;
+  })();
+
+  // Price context: below 30d avg
+  const priceBelowAvg30d = priceStats?.avg30d && bestPrice < priceStats.avg30d
+    ? Math.round(((priceStats.avg30d - bestPrice) / priceStats.avg30d) * 100)
+    : null;
+
+  // Price context: near all-time low (within 5%)
+  const isNearAllTimeLow = priceStats?.allTimeMin
+    ? bestPrice <= priceStats.allTimeMin * 1.05
+    : false;
+
+  // Social proof: popularity score
+  const showSocialProof = product.popularityScore > 10;
+  const viewCountDisplay = Math.round(product.popularityScore * 12);
 
   // Schema.org
   const schemaOffers = allOffers.map((o) => ({
@@ -377,6 +406,11 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               {discount && discount >= 20 && (
                 <span className="badge-lowest">Preco em queda</span>
               )}
+              {lastSeenLabel && (
+                <span className="flex items-center gap-1 text-xs text-text-muted">
+                  <Clock className="h-3 w-3" /> {lastSeenLabel}
+                </span>
+              )}
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold font-display text-text-primary mb-2">
               {product.name}
@@ -384,6 +418,11 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             {product.description && (
               <p className="text-sm text-text-secondary leading-relaxed line-clamp-2">
                 {product.description}
+              </p>
+            )}
+            {showSocialProof && (
+              <p className="flex items-center gap-1.5 text-xs text-text-muted mt-1">
+                <Users className="h-3 w-3" /> {viewCountDisplay} pessoas viram este produto
               </p>
             )}
           </div>
@@ -484,6 +523,17 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                   <p className="text-3xl font-bold text-brand-600 font-display mt-1">
                     {formatPrice(bestPrice)}
                   </p>
+                  {/* Price context badges */}
+                  {priceBelowAvg30d && priceBelowAvg30d >= 3 && (
+                    <p className="text-xs font-medium text-accent-green mt-1">
+                      {priceBelowAvg30d}% abaixo da media dos ultimos 30 dias
+                    </p>
+                  )}
+                  {isNearAllTimeLow && (
+                    <p className="text-xs font-medium text-accent-green mt-0.5">
+                      Proximo do menor preco historico!
+                    </p>
+                  )}
                   {showInstallment && (
                     <p className="text-sm text-text-muted mt-1">
                       ou {installmentCount}x de {formatPrice(installmentValue)}
@@ -491,14 +541,24 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                   )}
                   <p className="text-xs text-text-muted mt-1">em {bestOffer.sourceName}</p>
                 </div>
-                <a
-                  href={`/api/clickout/${bestOffer.id}?page=product`}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="btn-primary flex items-center gap-2 px-6 py-3"
-                >
-                  <ExternalLink className="h-4 w-4" /> Ver Oferta
-                </a>
+                <div className="flex flex-col items-center gap-1.5">
+                  <a
+                    href={`/api/clickout/${bestOffer.id}?page=product`}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="btn-primary flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold w-full"
+                  >
+                    <ExternalLink className="h-5 w-5" /> Ver Oferta
+                  </a>
+                  {discount && discount > 20 && (
+                    <p className="text-[10px] text-accent-orange font-medium text-center">
+                      Preco pode mudar a qualquer momento
+                    </p>
+                  )}
+                  <p className="text-[10px] text-text-muted text-center flex items-center gap-1">
+                    <Shield className="h-3 w-3" /> Compra segura via {bestOffer.sourceName}
+                  </p>
+                </div>
               </div>
               {/* Urgency signals */}
               <UrgencySignals

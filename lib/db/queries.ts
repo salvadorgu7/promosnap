@@ -438,6 +438,7 @@ export async function getProductBySlug(slug: string) {
               isFreeShipping: true,
               offerScore: true,
               affiliateUrl: true,
+              lastSeenAt: true,
             },
           },
         },

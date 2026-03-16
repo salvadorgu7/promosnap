@@ -290,6 +290,38 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
       { q: 'Tela IPS ou TN nessa faixa de preço?', a: 'Sempre prefira IPS quando disponível. Telas TN têm cores desbotadas e ângulos de visão ruins. Muitos notebooks até R$ 3.000 já oferecem IPS Full HD.' },
     ],
   },
+  // ═══════ NEW: high-intent commercial pages ═══════
+  'melhores-perfumes-masculinos': {
+    title: 'Melhores Perfumes Masculinos',
+    description: 'Os melhores perfumes masculinos com precos comparados. Fragancias com melhor custo-beneficio e avaliacao.',
+    intro: 'Escolher um perfume masculino e muito pessoal, mas o preco nao precisa ser misterio. Comparamos precos de perfumes nacionais e importados em todas as lojas para voce encontrar sua fragrancia ideal pelo melhor preco.',
+    query: { categories: ['beleza'], keywords: ['perfume masculino', 'colonia masculina'] },
+    faqs: [
+      { q: 'Qual o melhor perfume masculino custo-beneficio?', a: 'Malbec do Boticario e Kaiak da Natura sao excelentes opcoes nacionais. Para importados, 212 VIP e Bleu de Chanel lideram em avaliacao.' },
+      { q: 'Onde comprar perfume mais barato?', a: 'Compare precos entre Mercado Livre, Amazon e lojas oficiais. Fique atento ao historico de precos para aproveitar descontos reais.' },
+    ],
+  },
+  'melhores-ferramentas-eletricas': {
+    title: 'Melhores Ferramentas Eletricas',
+    description: 'As melhores ferramentas eletricas com precos comparados. Parafusadeiras, furadeiras e mais com desconto.',
+    intro: 'Ferramentas eletricas sao investimento de longo prazo. Comparamos precos de Bosch, DeWalt, Makita e Tramontina para voce montar sua bancada sem pagar caro.',
+    query: { categories: ['ferramentas'], keywords: ['parafusadeira', 'furadeira', 'serra'] },
+    faqs: [
+      { q: 'Qual a melhor parafusadeira custo-beneficio?', a: 'A Bosch GSB 12V e a mais recomendada para uso domestico. Para uso profissional, DeWalt e Makita lideram.' },
+      { q: 'Parafusadeira a bateria ou com fio?', a: 'A bateria e muito mais pratica para 90% dos usos domesticos. Com fio so compensa para trabalho pesado continuo.' },
+    ],
+  },
+  'melhores-brinquedos': {
+    title: 'Melhores Brinquedos',
+    description: 'Os melhores brinquedos com precos comparados. LEGO, Barbie, Hot Wheels e mais com desconto.',
+    intro: 'Brinquedos sao presentes que marcam. Comparamos precos entre todas as lojas para voce encontrar os melhores brinquedos sem pagar a mais, especialmente em datas sazonais como Natal e Dia das Criancas.',
+    query: { categories: ['brinquedos'], keywords: ['LEGO', 'Barbie', 'Hot Wheels', 'brinquedo'] },
+    faqs: [
+      { q: 'Quando brinquedos ficam mais baratos?', a: 'Janeiro e marco costumam ter os melhores precos. Antes do Dia das Criancas (outubro) e Natal os precos sobem. Use o historico do PromoSnap para comparar.' },
+      { q: 'LEGO original vs compativel?', a: 'LEGO original tem qualidade e encaixe superiores, mas custa mais. Para criancas pequenas, blocos compativeis podem ser uma boa opcao inicial.' },
+    ],
+  },
+  // smart-tvs, aspiradores-robo, cafeteiras, notebooks-gamer already defined above
 }
 
 export const BEST_PAGE_SLUGS = Object.keys(BEST_PAGES)

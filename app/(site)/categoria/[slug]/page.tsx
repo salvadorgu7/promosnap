@@ -520,8 +520,102 @@ export default async function CategoriaPage({
         );
       })()}
 
+      {/* SEO description block — topical authority + internal linking */}
+      <CategorySEOBlock categorySlug={slug} categoryName={name} productCount={total} />
+
       {/* Related searches */}
       <RelatedSearches searches={buildCategoryRelatedSearches(slug, name)} />
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* CategorySEOBlock — rich description with internal links for SEO    */
+/* ------------------------------------------------------------------ */
+function CategorySEOBlock({
+  categorySlug,
+  categoryName,
+  productCount,
+}: {
+  categorySlug: string;
+  categoryName: string;
+  productCount: number;
+}) {
+  const slug = categorySlug.toLowerCase();
+  const name = categoryName;
+
+  // Find matching "melhores" pages for this category
+  const melhoresLinks: { href: string; label: string }[] = [];
+  for (const [bpSlug, def] of Object.entries(BEST_PAGES)) {
+    if (
+      def.query.categories?.some((c) => c.toLowerCase() === slug) ||
+      def.query.keywords?.some(
+        (k) =>
+          name.toLowerCase().includes(k.toLowerCase()) ||
+          k.toLowerCase().includes(name.toLowerCase())
+      )
+    ) {
+      melhoresLinks.push({ href: `/melhores/${bpSlug}`, label: def.title });
+    }
+  }
+
+  // Price range quick-links
+  const priceRangeLinks = [
+    { label: `${name} ate R$ 500`, href: `/busca?q=${encodeURIComponent(name)}&maxPrice=500` },
+    { label: `${name} de R$ 500 a R$ 1.000`, href: `/busca?q=${encodeURIComponent(name)}&minPrice=500&maxPrice=1000` },
+    { label: `${name} de R$ 1.000 a R$ 3.000`, href: `/busca?q=${encodeURIComponent(name)}&minPrice=1000&maxPrice=3000` },
+    { label: `${name} acima de R$ 3.000`, href: `/busca?q=${encodeURIComponent(name)}&minPrice=3000` },
+  ];
+
+  return (
+    <section className="mt-10 border-t border-surface-100 pt-8">
+      <h2 className="text-base font-bold font-display text-text-primary mb-2">
+        Sobre {name} no PromoSnap
+      </h2>
+      <div className="text-sm text-text-secondary leading-relaxed space-y-3">
+        <p>
+          Encontre as melhores ofertas de <strong>{name}</strong> com precos comparados em tempo real.
+          {productCount > 0 && (
+            <> Atualmente temos <strong>{productCount} produto{productCount !== 1 ? "s" : ""}</strong> indexados nesta categoria, com historico de precos, cupons e alertas de queda de preco.</>
+          )}
+        </p>
+
+        {melhoresLinks.length > 0 && (
+          <p>
+            Confira tambem nossos rankings:{" "}
+            {melhoresLinks.map((link, i) => (
+              <span key={link.href}>
+                {i > 0 && ", "}
+                <Link href={link.href} className="text-accent-blue hover:underline">
+                  {link.label}
+                </Link>
+              </span>
+            ))}
+            .
+          </p>
+        )}
+
+        <p>
+          Explore por faixa de preco:{" "}
+          {priceRangeLinks.map((link, i) => (
+            <span key={link.href}>
+              {i > 0 && " · "}
+              <Link href={link.href} className="text-accent-blue hover:underline">
+                {link.label}
+              </Link>
+            </span>
+          ))}
+          .
+        </p>
+
+        <p>
+          Todos os precos sao monitorados automaticamente em lojas como Amazon, Mercado Livre, Magazine Luiza e mais.
+          Use o <Link href="/busca" className="text-accent-blue hover:underline">comparador de precos</Link> para encontrar
+          exatamente o que voce procura, ou confira as{" "}
+          <Link href="/ofertas" className="text-accent-blue hover:underline">ofertas do dia</Link> e os{" "}
+          <Link href="/mais-vendidos" className="text-accent-blue hover:underline">mais vendidos</Link>.
+        </p>
+      </div>
+    </section>
   );
 }
