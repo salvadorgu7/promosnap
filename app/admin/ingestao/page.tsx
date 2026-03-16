@@ -301,7 +301,7 @@ export default function AdminIngestaoPage() {
   const [error, setError] = useState<IngestError | null>(null);
 
   // Fix URLs state
-  const [fixUrlsResult, setFixUrlsResult] = useState<{ badOffers: number; items?: Array<{ offerId: string; currentUrl: string; productName: string }> } | null>(null);
+  const [fixUrlsResult, setFixUrlsResult] = useState<{ badOffers: number; items?: Array<{ offerId: string; currentUrl: string; productName: string; issue?: string }> } | null>(null);
   const [fixUrlsRunning, setFixUrlsRunning] = useState(false);
   const [fixUrlsMessage, setFixUrlsMessage] = useState<string | null>(null);
 
@@ -1235,7 +1235,16 @@ export default function AdminIngestaoPage() {
                 {fixUrlsResult.items?.slice(0, 20).map((item) => (
                   <div key={item.offerId} className="flex items-center gap-2 py-1 border-b border-surface-100">
                     <span className="text-text-primary font-medium truncate flex-1">{item.productName}</span>
-                    <span className="text-red-500 font-mono text-[10px] truncate max-w-[200px]">{item.currentUrl}</span>
+                    {item.issue && (
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                        item.issue === 'blocked_domain' ? 'bg-red-100 text-red-600' :
+                        item.issue === 'wrong_source' ? 'bg-amber-100 text-amber-600' :
+                        'bg-surface-100 text-surface-500'
+                      }`}>
+                        {item.issue === 'blocked_domain' ? 'concorrente' : item.issue === 'wrong_source' ? 'source errado' : 'nao-marketplace'}
+                      </span>
+                    )}
+                    <span className="text-red-500 font-mono text-[10px] truncate max-w-[180px]">{item.currentUrl}</span>
                   </div>
                 ))}
                 {(fixUrlsResult.items?.length || 0) > 20 && (
