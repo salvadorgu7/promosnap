@@ -69,8 +69,6 @@ export async function POST(req: NextRequest) {
     'sent'
   )
 
-  console.log(`[email/test] Template test: ${template} — subject: ${TEMPLATE_SUBJECTS[template]}`)
-
   return NextResponse.json({
     success: true,
     message: `Teste do template "${template}" registrado com sucesso`,

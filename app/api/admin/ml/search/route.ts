@@ -60,8 +60,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    console.log(`[ml-search] Discovering: "${query}" limit=${limit}`)
-
     const { products, meta } = await runDiscovery({
       mode: 'manual-admin',
       query,
@@ -80,8 +78,6 @@ export async function GET(req: NextRequest) {
       availability: p.availability,
       category: meta.resolvedCategories[0]?.name,
     }))
-
-    console.log(`[ml-search] "${query}" -> ${results.length} results in ${meta.timing.totalMs}ms`)
 
     return NextResponse.json({
       query,

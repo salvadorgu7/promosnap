@@ -1,0 +1,47 @@
+{
+  "name": "PromoSnap — Ofertas reais, preço de verdade",
+  "short_name": "PromoSnap",
+  "description": "Compare preços, encontre ofertas e economize de verdade nos maiores marketplaces do Brasil.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0F12",
+  "theme_color": "#9333EA",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["shopping", "finance"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Ofertas",
+      "short_name": "Ofertas",
+      "url": "/ofertas",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Buscar",
+      "short_name": "Buscar",
+      "url": "/busca",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

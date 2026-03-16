@@ -82,8 +82,6 @@ export async function GET(req: NextRequest) {
       scope: tokenData.scope,
     })
 
-    console.log(`[ml-callback] User token saved! user_id=${tokenData.user_id} expires_in=${tokenData.expires_in}s`)
-
     // Test the token immediately
     let testResult = 'not tested'
     try {

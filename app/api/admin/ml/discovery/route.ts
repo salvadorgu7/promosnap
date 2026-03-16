@@ -37,8 +37,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    console.log(`[ml-discovery-api] mode=${mode} q="${query || ''}" cat=${categoryId || ''} limit=${limit}`)
-
     const result = await runDiscovery({ mode, query, categoryId, limit, includeTrends })
 
     return NextResponse.json({

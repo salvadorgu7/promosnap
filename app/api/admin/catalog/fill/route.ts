@@ -257,7 +257,6 @@ export async function POST(req: NextRequest) {
       }
     }
     if (backfilled > 0 || orphanCount > 0) {
-      console.log(`[catalog/fill] Category backfill: ${backfilled}/${orphanCount} orphan products categorized`);
     }
   } catch (err) {
     console.error(`[catalog/fill] Category backfill error:`, err);

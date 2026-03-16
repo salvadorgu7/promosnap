@@ -85,7 +85,6 @@ async function runTest(
         }
       }
       // Log intent — real send needs Resend SDK
-      console.log('[integrations/test] Email test intent logged')
       return {
         success: true,
         message: 'RESEND_API_KEY presente — intent de teste logado',

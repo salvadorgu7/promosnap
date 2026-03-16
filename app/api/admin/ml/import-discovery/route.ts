@@ -50,8 +50,6 @@ export async function POST(req: NextRequest) {
       }
 
       const limit = Math.min(body.limit ?? 20, 50)
-      console.log(`[ml-import-discovery] Mode B: discover+import | query="${body.query || ''}" category="${body.category || ''}" limit=${limit}`)
-
       // 1. Run discovery pipeline
       const discoveryStart = Date.now()
       const discoveryResult = await runDiscovery({
@@ -63,17 +61,9 @@ export async function POST(req: NextRequest) {
       const discoveryDurationMs = Date.now() - discoveryStart
 
       const allProducts = discoveryResult.products
-      console.log(`[ml-import-discovery] Discovery returned ${allProducts.length} products`)
-
       // 2. Separate products with valid prices from those without
       const withPrice = allProducts.filter(p => p.currentPrice > 0)
       const withoutPrice = allProducts.filter(p => !p.currentPrice || p.currentPrice <= 0)
-
-      console.log(`[ml-import-discovery] Valid prices: ${withPrice.length} | Zero/missing price: ${withoutPrice.length}`)
-
-      if (withoutPrice.length > 0) {
-        console.log(`[ml-import-discovery] Discarded (price_zero):`, withoutPrice.map(p => p.title.slice(0, 60)))
-      }
 
       // 3. Collect unique categories from discovery
       const categories = [...new Set(
@@ -89,8 +79,6 @@ export async function POST(req: NextRequest) {
 
       // 5. Run import pipeline on valid products
       if (withPrice.length === 0) {
-        console.log(`[ml-import-discovery] No products with valid prices to import`)
-
         // Build structured diagnostic for zero-result debugging
         const highlightsStage = discoveryResult.meta.pipeline.find(s => s.stage === 'highlights')
         const hydrateStage = discoveryResult.meta.pipeline.find(s => s.stage === 'hydrate')
@@ -148,8 +136,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      console.log(`[ml-import-discovery] Import done: created=${importResult.created} updated=${importResult.updated} skipped=${importResult.skipped} failed=${importResult.failed} (${importResult.durationMs}ms)`)
-
       // Build per-item status for response
       const itemStatuses = importResult.items.map(item => ({
         externalId: item.externalId,
@@ -198,15 +184,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Envie { products: MLProduct[] } ou { discover: true, query: "..." }' }, { status: 400 })
     }
 
-    console.log(`[ml-import-discovery] Mode A: pre-hydrated | ${body.products.length} products received`)
-
     // Filter out zero-price products before import
     const validProducts = body.products.filter(p => p.currentPrice > 0)
     const zeroPrice = body.products.filter(p => !p.currentPrice || p.currentPrice <= 0)
-
-    if (zeroPrice.length > 0) {
-      console.log(`[ml-import-discovery] Filtered out ${zeroPrice.length} products with zero/missing price`)
-    }
 
     const discarded: { title: string; externalId: string; reason: string }[] = zeroPrice.map(p => ({
       title: p.title,
@@ -215,7 +195,6 @@ export async function POST(req: NextRequest) {
     }))
 
     if (validProducts.length === 0) {
-      console.log(`[ml-import-discovery] No valid products to import after filtering`)
       const suggestion = body.products!.length > 0
         ? 'Todos os produtos enviados tinham preco zero ou invalido. Verifique os dados de origem.'
         : 'Nenhum produto recebido.'
@@ -249,8 +228,6 @@ export async function POST(req: NextRequest) {
         })
       }
     }
-
-    console.log(`[ml-import-discovery] Import done: created=${result.created} updated=${result.updated} skipped=${result.skipped} failed=${result.failed} (${result.durationMs}ms)`)
 
     // Build per-item status for response
     const itemStatuses = result.items.map(item => ({
