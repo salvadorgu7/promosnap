@@ -209,20 +209,21 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       if (options?.sortBy === 'price_asc') url.searchParams.set('sort', 'price_asc')
       if (options?.sortBy === 'price_desc') url.searchParams.set('sort', 'price_desc')
 
-      const headers: Record<string, string> = {
-        ...(await getAuthHeaders()),
-      }
+      const authHeaders = await getAuthHeaders()
 
       console.log(`[ML] search("${query}") limit=${limit} offset=${offset}`)
 
-      const res = await fetch(url.toString(), { headers })
+      let res = await fetch(url.toString(), { headers: authHeaders })
+
+      // If auth token is expired/invalid, retry WITHOUT auth — ML search is public
+      if ((res.status === 401 || res.status === 403) && Object.keys(authHeaders).length > 0) {
+        console.warn(`[ML] search auth failed (${res.status}), retrying without token...`)
+        res = await fetch(url.toString())
+      }
 
       if (!res.ok) {
         const errText = await res.text()
         console.error(`[ML] search failed: ${res.status} — ${errText}`)
-        if (res.status === 401 || res.status === 403) {
-          throw new Error('Token ML expirado ou ausente. Autentique via OAuth primeiro.')
-        }
         throw new Error(`ML API retornou ${res.status}: ${errText.slice(0, 200)}`)
       }
 
@@ -242,7 +243,13 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
 
   async getProduct(externalId: string): Promise<AdapterResult | null> {
     const headers = await getAuthHeaders()
-    const res = await fetch(`${ML_API_BASE}/items/${externalId}`, { headers })
+    let res = await fetch(`${ML_API_BASE}/items/${externalId}`, { headers })
+
+    // If auth token is expired/invalid, retry WITHOUT auth — ML items API works for public listings
+    if ((res.status === 401 || res.status === 403) && Object.keys(headers).length > 0) {
+      console.warn(`[ML] getProduct auth failed (${res.status}), retrying without token...`)
+      res = await fetch(`${ML_API_BASE}/items/${externalId}`)
+    }
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '')
