@@ -360,6 +360,9 @@ interface MLItemResponse {
 
 function normalizeCatalogProduct(data: MLCatalogProductResponse, originalId: string): MLProduct | null {
   const bb = data.buy_box_winner
+  const rawPicUrl = data.pictures?.[0]?.url
+  const catalogImage = rawPicUrl && rawPicUrl.length > 5 ? rawPicUrl : undefined
+
   if (!bb) {
     return {
       externalId: originalId,
@@ -368,7 +371,7 @@ function normalizeCatalogProduct(data: MLCatalogProductResponse, originalId: str
       currentPrice: 0,
       currency: 'BRL',
       productUrl: `https://www.mercadolivre.com.br/p/${data.id}`,
-      imageUrl: data.pictures?.[0]?.url,
+      imageUrl: catalogImage,
       isFreeShipping: false,
       availability: 'unknown',
     }
@@ -382,7 +385,7 @@ function normalizeCatalogProduct(data: MLCatalogProductResponse, originalId: str
     originalPrice: bb.original_price ?? undefined,
     currency: bb.currency_id || 'BRL',
     productUrl: bb.permalink,
-    imageUrl: data.pictures?.[0]?.url,
+    imageUrl: catalogImage,
     isFreeShipping: bb.shipping?.free_shipping ?? false,
     availability: (bb.available_quantity ?? 0) > 0 ? 'in_stock' : 'out_of_stock',
     availableQuantity: bb.available_quantity,
@@ -395,7 +398,10 @@ function normalizeCatalogProduct(data: MLCatalogProductResponse, originalId: str
 export function normalizeItem(data: MLItemResponse): MLProduct {
   const mainImage = data.pictures?.[0]?.secure_url
     || data.pictures?.[0]?.url
-    || data.thumbnail?.replace(/-I\.jpg$/, '-O.jpg')
+    || (data.thumbnail ? data.thumbnail.replace(/-I\.jpg$/, '-O.jpg') : undefined)
+
+  // Ensure empty strings become undefined (critical for downstream null checks)
+  const imageUrl = mainImage && mainImage.length > 5 ? mainImage : undefined
 
   return {
     externalId: data.id,
@@ -405,7 +411,7 @@ export function normalizeItem(data: MLItemResponse): MLProduct {
     originalPrice: data.original_price ?? undefined,
     currency: data.currency_id || 'BRL',
     productUrl: data.permalink,
-    imageUrl: mainImage,
+    imageUrl,
     isFreeShipping: data.shipping?.free_shipping ?? false,
     availability: (data.available_quantity ?? 0) > 0 ? 'in_stock' : 'out_of_stock',
     availableQuantity: data.available_quantity,

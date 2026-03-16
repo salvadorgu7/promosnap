@@ -465,6 +465,33 @@ export async function runImportPipeline(
         dbProduct = { ...dbProduct, imageUrl: item.imageUrl }
       }
 
+      // Last-resort image fetch: if product STILL has no image and has an ML ID, try API directly
+      if (dbProduct && !dbProduct.imageUrl && item.externalId?.startsWith('MLB')) {
+        try {
+          const mlRes = await fetch(
+            `https://api.mercadolibre.com/items/${item.externalId}?attributes=thumbnail,pictures`,
+            { signal: AbortSignal.timeout(4000) }
+          )
+          if (mlRes.ok) {
+            const mlData = await mlRes.json()
+            const fetchedImage =
+              mlData.pictures?.[0]?.secure_url ||
+              mlData.pictures?.[0]?.url ||
+              (mlData.thumbnail ? mlData.thumbnail.replace(/-I\.jpg$/, '-O.jpg') : null)
+            if (fetchedImage && fetchedImage.length > 5) {
+              await prisma.product.update({
+                where: { id: dbProduct.id },
+                data: { imageUrl: fetchedImage },
+              })
+              item.imageUrl = fetchedImage
+              dbProduct = { ...dbProduct, imageUrl: fetchedImage }
+            }
+          }
+        } catch {
+          // Non-blocking — image fetch is best-effort
+        }
+      }
+
       // Create listing
       const listing = await prisma.listing.create({
         data: {

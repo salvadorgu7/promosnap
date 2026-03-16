@@ -269,6 +269,13 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
   stages.push({ stage: 'normalize', status: 'success', itemsIn: preDedup, itemsOut: products.length, durationMs: Date.now() - normStart })
   stageTimings.normalize = Date.now() - normStart
 
+  // ── Image health check ──────────────────────────────────────────────────
+  const withImage = products.filter(p => p.imageUrl && p.imageUrl.length > 5).length
+  const withoutImage = products.length - withImage
+  if (withoutImage > 0) {
+    log('image-check', `${withoutImage}/${products.length} products missing imageUrl after hydrate`)
+  }
+
   // ── Stage 6: Rank ───────────────────────────────────────────────────────
   const rankStart = Date.now()
   products = rankDiscoveryResults(products).slice(0, limit)
@@ -306,7 +313,8 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
 
 function normalizeSearchResult(item: any): MLProduct {
   const thumbnail = item.thumbnail || ''
-  const mainImage = thumbnail.replace(/-I\.jpg$/, '-O.jpg')
+  const rawImage = thumbnail ? thumbnail.replace(/-I\.jpg$/, '-O.jpg') : ''
+  const imageUrl = rawImage && rawImage.length > 5 ? rawImage : undefined
 
   return {
     externalId: item.id || '',
@@ -316,7 +324,7 @@ function normalizeSearchResult(item: any): MLProduct {
     originalPrice: item.original_price ?? undefined,
     currency: item.currency_id || 'BRL',
     productUrl: item.permalink || '',
-    imageUrl: mainImage || undefined,
+    imageUrl,
     isFreeShipping: item.shipping?.free_shipping ?? false,
     availability: (item.available_quantity ?? 0) > 0 ? 'in_stock' : 'out_of_stock',
     availableQuantity: item.available_quantity,
