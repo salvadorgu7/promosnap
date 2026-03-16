@@ -4,6 +4,7 @@
 
 import prisma from '@/lib/db/prisma'
 import { canonicalMatch } from '@/lib/catalog/canonical-match'
+import { KNOWN_BRANDS as SHARED_BRANDS, BRAND_CASING as SHARED_BRAND_CASING, detectBrand as sharedDetectBrand } from '@/lib/brands'
 
 /** Maximum number of items allowed per batch import to prevent memory/timeout issues */
 export const MAX_BATCH_SIZE = 500
@@ -51,17 +52,8 @@ export interface ImportPipelineResult {
 
 // ── Normalization ──────────────────────────────────────────────────────────
 
-const KNOWN_BRANDS = [
-  'apple', 'samsung', 'xiaomi', 'motorola', 'lg', 'sony', 'jbl', 'philips',
-  'dell', 'lenovo', 'asus', 'hp', 'acer', 'huawei', 'realme', 'oppo',
-  'bose', 'logitech', 'corsair', 'razer', 'microsoft', 'nintendo', 'google',
-  'amazon', 'anker', 'hyperx', 'akg', 'sennheiser', 'wacom', 'canon', 'nikon',
-  'gopro', 'garmin', 'fitbit', 'oneplus', 'nothing', 'poco', 'redmi',
-  'tcl', 'hisense', 'roku', 'epson', 'brother', 'kindle', 'echo',
-  // Brazilian electronics brands
-  'positivo', 'multilaser', 'mondial', 'electrolux', 'brastemp', 'consul',
-  'tramontina', 'intelbras', 'cadence', 'philco', 'britania', 'walita', 'arno', 'oster',
-]
+// Re-export from shared brands module (single source of truth)
+const KNOWN_BRANDS = SHARED_BRANDS
 
 /** Noise suffixes commonly appended by ML listings */
 const TITLE_NOISE = [
@@ -72,12 +64,8 @@ const TITLE_NOISE = [
   /\s*[-–|]\s*12x\s+sem\s+juros\s*$/i,
 ]
 
-/** Brands that should keep their original casing (not be title-cased) */
-const BRAND_CASING: Record<string, string> = {
-  iphone: 'iPhone', ipad: 'iPad', macbook: 'MacBook', airpods: 'AirPods',
-  playstation: 'PlayStation', xbox: 'Xbox', jbl: 'JBL', lg: 'LG', hp: 'HP',
-  ssd: 'SSD', led: 'LED', '4k': '4K', hd: 'HD', usb: 'USB', hdmi: 'HDMI',
-}
+// Re-export from shared brands module (single source of truth)
+const BRAND_CASING = SHARED_BRAND_CASING
 
 /** Clean up title before saving */
 function normalizeTitle(raw: string): string {
@@ -111,10 +99,8 @@ function normalizeTitle(raw: string): string {
   return title.trim()
 }
 
-function detectBrand(title: string): string | null {
-  const lower = title.toLowerCase()
-  return KNOWN_BRANDS.find(b => lower.includes(b)) ?? null
-}
+// Use shared brand detection (handles aliases + word boundaries)
+const detectBrand = sharedDetectBrand
 
 function generateSlug(title: string, suffix: string): string {
   const base = title

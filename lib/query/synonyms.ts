@@ -82,36 +82,22 @@ export const ABBREVIATION_EXPANSIONS: Record<string, string[]> = {
   kb:     ['teclado'],
 }
 
-/** Brand aliases and common misspellings */
-export const BRAND_ALIASES: Record<string, string[]> = {
-  samsung:    ['sansung', 'samsumg', 'samsnug', 'samsug', 'samsugg'],
-  apple:      ['aple', 'appel', 'applle'],
-  xiaomi:     ['xiomi', 'xaomi', 'xiaome', 'poco', 'redmi', 'xaiomi'],
-  motorola:   ['moto', 'motorolla', 'motorolla'],
-  sony:       ['soni'],
-  philips:    ['phillips', 'philps'],
-  lenovo:     ['lennovo', 'lenoo'],
-  logitech:   ['logitec', 'logitek'],
-  corsair:    ['corseir'],
-  microsoft:  ['microsft', 'microsof'],
-  nintendo:   ['nintedo', 'nientendo'],
-  jbl:        ['jibiel'],
-  bose:       ['boss'],
-  huawei:     ['hauwei', 'huaway', 'hauway'],
-  realme:     ['relme'],
-  iphone:     ['aifone', 'aifon', 'ifone'],
-}
+/** Brand aliases and common misspellings — re-exported from shared module */
+import { KNOWN_BRANDS as _SHARED_BRANDS, BRAND_ALIASES as _SHARED_ALIASES } from '@/lib/brands'
 
-/** Known brand list for entity extraction */
-export const KNOWN_BRANDS = [
-  'apple', 'samsung', 'xiaomi', 'motorola', 'lg', 'sony', 'jbl', 'philips',
-  'dell', 'lenovo', 'asus', 'hp', 'acer', 'huawei', 'realme', 'oppo',
-  'bose', 'logitech', 'corsair', 'razer', 'microsoft', 'nintendo', 'google',
-  'amazon', 'anker', 'edifier', 'hyperx', 'redragon', 'multilaser', 'intelbras',
-  'mondial', 'britania', 'electrolux', 'brastemp', 'consul', 'midea',
-  'nike', 'adidas', 'puma', 'asics', 'new balance', 'fila',
-  'natura', 'boticario', 'avon', 'lancome', 'dior', 'chanel',
-]
+// Convert shared flat alias map to the query engine's format (brand → typos[])
+export const BRAND_ALIASES: Record<string, string[]> = (() => {
+  const reversed: Record<string, string[]> = {}
+  for (const [alias, canonical] of Object.entries(_SHARED_ALIASES)) {
+    const key = canonical.toLowerCase()
+    if (!reversed[key]) reversed[key] = []
+    reversed[key].push(alias)
+  }
+  return reversed
+})()
+
+/** Known brand list for entity extraction — from shared module */
+export const KNOWN_BRANDS = _SHARED_BRANDS
 
 /** Deal/offer modifiers */
 export const DEAL_MODIFIERS = [

@@ -148,7 +148,7 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
     const warnings: string[] = [];
 
     // Extract ALL URLs
-    const urls = fullText.match(/https?:\/\/[^\s\]_)>]+/g);
+    const urls = fullText.match(/https?:\/\/[^\s\])<>]+/g);
     if (!urls || urls.length === 0) continue;
     const url = urls[0].replace(/[.,;:!?]+$/, ''); // clean trailing punctuation
 

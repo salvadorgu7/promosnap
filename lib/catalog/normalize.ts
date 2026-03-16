@@ -2,36 +2,13 @@
 // Catalog normalization utilities
 // ============================================
 
+// Brand data from shared module (single source of truth)
+import { BRAND_CANONICAL, BRAND_ALIASES as _BRAND_TYPOS, detectBrand as sharedDetectBrand } from '@/lib/brands'
+
+// Merge canonical + typo aliases into one flat lookup for backward compat
 export const BRAND_ALIASES: Record<string, string> = {
-  'apple': 'Apple', 'samsung': 'Samsung', 'xiaomi': 'Xiaomi', 'motorola': 'Motorola',
-  'lg': 'LG', 'sony': 'Sony', 'jbl': 'JBL', 'bose': 'Bose', 'dell': 'Dell',
-  'lenovo': 'Lenovo', 'asus': 'ASUS', 'acer': 'Acer', 'hp': 'HP',
-  'nintendo': 'Nintendo', 'playstation': 'PlayStation', 'xbox': 'Xbox',
-  'nike': 'Nike', 'adidas': 'Adidas', 'philips': 'Philips', 'mondial': 'Mondial',
-  'electrolux': 'Electrolux', 'brastemp': 'Brastemp', 'consul': 'Consul',
-  'arno': 'Arno', 'oster': 'Oster', 'cadence': 'Cadence', 'britania': 'Britânia',
-  'multilaser': 'Multilaser', 'positivo': 'Positivo', 'intelbras': 'Intelbras',
-  'amazon': 'Amazon', 'google': 'Google', 'microsoft': 'Microsoft',
-  'logitech': 'Logitech', 'hyperx': 'HyperX', 'razer': 'Razer', 'redragon': 'Redragon',
-  'edifier': 'Edifier', 'qcy': 'QCY', 'baseus': 'Baseus', 'anker': 'Anker',
-  // V18 additions — 60+ brands
-  'huawei': 'Huawei', 'oppo': 'OPPO', 'realme': 'Realme', 'oneplus': 'OnePlus',
-  'tecno': 'Tecno', 'infinix': 'Infinix', 'nokia': 'Nokia', 'nothing': 'Nothing',
-  'corsair': 'Corsair', 'steelseries': 'SteelSeries', 'cooler master': 'Cooler Master',
-  'coolermaster': 'Cooler Master', 'msi': 'MSI', 'gigabyte': 'Gigabyte', 'evga': 'EVGA',
-  'kingston': 'Kingston', 'crucial': 'Crucial', 'wd': 'WD', 'western digital': 'WD',
-  'seagate': 'Seagate', 'sandisk': 'SanDisk',
-  'canon': 'Canon', 'nikon': 'Nikon', 'gopro': 'GoPro', 'dji': 'DJI',
-  'garmin': 'Garmin', 'fitbit': 'Fitbit',
-  'panasonic': 'Panasonic', 'tcl': 'TCL', 'aoc': 'AOC', 'hisense': 'Hisense',
-  'epson': 'Epson', 'brother': 'Brother',
-  'tramontina': 'Tramontina', 'fischer': 'Fischer', 'wap': 'WAP',
-  'polishop': 'Polishop', 'walita': 'Walita', 'mallory': 'Mallory',
-  'puma': 'Puma', 'new balance': 'New Balance', 'asics': 'Asics',
-  'havaianas': 'Havaianas', 'olympikus': 'Olympikus',
-  'mattel': 'Mattel', 'hasbro': 'Hasbro', 'lego': 'LEGO',
-  'makita': 'Makita', 'bosch': 'Bosch', 'dewalt': 'DeWalt', 'black decker': 'Black+Decker',
-  'black+decker': 'Black+Decker', 'blackdecker': 'Black+Decker',
+  ...BRAND_CANONICAL,
+  ..._BRAND_TYPOS,
 }
 
 const NOISE_WORDS = [
@@ -125,16 +102,10 @@ export function normalizeTitle(title: string): string {
 }
 
 /**
- * Extract brand from title using known brand aliases
+ * Extract brand from title using shared brand detection
  */
 export function extractBrand(title: string): string | null {
-  const lower = title.toLowerCase()
-  for (const [key, brand] of Object.entries(BRAND_ALIASES)) {
-    // Match as whole word
-    const regex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
-    if (regex.test(lower)) return brand
-  }
-  return null
+  return sharedDetectBrand(title)
 }
 
 /**

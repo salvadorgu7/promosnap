@@ -1,4 +1,5 @@
 import type { ImportCandidate, EnrichmentData } from "./types";
+import { detectBrand as sharedDetectBrand, normalizeBrand as sharedNormalizeBrand } from '@/lib/brands';
 
 // ─── Pipeline Sub-Status ─────────────────────────────────────────────────────
 
@@ -38,111 +39,12 @@ export function determineSubStatus(
 
 // ─── Brand Detection ─────────────────────────────────────────────────────────
 
-/** Well-known brands for detection from title */
-const KNOWN_BRANDS = [
-  "Samsung", "Apple", "Xiaomi", "Motorola", "LG", "Sony", "Philips", "JBL",
-  "Lenovo", "Dell", "HP", "Asus", "Acer", "MSI", "Razer", "Logitech",
-  "Nike", "Adidas", "Havaianas", "Brastemp", "Electrolux", "Consul",
-  "Philco", "Intelbras", "TP-Link", "Positivo", "Multilaser", "Mondial",
-  "Britania", "Cadence", "Tramontina", "Arno", "Black+Decker", "Bosch",
-  "Makita", "DeWalt", "Whirlpool", "Panasonic", "TCL", "AOC", "Epson",
-  "Canon", "Nikon", "GoPro", "DJI", "Anker", "Baseus", "Redmi",
-  "OnePlus", "Realme", "POCO", "Google", "Amazon", "Kindle", "Echo",
-  "Nintendo", "PlayStation", "Xbox", "Corsair", "HyperX", "SteelSeries",
-  "Redragon", "Edifier", "Marshall", "Bose", "Sennheiser", "AKG",
-  "KitchenAid", "Oster", "Nespresso", "Dolce Gusto", "Wap", "Karcher",
-];
-
-/** Common brand abbreviations/variations → canonical name */
-const BRAND_ALIASES: Record<string, string> = {
-  "samung": "Samsung",
-  "samsumg": "Samsung",
-  "sansung": "Samsung",
-  "lg electronics": "LG",
-  "hewlett packard": "HP",
-  "hewlett-packard": "HP",
-  "black decker": "Black+Decker",
-  "black & decker": "Black+Decker",
-  "black&decker": "Black+Decker",
-  "b+d": "Black+Decker",
-  "tp link": "TP-Link",
-  "tplink": "TP-Link",
-  "dolce gusto": "Dolce Gusto",
-  "dolcegusto": "Dolce Gusto",
-  "jbl harman": "JBL",
-  "motorola moto": "Motorola",
-  "steelseries": "SteelSeries",
-  "hyperx": "HyperX",
-  "gopro": "GoPro",
-  "kitchenaid": "KitchenAid",
-  "playstation": "PlayStation",
-  "ps5": "PlayStation",
-  "ps4": "PlayStation",
-  "iphone": "Apple",
-  "ipad": "Apple",
-  "macbook": "Apple",
-  "airpods": "Apple",
-  "imac": "Apple",
-  "apple watch": "Apple",
-  "galaxy": "Samsung",
-  "echo dot": "Amazon",
-  "fire tv": "Amazon",
-  "alexa": "Amazon",
-};
-
-/**
- * Detect brand name from product title using known brand list.
- * Handles case variations and common abbreviations.
- */
+// Brand detection uses shared module (single source of truth)
 function detectBrand(title: string): string | undefined {
-  const titleLower = title.toLowerCase();
-
-  // First check aliases (case-insensitive substring)
-  for (const [alias, canonical] of Object.entries(BRAND_ALIASES)) {
-    if (titleLower.includes(alias)) {
-      return canonical;
-    }
-  }
-
-  // Then check known brands with word boundary matching
-  for (const brand of KNOWN_BRANDS) {
-    const pattern = new RegExp(`\\b${escapeRegex(brand)}\\b`, "i");
-    if (pattern.test(title)) {
-      return brand;
-    }
-  }
-
-  return undefined;
+  return sharedDetectBrand(title) ?? undefined;
 }
 
-/**
- * Normalize a brand string to its canonical form.
- * Handles case variations, common misspellings, and abbreviations.
- */
-export function normalizeBrand(brand: string): string {
-  const lower = brand.toLowerCase().trim();
-
-  // Check aliases
-  for (const [alias, canonical] of Object.entries(BRAND_ALIASES)) {
-    if (lower === alias || lower.includes(alias)) {
-      return canonical;
-    }
-  }
-
-  // Check known brands (case-insensitive exact match)
-  for (const known of KNOWN_BRANDS) {
-    if (lower === known.toLowerCase()) {
-      return known;
-    }
-  }
-
-  // Return with first letter capitalized
-  return brand.charAt(0).toUpperCase() + brand.slice(1);
-}
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
+export const normalizeBrand = sharedNormalizeBrand;
 
 // ─── Category Inference ──────────────────────────────────────────────────────
 
