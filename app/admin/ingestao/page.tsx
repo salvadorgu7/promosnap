@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info } from "lucide-react";
+import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X } from "lucide-react";
 
 interface IngestResult {
   mode?: string;
   query?: string;
+  keywords?: string[];
   fetched: number;
   created: number;
   updated: number;
@@ -13,6 +14,7 @@ interface IngestResult {
   failed: number;
   durationMs?: number;
   fetchErrors?: string[];
+  searchErrors?: string[];
   invalidIds?: string[];
   errors?: string[];
 }
@@ -21,7 +23,16 @@ interface IngestError {
   error: string;
   hint?: string;
   errors?: string[];
+  trends?: string[];
   configured?: boolean;
+}
+
+interface ManualItem {
+  title: string;
+  price: string;
+  url: string;
+  imageUrl: string;
+  originalPrice: string;
 }
 
 function extractMlIds(input: string): string[] {
@@ -30,16 +41,11 @@ function extractMlIds(input: string): string[] {
 
   for (const line of lines) {
     const trimmed = line.trim();
-
-    // Direct ML ID pattern: MLB-123456789 or MLB123456789
     const idMatch = trimmed.match(/ML[A-Z]-?\d{6,15}/i);
     if (idMatch) {
-      const raw = idMatch[0].replace("-", "");
-      ids.add(raw);
+      ids.add(idMatch[0].replace("-", ""));
       continue;
     }
-
-    // Plain number (assume MLB prefix)
     const numMatch = trimmed.match(/^\d{6,15}$/);
     if (numMatch) {
       ids.add(`MLB${numMatch[0]}`);
@@ -49,8 +55,12 @@ function extractMlIds(input: string): string[] {
   return Array.from(ids);
 }
 
+const emptyManualItem = (): ManualItem => ({
+  title: "", price: "", url: "", imageUrl: "", originalPrice: "",
+});
+
 export default function AdminIngestaoPage() {
-  const [mode, setMode] = useState<"ids" | "search">("search");
+  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual">("search");
 
   // ID mode state
   const [rawInput, setRawInput] = useState("");
@@ -61,6 +71,12 @@ export default function AdminIngestaoPage() {
   // Search mode state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLimit, setSearchLimit] = useState(20);
+
+  // Manual mode state
+  const [manualItems, setManualItems] = useState<ManualItem[]>([emptyManualItem()]);
+
+  // Trends mode state
+  const [trendsLimit, setTrendsLimit] = useState(20);
 
   // Shared state
   const [isRunning, setIsRunning] = useState(false);
@@ -90,10 +106,7 @@ export default function AdminIngestaoPage() {
 
   async function handleIngestIds() {
     if (parsedIds.length === 0) return;
-
-    setIsRunning(true);
-    setResult(null);
-    setError(null);
+    setIsRunning(true); setResult(null); setError(null);
 
     try {
       const res = await fetch("/api/admin/ingest", {
@@ -101,14 +114,8 @@ export default function AdminIngestaoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: parsedIds }),
       });
-
       const data = await res.json();
-
-      if (res.ok) {
-        setResult(data);
-      } else {
-        setError(data);
-      }
+      res.ok ? setResult(data) : setError(data);
     } catch (err: any) {
       setError({ error: err.message || "Erro de rede" });
     } finally {
@@ -118,21 +125,62 @@ export default function AdminIngestaoPage() {
 
   async function handleIngestSearch() {
     if (!searchQuery.trim()) return;
-
-    setIsRunning(true);
-    setResult(null);
-    setError(null);
+    setIsRunning(true); setResult(null); setError(null);
 
     try {
       const params = new URLSearchParams({ q: searchQuery.trim(), limit: String(searchLimit) });
       const res = await fetch(`/api/admin/ingest?${params}`);
       const data = await res.json();
+      res.ok ? setResult(data) : setError(data);
+    } catch (err: any) {
+      setError({ error: err.message || "Erro de rede" });
+    } finally {
+      setIsRunning(false);
+    }
+  }
 
-      if (res.ok) {
-        setResult(data);
-      } else {
-        setError(data);
-      }
+  async function handleIngestTrends() {
+    setIsRunning(true); setResult(null); setError(null);
+
+    try {
+      const res = await fetch("/api/admin/ingest", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: trendsLimit }),
+      });
+      const data = await res.json();
+      res.ok ? setResult(data) : setError(data);
+    } catch (err: any) {
+      setError({ error: err.message || "Erro de rede" });
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
+  async function handleIngestManual() {
+    const validItems = manualItems.filter(
+      (i) => i.title.trim() && i.price.trim() && i.url.trim()
+    );
+    if (validItems.length === 0) return;
+
+    setIsRunning(true); setResult(null); setError(null);
+
+    try {
+      const res = await fetch("/api/admin/ingest", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: validItems.map((i) => ({
+            title: i.title.trim(),
+            price: parseFloat(i.price.replace(",", ".")),
+            url: i.url.trim(),
+            imageUrl: i.imageUrl.trim() || undefined,
+            originalPrice: i.originalPrice ? parseFloat(i.originalPrice.replace(",", ".")) : undefined,
+          })),
+        }),
+      });
+      const data = await res.json();
+      res.ok ? setResult(data) : setError(data);
     } catch (err: any) {
       setError({ error: err.message || "Erro de rede" });
     } finally {
@@ -141,49 +189,60 @@ export default function AdminIngestaoPage() {
   }
 
   function handleClear() {
-    setRawInput("");
-    setSearchQuery("");
-    setParsedIds([]);
-    setInvalidLines([]);
-    setIsParsed(false);
-    setResult(null);
-    setError(null);
+    setRawInput(""); setSearchQuery("");
+    setParsedIds([]); setInvalidLines([]);
+    setIsParsed(false); setResult(null); setError(null);
+    setManualItems([emptyManualItem()]);
   }
+
+  function updateManualItem(index: number, field: keyof ManualItem, value: string) {
+    setManualItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  }
+
+  function addManualItem() {
+    setManualItems((prev) => [...prev, emptyManualItem()]);
+  }
+
+  function removeManualItem(index: number) {
+    setManualItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  const validManualCount = manualItems.filter(
+    (i) => i.title.trim() && i.price.trim() && i.url.trim()
+  ).length;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold font-display text-text-primary">Ingestao Manual</h1>
-        <p className="text-sm text-text-muted">Importe produtos do Mercado Livre por busca ou por IDs</p>
-        <p className="text-xs text-text-muted mt-1">
-          Requer <code className="bg-surface-100 px-1 rounded text-[11px]">ML_CLIENT_ID</code> e <code className="bg-surface-100 px-1 rounded text-[11px]">ML_CLIENT_SECRET</code> configurados no .env
-        </p>
+        <p className="text-sm text-text-muted">Importe produtos do Mercado Livre por busca, IDs, tendencias ou entrada manual</p>
       </div>
 
       {/* Mode tabs */}
-      <div className="flex gap-1 bg-surface-100 rounded-lg p-1 w-fit">
-        <button
-          onClick={() => { setMode("search"); setResult(null); setError(null); }}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            mode === "search"
-              ? "bg-white text-text-primary shadow-sm"
-              : "text-text-muted hover:text-text-secondary"
-          }`}
-        >
-          <Search className="inline h-4 w-4 mr-1.5 -mt-0.5" />
-          Busca
-        </button>
-        <button
-          onClick={() => { setMode("ids"); setResult(null); setError(null); }}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            mode === "ids"
-              ? "bg-white text-text-primary shadow-sm"
-              : "text-text-muted hover:text-text-secondary"
-          }`}
-        >
-          <Upload className="inline h-4 w-4 mr-1.5 -mt-0.5" />
-          Por IDs
-        </button>
+      <div className="flex gap-1 bg-surface-100 rounded-lg p-1 w-fit flex-wrap">
+        {([
+          { key: "search", icon: Search, label: "Busca" },
+          { key: "trends", icon: TrendingUp, label: "Tendencias" },
+          { key: "ids", icon: Upload, label: "Por IDs" },
+          { key: "manual", icon: PenLine, label: "Manual" },
+        ] as const).map(({ key, icon: Icon, label }) => (
+          <button
+            key={key}
+            onClick={() => { setMode(key); setResult(null); setError(null); }}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              mode === key
+                ? "bg-white text-text-primary shadow-sm"
+                : "text-text-muted hover:text-text-secondary"
+            }`}
+          >
+            <Icon className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* SEARCH MODE */}
@@ -224,25 +283,60 @@ export default function AdminIngestaoPage() {
               className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-2 disabled:opacity-50"
             >
               {isRunning ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Buscando e importando...
-                </>
+                <><Loader2 className="h-4 w-4 animate-spin" /> Buscando...</>
               ) : (
-                <>
-                  <Search className="h-4 w-4" />
-                  Buscar e Importar
-                </>
+                <><Search className="h-4 w-4" /> Buscar e Importar</>
               )}
             </button>
-            <button
-              onClick={handleClear}
-              className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5 text-text-muted"
-            >
-              <Trash2 className="h-4 w-4" />
-              Limpar
+            <button onClick={handleClear} className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5 text-text-muted">
+              <Trash2 className="h-4 w-4" /> Limpar
             </button>
           </div>
+        </div>
+      )}
+
+      {/* TRENDS MODE */}
+      {mode === "trends" && (
+        <div className="card p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">
+              <TrendingUp className="inline h-4 w-4 mr-1.5 -mt-0.5 text-accent-orange" />
+              Importar Produtos em Tendencia
+            </label>
+            <p className="text-sm text-text-muted">
+              Busca automaticamente os termos mais buscados no Mercado Livre e importa produtos populares.
+            </p>
+            <div className="flex gap-2 mt-3">
+              <select
+                value={trendsLimit}
+                onChange={(e) => setTrendsLimit(Number(e.target.value))}
+                className="px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary"
+              >
+                <option value={10}>10 produtos</option>
+                <option value={20}>20 produtos</option>
+                <option value={50}>50 produtos</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="p-3 bg-amber-50 rounded-lg flex items-start gap-2">
+            <Info className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-amber-700">
+              Usa a API <code className="bg-amber-100 px-1 rounded">/trends/MLB</code> (funciona sem OAuth) + scraping da pagina publica do ML para obter dados dos produtos.
+            </p>
+          </div>
+
+          <button
+            onClick={handleIngestTrends}
+            disabled={isRunning}
+            className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-2 disabled:opacity-50"
+          >
+            {isRunning ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Importando tendencias...</>
+            ) : (
+              <><TrendingUp className="h-4 w-4" /> Importar Tendencias</>
+            )}
+          </button>
         </div>
       )}
 
@@ -255,12 +349,9 @@ export default function AdminIngestaoPage() {
             </label>
             <textarea
               value={rawInput}
-              onChange={(e) => {
-                setRawInput(e.target.value);
-                setIsParsed(false);
-              }}
-              placeholder={"MLB1234567890\nMLB9876543210\nhttps://www.mercadolivre.com.br/produto-exemplo/p/MLB1111111111\n1234567890"}
-              className="w-full h-40 px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30 focus:border-accent-blue font-mono resize-y"
+              onChange={(e) => { setRawInput(e.target.value); setIsParsed(false); }}
+              placeholder={"MLB1234567890\nhttps://produto.mercadolivre.com.br/MLB-1234567890\n1234567890"}
+              className="w-full h-40 px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30 font-mono resize-y"
             />
             <p className="text-xs text-text-muted mt-1">
               Aceita: IDs (MLB...), URLs do ML, ou numeros puros (um por linha ou separados por virgula)
@@ -268,34 +359,24 @@ export default function AdminIngestaoPage() {
           </div>
 
           <div className="flex gap-2">
-            <button
-              onClick={handleParse}
-              disabled={!rawInput.trim()}
-              className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5 disabled:opacity-50"
-            >
-              <Search className="h-4 w-4" />
-              Analisar IDs
+            <button onClick={handleParse} disabled={!rawInput.trim()} className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5 disabled:opacity-50">
+              <Search className="h-4 w-4" /> Analisar IDs
             </button>
-            <button
-              onClick={handleClear}
-              className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5 text-text-muted"
-            >
-              <Trash2 className="h-4 w-4" />
-              Limpar
+            <button onClick={handleClear} className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5 text-text-muted">
+              <Trash2 className="h-4 w-4" /> Limpar
             </button>
           </div>
 
-          {/* Parse results */}
           {isParsed && (
             <div className="space-y-4 pt-2 border-t border-surface-100">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-green-50 rounded-lg">
                   <p className="text-2xl font-bold font-display text-accent-green">{parsedIds.length}</p>
-                  <p className="text-xs text-text-muted">IDs validos encontrados</p>
+                  <p className="text-xs text-text-muted">IDs validos</p>
                 </div>
                 <div className="p-3 bg-red-50 rounded-lg">
                   <p className="text-2xl font-bold font-display text-red-500">{invalidLines.length}</p>
-                  <p className="text-xs text-text-muted">Linhas invalidas</p>
+                  <p className="text-xs text-text-muted">Invalidos</p>
                 </div>
               </div>
 
@@ -304,23 +385,7 @@ export default function AdminIngestaoPage() {
                   <p className="text-xs text-text-muted font-medium mb-1">IDs a ingerir:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {parsedIds.map((id) => (
-                      <span key={id} className="inline-block px-2 py-0.5 rounded bg-surface-100 text-xs font-mono text-text-secondary">
-                        {id}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {invalidLines.length > 0 && (
-                <div>
-                  <p className="text-xs text-text-muted font-medium mb-1">Linhas ignoradas:</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {invalidLines.map((line, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-50 text-xs text-red-600">
-                        <AlertTriangle className="h-3 w-3" />
-                        {line.length > 40 ? line.slice(0, 40) + "..." : line}
-                      </span>
+                      <span key={id} className="inline-block px-2 py-0.5 rounded bg-surface-100 text-xs font-mono text-text-secondary">{id}</span>
                     ))}
                   </div>
                 </div>
@@ -332,19 +397,108 @@ export default function AdminIngestaoPage() {
                 className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-2 disabled:opacity-50"
               >
                 {isRunning ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Ingerindo {parsedIds.length} itens...
-                  </>
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Ingerindo...</>
                 ) : (
-                  <>
-                    <Upload className="h-4 w-4" />
-                    Ingerir {parsedIds.length} {parsedIds.length === 1 ? "item" : "itens"}
-                  </>
+                  <><Upload className="h-4 w-4" /> Ingerir {parsedIds.length} {parsedIds.length === 1 ? "item" : "itens"}</>
                 )}
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* MANUAL MODE */}
+      {mode === "manual" && (
+        <div className="card p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              <PenLine className="inline h-4 w-4 mr-1.5 -mt-0.5 text-accent-purple" />
+              Entrada Manual de Produtos
+            </label>
+            <p className="text-xs text-text-muted">
+              Cole os dados do produto diretamente. Funciona sempre, sem depender da API do ML.
+            </p>
+          </div>
+
+          <div className="p-3 bg-blue-50 rounded-lg flex items-start gap-2">
+            <Info className="h-4 w-4 text-accent-blue mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-blue-700">
+              Abra o produto no Mercado Livre, copie o titulo, preco e URL, e cole nos campos abaixo.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {manualItems.map((item, i) => (
+              <div key={i} className="p-4 bg-surface-50 rounded-lg space-y-3 relative">
+                {manualItems.length > 1 && (
+                  <button
+                    onClick={() => removeManualItem(i)}
+                    className="absolute top-2 right-2 text-text-muted hover:text-red-500 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                <p className="text-xs font-semibold text-text-muted">Produto {i + 1}</p>
+                <input
+                  type="text"
+                  value={item.title}
+                  onChange={(e) => updateManualItem(i, "title", e.target.value)}
+                  placeholder="Titulo do produto *"
+                  className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30"
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={item.price}
+                    onChange={(e) => updateManualItem(i, "price", e.target.value)}
+                    placeholder="Preco atual (R$) *"
+                    className="px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30"
+                  />
+                  <input
+                    type="text"
+                    value={item.originalPrice}
+                    onChange={(e) => updateManualItem(i, "originalPrice", e.target.value)}
+                    placeholder="Preco original (opcional)"
+                    className="px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30"
+                  />
+                </div>
+                <input
+                  type="url"
+                  value={item.url}
+                  onChange={(e) => updateManualItem(i, "url", e.target.value)}
+                  placeholder="URL do produto no ML *"
+                  className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30"
+                />
+                <input
+                  type="url"
+                  value={item.imageUrl}
+                  onChange={(e) => updateManualItem(i, "imageUrl", e.target.value)}
+                  placeholder="URL da imagem (opcional)"
+                  className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={addManualItem}
+              className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" /> Adicionar produto
+            </button>
+            <button
+              onClick={handleIngestManual}
+              disabled={validManualCount === 0 || isRunning}
+              className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-2 disabled:opacity-50"
+            >
+              {isRunning ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</>
+              ) : (
+                <><Upload className="h-4 w-4" /> Importar {validManualCount} {validManualCount === 1 ? "produto" : "produtos"}</>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
@@ -362,12 +516,13 @@ export default function AdminIngestaoPage() {
               <p className="text-xs text-amber-700">{error.hint}</p>
             </div>
           )}
-          {error.configured === false && (
-            <div className="flex items-start gap-2 p-3 bg-white/60 rounded-lg">
-              <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-red-600">
-                <p className="font-semibold">API ML nao configurada</p>
-                <p className="mt-0.5">Configure as variaveis de ambiente <code className="bg-red-100 px-1 rounded">ML_CLIENT_ID</code> e <code className="bg-red-100 px-1 rounded">ML_CLIENT_SECRET</code> (ou <code className="bg-red-100 px-1 rounded">MERCADOLIVRE_APP_ID</code> / <code className="bg-red-100 px-1 rounded">MERCADOLIVRE_SECRET</code>) no .env</p>
+          {error.trends && error.trends.length > 0 && (
+            <div className="p-3 bg-white/60 rounded-lg">
+              <p className="text-xs text-text-muted font-medium mb-1">Tendencias encontradas:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {error.trends.map((t) => (
+                  <span key={t} className="inline-block px-2 py-0.5 rounded bg-amber-100 text-xs text-amber-700">{t}</span>
+                ))}
               </div>
             </div>
           )}
@@ -401,6 +556,21 @@ export default function AdminIngestaoPage() {
             </p>
           )}
 
+          {result.mode === "trends" && result.keywords && (
+            <div>
+              <p className="text-sm text-text-secondary mb-2">Keywords buscadas:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {result.keywords.map((k) => (
+                  <span key={k} className="inline-block px-2 py-0.5 rounded bg-accent-orange/10 text-xs text-accent-orange font-medium">{k}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {result.mode === "manual" && (
+            <p className="text-sm text-text-secondary">Entrada manual</p>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="text-center p-3 bg-surface-50 rounded-lg">
               <p className="text-2xl font-bold font-display text-text-primary">{result.fetched}</p>
@@ -424,11 +594,11 @@ export default function AdminIngestaoPage() {
             </div>
           </div>
 
-          {result.fetchErrors && result.fetchErrors.length > 0 && (
+          {(result.fetchErrors || result.searchErrors) && (
             <div>
-              <p className="text-xs text-text-muted font-medium mb-1">Erros de busca:</p>
+              <p className="text-xs text-text-muted font-medium mb-1">Erros:</p>
               <div className="space-y-0.5">
-                {result.fetchErrors.map((e, i) => (
+                {[...(result.fetchErrors || []), ...(result.searchErrors || [])].map((e, i) => (
                   <p key={i} className="text-xs text-red-500 font-mono">{e}</p>
                 ))}
               </div>

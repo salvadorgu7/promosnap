@@ -3,6 +3,7 @@ import { validateAdmin } from '@/lib/auth/admin'
 import { MercadoLivreSourceAdapter } from '@/lib/adapters/mercadolivre'
 import { runImportPipeline, type ImportItem } from '@/lib/import'
 import { rateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
+import { getMLAppToken } from '@/lib/ml-auth'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -154,5 +155,148 @@ export async function POST(request: NextRequest) {
     })
   } catch (err) {
     return NextResponse.json({ error: 'Erro interno ao processar ingestao' }, { status: 500 })
+  }
+}
+
+// ─── PUT /api/admin/ingest ──────────────────────────────────────────────────
+// Manual entry: accepts pre-formatted product data directly
+// Body: { items: [{ title, price, url, imageUrl?, originalPrice? }] }
+
+export async function PUT(request: NextRequest) {
+  const denied = validateAdmin(request)
+  if (denied) return denied
+
+  const rl = rateLimit(request, 'public')
+  if (!rl.success) return rateLimitResponse(rl)
+
+  let body: { items?: Array<{ title: string; price: number; url: string; imageUrl?: string; originalPrice?: number }> }
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Body JSON invalido' }, { status: 400 })
+  }
+
+  const rawItems = body?.items
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    return NextResponse.json({ error: 'Envie { items: [{ title, price, url }] }' }, { status: 400 })
+  }
+
+  const items: ImportItem[] = rawItems.map((item, i) => {
+    const mlMatch = item.url?.match(/MLB-?\d+/)
+    const externalId = mlMatch ? mlMatch[0].replace('-', '') : `MANUAL_${Date.now()}_${i}`
+
+    return {
+      externalId,
+      title: item.title,
+      currentPrice: item.price,
+      originalPrice: item.originalPrice,
+      productUrl: item.url,
+      imageUrl: item.imageUrl,
+      availability: 'in_stock' as const,
+      sourceSlug: 'mercadolivre',
+      discoverySource: 'manual_entry',
+    }
+  })
+
+  try {
+    const result = await runImportPipeline(items)
+    return NextResponse.json({
+      mode: 'manual',
+      fetched: items.length,
+      created: result.created,
+      updated: result.updated,
+      skipped: result.skipped,
+      failed: result.failed,
+      durationMs: result.durationMs,
+    })
+  } catch (err) {
+    return NextResponse.json({ error: 'Erro interno ao processar ingestao manual' }, { status: 500 })
+  }
+}
+
+// ─── PATCH /api/admin/ingest ────────────────────────────────────────────────
+// Import from ML trends — uses working /trends/MLB endpoint
+// Body: { limit?: number }
+
+export async function PATCH(request: NextRequest) {
+  const denied = validateAdmin(request)
+  if (denied) return denied
+
+  const rl = rateLimit(request, 'public')
+  if (!rl.success) return rateLimitResponse(rl)
+
+  let body: { limit?: number } = {}
+  try {
+    body = await request.json()
+  } catch { /* empty body ok */ }
+
+  const limit = Math.min(body.limit || 20, 50)
+
+  // Fetch trending keywords from ML (works with client_credentials!)
+  let trends: Array<{ keyword: string; url: string }> = []
+  try {
+    let headers: Record<string, string> = {}
+    try {
+      const token = await getMLAppToken()
+      headers = { Authorization: `Bearer ${token}` }
+    } catch { /* try without token */ }
+
+    const res = await fetch('https://api.mercadolibre.com/trends/MLB', { headers })
+    if (res.ok) {
+      trends = await res.json()
+    } else {
+      return NextResponse.json({ error: `Falha ao buscar trends: ${res.status}` }, { status: 502 })
+    }
+  } catch (err: any) {
+    return NextResponse.json({ error: `Erro ao buscar trends: ${err.message}` }, { status: 502 })
+  }
+
+  if (trends.length === 0) {
+    return NextResponse.json({ error: 'Nenhuma tendencia encontrada' }, { status: 404 })
+  }
+
+  // Use adapter to search for each trending keyword
+  const adapter = new MercadoLivreSourceAdapter()
+  const allItems: ImportItem[] = []
+  const errors: string[] = []
+  const perKeyword = Math.max(2, Math.ceil(limit / Math.min(trends.length, 10)))
+
+  for (const trend of trends.slice(0, 10)) {
+    try {
+      const results = await adapter.search(trend.keyword, { limit: perKeyword })
+      for (const r of results) {
+        allItems.push(adapterResultToImportItem(r))
+      }
+    } catch (err: any) {
+      errors.push(`"${trend.keyword}": ${err.message || 'falha'}`)
+    }
+    if (allItems.length >= limit) break
+  }
+
+  const uniqueItems = allItems.slice(0, limit)
+
+  if (uniqueItems.length === 0) {
+    return NextResponse.json({
+      error: 'Nenhum produto encontrado nas tendencias',
+      trends: trends.slice(0, 10).map(t => t.keyword),
+      errors,
+    }, { status: 404 })
+  }
+
+  try {
+    const result = await runImportPipeline(uniqueItems)
+    return NextResponse.json({
+      mode: 'trends',
+      keywords: trends.slice(0, 10).map(t => t.keyword),
+      fetched: uniqueItems.length,
+      created: result.created,
+      updated: result.updated,
+      skipped: result.skipped,
+      failed: result.failed,
+      durationMs: result.durationMs,
+      ...(errors.length > 0 && { searchErrors: errors }),
+    })
+  } catch (err) {
+    return NextResponse.json({ error: 'Erro interno ao processar trends' }, { status: 500 })
   }
 }
