@@ -147,10 +147,26 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
     const fullText = block.join('\n');
     const warnings: string[] = [];
 
-    // Extract ALL URLs
-    const urls = fullText.match(/https?:\/\/[^\s\])<>]+/g);
-    if (!urls || urls.length === 0) continue;
-    const url = urls[0].replace(/[.,;:!?]+$/, ''); // clean trailing punctuation
+    // Extract ALL URLs — prefer marketplace URLs over tracker/competitor links
+    const allUrls = (fullText.match(/https?:\/\/[^\s\])<>]+/g) || []).map(u => u.replace(/[.,;:!?]+$/, ''));
+    if (allUrls.length === 0) continue;
+
+    // Blocked domains: competitor trackers that should never be used as product URLs
+    const BLOCKED_DOMAINS = ['tempromo.app.br', 'tempromo.com.br', 'pelando.com.br', 'promobit.com.br', 'gatry.com', 'ctt.cx', 'bit.ly', 'cutt.ly', 'is.gd', 't.co'];
+    // Marketplace domains: these are the real product URLs we want
+    const MARKETPLACE_DOMAINS = ['mercadolivre.com.br', 'mercadolibre.com', 'amazon.com.br', 'shopee.com.br', 'magazineluiza.com.br', 'magalu.com', 'americanas.com.br', 'casasbahia.com.br', 'kabum.com.br', 'aliexpress.com'];
+
+    const isBlockedUrl = (u: string) => { try { return BLOCKED_DOMAINS.some(d => new URL(u).hostname.includes(d)); } catch { return false; } };
+    const isMarketplaceUrl = (u: string) => { try { return MARKETPLACE_DOMAINS.some(d => new URL(u).hostname.includes(d)); } catch { return false; } };
+    const hasMLBId = (u: string) => /MLB-?\d+/.test(u);
+
+    // Priority: 1) ML URL with MLB ID, 2) any marketplace URL, 3) URL with MLB ID anywhere, 4) first non-blocked URL
+    const url =
+      allUrls.find(u => isMarketplaceUrl(u) && hasMLBId(u)) ||
+      allUrls.find(u => isMarketplaceUrl(u)) ||
+      allUrls.find(u => hasMLBId(u)) ||
+      allUrls.find(u => !isBlockedUrl(u)) ||
+      allUrls[0];
 
     // Dedup by URL
     const urlKey = url.replace(/[?#].*$/, '').replace(/\/+$/, '');

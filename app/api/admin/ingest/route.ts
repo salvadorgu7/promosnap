@@ -182,19 +182,42 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Envie { items: [{ title, price, url }] }' }, { status: 400 })
   }
 
+  // Known marketplace domains — only these should be used as product/affiliate URLs
+  const MARKETPLACE_HOSTS = ['mercadolivre.com.br', 'mercadolibre.com', 'amazon.com.br', 'shopee.com.br', 'magazineluiza.com.br', 'magalu.com', 'americanas.com.br', 'casasbahia.com.br', 'kabum.com.br', 'aliexpress.com']
+  const isMarketplaceUrl = (u: string) => { try { return MARKETPLACE_HOSTS.some(d => new URL(u).hostname.includes(d)) } catch { return false } }
+
+  // Detect source from URL domain
+  const detectSource = (u: string): string => {
+    try {
+      const host = new URL(u).hostname
+      if (host.includes('amazon')) return 'amazon-br'
+      if (host.includes('shopee')) return 'shopee'
+      if (host.includes('magazineluiza') || host.includes('magalu')) return 'magalu'
+      if (host.includes('kabum')) return 'kabum'
+    } catch {}
+    return 'mercadolivre'
+  }
+
   const items: ImportItem[] = rawItems.map((item, i) => {
     const mlMatch = item.url?.match(/MLB-?\d+/)
     const externalId = mlMatch ? mlMatch[0].replace('-', '') : `MANUAL_${Date.now()}_${i}`
+
+    // Only use URL as productUrl if it points to a known marketplace
+    // Competitor/tracker URLs (tempromo, pelando, etc.) are stripped
+    const cleanUrl = item.url && isMarketplaceUrl(item.url) ? item.url : (
+      // If URL is not marketplace but has MLB ID, build a ML URL from the ID
+      mlMatch ? `https://www.mercadolivre.com.br/p/${mlMatch[0].replace('-', '')}` : undefined
+    )
 
     return {
       externalId,
       title: item.title,
       currentPrice: item.price,
       originalPrice: item.originalPrice,
-      productUrl: item.url,
+      productUrl: cleanUrl || "",
       imageUrl: item.imageUrl,
       availability: 'in_stock' as const,
-      sourceSlug: 'mercadolivre',
+      sourceSlug: cleanUrl ? detectSource(cleanUrl) : 'mercadolivre',
       discoverySource: 'manual_entry',
     }
   })

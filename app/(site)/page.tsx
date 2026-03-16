@@ -1,4 +1,4 @@
-import { Flame, TrendingDown, Trophy, Sparkles, Tag, Star, Search, ArrowRight, Package, Percent, Zap, Smartphone, Laptop, Footprints, ChevronRight } from "lucide-react";
+import { Flame, TrendingDown, Trophy, Sparkles, Tag, Star, Search, ArrowRight, Package, Percent, Zap } from "lucide-react";
 import nextDynamic from "next/dynamic";
 import DailyOpportunities from "@/components/home/DailyOpportunities";
 import Link from "next/link";
@@ -29,12 +29,8 @@ import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";
 
-// Priority categories that should always appear first
-const PRIORITY_CATEGORIES = [
-  { slug: "celulares", name: "Celulares", icon: "📲", displayIcon: Smartphone, color: "text-accent-blue", bgColor: "bg-accent-blue/8", borderColor: "border-accent-blue/15" },
-  { slug: "notebooks", name: "Notebooks", icon: "💻", displayIcon: Laptop, color: "text-accent-purple", bgColor: "bg-accent-purple/8", borderColor: "border-accent-purple/15" },
-  { slug: "esportes", name: "Tenis & Esportes", icon: "⚽", displayIcon: Footprints, color: "text-accent-green", bgColor: "bg-accent-green/8", borderColor: "border-accent-green/15" },
-] as const;
+// Priority category slugs — controls sort order in the categories grid
+const PRIORITY_SLUGS = ["celulares", "notebooks", "esportes"];
 
 const TRENDING_SEARCHES = [
   "iPhone 15", "Galaxy S24", "Air Fryer", "PS5", "Notebook Gamer",
@@ -115,10 +111,9 @@ export default async function HomePage() {
   const dealOfTheDay = hotOffers.length > 0 ? hotOffers[0] : null;
 
   // Sort categories so priority ones come first
-  const prioritySlugs = PRIORITY_CATEGORIES.map(c => c.slug);
   const sortedCategories = [
-    ...categories.filter((c: any) => prioritySlugs.includes(c.slug)),
-    ...categories.filter((c: any) => !prioritySlugs.includes(c.slug)),
+    ...categories.filter((c: any) => PRIORITY_SLUGS.includes(c.slug)),
+    ...categories.filter((c: any) => !PRIORITY_SLUGS.includes(c.slug)),
   ];
 
   // Category rails (top 3 categories with products)
@@ -134,17 +129,6 @@ export default async function HomePage() {
     })
   );
 
-  // Priority category products for featured section
-  const priorityCategoryProducts = await Promise.all(
-    PRIORITY_CATEGORIES.map(async (pc) => {
-      try {
-        const { products } = await getProductsByCategory(pc.slug, { limit: 6 });
-        return { ...pc, products };
-      } catch {
-        return { ...pc, products: [] as any[] };
-      }
-    })
-  );
 
   return (
     <div>
@@ -243,43 +227,6 @@ export default async function HomePage() {
 
       {/* ===== 2c. RETURN USER GREETING ===== */}
       <ReturnUserGreeting />
-
-      {/* ===== 2d. CATEGORIAS EM DESTAQUE — priority categories with larger cards ===== */}
-      <section id="featured-categories" className="py-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <SectionHeader
-            icon={Sparkles}
-            iconColor="text-brand-500"
-            title="Categorias em Destaque"
-            subtitle="As categorias mais procuradas agora"
-          />
-          <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {PRIORITY_CATEGORIES.map((pc) => {
-              const Icon = pc.displayIcon;
-              const catData = priorityCategoryProducts.find(p => p.slug === pc.slug);
-              const count = catData?.products?.length || 0;
-              return (
-                <Link
-                  key={pc.slug}
-                  href={`/categoria/${pc.slug}`}
-                  className={`card group flex items-center gap-4 p-4 hover:border-brand-500/25 transition-all`}
-                >
-                  <div className={`w-12 h-12 rounded-xl ${pc.bgColor} flex items-center justify-center flex-shrink-0 border ${pc.borderColor}`}>
-                    <Icon className={`w-6 h-6 ${pc.color}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-display font-bold text-sm text-text-primary">{pc.name}</h3>
-                    <p className="text-xs text-text-muted mt-0.5">
-                      {count > 0 ? `${count}+ ofertas disponiveis` : "Explorar ofertas"}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-surface-400 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all" />
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
 
       {/* ===== 3. OFERTA DO DIA — auto-rotates top 6 deals ===== */}
       {hotOffers.length > 0 && (
