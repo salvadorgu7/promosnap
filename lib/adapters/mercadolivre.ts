@@ -26,6 +26,12 @@ const REQUIRED_ENV_KEYS = ['ML_CLIENT_ID', 'ML_CLIENT_SECRET'] as const
 const ML_API_BASE = 'https://api.mercadolibre.com'
 const ML_SITE = 'MLB' // Brasil
 
+// Standard headers to avoid ML blocking server-side requests
+const ML_BASE_HEADERS: Record<string, string> = {
+  'Accept': 'application/json',
+  'User-Agent': 'PromoSnap/1.0 (https://promosnap.com)',
+}
+
 // ---------------------------------------------------------------------------
 // ML API response types
 // ---------------------------------------------------------------------------
@@ -216,23 +222,33 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       let res: Response | null = null
       let lastErr = ''
 
-      // Attempt 1: full auth (user token → app token via getMLToken)
-      const authHeaders = await getAuthHeaders()
-      if (Object.keys(authHeaders).length > 0) {
-        res = await fetch(url.toString(), { headers: authHeaders })
-        if (res.ok) { /* success */ }
-        else {
-          lastErr = `auth(${res.status})`
-          console.warn(`[ML] search with auth failed: ${res.status}`)
-          res = null
+      // Attempt 1: no auth first (ML search is a public API — fastest path)
+      res = await fetch(url.toString(), { headers: { ...ML_BASE_HEADERS } })
+      if (!res.ok) {
+        lastErr = `noAuth(${res.status})`
+        console.warn(`[ML] search without auth failed: ${res.status}`)
+        res = null
+      }
+
+      // Attempt 2: full auth (user token → app token via getMLToken)
+      if (!res) {
+        const authHeaders = await getAuthHeaders()
+        if (Object.keys(authHeaders).length > 0) {
+          res = await fetch(url.toString(), { headers: { ...ML_BASE_HEADERS, ...authHeaders } })
+          if (res.ok) { /* success */ }
+          else {
+            lastErr = `auth(${res.status})`
+            console.warn(`[ML] search with auth failed: ${res.status}`)
+            res = null
+          }
         }
       }
 
-      // Attempt 2: explicit app token (client_credentials)
+      // Attempt 3: explicit app token (client_credentials)
       if (!res) {
         try {
           const appToken = await getMLAppToken()
-          res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${appToken}` } })
+          res = await fetch(url.toString(), { headers: { ...ML_BASE_HEADERS, Authorization: `Bearer ${appToken}` } })
           if (res.ok) { /* success */ }
           else {
             lastErr = `app_token(${res.status})`
@@ -244,14 +260,9 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
         }
       }
 
-      // Attempt 3: no auth at all (ML search is a public API)
+      // All attempts failed
       if (!res) {
-        res = await fetch(url.toString())
-        if (!res.ok) {
-          const errText = await res.text()
-          console.error(`[ML] search all attempts failed. Last: ${lastErr}, noAuth: ${res.status} — ${errText}`)
-          throw new Error(`ML API retornou ${res.status}: ${errText.slice(0, 200)}`)
-        }
+        throw new Error(`ML API busca falhou em todas as tentativas. Último erro: ${lastErr}`)
       }
 
       const data: MLSearchResponse = await res.json()
@@ -270,24 +281,38 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
 
   async getProduct(externalId: string): Promise<AdapterResult | null> {
     const itemUrl = `${ML_API_BASE}/items/${externalId}`
+    const multiGetUrl = `${ML_API_BASE}/items?ids=${externalId}`
     let res: Response | null = null
+    let lastErr = ''
 
-    // Attempt 1: full auth
-    const headers = await getAuthHeaders()
-    if (Object.keys(headers).length > 0) {
-      res = await fetch(itemUrl, { headers })
-      if (!res.ok) {
-        console.warn(`[ML] getProduct(${externalId}) auth failed: ${res.status}`)
-        res = null
+    // Attempt 1: no auth (works for public/active items)
+    res = await fetch(itemUrl, { headers: { ...ML_BASE_HEADERS } })
+    if (!res.ok) {
+      lastErr = `noAuth(${res.status})`
+      console.warn(`[ML] getProduct(${externalId}) no auth failed: ${res.status}`)
+      res = null
+    }
+
+    // Attempt 2: full auth (user token → app token)
+    if (!res) {
+      const headers = await getAuthHeaders()
+      if (Object.keys(headers).length > 0) {
+        res = await fetch(itemUrl, { headers: { ...ML_BASE_HEADERS, ...headers } })
+        if (!res.ok) {
+          lastErr = `auth(${res.status})`
+          console.warn(`[ML] getProduct(${externalId}) auth failed: ${res.status}`)
+          res = null
+        }
       }
     }
 
-    // Attempt 2: explicit app token
+    // Attempt 3: explicit app token
     if (!res) {
       try {
         const appToken = await getMLAppToken()
-        res = await fetch(itemUrl, { headers: { Authorization: `Bearer ${appToken}` } })
+        res = await fetch(itemUrl, { headers: { ...ML_BASE_HEADERS, Authorization: `Bearer ${appToken}` } })
         if (!res.ok) {
+          lastErr = `appToken(${res.status})`
           console.warn(`[ML] getProduct(${externalId}) app token failed: ${res.status}`)
           res = null
         }
@@ -296,9 +321,45 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       }
     }
 
-    // Attempt 3: no auth
+    // Attempt 4: multi-get endpoint (different ML policy, sometimes works when /items/{id} doesn't)
     if (!res) {
-      res = await fetch(itemUrl)
+      try {
+        const multiRes = await fetch(multiGetUrl, { headers: { ...ML_BASE_HEADERS } })
+        if (multiRes.ok) {
+          const multiData = await multiRes.json()
+          if (Array.isArray(multiData) && multiData[0]?.code === 200 && multiData[0]?.body) {
+            const item: MLItemResponse = multiData[0].body
+            return mlItemToAdapterResult(item)
+          }
+          lastErr = `multiGet(item not found or error)`
+        } else {
+          lastErr = `multiGet(${multiRes.status})`
+        }
+      } catch (e) {
+        console.warn(`[ML] multi-get fallback failed:`, e instanceof Error ? e.message : e)
+      }
+    }
+
+    // Attempt 5: search by ID as last resort
+    if (!res) {
+      try {
+        const searchUrl = `${ML_API_BASE}/sites/${ML_SITE}/search?q=${externalId}&limit=1`
+        const searchRes = await fetch(searchUrl, { headers: { ...ML_BASE_HEADERS } })
+        if (searchRes.ok) {
+          const searchData: MLSearchResponse = await searchRes.json()
+          const match = searchData.results.find(r => r.id === externalId)
+          if (match) {
+            console.log(`[ML] getProduct(${externalId}) resolved via search fallback`)
+            return mlToAdapterResult(match)
+          }
+        }
+      } catch (e) {
+        console.warn(`[ML] search fallback failed:`, e instanceof Error ? e.message : e)
+      }
+    }
+
+    if (!res) {
+      throw new Error(`[ML] getProduct(${externalId}) falhou em todas as tentativas. Último: ${lastErr}`)
     }
 
     if (!res.ok) {
