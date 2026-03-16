@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import Link from "next/link";
 
-export default function Error({
+export default function GlobalError({
   error,
   reset,
 }: {
@@ -12,48 +12,46 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log error digest only (no sensitive details to client console)
-    if (error.digest) {
-      console.error("[PromoSnap] Error digest:", error.digest);
-    }
+    console.error("[ErrorBoundary]", error);
   }, [error]);
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-6">
-          <AlertTriangle className="w-8 h-8 text-red-500" />
+    <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <div className="text-center max-w-md space-y-6">
+        <div className="mx-auto w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+          <AlertTriangle className="h-8 w-8 text-red-500" />
         </div>
 
-        <h1 className="text-2xl font-bold font-display text-text-primary mb-2">
-          Algo deu errado
-        </h1>
-        <p className="text-sm text-text-muted mb-8">
-          Ocorreu um erro inesperado. Tente recarregar a pagina ou voltar para o inicio.
-        </p>
+        <div>
+          <h1 className="text-2xl font-bold font-display text-text-primary mb-2">
+            Algo deu errado
+          </h1>
+          <p className="text-text-secondary text-sm leading-relaxed">
+            Ocorreu um erro inesperado. Tente recarregar a pagina ou volte para o inicio.
+          </p>
+          {error.digest && (
+            <p className="text-xs text-text-muted mt-2 font-mono">
+              Ref: {error.digest}
+            </p>
+          )}
+        </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3">
           <button
-            onClick={() => reset()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors"
+            onClick={reset}
+            className="btn-primary flex items-center gap-2 text-sm"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RefreshCw className="h-4 w-4" />
             Tentar novamente
           </button>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-surface-200 text-sm font-medium text-text-secondary hover:bg-surface-50 transition-colors"
+            className="btn-secondary flex items-center gap-2 text-sm"
           >
-            <Home className="w-4 h-4" />
-            Pagina inicial
+            <Home className="h-4 w-4" />
+            Inicio
           </Link>
         </div>
-
-        {error.digest && (
-          <p className="mt-6 text-xs text-text-muted/50">
-            Codigo: {error.digest}
-          </p>
-        )}
       </div>
     </div>
   );
