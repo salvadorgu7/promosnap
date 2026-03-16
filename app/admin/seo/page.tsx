@@ -107,8 +107,8 @@ const severityConfig: Record<
   SEOIssueSeverity,
   { icon: typeof CheckCircle; color: string; bg: string; label: string }
 > = {
-  critical: { icon: XCircle, color: "text-red-500", bg: "bg-red-50", label: "Critico" },
-  warning: { icon: AlertTriangle, color: "text-accent-orange", bg: "bg-orange-50", label: "Atencao" },
+  critical: { icon: XCircle, color: "text-red-500", bg: "bg-red-50", label: "Crítico" },
+  warning: { icon: AlertTriangle, color: "text-accent-orange", bg: "bg-orange-50", label: "Atenção" },
   info: { icon: Info, color: "text-accent-blue", bg: "bg-blue-50", label: "Info" },
 };
 
@@ -118,10 +118,10 @@ const actionTypeConfig: Record<
   string,
   { icon: typeof Plus; color: string; bg: string; label: string }
 > = {
-  create_page: { icon: Plus, color: "text-accent-green", bg: "bg-green-50", label: "Criar Pagina" },
+  create_page: { icon: Plus, color: "text-accent-green", bg: "bg-green-50", label: "Criar Página" },
   fix_metadata: { icon: PenLine, color: "text-accent-orange", bg: "bg-orange-50", label: "Corrigir Metadata" },
   add_internal_links: { icon: Link2, color: "text-accent-blue", bg: "bg-blue-50", label: "Adicionar Links" },
-  improve_content: { icon: FileText, color: "text-accent-purple", bg: "bg-purple-50", label: "Melhorar Conteudo" },
+  improve_content: { icon: FileText, color: "text-accent-purple", bg: "bg-purple-50", label: "Melhorar Conteúdo" },
 };
 
 const impactConfig: Record<string, { color: string; bg: string }> = {
@@ -151,7 +151,7 @@ export default async function AdminSEOGovernancePage() {
           SEO Governance
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Auditoria completa de saude SEO, cobertura de conteudo e fila de acoes priorizadas
+          Auditoria completa de saude SEO, cobertura de conteúdo e fila de ações priorizadas
         </p>
       </div>
 
@@ -164,9 +164,9 @@ export default async function AdminSEOGovernancePage() {
             Detalhamento do Score
           </h2>
           <SubScoreBar label="Metadata (titles, descriptions)" score={audit.score.metadata} icon={FileText} />
-          <SubScoreBar label="Qualidade do Conteudo" score={audit.score.content} icon={Layers} />
+          <SubScoreBar label="Qualidade do Conteúdo" score={audit.score.content} icon={Layers} />
           <SubScoreBar label="Links Internos" score={audit.score.internalLinking} icon={Link2} />
-          <SubScoreBar label="Cobertura de Conteudo" score={audit.score.coverage} icon={BarChart3} />
+          <SubScoreBar label="Cobertura de Conteúdo" score={audit.score.coverage} icon={BarChart3} />
         </div>
       </div>
 
@@ -176,7 +176,7 @@ export default async function AdminSEOGovernancePage() {
           <p className="text-2xl font-bold font-display text-text-primary">
             {audit.totalPages.toLocaleString("pt-BR")}
           </p>
-          <p className="text-xs text-text-muted mt-1">Paginas Totais</p>
+          <p className="text-xs text-text-muted mt-1">Páginas Totais</p>
         </div>
         <div className="card p-4 text-center">
           <p className="text-2xl font-bold font-display text-accent-orange">
@@ -188,7 +188,7 @@ export default async function AdminSEOGovernancePage() {
           <p className="text-2xl font-bold font-display text-red-500">
             {audit.issuesBySeverity.critical}
           </p>
-          <p className="text-xs text-text-muted mt-1">Criticos</p>
+          <p className="text-xs text-text-muted mt-1">Críticos</p>
         </div>
         <div className="card p-4 text-center">
           <p className="text-2xl font-bold font-display text-accent-blue">
@@ -202,7 +202,7 @@ export default async function AdminSEOGovernancePage() {
       <div className="card p-5">
         <h2 className="text-lg font-semibold font-display text-text-primary mb-4 flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-accent-blue" />
-          Cobertura de Conteudo
+          Cobertura de Conteúdo
         </h2>
         <div className="space-y-3">
           {coverage.items.map((item) => {
@@ -256,14 +256,14 @@ export default async function AdminSEOGovernancePage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {(
             [
-              { key: "empty_page", label: "Paginas Vazias" },
-              { key: "missing_title", label: "Sem Titulo" },
-              { key: "missing_description", label: "Sem Descricao" },
-              { key: "weak_content", label: "Conteudo Fraco" },
+              { key: "empty_page", label: "Páginas Vazias" },
+              { key: "missing_title", label: "Sem Título" },
+              { key: "missing_description", label: "Sem Descrição" },
+              { key: "weak_content", label: "Conteúdo Fraco" },
               { key: "poor_internal_linking", label: "Links Fracos" },
-              { key: "orphan_page", label: "Paginas Orfas" },
+              { key: "orphan_page", label: "Páginas Orfas" },
               { key: "missing_canonical", label: "Sem Canonical" },
-              { key: "weak_title", label: "Titulo Fraco" },
+              { key: "weak_title", label: "Título Fraco" },
             ] as const
           ).map((item) => {
             const count = audit.issuesByType[item.key];
@@ -326,16 +326,16 @@ export default async function AdminSEOGovernancePage() {
       <div className="card p-5">
         <h2 className="text-lg font-semibold font-display text-text-primary mb-1 flex items-center gap-2">
           <Zap className="h-5 w-5 text-accent-orange" />
-          Fila de Acoes SEO
+          Fila de Ações SEO
         </h2>
         <p className="text-xs text-text-muted mb-4">
-          Acoes priorizadas por oportunidade e impacto estimado
+          Ações priorizadas por oportunidade e impacto estimado
         </p>
 
         {topActions.length === 0 ? (
           <div className="text-center py-8">
             <CheckCircle className="h-8 w-8 text-accent-green mx-auto mb-2" />
-            <p className="text-sm text-text-muted">Nenhuma acao pendente. SEO esta otimizado!</p>
+            <p className="text-sm text-text-muted">Nenhuma ação pendente. SEO esta otimizado!</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -375,7 +375,7 @@ export default async function AdminSEOGovernancePage() {
                       {cfg.label}
                     </span>
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${impact.bg} ${impact.color}`}>
-                      {action.estimatedImpact === "high" ? "Alto" : action.estimatedImpact === "medium" ? "Medio" : "Baixo"}
+                      {action.estimatedImpact === "high" ? "Alto" : action.estimatedImpact === "medium" ? "Médio" : "Baixo"}
                     </span>
                     <span className="text-[10px] text-text-muted bg-surface-100 px-1.5 py-0.5 rounded-full">
                       {action.pageType}
@@ -389,7 +389,7 @@ export default async function AdminSEOGovernancePage() {
 
         {actions.length > 20 && (
           <p className="text-xs text-text-muted text-center mt-3">
-            +{actions.length - 20} acoes adicionais nao exibidas
+            +{actions.length - 20} ações adicionais não exibidas
           </p>
         )}
       </div>

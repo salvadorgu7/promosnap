@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
 export function generateMetadata() {
   const today = new Date().toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
   return buildMetadata({
-    title: `Preco Hoje — Melhores Oportunidades de ${today}`,
-    description: `As melhores ofertas de hoje: maiores quedas de preco, ofertas quentes, cupons ativos e produtos novos. Atualizado em tempo real.`,
+    title: `Preço Hoje — Melhores Oportunidades de ${today}`,
+    description: `As melhores ofertas de hoje: maiores quedas de preço, ofertas quentes, cupons ativos e produtos novos. Atualizado em tempo real.`,
     path: "/preco-hoje",
   });
 }
@@ -87,12 +87,12 @@ export default async function PrecoHojePage() {
           </div>
 
           <h1 className="font-display font-extrabold text-3xl md:text-5xl text-surface-900 tracking-tight leading-[1.1]">
-            Preco{" "}
+            Preço{" "}
             <span className="text-gradient">Hoje</span>
           </h1>
 
           <p className="mt-3 text-surface-500 text-base max-w-lg mx-auto">
-            As melhores oportunidades do dia reunidas em um so lugar. Quedas de preco, ofertas quentes, cupons e novidades.
+            As melhores oportunidades do dia reunidas em um só lugar. Quedas de preço, ofertas quentes, cupons e novidades.
           </p>
         </div>
       </section>
@@ -105,7 +105,7 @@ export default async function PrecoHojePage() {
               icon={TrendingDown}
               iconColor="text-accent-blue"
               title="Maiores Quedas"
-              subtitle="Produtos no menor preco historico"
+              subtitle="Produtos no menor preço histórico"
             />
             <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {lowestPrices.map((p) => (
@@ -148,7 +148,7 @@ export default async function PrecoHojePage() {
                 icon={Tag}
                 iconColor="text-accent-orange"
                 title="Cupons Ativos"
-                subtitle="Economize com codigos de desconto"
+                subtitle="Economize com códigos de desconto"
               />
               <Link href="/cupons" className="text-sm text-accent-blue hover:text-brand-500 font-medium">
                 Ver todos
@@ -205,7 +205,7 @@ export default async function PrecoHojePage() {
             <span className="text-sm font-semibold text-text-primary">Explore mais</span>
           </div>
           <p className="text-sm text-text-muted mb-5 max-w-md mx-auto">
-            Descubra ainda mais oportunidades navegando pelas nossas paginas especializadas.
+            Descubra ainda mais oportunidades navegando pelas nossas páginas especializadas.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link
@@ -219,7 +219,7 @@ export default async function PrecoHojePage() {
               href="/menor-preco"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-surface-200 text-text-primary text-sm font-semibold hover:border-brand-500/30 hover:bg-brand-50 transition-colors shadow-sm"
             >
-              Menor Preco
+              Menor Preço
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link

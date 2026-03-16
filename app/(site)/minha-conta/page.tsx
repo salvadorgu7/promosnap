@@ -139,7 +139,7 @@ export default function MinhaContaPage() {
         id: `rv-${item.slug}-${i}`,
         type: "recent_view",
         title: item.name,
-        subtitle: "Voce visitou este produto",
+        subtitle: "Você visitou este produto",
         href: `/produto/${item.slug}`,
         imageUrl: item.imageUrl,
         timestamp: item.viewedAt,
@@ -281,11 +281,11 @@ export default function MinhaContaPage() {
       const diff = Date.now() - new Date(ts).getTime();
       const mins = Math.floor(diff / 60000);
       if (mins < 1) return "agora";
-      if (mins < 60) return `${mins}min atras`;
+      if (mins < 60) return `${mins}min atrás`;
       const hours = Math.floor(mins / 60);
-      if (hours < 24) return `${hours}h atras`;
+      if (hours < 24) return `${hours}h atrás`;
       const days = Math.floor(hours / 24);
-      if (days < 7) return `${days}d atras`;
+      if (days < 7) return `${days}d atrás`;
       return new Date(ts).toLocaleDateString("pt-BR");
     } catch {
       return "";
@@ -313,7 +313,7 @@ export default function MinhaContaPage() {
           Minha Conta
         </h1>
         <p className="text-sm text-text-muted mt-2">
-          Gerencie seus favoritos, alertas e historico
+          Gerencie seus favoritos, alertas e histórico
         </p>
       </div>
 
@@ -489,7 +489,7 @@ export default function MinhaContaPage() {
               <div className="text-center py-12">
                 <Rss className="h-12 w-12 text-surface-300 mx-auto mb-3" />
                 <p className="text-sm text-text-muted">
-                  Seu feed esta vazio. Explore produtos, adicione favoritos e crie alertas para ver atividades aqui.
+                  Seu feed está vazio. Explore produtos, adicione favoritos e crie alertas para ver atividades aqui.
                 </p>
                 <a
                   href="/ofertas"
@@ -558,7 +558,7 @@ export default function MinhaContaPage() {
               <div className="text-center py-12">
                 <Heart className="h-12 w-12 text-surface-300 mx-auto mb-3" />
                 <p className="text-sm text-text-muted">
-                  Voce ainda nao tem favoritos. Explore produtos e adicione aqui.
+                  Você ainda não tem favoritos. Explore produtos e adicione aqui.
                 </p>
                 <a
                   href="/ofertas"
@@ -581,7 +581,7 @@ export default function MinhaContaPage() {
                     onClick={clearRecentlyViewed}
                     className="text-xs text-text-muted hover:text-accent-red transition-colors flex items-center gap-1"
                   >
-                    <Trash2 className="h-3 w-3" /> Limpar historico
+                    <Trash2 className="h-3 w-3" /> Limpar histórico
                   </button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -630,7 +630,7 @@ export default function MinhaContaPage() {
               <div className="text-center py-12">
                 <Bell className="h-12 w-12 text-surface-300 mx-auto mb-3" />
                 <p className="text-sm text-text-muted">
-                  Salve seu email acima para ver seus alertas de preco.
+                  Salve seu email acima para ver seus alertas de preço.
                 </p>
               </div>
             ) : alertsLoading ? (
@@ -728,7 +728,7 @@ export default function MinhaContaPage() {
                   Nenhum alerta encontrado para {savedEmail}.
                 </p>
                 <p className="text-xs text-text-muted mt-1">
-                  Crie alertas de preco nas paginas de produto.
+                  Crie alertas de preço nas páginas de produto.
                 </p>
               </div>
             )}

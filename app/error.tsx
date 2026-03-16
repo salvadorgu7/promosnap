@@ -27,7 +27,7 @@ export default function GlobalError({
             Algo deu errado
           </h1>
           <p className="text-text-secondary text-sm leading-relaxed">
-            Ocorreu um erro inesperado. Tente recarregar a pagina ou volte para o inicio.
+            Ocorreu um erro inesperado. Tente recarregar a página ou volte para o início.
           </p>
           {error.digest && (
             <p className="text-xs text-text-muted mt-2 font-mono">
@@ -49,7 +49,7 @@ export default function GlobalError({
             className="btn-secondary flex items-center gap-2 text-sm"
           >
             <Home className="h-4 w-4" />
-            Inicio
+            Início
           </Link>
         </div>
       </div>

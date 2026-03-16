@@ -91,7 +91,7 @@ export default async function SupplyCommandCenter() {
             Supply Command Center
           </h1>
           <p className="text-sm text-text-muted">
-            Visao operacional do catalogo — preencha as lacunas, aumente a densidade
+            Visão operacional do catálogo — preencha as lacunas, aumente a densidade
           </p>
         </div>
       </div>
@@ -215,7 +215,7 @@ export default async function SupplyCommandCenter() {
               {/* Anchor queries — next actions */}
               <div>
                 <p className="text-xs font-semibold text-text-secondary mb-2">
-                  Proximas acoes — queries de ancoragem:
+                  Próximas ações — queries de ancoragem:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {config.anchorQueries.slice(0, 6).map((q) => (

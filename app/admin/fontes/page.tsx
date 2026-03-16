@@ -42,9 +42,9 @@ const statusConfig: Record<string, { icon: typeof CheckCircle2; severity: Severi
 
 const healthConfig: Record<string, { severity: Severity; label: string; guidance: string }> = {
   READY: { severity: "ok", label: "Pronto", guidance: "Adapter configurado e pronto para operar." },
-  PARTIAL: { severity: "warning", label: "Parcial", guidance: "Funcionando com limitacoes. Configure as variaveis faltantes para funcionalidade completa." },
-  MOCK: { severity: "info", label: "Mock", guidance: "Usando dados simulados. Configure as credenciais reais para dados de producao." },
-  BLOCKED: { severity: "critical", label: "Bloqueado", guidance: "Adapter nao funcional. Credenciais ou configuracao critica ausente." },
+  PARTIAL: { severity: "warning", label: "Parcial", guidance: "Funcionando com limitações. Configure as variáveis faltantes para funcionalidade completa." },
+  MOCK: { severity: "info", label: "Mock", guidance: "Usando dados simulados. Configure as credenciais reais para dados de produção." },
+  BLOCKED: { severity: "critical", label: "Bloqueado", guidance: "Adapter nao funcional. Credenciais ou configuração crítica ausente." },
 };
 
 const readinessConfig: Record<ReadinessStatus, { severity: Severity; label: string; color: string }> = {
@@ -52,7 +52,7 @@ const readinessConfig: Record<ReadinessStatus, { severity: Severity; label: stri
   partial: { severity: "warning", label: "Parcial", color: "bg-amber-100 text-amber-700 border-amber-300" },
   mock: { severity: "info", label: "Mock", color: "bg-blue-100 text-blue-700 border-blue-300" },
   blocked: { severity: "critical", label: "Bloqueado", color: "bg-red-100 text-red-700 border-red-300" },
-  not_configured: { severity: "warning", label: "Nao Configurado", color: "bg-gray-100 text-gray-600 border-gray-300" },
+  not_configured: { severity: "warning", label: "Não Configurado", color: "bg-gray-100 text-gray-600 border-gray-300" },
 };
 
 const checklistStatusIcon: Record<string, string> = {
@@ -66,7 +66,7 @@ const capabilityLabels: Record<string, string> = {
   lookup: "Lookup",
   feed_sync: "Feed Sync",
   clickout_ready: "Clickout",
-  price_refresh: "Preco",
+  price_refresh: "Preço",
   import_ready: "Import",
 };
 
@@ -124,11 +124,11 @@ function ReadinessCard({ readiness, pipeline }: { readiness: SourceReadiness; pi
         )}
       </div>
 
-      {/* V22: Ultimo Sync timestamp */}
+      {/* V22: Último Sync timestamp */}
       {truth?.lastSync ? (
         <p className="text-[10px] text-text-muted mb-2 flex items-center gap-1">
           <Clock className="h-2.5 w-2.5" />
-          Ultimo Sync: {timeAgo(truth.lastSync)}
+          Último Sync: {timeAgo(truth.lastSync)}
         </p>
       ) : (
         <p className="text-[10px] text-amber-500 mb-2 flex items-center gap-1">
@@ -212,7 +212,7 @@ function AdapterStatusCard({ adapter }: { adapter: AdapterStatus }) {
       <p className="text-xs text-text-secondary mb-2">{adapter.message}</p>
       {adapter.missingEnvVars.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">Variaveis ausentes:</p>
+          <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">Variáveis ausentes:</p>
           <div className="flex flex-wrap gap-1">
             {adapter.missingEnvVars.map((v) => (
               <code key={v} className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-mono">
@@ -261,11 +261,11 @@ export default async function AdminFontesPage() {
           <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-amber-800">
-              {adapterSummary.unconfigured} adapter(s) sem configuracao
+              {adapterSummary.unconfigured} adapter(s) sem configuração
             </p>
             <p className="text-xs text-amber-700 mt-0.5">
-              Adapters nao configurados usam dados mock ou estao bloqueados.
-              Adicione as variaveis de ambiente necessarias (listadas abaixo) para ativar dados reais.
+              Adapters não configurados usam dados mock ou estao bloqueados.
+              Adicione as variáveis de ambiente necessárias (listadas abaixo) para ativar dados reais.
             </p>
           </div>
         </div>
@@ -277,7 +277,7 @@ export default async function AdminFontesPage() {
           <div>
             <p className="text-sm font-semibold text-blue-800">Nenhuma fonte cadastrada no banco</p>
             <p className="text-xs text-blue-700 mt-0.5">
-              Execute a ingestao inicial em /admin/ingestao para criar as fontes automaticamente,
+              Execute a ingestão inicial em /admin/ingestao para criar as fontes automaticamente,
               ou use /admin/jobs para rodar o pipeline completo.
             </p>
           </div>
@@ -288,7 +288,7 @@ export default async function AdminFontesPage() {
       <div className="rounded-xl border border-surface-200 bg-white p-5">
         <div className="flex items-center gap-2 mb-4">
           <Settings className="h-5 w-5 text-text-muted" />
-          <h2 className="text-lg font-bold font-display text-text-primary">Integracao de APIs</h2>
+          <h2 className="text-lg font-bold font-display text-text-primary">Integração de APIs</h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <div className="text-center p-3 bg-surface-50 rounded-lg">
@@ -324,7 +324,7 @@ export default async function AdminFontesPage() {
           <h2 className="text-lg font-bold font-display text-text-primary">Readiness por Fonte</h2>
         </div>
         <p className="text-xs text-text-muted mb-4">
-          Status de prontidao, checklist de requisitos e capabilities disponiveis por adapter.
+          Status de prontidão, checklist de requisitos e capabilities disponíveis por adapter.
         </p>
         <div className="grid md:grid-cols-2 gap-3">
           {sourceReadiness.map((r) => (
@@ -380,10 +380,10 @@ export default async function AdminFontesPage() {
 
                 <div className="text-xs text-text-muted">
                   {s.lastUpdate ? (
-                    <span>Ultima atualizacao: {timeAgo(new Date(s.lastUpdate))}</span>
+                    <span>Última atualização: {timeAgo(new Date(s.lastUpdate))}</span>
                   ) : (
                     <span className="text-amber-600">
-                      Sem dados ainda. Execute ingestao ou aguarde o proximo cron.
+                      Sem dados ainda. Execute ingestão ou aguarde o próximo cron.
                     </span>
                   )}
                 </div>
@@ -401,7 +401,7 @@ export default async function AdminFontesPage() {
                   <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-surface-100">
                     <Info className="h-3 w-3 flex-shrink-0 mt-0.5 text-amber-500" />
                     <p className="text-[10px] text-amber-600 leading-relaxed">
-                      Fonte pausada. Dados nao estao sendo atualizados. Reative se necessario.
+                      Fonte pausada. Dados não estão sendo atualizados. Reative se necessario.
                     </p>
                   </div>
                 )}
@@ -428,7 +428,7 @@ export default async function AdminFontesPage() {
             <div className="col-span-2 rounded-xl border border-surface-200 bg-white p-8 text-center">
               <Store className="h-8 w-8 mx-auto mb-2 text-text-muted opacity-30" />
               <p className="text-sm text-text-muted">
-                Nenhuma fonte cadastrada. Execute a ingestao para criar fontes automaticamente.
+                Nenhuma fonte cadastrada. Execute a ingestão para criar fontes automaticamente.
               </p>
             </div>
           )}
@@ -443,7 +443,7 @@ export default async function AdminFontesPage() {
             <h2 className="text-lg font-bold font-display text-text-primary">Sync Recommendations</h2>
           </div>
           <p className="text-xs text-text-muted mb-4">
-            Sugestoes priorizadas para melhorar a cobertura e atualidade do catalogo.
+            Sugestões priorizadas para melhorar a cobertura e atualidade do catálogo.
           </p>
           <div className="space-y-2">
             {archRecommendations.map((rec, idx) => {

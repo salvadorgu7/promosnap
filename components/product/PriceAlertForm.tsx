@@ -26,7 +26,7 @@ function ProgressBar({ current, target }: { current: number; target: number }) {
   return (
     <div className="mt-3 mb-1">
       <div className="flex items-center justify-between text-[10px] text-text-muted mb-1.5">
-        <span>Preco atual: {formatPrice(current)}</span>
+        <span>Preço atual: {formatPrice(current)}</span>
         <span>Alvo: {formatPrice(target)}</span>
       </div>
       <div className="relative h-2 bg-surface-100 rounded-full overflow-hidden">
@@ -48,7 +48,7 @@ function ProgressBar({ current, target }: { current: number; target: number }) {
       )}
       {percentAway === 0 && current <= target && (
         <p className="text-[10px] text-accent-green mt-1.5 font-medium">
-          O preco ja esta no alvo ou abaixo!
+          O preço já está no alvo ou abaixo!
         </p>
       )}
     </div>
@@ -128,7 +128,7 @@ export default function PriceAlertForm({ listingId, currentPrice, productName }:
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 text-accent-orange font-semibold text-sm">
           <BellRing className="w-4 h-4" />
-          Alerta de Preco
+          Alerta de Preço
         </div>
         <button onClick={() => setOpen(false)} className="text-text-muted hover:text-text-primary">
           <X className="w-4 h-4" />
@@ -140,13 +140,13 @@ export default function PriceAlertForm({ listingId, currentPrice, productName }:
           <BellRing className="w-8 h-8 text-accent-green mx-auto mb-2" />
           <p className="text-sm font-medium text-text-primary">Alerta criado!</p>
           <p className="text-xs text-text-muted mt-1">
-            Voce recebera um aviso quando o preco atingir {formatPrice(targetPrice)}
+            Você receberá um aviso quando o preço atingir {formatPrice(targetPrice)}
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-3">
           <p className="text-xs text-text-muted">
-            Receba um aviso quando <strong className="text-text-secondary">{productName}</strong> atingir o preco desejado.
+            Receba um aviso quando <strong className="text-text-secondary">{productName}</strong> atingir o preço desejado.
           </p>
 
           <div>
@@ -163,7 +163,7 @@ export default function PriceAlertForm({ listingId, currentPrice, productName }:
 
           <div>
             <label className="text-xs font-medium text-text-secondary block mb-1">
-              Preco alvo (atual: {formatPrice(currentPrice)})
+              Preço alvo (atual: {formatPrice(currentPrice)})
             </label>
             <input
               type="number"

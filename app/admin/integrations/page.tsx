@@ -67,7 +67,7 @@ function statusToSeverity(status: IntegrationStatus): Severity {
 function statusLabel(status: IntegrationStatus): string {
   switch (status) {
     case 'READY_PRODUCTION':
-      return 'Producao'
+      return 'Produção'
     case 'READY_TO_TEST':
       return 'Pronto p/ teste'
     case 'CONFIG_PARTIAL':
@@ -75,7 +75,7 @@ function statusLabel(status: IntegrationStatus): string {
     case 'BLOCKED_EXTERNAL':
       return 'Bloqueado'
     case 'NOT_CONFIGURED':
-      return 'Nao configurado'
+      return 'Não configurado'
     default:
       return status
   }
@@ -128,7 +128,7 @@ function IntegrationRow({ integration }: { integration: IntegrationReadiness }) 
             />
             {/* Testable indicator */}
             {integration.testable && (
-              <span className="flex items-center gap-0.5 text-xs text-blue-600" title="Testavel">
+              <span className="flex items-center gap-0.5 text-xs text-blue-600" title="Testável">
                 <FlaskConical className="h-3.5 w-3.5" />
               </span>
             )}
@@ -187,9 +187,9 @@ export default function IntegrationsPage() {
     <div className="mx-auto max-w-4xl space-y-8 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Integracoes</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Integrações</h1>
         <p className="mt-1 text-sm text-gray-500">
-          {readyCount} de {integrations.length} integracoes prontas
+          {readyCount} de {integrations.length} integrações prontas
         </p>
       </div>
 

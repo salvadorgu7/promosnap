@@ -68,7 +68,7 @@ export default function WhyHighlighted({
     const ratio = price / avgPrice;
     const priceScore = ratio <= 0.7 ? 95 : ratio <= 0.85 ? 80 : ratio <= 1.0 ? 60 : ratio <= 1.1 ? 40 : 20;
     factors.push({
-      label: "Preco",
+      label: "Preço",
       value: priceScore,
       icon: DollarSign,
       color: "text-accent-green",
@@ -76,7 +76,7 @@ export default function WhyHighlighted({
     });
   } else {
     factors.push({
-      label: "Preco",
+      label: "Preço",
       value: Math.min(90, offerScore * 1.1),
       icon: DollarSign,
       color: "text-accent-green",
@@ -87,7 +87,7 @@ export default function WhyHighlighted({
   // Trust factor
   const trustValue = sourceReliability ?? Math.min(85, offerScore + 10);
   factors.push({
-    label: "Confianca",
+    label: "Confiança",
     value: trustValue,
     icon: ShieldCheck,
     color: "text-accent-blue",
@@ -97,7 +97,7 @@ export default function WhyHighlighted({
   // Rating factor
   if (rating != null && rating > 0) {
     factors.push({
-      label: "Avaliacao",
+      label: "Avaliação",
       value: (rating / 5) * 100,
       icon: Star,
       color: "text-accent-orange",
@@ -143,8 +143,8 @@ export default function WhyHighlighted({
       {isExpanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-surface-100">
           <p className="text-[10px] text-text-muted pt-3 leading-relaxed">
-            O PromoSnap analisa multiplos fatores para destacar as melhores ofertas.
-            Veja a pontuacao detalhada:
+            O PromoSnap analisa múltiplos fatores para destacar as melhores ofertas.
+            Veja a pontuação detalhada:
           </p>
           <div className="space-y-2.5">
             {factors.map((factor) => (
@@ -152,7 +152,7 @@ export default function WhyHighlighted({
             ))}
           </div>
           <p className="text-[10px] text-text-muted pt-1 leading-relaxed italic">
-            Quanto maior a barra, melhor a oferta nesse criterio. Nenhum fator isolado
+            Quanto maior a barra, melhor a oferta nesse critério. Nenhum fator isolado
             determina o destaque &mdash; o score combina todos os indicadores.
           </p>
         </div>

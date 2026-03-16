@@ -185,7 +185,7 @@ export default async function MonitoringPage() {
           <div className="text-center py-8 text-text-muted">
             <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-400" />
             <p className="text-sm font-medium text-emerald-600">Nenhum erro capturado</p>
-            <p className="text-xs text-text-muted mt-1">O sistema esta operando sem erros detectados.</p>
+            <p className="text-xs text-text-muted mt-1">O sistema está operando sem erros detectados.</p>
           </div>
         ) : (
           <div className="space-y-3 max-h-[400px] overflow-y-auto">
@@ -235,7 +235,7 @@ export default async function MonitoringPage() {
             <Activity className="h-8 w-8 mx-auto mb-2 text-blue-300" />
             <p className="text-sm font-medium text-text-muted">Nenhum evento capturado</p>
             <p className="text-xs text-text-muted mt-1">
-              Eventos sao registrados quando jobs executam, cron roda e acoes do sistema acontecem.
+              Eventos são registrados quando jobs executam, cron roda e ações do sistema acontecem.
             </p>
           </div>
         ) : (

@@ -78,7 +78,7 @@ const STEPS = [
   {
     num: 2,
     title: "Amigos acessam",
-    desc: "Quando acessam pelo seu link, a visita e registrada automaticamente no seu painel.",
+    desc: "Quando acessam pelo seu link, a visita é registrada automaticamente no seu painel.",
     color: "from-accent-purple to-brand-500",
     iconColor: "text-accent-purple",
     icon: Eye,
@@ -86,7 +86,7 @@ const STEPS = [
   {
     num: 3,
     title: "Todos economizam",
-    desc: "Seus amigos encontram ofertas incriveis e voce acompanha o impacto que causou.",
+    desc: "Seus amigos encontram ofertas incríveis e você acompanha o impacto que causou.",
     color: "from-accent-green to-accent-blue",
     iconColor: "text-accent-green",
     icon: Trophy,
@@ -95,24 +95,24 @@ const STEPS = [
 
 const FAQ_ITEMS = [
   {
-    q: "Como funciona o programa de indicacao?",
-    a: "Voce recebe um codigo unico de indicacao. Ao compartilhar seu link, cada visita e clickout gerado pelos seus amigos e rastreado automaticamente.",
+    q: "Como funciona o programa de indicação?",
+    a: "Você recebe um código único de indicação. Ao compartilhar seu link, cada visita e clickout gerado pelos seus amigos é rastreado automaticamente.",
   },
   {
     q: "Preciso me cadastrar?",
-    a: "Nao! Seu codigo e gerado automaticamente e salvo no seu navegador. Nao precisa de login ou cadastro.",
+    a: "Não! Seu código é gerado automaticamente e salvo no seu navegador. Não precisa de login ou cadastro.",
   },
   {
     q: "O que sao clickouts?",
-    a: "Clickouts sao cliques que seus indicados fazem nos links de compra das ofertas. Quanto mais clickouts, mais pessoas estao aproveitando as ofertas que voce indicou!",
+    a: "Clickouts são cliques que seus indicados fazem nos links de compra das ofertas. Quanto mais clickouts, mais pessoas estão aproveitando as ofertas que você indicou!",
   },
   {
     q: "Existe algum beneficio por indicar?",
-    a: "No momento, o programa de indicacao ajuda a comunidade PromoSnap a crescer. Estamos planejando recompensas futuras para os maiores indicadores!",
+    a: "No momento, o programa de indicação ajuda a comunidade PromoSnap a crescer. Estamos planejando recompensas futuras para os maiores indicadores!",
   },
   {
     q: "Posso compartilhar em qualquer lugar?",
-    a: "Sim! Compartilhe onde quiser: WhatsApp, Telegram, Twitter/X, Facebook, email, ou ate colando o link em foruns e grupos.",
+    a: "Sim! Compartilhe onde quiser: WhatsApp, Telegram, Twitter/X, Facebook, email, ou até colando o link em fóruns e grupos.",
   },
 ];
 
@@ -120,21 +120,21 @@ const MOTIVATION_ITEMS = [
   {
     icon: Zap,
     title: "Ajude amigos a economizar",
-    desc: "Cada indicacao ajuda alguem a encontrar o melhor preco.",
+    desc: "Cada indicação ajuda alguém a encontrar o melhor preço.",
     color: "text-accent-orange",
     bgColor: "bg-accent-orange/10",
   },
   {
     icon: Rocket,
-    title: "Faca a comunidade crescer",
-    desc: "Mais usuarios significam mais dados e melhores comparacoes.",
+    title: "Faça a comunidade crescer",
+    desc: "Mais usuários significam mais dados e melhores comparações.",
     color: "text-accent-purple",
     bgColor: "bg-accent-purple/10",
   },
   {
     icon: Heart,
     title: "Recompensas futuras",
-    desc: "Estamos planejando beneficios exclusivos para indicadores ativos.",
+    desc: "Estamos planejando benefícios exclusivos para indicadores ativos.",
     color: "text-accent-red",
     bgColor: "bg-accent-red/10",
   },
@@ -199,12 +199,12 @@ export default function IndicarPage() {
   }
 
   function shareWhatsApp() {
-    const text = `Encontrei um comparador de precos incrivel! Ofertas com ate 60% OFF e historico de preco real. Confira: ${referralUrl}`;
+    const text = `Encontrei um comparador de preços incrível! Ofertas com até 60% OFF e histórico de preço real. Confira: ${referralUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   }
 
   function shareTelegram() {
-    const text = `Ofertas com ate 60% de desconto e historico de preco! Compare antes de comprar:`;
+    const text = `Ofertas com até 60% de desconto e histórico de preço! Compare antes de comprar:`;
     window.open(
       `https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(text)}`,
       "_blank"
@@ -212,7 +212,7 @@ export default function IndicarPage() {
   }
 
   function shareTwitter() {
-    const text = `Descobri o @PromoSnap - comparador de precos com historico real e ofertas com ate 60% OFF!`;
+    const text = `Descobri o @PromoSnap - comparador de preços com histórico real e ofertas com até 60% OFF!`;
     window.open(
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(referralUrl)}`,
       "_blank"
@@ -230,7 +230,7 @@ export default function IndicarPage() {
         <div className="relative z-10 max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs font-semibold mb-6">
             <Sparkles className="h-3.5 w-3.5" />
-            Programa de Indicacao
+            Programa de Indicação
           </div>
           <h1 className="text-3xl md:text-5xl font-extrabold font-display text-white mb-4 leading-tight">
             Indique amigos.{" "}
@@ -239,7 +239,7 @@ export default function IndicarPage() {
             </span>
           </h1>
           <p className="text-white/60 text-lg max-w-lg mx-auto leading-relaxed">
-            Compartilhe o PromoSnap e ajude mais pessoas a encontrar ofertas reais com precos verificados.
+            Compartilhe o PromoSnap e ajude mais pessoas a encontrar ofertas reais com preços verificados.
           </p>
 
           {/* Quick CTA in hero */}
@@ -281,7 +281,7 @@ export default function IndicarPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold font-display text-text-primary flex items-center gap-2">
               <Target className="h-5 w-5 text-accent-purple" />
-              Seu Nivel
+              Seu Nível
             </h2>
             <div className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-lg ${level.current.bg} flex items-center justify-center`}>
@@ -301,7 +301,7 @@ export default function IndicarPage() {
                   {stats.clickouts} / {level.next.minClickouts} clickouts
                 </span>
                 <span className="text-xs text-text-muted flex items-center gap-1">
-                  Proximo: <span className={`font-semibold ${level.next.color}`}>{level.next.name}</span>
+                  Próximo: <span className={`font-semibold ${level.next.color}`}>{level.next.name}</span>
                 </span>
               </div>
               <div className="w-full h-2 rounded-full bg-surface-100 overflow-hidden">
@@ -315,7 +315,7 @@ export default function IndicarPage() {
           {!level.next && (
             <p className="text-sm text-accent-purple font-medium flex items-center gap-1.5">
               <Award className="h-4 w-4" />
-              Nivel maximo alcancado! Voce e um Embaixador PromoSnap.
+              Nível máximo alcançado! Você é um Embaixador PromoSnap.
             </p>
           )}
         </div>
@@ -363,13 +363,13 @@ export default function IndicarPage() {
         <div className="card p-6 md:p-8 mb-6">
           <h2 className="text-base font-bold font-display text-text-primary mb-5 flex items-center gap-2">
             <Share2 className="h-5 w-5 text-accent-blue" />
-            Seu Codigo de Indicacao
+            Seu Código de Indicação
           </h2>
 
           {/* Code display */}
           <div className="flex flex-col sm:flex-row items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-accent-blue/5 via-accent-purple/5 to-brand-500/5 border border-surface-200 mb-6">
             <div className="flex-1 text-center sm:text-left">
-              <p className="text-xs text-text-muted mb-1 uppercase tracking-wider font-semibold">Seu codigo exclusivo</p>
+              <p className="text-xs text-text-muted mb-1 uppercase tracking-wider font-semibold">Seu código exclusivo</p>
               <p className="text-3xl md:text-4xl font-extrabold font-display text-accent-blue tracking-[0.15em]">
                 {code}
               </p>
@@ -396,7 +396,7 @@ export default function IndicarPage() {
 
           {/* Referral URL */}
           <div className="p-3 rounded-lg bg-surface-50 border border-surface-200 mb-6">
-            <p className="text-xs text-text-muted mb-1">Link de indicacao</p>
+            <p className="text-xs text-text-muted mb-1">Link de indicação</p>
             <p className="text-sm text-text-secondary break-all font-mono">
               {referralUrl}
             </p>
@@ -461,7 +461,7 @@ export default function IndicarPage() {
         <div className="card p-6 md:p-8 mb-6">
           <h2 className="text-base font-bold font-display text-text-primary mb-5 flex items-center gap-2">
             <Users className="h-5 w-5 text-accent-purple" />
-            Suas Estatisticas
+            Suas Estatísticas
           </h2>
           <div className="grid grid-cols-3 gap-4">
             <div className="stat-card stat-card-blue text-center">
@@ -483,13 +483,13 @@ export default function IndicarPage() {
               <p className="text-2xl font-extrabold font-display text-text-primary">
                 {conversionRate}%
               </p>
-              <p className="text-xs text-text-muted mt-0.5">Conversao</p>
+              <p className="text-xs text-text-muted mt-0.5">Conversão</p>
             </div>
           </div>
           {stats.visits === 0 && stats.clickouts === 0 && (
             <div className="text-center mt-5 p-4 rounded-xl bg-surface-50 border border-surface-200/60">
               <p className="text-sm text-text-muted">
-                Compartilhe seu link para comecar a rastrear suas indicacoes.
+                Compartilhe seu link para começar a rastrear suas indicações.
               </p>
               <button
                 onClick={() => handleCopy("stats-empty")}
@@ -572,7 +572,7 @@ export default function IndicarPage() {
               </div>
               <div className="min-w-0">
                 <h3 className="font-display font-bold text-sm text-text-primary">Grupo WhatsApp</h3>
-                <p className="text-xs text-text-muted">Resumo diario de ofertas</p>
+                <p className="text-xs text-text-muted">Resumo diário de ofertas</p>
               </div>
               <ArrowRight className="h-4 w-4 text-surface-300 group-hover:text-[#25D366] flex-shrink-0 transition-colors" />
             </a>

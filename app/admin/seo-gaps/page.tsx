@@ -23,18 +23,18 @@ const typeConfig: Record<
     action: "Criar guia",
   },
   comparison: {
-    label: "Comparacao",
+    label: "Comparação",
     icon: GitCompare,
     color: "text-accent-purple",
     bg: "bg-purple-50",
     action: "Criar comparativo",
   },
   price: {
-    label: "Pagina de Preco",
+    label: "Página de Preço",
     icon: TrendingUp,
     color: "text-accent-green",
     bg: "bg-green-50",
-    action: "Criar pagina de ofertas",
+    action: "Criar página de ofertas",
   },
   collection: {
     label: "Landing Page",
@@ -70,7 +70,7 @@ export default async function AdminSEOGapsPage() {
   const sections = [
     { title: "Marcas sem Guia", items: guides, type: "guide" as const },
     { title: "Categorias sem Landing", items: collections, type: "collection" as const },
-    { title: "Comparacoes Promissoras", items: comparisons, type: "comparison" as const },
+    { title: "Comparações Promissoras", items: comparisons, type: "comparison" as const },
     { title: "Keywords Descobertas", items: keywords, type: "price" as const },
   ];
 
@@ -79,10 +79,10 @@ export default async function AdminSEOGapsPage() {
       <div>
         <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
           <SearchX className="h-6 w-6 text-accent-blue" />
-          Gaps de Conteudo SEO
+          Gaps de Conteúdo SEO
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Oportunidades de conteudo identificadas automaticamente com base no catalogo, buscas e clickouts
+          Oportunidades de conteúdo identificadas automaticamente com base no catálogo, buscas e clickouts
         </p>
       </div>
 
@@ -111,7 +111,7 @@ export default async function AdminSEOGapsPage() {
         <div className="rounded-xl border border-surface-200 bg-white p-12 text-center">
           <AlertTriangle className="h-8 w-8 text-text-muted mx-auto mb-3" />
           <p className="text-sm text-text-muted">
-            Nenhum gap de conteudo identificado. O catalogo pode estar vazio ou todas as oportunidades ja foram cobertas.
+            Nenhum gap de conteúdo identificado. O catálogo pode estar vazio ou todas as oportunidades ja foram cobertas.
           </p>
         </div>
       )}

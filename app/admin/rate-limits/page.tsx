@@ -58,7 +58,7 @@ export default function RateLimitsPage() {
   }, [fetchStats]);
 
   const typeLabels: Record<string, string> = {
-    public: "API Publica",
+    public: "API Pública",
     search: "Busca",
     clickout: "Clickout",
     alerts: "Alertas",
@@ -84,7 +84,7 @@ export default function RateLimitsPage() {
           <div>
             <h1 className="text-xl font-bold font-display text-text-primary">Rate Limits</h1>
             <p className="text-sm text-text-muted">
-              Monitoramento em tempo real dos limites de requisicao
+              Monitoramento em tempo real dos limites de requisição
             </p>
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function RateLimitsPage() {
             <p className="text-sm font-semibold text-red-800">Erro ao carregar dados</p>
             <p className="text-xs text-red-700 mt-0.5">{error}</p>
             <p className="text-xs text-red-600 mt-1 opacity-70">
-              Verifique se o secret esta correto na URL e se a API esta acessivel.
+              Verifique se o secret está correto na URL e se a API está acessível.
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function RateLimitsPage() {
               <div>
                 <p className="text-sm font-semibold text-blue-800">Nenhum rate limiter ativo</p>
                 <p className="text-xs text-blue-700 mt-0.5">
-                  Nenhuma requisicao recebida nos endpoints protegidos. Isso e normal se o site acabou de iniciar.
+                  Nenhuma requisição recebida nos endpoints protegidos. Isso e normal se o site acabou de iniciar.
                 </p>
               </div>
             </div>

@@ -21,13 +21,13 @@ export function generateProductMeta(product: {
     : "";
 
   const discountStr =
-    discount && discount > 0 ? ` com ate ${discount}% de desconto` : "";
+    discount && discount > 0 ? ` com até ${discount}% de desconto` : "";
 
   const brandStr = brand ? ` da ${brand}` : "";
 
   return {
-    title: `${name}${brandStr} - Melhor Preco e Ofertas`,
-    description: `Compare precos de ${name}${brandStr}${priceStr}${discountStr}. Historico real de precos, cupons e alertas de queda. Encontre a melhor oferta no PromoSnap.`,
+    title: `${name}${brandStr} - Melhor Preço e Ofertas`,
+    description: `Compare preços de ${name}${brandStr}${priceStr}${discountStr}. Histórico real de preços, cupons e alertas de queda. Encontre a melhor oferta no PromoSnap.`,
   };
 }
 
@@ -39,8 +39,8 @@ export function generateCategoryMeta(category: {
   const countStr = productCount > 0 ? `${productCount}+ produtos` : "ofertas";
 
   return {
-    title: `${name} - Melhores Ofertas e Precos`,
-    description: `Compare precos de ${countStr} em ${name}. Encontre as melhores ofertas, descontos reais e frete gratis. Historico de precos e alertas no PromoSnap.`,
+    title: `${name} - Melhores Ofertas e Preços`,
+    description: `Compare preços de ${countStr} em ${name}. Encontre as melhores ofertas, descontos reais e frete grátis. Histórico de preços e alertas no PromoSnap.`,
   };
 }
 
@@ -52,7 +52,7 @@ export function generateBrandMeta(brand: {
   const countStr = productCount > 0 ? `${productCount}+ produtos` : "ofertas";
 
   return {
-    title: `${name} - Melhores Ofertas e Precos`,
-    description: `Encontre ${countStr} de ${name} com precos comparados. Veja descontos reais, historico de precos e economize em produtos ${name} no PromoSnap.`,
+    title: `${name} - Melhores Ofertas e Preços`,
+    description: `Encontre ${countStr} de ${name} com preços comparados. Veja descontos reais, histórico de preços e economize em produtos ${name} no PromoSnap.`,
   };
 }

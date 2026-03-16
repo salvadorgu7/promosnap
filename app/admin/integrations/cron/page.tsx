@@ -96,7 +96,7 @@ export default async function CronIntegrationPage() {
           <Timer className="h-6 w-6" /> Cron Jobs
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Configuracao e diagnostico dos jobs agendados
+          Configuração e diagnóstico dos jobs agendados
         </p>
       </div>
 
@@ -120,7 +120,7 @@ export default async function CronIntegrationPage() {
       {/* Configuration */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Settings className="h-4 w-4" /> Configuracao
+          <Settings className="h-4 w-4" /> Configuração
         </h2>
         <EnvRow label="CRON_SECRET" present={hasCronSecret} />
         <div className="flex items-center justify-between py-2 border-b border-gray-100">
@@ -135,7 +135,7 @@ export default async function CronIntegrationPage() {
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 text-xs text-amber-600">
-              <AlertTriangle className="h-3.5 w-3.5" /> Nao encontrado
+              <AlertTriangle className="h-3.5 w-3.5" /> Não encontrado
             </span>
           )}
         </div>
@@ -144,7 +144,7 @@ export default async function CronIntegrationPage() {
       {/* Last Run */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Play className="h-4 w-4" /> Ultima Execucao
+          <Play className="h-4 w-4" /> Última Execução
         </h2>
         {lastRun ? (
           <div className="space-y-2 text-xs">
@@ -167,7 +167,7 @@ export default async function CronIntegrationPage() {
             </div>
             {lastRun.durationMs != null && (
               <div className="flex items-center justify-between">
-                <span className="text-text-muted">Duracao</span>
+                <span className="text-text-muted">Duração</span>
                 <span className="font-mono">{(lastRun.durationMs / 1000).toFixed(1)}s</span>
               </div>
             )}
@@ -179,14 +179,14 @@ export default async function CronIntegrationPage() {
             )}
           </div>
         ) : (
-          <p className="text-xs text-text-muted">Nenhuma execucao registrada</p>
+          <p className="text-xs text-text-muted">Nenhuma execução registrada</p>
         )}
       </div>
 
       {/* Recent Errors */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
-          <XCircle className="h-4 w-4" /> Ultimos Erros
+          <XCircle className="h-4 w-4" /> Últimos Erros
         </h2>
         {recentErrors.length === 0 ? (
           <p className="text-xs text-text-muted">Nenhum erro registrado</p>

@@ -265,7 +265,7 @@ export async function getAvailableFilters(
   if (freeCount > 0 && freeCount < filterables.length) {
     filters.push({
       key: "freeShipping",
-      label: "Frete Gratis",
+      label: "Frete Grátis",
       type: "toggle",
       values: [
         { value: "true", label: "Frete gratis", count: freeCount },

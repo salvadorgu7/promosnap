@@ -49,7 +49,7 @@ const PRIORITY_STYLES: Record<string, string> = {
 
 const PRIORITY_LABELS: Record<string, string> = {
   high: "Alta",
-  medium: "Media",
+  medium: "Média",
   low: "Baixa",
 };
 
@@ -91,7 +91,7 @@ export default async function GrowthOpsPage() {
   // Summary cards with trends
   const summaryCards = [
     {
-      label: "Catalogo",
+      label: "Catálogo",
       count: catalogOps.totalOpportunities,
       icon: Package,
       color: "text-accent-blue",
@@ -102,13 +102,13 @@ export default async function GrowthOpsPage() {
       trend: catalogOps.totalOpportunities > 5 ? "up" : catalogOps.totalOpportunities > 0 ? "neutral" : "down",
     },
     {
-      label: "Importacao",
+      label: "Importação",
       count: trendGaps.importOpportunities.length,
       icon: Upload,
       color: "text-accent-orange",
       borderColor: "border-l-accent-orange",
       bgColor: "bg-accent-orange/5",
-      description: "Keywords em alta sem produtos no catalogo",
+      description: "Keywords em alta sem produtos no catálogo",
       href: "/admin/imports",
       trend: trendGaps.importOpportunities.length > 3 ? "up" : "neutral",
     },
@@ -119,12 +119,12 @@ export default async function GrowthOpsPage() {
       color: "text-accent-green",
       borderColor: "border-l-accent-green",
       bgColor: "bg-accent-green/5",
-      description: "Keywords com produtos mas sem pagina SEO",
+      description: "Keywords com produtos mas sem página SEO",
       href: "/admin/seo",
       trend: trendGaps.pageOpportunities.length > 0 ? "up" : "neutral",
     },
     {
-      label: "Conteudo",
+      label: "Conteúdo",
       count: trendGaps.contentOpportunities.length,
       icon: FileText,
       color: "text-accent-purple",
@@ -135,13 +135,13 @@ export default async function GrowthOpsPage() {
       trend: trendGaps.contentOpportunities.length > 2 ? "up" : "neutral",
     },
     {
-      label: "Distribuicao",
+      label: "Distribuição",
       count: trendGaps.distributionOpportunities.length + readyOffers.length,
       icon: Radio,
       color: "text-brand-500",
       borderColor: "border-l-brand-500",
       bgColor: "bg-brand-500/5",
-      description: "Ofertas prontas para canais de distribuicao",
+      description: "Ofertas prontas para canais de distribuição",
       href: "/admin/distribution",
       trend: readyOffers.length > 0 ? "up" : "neutral",
     },
@@ -157,7 +157,7 @@ export default async function GrowthOpsPage() {
             Growth & Ops
           </h1>
           <p className="text-sm text-text-muted">
-            Oportunidades priorizadas de catalogo, conteudo, SEO e distribuicao
+            Oportunidades priorizadas de catálogo, conteúdo, SEO e distribuição
           </p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-blue/10 text-accent-blue text-xs font-medium">
@@ -199,7 +199,7 @@ export default async function GrowthOpsPage() {
                 Oportunidades de Receita
               </h2>
               <p className="text-[10px] text-text-muted">
-                Produtos com maior potencial de monetizacao
+                Produtos com maior potencial de monetização
               </p>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default async function GrowthOpsPage() {
               <div>
                 <h3 className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-1.5">
                   <Eye className="h-3 w-3 text-accent-orange" />
-                  Alto Trafego, Baixa Conversao
+                  Alto Trafego, Baixa Conversão
                 </h3>
                 <div className="space-y-1.5">
                   {underperformers.map((p) => (
@@ -305,7 +305,7 @@ export default async function GrowthOpsPage() {
                 Money Map
               </h2>
               <p className="text-[10px] text-text-muted">
-                Interesse vs receita — onde ha gap de monetizacao
+                Interesse vs receita — onde ha gap de monetização
               </p>
             </div>
           </div>
@@ -464,7 +464,7 @@ export default async function GrowthOpsPage() {
                             <MousePointerClick className="h-2.5 w-2.5" />
                             {p.clickouts30d} clickouts
                           </span>
-                          <span>{p.uniqueSessions} sessoes</span>
+                          <span>{p.uniqueSessions} sessões</span>
                         </div>
                       </div>
                       <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-accent-green/10 text-accent-green">
@@ -505,7 +505,7 @@ export default async function GrowthOpsPage() {
             <div className="mt-4 pt-4 border-t border-surface-200">
               <h3 className="text-xs font-semibold text-text-secondary mb-2 flex items-center gap-1.5">
                 <Activity className="h-3 w-3 text-accent-purple" />
-                Conteudo que Converte
+                Conteúdo que Converte
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {compounding.conversionContent.slice(0, 6).map((item, i) => (
@@ -556,10 +556,10 @@ export default async function GrowthOpsPage() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-text-primary">
-                Proximas Acoes Recomendadas
+                Próximas Ações Recomendadas
               </h2>
               <p className="text-[10px] text-text-muted">
-                Acoes baseadas no estado atual do catalogo e dados de performance
+                Ações baseadas no estado atual do catálogo e dados de performance
               </p>
             </div>
           </div>
@@ -594,7 +594,7 @@ export default async function GrowthOpsPage() {
       {/* ── Section Divider ── */}
       <div className="border-t border-surface-200" />
 
-      {/* ── Acoes Sugeridas ── */}
+      {/* ── Ações Sugeridas ── */}
       {automationSuggestions.length > 0 && (
         <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
@@ -604,10 +604,10 @@ export default async function GrowthOpsPage() {
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-text-primary">
-                  Acoes Sugeridas
+                  Ações Sugeridas
                 </h2>
                 <p className="text-[10px] text-text-muted">
-                  Sugestoes automatizadas priorizadas pela engine de automacao
+                  Sugestoes automatizadas priorizadas pela engine de automação
                 </p>
               </div>
             </div>
@@ -659,12 +659,12 @@ export default async function GrowthOpsPage() {
       {/* Import Opportunities */}
       {trendGaps.importOpportunities.length > 0 && (
         <Section
-          title="Oportunidades de Importacao"
+          title="Oportunidades de Importação"
           subtitle="Keywords em alta sem produtos — importar para capturar demanda"
           icon={Upload}
           iconColor="text-accent-orange"
           count={trendGaps.importOpportunities.length}
-          actionLabel="Importar Catalogo"
+          actionLabel="Importar Catálogo"
           actionHref="/admin/imports"
         >
           <div className="space-y-2">
@@ -678,8 +678,8 @@ export default async function GrowthOpsPage() {
       {/* Page (SEO) Opportunities */}
       {trendGaps.pageOpportunities.length > 0 && (
         <Section
-          title="Oportunidades de Pagina SEO"
-          subtitle="Produtos existem mas sem pagina otimizada para buscadores"
+          title="Oportunidades de Página SEO"
+          subtitle="Produtos existem mas sem página otimizada para buscadores"
           icon={Globe}
           iconColor="text-accent-green"
           count={trendGaps.pageOpportunities.length}
@@ -697,12 +697,12 @@ export default async function GrowthOpsPage() {
       {/* Content Opportunities */}
       {trendGaps.contentOpportunities.length > 0 && (
         <Section
-          title="Oportunidades de Conteudo"
+          title="Oportunidades de Conteúdo"
           subtitle="Keywords com produtos mas sem artigo ou guia editorial"
           icon={FileText}
           iconColor="text-accent-purple"
           count={trendGaps.contentOpportunities.length}
-          actionLabel="Criar Conteudo"
+          actionLabel="Criar Conteúdo"
           actionHref="/admin/artigos"
         >
           <div className="space-y-2">
@@ -716,7 +716,7 @@ export default async function GrowthOpsPage() {
       {/* Distribution Opportunities */}
       {(trendGaps.distributionOpportunities.length > 0 || readyOffers.length > 0) && (
         <Section
-          title="Oportunidades de Distribuicao"
+          title="Oportunidades de Distribuição"
           subtitle="Ofertas prontas para publicar em Telegram, WhatsApp, e-mail"
           icon={Radio}
           iconColor="text-brand-500"
@@ -766,7 +766,7 @@ export default async function GrowthOpsPage() {
           icon={Package}
           iconColor="text-accent-blue"
           count={catalogOps.emptyCategories.length}
-          actionLabel="Editar Catalogo"
+          actionLabel="Editar Catálogo"
           actionHref="/admin/catalog-edit"
         >
           <div className="space-y-2">
@@ -804,7 +804,7 @@ export default async function GrowthOpsPage() {
             Nenhuma oportunidade identificada no momento.
           </p>
           <p className="text-text-muted text-xs mt-1">
-            Importe tendencias e produtos para gerar oportunidades automaticamente.
+            Importe tendências e produtos para gerar oportunidades automaticamente.
           </p>
         </div>
       )}
@@ -854,7 +854,7 @@ function QuickActionButton({ type, slug }: { type: string; slug?: string }) {
   } else if (type === "Expandir Cobertura") {
     href = "/admin/imports";
     label = "Expandir";
-  } else if (type.includes("Guia") || type.includes("Review") || type.includes("Comparativo") || type.includes("Conteudo")) {
+  } else if (type.includes("Guia") || type.includes("Review") || type.includes("Comparativo") || type.includes("Conteúdo")) {
     href = "/admin/artigos";
     label = "Criar";
   }

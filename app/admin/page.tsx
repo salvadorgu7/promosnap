@@ -131,7 +131,7 @@ export default async function AdminDashboard() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-text-primary">Command Center</h1>
-          <p className="text-sm text-text-muted">Visao geral do PromoSnap</p>
+          <p className="text-sm text-text-muted">Visão geral do PromoSnap</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="status-ok">
@@ -140,7 +140,7 @@ export default async function AdminDashboard() {
           </div>
           {lastJob && (
             <div className="text-xs text-text-muted">
-              Ultimo job: <span className="font-medium text-text-secondary">{lastJob.jobName}</span>{" "}
+              Último job: <span className="font-medium text-text-secondary">{lastJob.jobName}</span>{" "}
               <span className={jobStatusIcon[lastJob.status]?.color || "text-text-muted"}>
                 {lastJob.status}
               </span>{" "}
@@ -150,14 +150,14 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* Pendencias Criticas + Sistema */}
+      {/* Pendências Críticas + Sistema */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Pendencias Criticas */}
+        {/* Pendências Críticas */}
         {criticalOpen.length > 0 && (
           <div className="stat-card stat-card-red lg:col-span-2">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="h-4 w-4 text-red-500" />
-              <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Pendencias Criticas</span>
+              <span className="text-xs text-text-muted uppercase tracking-wider font-semibold">Pendências Críticas</span>
               <span className="ml-auto text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
                 {criticalOpen.length}
               </span>
@@ -177,7 +177,7 @@ export default async function AdminDashboard() {
             <div className="mt-2 pt-2 border-t border-surface-200 flex items-center gap-4 text-[10px] text-text-muted">
               <span>{pendingAudit.totalOpen} abertas</span>
               <span>{pendingAudit.totalPartial} parciais</span>
-              <span>{pendingAudit.totalClosed} concluidas</span>
+              <span>{pendingAudit.totalClosed} concluídas</span>
             </div>
           </div>
         )}
@@ -192,7 +192,7 @@ export default async function AdminDashboard() {
           <p className="text-xs text-text-muted mt-1">{integritySummary.status}</p>
           <div className="mt-2 pt-2 border-t border-surface-200 flex items-center gap-3 text-[10px] text-text-muted">
             {integritySummary.criticalCount > 0 && (
-              <span className="text-red-500 font-medium">{integritySummary.criticalCount} criticos</span>
+              <span className="text-red-500 font-medium">{integritySummary.criticalCount} críticos</span>
             )}
             {integritySummary.warningCount > 0 && (
               <span className="text-amber-500 font-medium">{integritySummary.warningCount} avisos</span>
@@ -269,12 +269,12 @@ export default async function AdminDashboard() {
               </div>
               {productsTotal > 0 && clickouts7d === 0 && (
                 <p className="mt-3 pt-2 border-t border-surface-200 text-[11px] text-red-500 font-medium">
-                  ⚠ Zero clickouts — o funil para antes da conversao. Verificar CTAs e affiliate URLs.
+                  ⚠ Zero clickouts — o funil para antes da conversão. Verificar CTAs e affiliate URLs.
                 </p>
               )}
               {productsTotal > 0 && clickouts7d > 0 && (
                 <p className="mt-3 pt-2 border-t border-surface-200 text-[11px] text-text-muted">
-                  Taxa de conversao estimada: <span className="font-bold text-text-primary">{((clickouts7d / Math.max(readyForDistribution, 1)) * 100).toFixed(1)}%</span> das ofertas prontas geraram click
+                  Taxa de conversão estimada: <span className="font-bold text-text-primary">{((clickouts7d / Math.max(readyForDistribution, 1)) * 100).toFixed(1)}%</span> das ofertas prontas geraram click
                 </p>
               )}
             </div>
@@ -359,22 +359,22 @@ export default async function AdminDashboard() {
         const amazonAffiliate = !!process.env.AMAZON_AFFILIATE_TAG;
 
         // Critical blockers — these prevent revenue
-        if (!mlAffiliate) blockers.push({ text: "MERCADOLIVRE_AFFILIATE_ID ausente — clicks no ML nao geram comissao", severity: "critical" });
-        if (!amazonAffiliate) blockers.push({ text: "AMAZON_AFFILIATE_TAG ausente — clicks na Amazon nao geram comissao", severity: "critical" });
-        if (productsTotal === 0) blockers.push({ text: "Catalogo vazio — sem produtos, sem receita possivel", severity: "critical" });
-        if (stats.activeOffers === 0 && productsTotal > 0) blockers.push({ text: "Zero ofertas ativas — produtos existem mas nao tem precos", severity: "critical" });
-        if (readyForDistribution === 0 && stats.activeOffers > 0) blockers.push({ text: "Nenhuma oferta com affiliate URL — clicks existem mas nao monetizam", severity: "critical" });
-        if (stats.clickoutsToday === 0 && clickouts7d === 0) blockers.push({ text: "Zero clickouts — ninguem esta clicando para comprar", severity: "critical" });
+        if (!mlAffiliate) blockers.push({ text: "MERCADOLIVRE_AFFILIATE_ID ausente — clicks no ML não geram comissão", severity: "critical" });
+        if (!amazonAffiliate) blockers.push({ text: "AMAZON_AFFILIATE_TAG ausente — clicks na Amazon não geram comissão", severity: "critical" });
+        if (productsTotal === 0) blockers.push({ text: "Catálogo vazio — sem produtos, sem receita possível", severity: "critical" });
+        if (stats.activeOffers === 0 && productsTotal > 0) blockers.push({ text: "Zero ofertas ativas — produtos existem mas não tem preços", severity: "critical" });
+        if (readyForDistribution === 0 && stats.activeOffers > 0) blockers.push({ text: "Nenhuma oferta com affiliate URL — clicks existem mas não monetizam", severity: "critical" });
+        if (stats.clickoutsToday === 0 && clickouts7d === 0) blockers.push({ text: "Zero clickouts — ninguém está clicando para comprar", severity: "critical" });
 
         // Warnings — these reduce revenue
-        if (errorSources > 0) blockers.push({ text: `${errorSources} fonte(s) com erro — precos desatualizados`, severity: "warning" });
+        if (errorSources > 0) blockers.push({ text: `${errorSources} fonte(s) com erro — preços desatualizados`, severity: "warning" });
         if (lastJob?.status === "FAILED") blockers.push({ text: `Job "${lastJob.jobName}" falhou — pipeline pode estar parado`, severity: "warning" });
-        if (!mlConfigured) blockers.push({ text: "ML API nao configurada — discovery automatico desabilitado", severity: "warning" });
-        if (candidatesPending > 0) blockers.push({ text: `${candidatesPending} candidato(s) esperando revisao em Ingestao`, severity: "warning" });
+        if (!mlConfigured) blockers.push({ text: "ML API não configurada — discovery automático desabilitado", severity: "warning" });
+        if (candidatesPending > 0) blockers.push({ text: `${candidatesPending} candidato(s) esperando revisão em Ingestão`, severity: "warning" });
 
         // Growth opportunities
-        if (!emailConfigured) blockers.push({ text: "RESEND_API_KEY ausente — alertas de preco e newsletters desabilitados", severity: "info" });
-        if (trendingWithoutCoverage > 0) blockers.push({ text: `${trendingWithoutCoverage} keywords trending sem produtos no catalogo`, severity: "info" });
+        if (!emailConfigured) blockers.push({ text: "RESEND_API_KEY ausente — alertas de preço e newsletters desabilitados", severity: "info" });
+        if (trendingWithoutCoverage > 0) blockers.push({ text: `${trendingWithoutCoverage} keywords trending sem produtos no catálogo`, severity: "info" });
 
         if (blockers.length === 0) return (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4">
@@ -382,7 +382,7 @@ export default async function AdminDashboard() {
               <CheckCircle className="h-4 w-4 text-green-600" />
               <h3 className="font-bold text-green-800 text-sm">Sistema Operacional</h3>
             </div>
-            <p className="text-sm text-green-700 mt-1">Nenhum bloqueio critico identificado. Pipeline de receita funcional.</p>
+            <p className="text-sm text-green-700 mt-1">Nenhum bloqueio crítico identificado. Pipeline de receita funcional.</p>
           </div>
         );
 
@@ -398,7 +398,7 @@ export default async function AdminDashboard() {
               <h3 className="font-bold text-text-primary text-sm">O Que Bloqueia Receita</h3>
               {criticals.length > 0 && (
                 <span className="ml-auto text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
-                  {criticals.length} critico{criticals.length !== 1 ? "s" : ""}
+                  {criticals.length} crítico{criticals.length !== 1 ? "s" : ""}
                 </span>
               )}
             </div>
@@ -438,11 +438,11 @@ export default async function AdminDashboard() {
         );
       })()}
 
-      {/* Acoes do dia */}
+      {/* Ações do dia */}
       <div className="card p-5 border-l-4 border-l-brand-500">
         <div className="flex items-center gap-2 mb-3">
           <Flame className="h-5 w-5 text-brand-500" />
-          <h2 className="text-sm font-semibold font-display text-text-primary">Acoes do Dia</h2>
+          <h2 className="text-sm font-semibold font-display text-text-primary">Ações do Dia</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {candidatesPending > 0 && (
@@ -502,7 +502,7 @@ export default async function AdminDashboard() {
             >
               <Clock className={`h-4 w-4 flex-shrink-0 ${lastJob.status === "FAILED" ? "text-red-500" : "text-text-muted"}`} />
               <div>
-                <p className="text-sm font-medium text-text-primary">Ultimo job</p>
+                <p className="text-sm font-medium text-text-primary">Último job</p>
                 <p className={`text-[10px] ${lastJob.status === "FAILED" ? "text-red-500 font-medium" : "text-text-muted"}`}>
                   {lastJob.status} {timeAgo(new Date(lastJob.startedAt))}
                 </p>
@@ -554,7 +554,7 @@ export default async function AdminDashboard() {
         <div className="admin-section-header">
           <BarChart3 className="h-5 w-5 text-accent-blue" />
           <div>
-            <h2 className="admin-section-title">Clickouts - Ultimos 7 dias</h2>
+            <h2 className="admin-section-title">Clickouts - Últimos 7 dias</h2>
           </div>
         </div>
         {days.length === 0 ? (
@@ -586,7 +586,7 @@ export default async function AdminDashboard() {
         <div className="admin-card">
           <div className="admin-section-header">
             <MousePointerClick className="h-5 w-5 text-accent-orange" />
-            <h2 className="admin-section-title">Ultimos Clickouts</h2>
+            <h2 className="admin-section-title">Últimos Clickouts</h2>
           </div>
           {recentClickouts.length === 0 ? (
             <p className="text-sm text-text-muted">Nenhum clickout registrado.</p>

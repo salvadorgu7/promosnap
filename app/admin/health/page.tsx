@@ -60,17 +60,17 @@ function operationalGuidance(check: HealthCheckResult): string | null {
   if (name.includes('database'))
     return 'Verifique DATABASE_URL e conectividade de rede. Sem banco, nenhuma funcionalidade opera.'
   if (name.includes('source'))
-    return 'Nenhuma fonte ativa. Acesse /admin/fontes e ative pelo menos uma fonte para ingestao.'
+    return 'Nenhuma fonte ativa. Acesse /admin/fontes e ative pelo menos uma fonte para ingestão.'
   if (name.includes('job'))
     return 'Jobs falhando indicam problemas de dados ou conectividade. Verifique os logs em /admin/monitoring.'
   if (name.includes('sitemap'))
-    return 'Sitemap nao gerado. Execute o job de sitemap manualmente em /admin/jobs ou aguarde o proximo cron.'
+    return 'Sitemap não gerado. Execute o job de sitemap manualmente em /admin/jobs ou aguarde o próximo cron.'
   if (name.includes('email') || name.includes('resend'))
-    return 'Sem RESEND_API_KEY, emails nao serao enviados. Crie conta em resend.com e configure.'
+    return 'Sem RESEND_API_KEY, emails não serão enviados. Crie conta em resend.com e configure.'
   if (name.includes('cron'))
-    return 'Sem CRON_SECRET, jobs agendados nao executam. Precos e scores ficam desatualizados.'
+    return 'Sem CRON_SECRET, jobs agendados não executam. Preços e scores ficam desatualizados.'
   if (name.includes('env'))
-    return 'Variaveis de ambiente criticas ausentes. Acesse /admin/config para ver quais faltam.'
+    return 'Variáveis de ambiente críticas ausentes. Acesse /admin/config para ver quais faltam.'
   if (name.includes('build') || name.includes('runtime'))
     return 'Problema no build ou runtime. Verifique os logs do deploy e o NODE_ENV.'
   return null
@@ -167,11 +167,11 @@ async function getCatalogStats() {
   // Recommendations
   const recommendations: string[] = []
   if (services.email === 'missing') recommendations.push('Configurar RESEND_API_KEY para envio de emails')
-  if (services.ml === 'missing') recommendations.push('Configurar credenciais ML para discovery automatico')
+  if (services.ml === 'missing') recommendations.push('Configurar credenciais ML para discovery automático')
   if (services.analytics === 'missing') recommendations.push('Configurar NEXT_PUBLIC_GA_ID para analytics')
-  if (services.cron === 'open_mode') recommendations.push('CRON_SECRET nao configurado — cron acessivel sem auth')
+  if (services.cron === 'open_mode') recommendations.push('CRON_SECRET não configurado — cron acessível sem auth')
   if (subscribers === 0) recommendations.push('Nenhum subscriber ativo — captar assinantes')
-  if (activeAlerts === 0) recommendations.push('Nenhum alerta ativo — promover funcionalidade para usuarios')
+  if (activeAlerts === 0) recommendations.push('Nenhum alerta ativo — promover funcionalidade para usuários')
   if (clickouts === 0) recommendations.push('Nenhum clickout registrado — verificar tracking')
   if (Object.keys(lastByJob).length === 0) recommendations.push('Nenhum job executado — rodar cron manualmente')
 
@@ -217,7 +217,7 @@ export default async function HealthPage() {
             System Health
           </h1>
           <p className="text-sm text-text-muted mt-1">
-            Painel de diagnostico em tempo real do sistema
+            Painel de diagnóstico em tempo real do sistema
           </p>
         </div>
         <div className="text-xs text-text-muted">
@@ -238,10 +238,10 @@ export default async function HealthPage() {
               <p className="text-sm font-medium opacity-90">Status Geral do Sistema</p>
               <p className="text-3xl font-bold font-display uppercase tracking-wide">
                 {report.status === 'healthy'
-                  ? 'Saudavel'
+                  ? 'Saudável'
                   : report.status === 'degraded'
                     ? 'Degradado'
-                    : 'Critico'}
+                    : 'Crítico'}
               </p>
             </div>
           </div>
@@ -256,7 +256,7 @@ export default async function HealthPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{report.summary.critical}</p>
-              <p className="text-xs opacity-80">Critico</p>
+              <p className="text-xs opacity-80">Crítico</p>
             </div>
           </div>
         </div>
@@ -265,7 +265,7 @@ export default async function HealthPage() {
       {/* Services Status */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider flex items-center gap-2">
-          <Server className="h-4 w-4" /> Servicos
+          <Server className="h-4 w-4" /> Serviços
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Object.entries(extra.services).map(([name, status]) => (
@@ -273,7 +273,7 @@ export default async function HealthPage() {
               <ServiceStatusDot status={status} />
               <div>
                 <p className="text-sm font-medium text-text-primary capitalize">{name === 'ml' ? 'ML / Mercado Livre' : name}</p>
-                <p className="text-[10px] text-text-muted">{status === 'configured' ? 'Configurado' : status === 'open_mode' ? 'Modo aberto' : 'Nao configurado'}</p>
+                <p className="text-[10px] text-text-muted">{status === 'configured' ? 'Configurado' : status === 'open_mode' ? 'Modo aberto' : 'Não configurado'}</p>
               </div>
             </div>
           ))}
@@ -283,7 +283,7 @@ export default async function HealthPage() {
       {/* Catalog Stats */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider flex items-center gap-2">
-          <BarChart3 className="h-4 w-4" /> Catalogo
+          <BarChart3 className="h-4 w-4" /> Catálogo
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <CatalogStatItem icon={Package} label="Produtos ativos" value={extra.catalog.products} />
@@ -291,7 +291,7 @@ export default async function HealthPage() {
           <CatalogStatItem icon={Globe} label="Listings ativos" value={extra.catalog.listings} />
           <CatalogStatItem icon={Users} label="Assinantes" value={extra.catalog.subscribers} />
           <CatalogStatItem icon={Activity} label="Clickouts" value={extra.catalog.clickouts} />
-          <CatalogStatItem icon={Mail} label="Alertas de preco" value={extra.catalog.alerts} />
+          <CatalogStatItem icon={Mail} label="Alertas de preço" value={extra.catalog.alerts} />
           <CatalogStatItem icon={CheckCircle2} label="Alertas ativos" value={extra.catalog.activeAlerts} />
           <CatalogStatItem icon={Search} label="Buscas registradas" value={extra.catalog.searchLogs} />
         </div>
@@ -329,7 +329,7 @@ export default async function HealthPage() {
       {report.checks.some((c) => c.status === 'critical') && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-red-600 uppercase tracking-wider flex items-center gap-2">
-            <XCircle className="h-4 w-4" /> Problemas Criticos
+            <XCircle className="h-4 w-4" /> Problemas Críticos
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {report.checks
@@ -373,7 +373,7 @@ export default async function HealthPage() {
       {extra.recommendations.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider flex items-center gap-2">
-            <Lightbulb className="h-4 w-4" /> Recomendacoes
+            <Lightbulb className="h-4 w-4" /> Recomendações
           </h2>
           <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
             <ul className="space-y-2">

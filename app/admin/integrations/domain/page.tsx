@@ -71,10 +71,10 @@ export default function DomainIntegrationPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
-          <Globe className="h-6 w-6" /> Dominio & URLs
+          <Globe className="h-6 w-6" /> Domínio & URLs
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Configuracao de dominio e URLs canonicas do sistema
+          Configuração de domínio e URLs canônicas do sistema
         </p>
       </div>
 
@@ -98,11 +98,11 @@ export default function DomainIntegrationPage() {
       {/* Domain Detection */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Settings className="h-4 w-4" /> Deteccao de Dominio
+          <Settings className="h-4 w-4" /> Detecção de Domínio
         </h2>
         <div className="space-y-2 text-xs">
           <div className="flex items-center justify-between">
-            <span className="text-text-muted">Dominio detectado</span>
+            <span className="text-text-muted">Domínio detectado</span>
             <span className="font-mono font-semibold">{baseUrl}</span>
           </div>
           <div className="flex items-center justify-between">
@@ -115,7 +115,7 @@ export default function DomainIntegrationPage() {
       {/* Environment Variables */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Settings className="h-4 w-4" /> Variaveis de Ambiente
+          <Settings className="h-4 w-4" /> Variáveis de Ambiente
         </h2>
         <EnvRow label="APP_URL" present={hasAppUrl} />
         <EnvRow label="NEXT_PUBLIC_APP_URL" present={hasPublicUrl} />
@@ -124,7 +124,7 @@ export default function DomainIntegrationPage() {
       {/* Validation Checks */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Shield className="h-4 w-4" /> Validacoes
+          <Shield className="h-4 w-4" /> Validações
         </h2>
         <div className="space-y-2">
           <div className="flex items-center justify-between py-1">
@@ -135,7 +135,7 @@ export default function DomainIntegrationPage() {
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-xs text-amber-600">
-                <AlertTriangle className="h-3.5 w-3.5" /> Nao (recomendado em producao)
+                <AlertTriangle className="h-3.5 w-3.5" /> Não (recomendado em produção)
               </span>
             )}
           </div>
@@ -176,7 +176,7 @@ export default function DomainIntegrationPage() {
           <div className="flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-sm font-semibold text-red-800">Inconsistencia Detectada</h3>
+              <h3 className="text-sm font-semibold text-red-800">Inconsistência Detectada</h3>
               <p className="text-xs text-red-700 mt-1">
                 APP_URL ({appUrl}) difere de NEXT_PUBLIC_APP_URL ({publicUrl}).
                 Isso pode causar problemas de SEO, links e callbacks OAuth.

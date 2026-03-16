@@ -38,20 +38,20 @@ interface ChannelDef {
 const CHANNELS: Record<string, ChannelDef> = {
   eletronicos: {
     slug: "eletronicos",
-    name: "Eletronicos",
+    name: "Eletrônicos",
     description:
-      "Ofertas verificadas de smartphones, notebooks, fones, TVs e acessorios com alertas de preco e historico real.",
+      "Ofertas verificadas de smartphones, notebooks, fones, TVs e acessórios com alertas de preço e histórico real.",
     longDescription:
-      "O canal de Eletronicos do PromoSnap monitora continuamente os precos dos produtos mais procurados em tecnologia. Smartphones, notebooks, fones de ouvido, smart TVs, tablets e acessorios — tudo com score de oferta, historico de 90 dias e comparacao entre lojas. Receba notificacoes quando o preco atingir o menor valor historico.",
+      "O canal de Eletrônicos do PromoSnap monitora continuamente os preços dos produtos mais procurados em tecnologia. Smartphones, notebooks, fones de ouvido, smart TVs, tablets e acessórios — tudo com score de oferta, histórico de 90 dias e comparação entre lojas. Receba notificações quando o preço atingir o menor valor histórico.",
     icon: Smartphone,
     color: "text-accent-blue",
     bg: "bg-accent-blue/10",
     borderColor: "border-accent-blue/20",
     categorySlugs: ["eletronicos", "smartphones", "notebooks", "fones", "tvs"],
     benefits: [
-      "Alertas de preco para smartphones e notebooks",
-      "Comparacao entre Amazon, Mercado Livre, Shopee e Shein",
-      "Historico de 90 dias para nao cair em falso desconto",
+      "Alertas de preço para smartphones e notebooks",
+      "Comparação entre Amazon, Mercado Livre, Shopee e Shein",
+      "Histórico de 90 dias para não cair em falso desconto",
       "Cupons exclusivos de lojas de tecnologia",
       "Score de oferta calculado em tempo real",
     ],
@@ -60,9 +60,9 @@ const CHANNELS: Record<string, ChannelDef> = {
     slug: "cupons",
     name: "Cupons e Descontos",
     description:
-      "Cupons ativos, codigos promocionais e descontos exclusivos de todas as lojas monitoradas pelo PromoSnap.",
+      "Cupons ativos, códigos promocionais e descontos exclusivos de todas as lojas monitoradas pelo PromoSnap.",
     longDescription:
-      "O canal de Cupons consolida todos os codigos promocionais ativos dos marketplaces monitorados. Receba alertas quando novos cupons forem detectados, com informacoes de validade, loja de origem e produtos elegiveis. Nunca mais perca um cupom por falta de informacao.",
+      "O canal de Cupons consolida todos os códigos promocionais ativos dos marketplaces monitorados. Receba alertas quando novos cupons forem detectados, com informações de validade, loja de origem e produtos elegíveis. Nunca mais perca um cupom por falta de informação.",
     icon: Tag,
     color: "text-accent-orange",
     bg: "bg-accent-orange/10",
@@ -71,18 +71,18 @@ const CHANNELS: Record<string, ChannelDef> = {
     benefits: [
       "Cupons verificados de Amazon, Mercado Livre, Shopee e Shein",
       "Alertas de novos cupons em tempo real",
-      "Informacoes de validade e restricoes",
-      "Codigos exclusivos negociados pelo PromoSnap",
-      "Historico de cupons para prever promocoes",
+      "Informações de validade e restrições",
+      "Códigos exclusivos negociados pelo PromoSnap",
+      "Histórico de cupons para prever promoções",
     ],
   },
   "ofertas-quentes": {
     slug: "ofertas-quentes",
     name: "Ofertas Quentes",
     description:
-      "As ofertas com maior score do PromoSnap. Produtos com desconto real, preco historico baixo e alta demanda.",
+      "As ofertas com maior score do PromoSnap. Produtos com desconto real, preço histórico baixo e alta demanda.",
     longDescription:
-      "O canal de Ofertas Quentes destaca apenas produtos com score acima de 70 — ou seja, ofertas que combinam preco baixo real, historico favoravel, avaliacao positiva e alta demanda. Ideal para quem quer ser avisado so quando realmente vale a pena comprar.",
+      "O canal de Ofertas Quentes destaca apenas produtos com score acima de 70 — ou seja, ofertas que combinam preço baixo real, histórico favorável, avaliação positiva e alta demanda. Ideal para quem quer ser avisado só quando realmente vale a pena comprar.",
     icon: Flame,
     color: "text-accent-red",
     bg: "bg-accent-red/10",
@@ -90,19 +90,19 @@ const CHANNELS: Record<string, ChannelDef> = {
     categorySlugs: [],
     benefits: [
       "Apenas ofertas com score acima de 70",
-      "Preco verificado vs historico de 90 dias",
-      "Alertas imediatos quando o preco cai",
-      "Comparacao automatica entre lojas",
-      "Avaliacoes consolidadas de multiplas fontes",
+      "Preço verificado vs histórico de 90 dias",
+      "Alertas imediatos quando o preço cai",
+      "Comparação automática entre lojas",
+      "Avaliações consolidadas de múltiplas fontes",
     ],
   },
   moda: {
     slug: "moda",
     name: "Moda",
     description:
-      "Roupas, calcados e acessorios com cupons frequentes e ofertas das melhores lojas online do Brasil.",
+      "Roupas, calçados e acessórios com cupons frequentes e ofertas das melhores lojas online do Brasil.",
     longDescription:
-      "O canal de Moda do PromoSnap acompanha precos e promocoes de roupas, calcados, bolsas e acessorios nos maiores marketplaces. Com foco em Shein, Shopee e Amazon, voce recebe alertas de ofertas reais com historico de preco e avaliacoes consolidadas.",
+      "O canal de Moda do PromoSnap acompanha preços e promoções de roupas, calçados, bolsas e acessórios nos maiores marketplaces. Com foco em Shein, Shopee e Amazon, você recebe alertas de ofertas reais com histórico de preço e avaliações consolidadas.",
     icon: Shirt,
     color: "text-accent-red",
     bg: "bg-accent-red/10",
@@ -110,29 +110,29 @@ const CHANNELS: Record<string, ChannelDef> = {
     categorySlugs: ["moda", "roupas", "calcados"],
     benefits: [
       "Ofertas verificadas de Shein, Shopee e Amazon",
-      "Cupons exclusivos para moda e acessorios",
-      "Alertas de queda de preco em itens favoritos",
-      "Comparacao de precos entre lojas",
-      "Avaliacoes consolidadas de compradores reais",
+      "Cupons exclusivos para moda e acessórios",
+      "Alertas de queda de preço em itens favoritos",
+      "Comparação de preços entre lojas",
+      "Avaliações consolidadas de compradores reais",
     ],
   },
   casa: {
     slug: "casa",
-    name: "Casa & Decoracao",
+    name: "Casa & Decoração",
     description:
-      "Moveis, eletrodomesticos, decoracao e utilidades com precos verificados e historico real.",
+      "Móveis, eletrodomésticos, decoração e utilidades com preços verificados e histórico real.",
     longDescription:
-      "O canal de Casa & Decoracao monitora precos de moveis, eletrodomesticos, itens de cozinha, decoracao e utilidades domesticas. Ideal para quem esta montando ou renovando a casa e quer aproveitar ofertas reais com confianca.",
+      "O canal de Casa & Decoração monitora preços de móveis, eletrodomésticos, itens de cozinha, decoração e utilidades domésticas. Ideal para quem está montando ou renovando a casa e quer aproveitar ofertas reais com confiança.",
     icon: HomeIcon,
     color: "text-accent-orange",
     bg: "bg-accent-orange/10",
     borderColor: "border-accent-orange/20",
     categorySlugs: ["casa", "decoracao", "eletrodomesticos", "moveis", "cozinha"],
     benefits: [
-      "Monitoramento de precos em eletrodomesticos",
-      "Ofertas de moveis e decoracao com historico",
+      "Monitoramento de preços em eletrodomésticos",
+      "Ofertas de móveis e decoração com histórico",
       "Alertas para itens de cozinha e utilidades",
-      "Comparacao entre Amazon, Mercado Livre e Shopee",
+      "Comparação entre Amazon, Mercado Livre e Shopee",
       "Frete e prazo de entrega de cada loja",
     ],
   },
@@ -140,20 +140,20 @@ const CHANNELS: Record<string, ChannelDef> = {
     slug: "games",
     name: "Games",
     description:
-      "Consoles, jogos, perifericos e acessorios gamer com ofertas exclusivas e alertas de preco.",
+      "Consoles, jogos, periféricos e acessórios gamer com ofertas exclusivas e alertas de preço.",
     longDescription:
-      "O canal de Games do PromoSnap e dedicado a gamers que buscam os melhores precos em consoles, jogos, perifericos e acessorios. Monitoramos PS5, Xbox, Nintendo Switch, headsets, teclados mecanicos e muito mais — tudo com score de oferta e historico real.",
+      "O canal de Games do PromoSnap é dedicado a gamers que buscam os melhores preços em consoles, jogos, periféricos e acessórios. Monitoramos PS5, Xbox, Nintendo Switch, headsets, teclados mecânicos e muito mais — tudo com score de oferta e histórico real.",
     icon: Gamepad2,
     color: "text-accent-green",
     bg: "bg-accent-green/10",
     borderColor: "border-accent-green/20",
     categorySlugs: ["games", "consoles", "jogos", "perifericos"],
     benefits: [
-      "Alertas de preco para consoles e jogos",
-      "Ofertas de perifericos gamer verificadas",
-      "Historico de preco para nao cair em falso desconto",
+      "Alertas de preço para consoles e jogos",
+      "Ofertas de periféricos gamer verificadas",
+      "Histórico de preço para não cair em falso desconto",
       "Cupons de lojas de games e tecnologia",
-      "Comparacao entre todas as lojas monitoradas",
+      "Comparação entre todas as lojas monitoradas",
     ],
   },
 };
@@ -173,8 +173,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const channel = CHANNELS[slug];
   if (!channel) {
     return buildMetadata({
-      title: "Canal nao encontrado",
-      description: "Este canal nao existe no PromoSnap.",
+      title: "Canal não encontrado",
+      description: "Este canal não existe no PromoSnap.",
       path: `/canais/${slug}`,
       noIndex: true,
     });
@@ -205,9 +205,9 @@ export default async function ChannelPage({
           <div className="empty-state-icon">
             <Bell className="w-8 h-8 text-surface-400" />
           </div>
-          <h1 className="empty-state-title">Canal nao encontrado</h1>
+          <h1 className="empty-state-title">Canal não encontrado</h1>
           <p className="empty-state-text">
-            Este canal ainda nao existe. Explore os canais disponiveis.
+            Este canal ainda não existe. Explore os canais disponíveis.
           </p>
           <Link href="/canais" className="btn-primary">
             Ver canais
@@ -288,7 +288,7 @@ export default async function ChannelPage({
         <div className="flex items-center gap-2 mb-6">
           <Sparkles className="w-5 h-5 text-brand-500" />
           <h2 className="font-display font-bold text-xl text-text-primary">
-            O que voce recebe neste canal
+            O que você recebe neste canal
           </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -341,8 +341,8 @@ export default async function ChannelPage({
             Quer ser avisado quando este canal abrir?
           </h2>
           <p className="text-sm text-text-muted mb-7 max-w-md mx-auto">
-            Cadastre seu interesse e voce sera notificado assim que o canal de{" "}
-            {channel.name} estiver disponivel no Telegram ou WhatsApp.
+            Cadastre seu interesse e você será notificado assim que o canal de{" "}
+            {channel.name} estiver disponível no Telegram ou WhatsApp.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link

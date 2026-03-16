@@ -27,7 +27,7 @@ export function generateMetadata() {
   return buildMetadata({
     title: "Canais da Comunidade — PromoSnap",
     description:
-      "Entre nos canais do PromoSnap e receba ofertas verificadas direto no Telegram, WhatsApp ou e-mail. Canais por categoria: eletronicos, moda, casa, games e mais.",
+      "Entre nos canais do PromoSnap e receba ofertas verificadas direto no Telegram, WhatsApp ou e-mail. Canais por categoria: eletrônicos, moda, casa, games e mais.",
     path: "/canais",
   });
 }
@@ -37,7 +37,7 @@ const MAIN_CHANNELS = [
     id: "telegram-geral",
     name: "Telegram Geral",
     description:
-      "Ofertas verificadas com score alto, alertas de preco historico e cupons exclusivos. O canal mais ativo da comunidade.",
+      "Ofertas verificadas com score alto, alertas de preço histórico e cupons exclusivos. O canal mais ativo da comunidade.",
     icon: Send,
     color: "text-blue-500",
     bg: "bg-blue-500/10",
@@ -55,7 +55,7 @@ const MAIN_CHANNELS = [
     id: "whatsapp-geral",
     name: "WhatsApp Geral",
     description:
-      "Receba as melhores ofertas do dia direto no WhatsApp. Formato resumido e sem spam — so o que vale a pena.",
+      "Receba as melhores ofertas do dia direto no WhatsApp. Formato resumido e sem spam — só o que vale a pena.",
     icon: MessageCircle,
     color: "text-green-500",
     bg: "bg-green-500/10",
@@ -71,7 +71,7 @@ const MAIN_CHANNELS = [
     id: "email-daily",
     name: "E-mail / Daily Deals",
     description:
-      "Resumo diario das melhores ofertas, alertas de preco e cupons. Receba tudo organizado na sua caixa de entrada.",
+      "Resumo diário das melhores ofertas, alertas de preço e cupons. Receba tudo organizado na sua caixa de entrada.",
     icon: Mail,
     color: "text-purple-500",
     bg: "bg-purple-500/10",
@@ -89,9 +89,9 @@ const CATEGORY_CHANNELS = [
   {
     id: "eletronicos",
     slug: "eletronicos",
-    name: "Eletronicos",
+    name: "Eletrônicos",
     description:
-      "Smartphones, notebooks, fones, TVs e acessorios com as melhores ofertas e alertas de preco.",
+      "Smartphones, notebooks, fones, TVs e acessórios com as melhores ofertas e alertas de preço.",
     icon: Smartphone,
     color: "text-accent-blue",
     bg: "bg-accent-blue/10",
@@ -102,7 +102,7 @@ const CATEGORY_CHANNELS = [
     slug: "moda",
     name: "Moda",
     description:
-      "Roupas, calcados e acessorios com cupons e ofertas das melhores lojas online.",
+      "Roupas, calçados e acessórios com cupons e ofertas das melhores lojas online.",
     icon: Shirt,
     color: "text-accent-red",
     bg: "bg-accent-red/10",
@@ -111,9 +111,9 @@ const CATEGORY_CHANNELS = [
   {
     id: "casa",
     slug: "casa",
-    name: "Casa & Decoracao",
+    name: "Casa & Decoração",
     description:
-      "Moveis, eletrodomesticos, decoracao e utilidades com precos verificados.",
+      "Móveis, eletrodomésticos, decoração e utilidades com preços verificados.",
     icon: HomeIcon,
     color: "text-accent-orange",
     bg: "bg-accent-orange/10",
@@ -124,7 +124,7 @@ const CATEGORY_CHANNELS = [
     slug: "games",
     name: "Games",
     description:
-      "Consoles, jogos, perifericos e acessorios gamer com ofertas exclusivas e alertas.",
+      "Consoles, jogos, periféricos e acessórios gamer com ofertas exclusivas e alertas.",
     icon: Gamepad2,
     color: "text-accent-green",
     bg: "bg-accent-green/10",
@@ -136,28 +136,28 @@ const WHY_PARTICIPATE = [
   {
     icon: ShieldCheck,
     title: "Ofertas verificadas",
-    description: "Cada oferta passa por verificacao automatica de score e historico de preco.",
+    description: "Cada oferta passa por verificação automática de score e histórico de preço.",
     color: "text-accent-green",
     bg: "bg-accent-green/10",
   },
   {
     icon: TrendingDown,
-    title: "Alertas de preco",
-    description: "Seja notificado quando o produto que voce quer atingir o preco ideal.",
+    title: "Alertas de preço",
+    description: "Seja notificado quando o produto que você quer atingir o preço ideal.",
     color: "text-accent-blue",
     bg: "bg-accent-blue/10",
   },
   {
     icon: Gift,
     title: "Cupons exclusivos",
-    description: "Acesso a cupons e codigos promocionais antes de todo mundo.",
+    description: "Acesso a cupons e códigos promocionais antes de todo mundo.",
     color: "text-accent-orange",
     bg: "bg-accent-orange/10",
   },
   {
     icon: Target,
     title: "Zero spam",
-    description: "Sem mensagens desnecessarias. So enviamos o que realmente vale a pena.",
+    description: "Sem mensagens desnecessárias. Só enviamos o que realmente vale a pena.",
     color: "text-accent-purple",
     bg: "bg-accent-purple/10",
   },
@@ -202,7 +202,7 @@ export default function CanaisPage() {
           <span className="text-gradient">direto no seu canal</span>
         </h1>
         <p className="text-lg text-text-secondary leading-relaxed max-w-2xl mx-auto mb-8">
-          Receba alertas de preco, cupons e ofertas com score alto no Telegram,
+          Receba alertas de preço, cupons e ofertas com score alto no Telegram,
           WhatsApp ou e-mail. Escolha seu canal preferido e nunca mais perca uma
           oportunidade real.
         </p>
@@ -242,7 +242,7 @@ export default function CanaisPage() {
             24h
           </div>
           <div className="text-xs text-text-muted mt-1">
-            Monitoramento diario
+            Monitoramento diário
           </div>
         </div>
         <div className="card-depth text-center p-4">
@@ -333,7 +333,7 @@ export default function CanaisPage() {
               Por que participar?
             </h2>
             <p className="text-sm text-text-muted max-w-lg mx-auto">
-              Nossos canais sao feitos para quem quer economizar de verdade, sem perder tempo com ofertas falsas.
+              Nossos canais são feitos para quem quer economizar de verdade, sem perder tempo com ofertas falsas.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -423,7 +423,7 @@ export default function CanaisPage() {
                   1. Escolha seu canal
                 </h3>
                 <p className="text-sm text-text-muted">
-                  Telegram, WhatsApp ou e-mail — onde voce preferir receber.
+                  Telegram, WhatsApp ou e-mail — onde você preferir receber.
                 </p>
               </div>
               <div className="flex flex-col items-center">
@@ -434,7 +434,7 @@ export default function CanaisPage() {
                   2. Receba ofertas reais
                 </h3>
                 <p className="text-sm text-text-muted">
-                  Ofertas com score alto, verificadas e com historico de preco.
+                  Ofertas com score alto, verificadas e com histórico de preço.
                 </p>
               </div>
               <div className="flex flex-col items-center">
@@ -442,10 +442,10 @@ export default function CanaisPage() {
                   <Sparkles className="w-6 h-6 text-accent-orange" />
                 </div>
                 <h3 className="font-display font-bold text-text-primary mb-1">
-                  3. Compre com confianca
+                  3. Compre com confiança
                 </h3>
                 <p className="text-sm text-text-muted">
-                  Saiba se o desconto e real antes de clicar no link.
+                  Saiba se o desconto é real antes de clicar no link.
                 </p>
               </div>
             </div>
@@ -457,10 +457,10 @@ export default function CanaisPage() {
       <section className="text-center mb-8">
         <div className="card-depth p-10 md:p-12 bg-gradient-to-br from-indigo-50/60 via-white to-purple-50/40">
           <h2 className="text-2xl md:text-3xl font-extrabold font-display text-text-primary mb-3">
-            Nao perca nenhuma oferta real
+            Não perca nenhuma oferta real
           </h2>
           <p className="text-sm text-text-muted mb-7 max-w-md mx-auto">
-            Junte-se a comunidade PromoSnap e receba alertas de preco, cupons e
+            Junte-se à comunidade PromoSnap e receba alertas de preço, cupons e
             ofertas verificadas direto no seu canal preferido.
           </p>
           <Link

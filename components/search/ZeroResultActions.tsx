@@ -41,7 +41,7 @@ export default function ZeroResultActions({ query }: ZeroResultActionsProps) {
   return (
     <div className="mt-6 p-4 rounded-xl bg-surface-50 border border-surface-200">
       <h3 className="text-sm font-bold font-display text-text-primary mb-3">
-        Nao encontrou? Experimente:
+        Não encontrou? Experimente:
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {actions.map((action, i) => (

@@ -20,10 +20,10 @@ export default async function AmazonAdminPage() {
   const campaigns = getActiveCampaigns()
 
   const levelLabels: Record<string, { text: string; color: string }> = {
-    "not-configured": { text: "Nao Configurado", color: "bg-red-50 text-red-700 border-red-200" },
+    "not-configured": { text: "Não Configurado", color: "bg-red-50 text-red-700 border-red-200" },
     "affiliate-only": { text: "Affiliate Only", color: "bg-amber-50 text-amber-700 border-amber-200" },
     "api-partial": { text: "API Parcial", color: "bg-blue-50 text-blue-700 border-blue-200" },
-    "api-full": { text: "Integracao Completa", color: "bg-green-50 text-green-700 border-green-200" },
+    "api-full": { text: "Integração Completa", color: "bg-green-50 text-green-700 border-green-200" },
   }
 
   const levelInfo = levelLabels[readiness.level] || levelLabels["not-configured"]
@@ -37,7 +37,7 @@ export default async function AmazonAdminPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold font-display text-text-primary">Amazon</h1>
-          <p className="text-sm text-text-muted">Integracao, tracking e status operacional</p>
+          <p className="text-sm text-text-muted">Integração, tracking e status operacional</p>
         </div>
         <div className="ml-auto">
           <span className={`text-sm font-semibold px-3 py-1.5 rounded-lg border ${levelInfo.color}`}>
@@ -50,7 +50,7 @@ export default async function AmazonAdminPage() {
       <div className="bg-white rounded-xl border border-surface-200 p-6 mb-6">
         <h2 className="text-lg font-bold font-display text-text-primary mb-1">Tracking Tag</h2>
         <p className="text-xs text-text-muted mb-4">
-          Identificador de afiliado usado em todos os links Amazon — gera comissao para o PromoSnap
+          Identificador de afiliado usado em todos os links Amazon — gera comissão para o PromoSnap
         </p>
         <div className="flex items-center gap-3 p-4 rounded-lg bg-surface-50">
           <Link2 className="w-5 h-5 text-[#FF9900] flex-shrink-0" />
@@ -61,14 +61,14 @@ export default async function AmazonAdminPage() {
             </p>
             <p className="text-[11px] text-text-muted mt-0.5">
               {readiness.affiliateTag.ok
-                ? "Ativo — clickouts Amazon usam esta tag para atribuicao de comissao"
-                : "NAO configurado — clickouts Amazon nao geram comissao"}
+                ? "Ativo — clickouts Amazon usam esta tag para atribuição de comissão"
+                : "NÃO configurado — clickouts Amazon não geram comissão"}
             </p>
           </div>
           <StatusBadge ok={readiness.affiliateTag.ok} label={readiness.affiliateTag.ok ? "Ativo" : "Ausente"} />
         </div>
         <p className="text-[10px] text-text-muted mt-2 ml-1">
-          Importante: promosnap-20 e uma tag de afiliado, NAO um cupom de desconto. O usuario nao recebe desconto — o PromoSnap recebe comissao.
+          Importante: promosnap-20 é uma tag de afiliado, NÃO um cupom de desconto. O usuário não recebe desconto — o PromoSnap recebe comissão.
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export default async function AmazonAdminPage() {
       <div className="bg-white rounded-xl border border-surface-200 p-6 mb-6">
         <h2 className="text-lg font-bold font-display text-text-primary mb-1">Caminhos Oficiais</h2>
         <p className="text-xs text-text-muted mb-4">
-          Qual API Amazon esta disponivel para esta conta
+          Qual API Amazon está disponível para esta conta
         </p>
         <div className="space-y-3">
           {/* Creators API */}
@@ -91,7 +91,7 @@ export default async function AmazonAdminPage() {
             </div>
             {!apiStatus.creatorsApi.configured && (
               <p className="text-[10px] text-text-muted mt-2 ml-7">
-                Env vars necessarias: {apiStatus.creatorsApi.envVars.join(", ")}
+                Env vars necessárias: {apiStatus.creatorsApi.envVars.join(", ")}
               </p>
             )}
           </div>
@@ -102,13 +102,13 @@ export default async function AmazonAdminPage() {
               <Search className={`w-4 h-4 flex-shrink-0 ${apiStatus.path === "pa-api" ? "text-accent-blue" : "text-surface-400"}`} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-text-primary">PA-API 5.0</p>
-                <p className="text-[11px] text-text-muted">API classica de Product Advertising — ponte temporaria</p>
+                <p className="text-[11px] text-text-muted">API clássica de Product Advertising — ponte temporária</p>
               </div>
               <StatusBadge ok={apiStatus.paApi.configured} label={apiStatus.paApi.configured ? "Configurada" : "Pendente"} />
             </div>
             {!apiStatus.paApi.configured && (
               <p className="text-[10px] text-text-muted mt-2 ml-7">
-                Env vars necessarias: {apiStatus.paApi.envVars.join(", ")}
+                Env vars necessárias: {apiStatus.paApi.envVars.join(", ")}
               </p>
             )}
           </div>
@@ -145,7 +145,7 @@ export default async function AmazonAdminPage() {
               "Clickout com tag de afiliado (tag=promosnap-20)",
               "Attribution no pipeline de clickout",
               "Banner na homepage com link de afiliado",
-              "Bloco 'Veja na Amazon' nas paginas de produto",
+              "Bloco 'Veja na Amazon' nas páginas de produto",
               "Import manual de produtos Amazon via pipeline",
               "Source routing reconhece amazon-br (quality 0.95, revenue 4%)",
             ].map((item) => (
@@ -164,11 +164,11 @@ export default async function AmazonAdminPage() {
           </h2>
           <div className="space-y-2">
             {[
-              "Busca automatica de produtos Amazon",
-              "Sincronizacao de precos em tempo real",
-              "Feed sync periodico (cron)",
-              "Comparacao automatica Amazon vs ML",
-              "Ingestao automatizada de catalogo",
+              "Busca automática de produtos Amazon",
+              "Sincronização de preços em tempo real",
+              "Feed sync periódico (cron)",
+              "Comparação automática Amazon vs ML",
+              "Ingestão automatizada de catálogo",
               "Refresh de ofertas Amazon",
             ].map((item) => (
               <div key={item} className="flex items-start gap-2">
@@ -228,7 +228,7 @@ export default async function AmazonAdminPage() {
       <div className="bg-white rounded-xl border border-surface-200 p-6">
         <h2 className="text-base font-bold font-display text-text-primary mb-3 flex items-center gap-2">
           <ArrowRight className="w-4 h-4 text-accent-blue" />
-          Proximo Passo
+          Próximo Passo
         </h2>
         <div className="p-4 rounded-lg bg-accent-blue/5 border border-accent-blue/10">
           <p className="text-sm text-text-primary font-medium">{readiness.nextStep}</p>
@@ -239,10 +239,10 @@ export default async function AmazonAdminPage() {
             {[
               { done: readiness.affiliateTag.ok, text: "Configurar tag de afiliado (AMAZON_AFFILIATE_TAG)" },
               { done: false, text: "Verificar acesso a Creators API no Amazon Associates" },
-              { done: readiness.creatorsApi.ok, text: "Configurar credenciais Creators API (se disponivel)" },
+              { done: readiness.creatorsApi.ok, text: "Configurar credenciais Creators API (se disponível)" },
               { done: readiness.paApi.ok, text: "Ou configurar credenciais PA-API 5.0 (alternativa)" },
               { done: false, text: "Implementar feed sync com API escolhida" },
-              { done: readiness.feedSync, text: "Ativar sync periodico via cron" },
+              { done: readiness.feedSync, text: "Ativar sync periódico via cron" },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-2">
                 {item.done ? (

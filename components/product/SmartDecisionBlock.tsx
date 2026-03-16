@@ -32,8 +32,8 @@ export default function SmartDecisionBlock({
     const pctBelow = Math.round(((avg30d - currentPrice) / avg30d) * 100);
     signals.push({
       icon: TrendingDown,
-      label: "Abaixo da media",
-      detail: `${pctBelow}% mais barato que a media dos ultimos 30 dias`,
+      label: "Abaixo da média",
+      detail: `${pctBelow}% mais barato que a média dos últimos 30 dias`,
       color: "text-accent-green",
       positive: true,
     });
@@ -43,8 +43,8 @@ export default function SmartDecisionBlock({
   if (allTimeMin && currentPrice <= allTimeMin * 1.05) {
     signals.push({
       icon: TrendingDown,
-      label: "Proximo ao minimo historico",
-      detail: allTimeMin === currentPrice ? "Este e o menor preco ja registrado" : `Apenas ${formatPrice(currentPrice - allTimeMin)} acima do minimo`,
+      label: "Próximo ao mínimo histórico",
+      detail: allTimeMin === currentPrice ? "Este é o menor preço já registrado" : `Apenas ${formatPrice(currentPrice - allTimeMin)} acima do mínimo`,
       color: "text-accent-blue",
       positive: true,
     });
@@ -57,7 +57,7 @@ export default function SmartDecisionBlock({
       signals.push({
         icon: ThumbsUp,
         label: `${disc}% de desconto real`,
-        detail: `Economia de ${formatPrice(originalPrice - currentPrice)} no preco original`,
+        detail: `Economia de ${formatPrice(originalPrice - currentPrice)} no preço original`,
         color: "text-accent-green",
         positive: true,
       });
@@ -69,7 +69,7 @@ export default function SmartDecisionBlock({
     signals.push({
       icon: Scale,
       label: `${offersCount} lojas comparadas`,
-      detail: "Voce esta vendo o melhor preco entre todas as fontes",
+      detail: "Você está vendo o melhor preço entre todas as fontes",
       color: "text-brand-500",
       positive: true,
     });
@@ -79,8 +79,8 @@ export default function SmartDecisionBlock({
   if (isFreeShipping) {
     signals.push({
       icon: ThumbsUp,
-      label: "Frete gratis incluido",
-      detail: "O preco final ja inclui entrega sem custo",
+      label: "Frete grátis incluído",
+      detail: "O preço final já inclui entrega sem custo",
       color: "text-accent-purple",
       positive: true,
     });
@@ -90,8 +90,8 @@ export default function SmartDecisionBlock({
   if (trend === "up") {
     signals.push({
       icon: AlertTriangle,
-      label: "Preco subindo",
-      detail: "O preco esta acima da media recente. Considere esperar",
+      label: "Preço subindo",
+      detail: "O preço está acima da média recente. Considere esperar",
       color: "text-accent-orange",
       positive: false,
     });
@@ -119,7 +119,7 @@ export default function SmartDecisionBlock({
     <div className="card p-4 border-l-4 border-l-brand-500">
       <div className="flex items-center gap-2 mb-3">
         <Brain className="h-4 w-4 text-brand-500" />
-        <h3 className="text-sm font-bold font-display text-text-primary">Analise Inteligente</h3>
+        <h3 className="text-sm font-bold font-display text-text-primary">Análise Inteligente</h3>
         <span className={`ml-auto text-xs font-bold ${verdictColor} bg-current/10 px-2 py-0.5 rounded-full`} style={{ backgroundColor: 'transparent' }}>
           <span className={verdictColor}>{verdict}</span>
         </span>

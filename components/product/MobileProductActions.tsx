@@ -73,7 +73,7 @@ export default function MobileProductActions({
         <div className="bg-gradient-to-r from-accent-green/10 to-green-50 px-4 py-1 flex items-center justify-center gap-1.5">
           <Zap className="w-3 h-3 text-accent-green" />
           <span className="text-[10px] font-semibold text-accent-green">
-            {discount && discount >= 30 ? `${discount}% OFF — preco pode mudar a qualquer momento` : "Oportunidade verificada"}
+            {discount && discount >= 30 ? `${discount}% OFF — preço pode mudar a qualquer momento` : "Oportunidade verificada"}
           </span>
         </div>
       )}

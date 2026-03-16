@@ -72,7 +72,7 @@ function buildCategoryRelatedSearches(
   results.push(
     { label: `Melhores ${categoryName}`, href: `/busca?q=melhores+${encodeURIComponent(categoryName)}` },
     { label: `Ofertas ${categoryName}`, href: `/busca?q=ofertas+${encodeURIComponent(categoryName)}` },
-    { label: `${categoryName} menor preco`, href: `/busca?q=${encodeURIComponent(categoryName)}+menor+preco` },
+    { label: `${categoryName} menor preço`, href: `/busca?q=${encodeURIComponent(categoryName)}+menor+preco` },
   );
 
   // Deduplicate by href and limit to 8
@@ -103,8 +103,8 @@ export async function generateMetadata({
   const name = category?.name || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return buildMetadata({
-    title: `Melhores Ofertas de ${name} \u2014 Pre\u00e7os Atualizados`,
-    description: `Compare pre\u00e7os e encontre as melhores ofertas de ${name} em 2026. Hist\u00f3rico de pre\u00e7os, cupons, frete gr\u00e1tis e descontos reais atualizados.`,
+    title: `Melhores Ofertas de ${name} — Preços Atualizados`,
+    description: `Compare preços e encontre as melhores ofertas de ${name}. Histórico de preços, cupons, frete grátis e descontos reais atualizados.`,
     path: `/categoria/${slug}`,
   });
 }
@@ -205,7 +205,7 @@ export default async function CategoriaPage({
                 <Brain className="w-4.5 h-4.5 text-accent-blue" />
               </div>
               <div>
-                <p className="text-[11px] text-text-muted uppercase tracking-wide">Score medio</p>
+                <p className="text-[11px] text-text-muted uppercase tracking-wide">Score médio</p>
                 <p className="text-base font-extrabold text-text-primary">{avgScore}<span className="text-xs font-normal text-text-muted">/100</span></p>
               </div>
             </div>
@@ -223,7 +223,7 @@ export default async function CategoriaPage({
                 <Truck className="w-4.5 h-4.5 text-accent-purple" />
               </div>
               <div>
-                <p className="text-[11px] text-text-muted uppercase tracking-wide">Frete gratis</p>
+                <p className="text-[11px] text-text-muted uppercase tracking-wide">Frete grátis</p>
                 <p className="text-base font-extrabold text-accent-purple">{withFreeShipping}</p>
               </div>
             </div>
@@ -232,7 +232,7 @@ export default async function CategoriaPage({
                 <SlidersHorizontal className="w-4.5 h-4.5 text-accent-orange" />
               </div>
               <div>
-                <p className="text-[11px] text-text-muted uppercase tracking-wide">Faixa de preco</p>
+                <p className="text-[11px] text-text-muted uppercase tracking-wide">Faixa de preço</p>
                 <p className="text-xs font-bold text-text-primary">
                   {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(minPrice)} — {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(maxPrice)}
                 </p>
@@ -318,7 +318,7 @@ export default async function CategoriaPage({
         />
       )}
 
-      {/* Oportunidades Imperdiveis — top deals by offerScore */}
+      {/* Oportunidades Imperdíveis — top deals by offerScore */}
       {products.length >= 3 && (() => {
         const topDeals = [...products]
           .sort((a, b) => b.bestOffer.offerScore - a.bestOffer.offerScore)
@@ -326,7 +326,7 @@ export default async function CategoriaPage({
         return (
           <section className="mt-10">
             <h2 className="text-lg font-bold font-display text-text-primary mb-4 flex items-center gap-2">
-              <Flame className="w-5 h-5 text-accent-orange" /> Oportunidades Imperdiveis em {name}
+              <Flame className="w-5 h-5 text-accent-orange" /> Oportunidades Imperdíveis em {name}
             </h2>
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
               {topDeals.map((p) => (
@@ -373,7 +373,7 @@ export default async function CategoriaPage({
         );
       })()}
 
-      {/* Faixas de Preco — price range navigation */}
+      {/* Faixas de Preço — price range navigation */}
       {products.length >= 5 && (() => {
         const priceRanges = [
           { label: "Ate R$ 500", min: 0, max: 500 },
@@ -394,7 +394,7 @@ export default async function CategoriaPage({
         return (
           <section className="mt-10">
             <h2 className="text-lg font-bold font-display text-text-primary mb-4 flex items-center gap-2">
-              <BadgePercent className="w-5 h-5 text-accent-blue" /> Faixas de Preco
+              <BadgePercent className="w-5 h-5 text-accent-blue" /> Faixas de Preço
             </h2>
             <div className="flex flex-wrap gap-2">
               {ranges.map((r) => (
@@ -574,15 +574,15 @@ function CategorySEOBlock({
       </h2>
       <div className="text-sm text-text-secondary leading-relaxed space-y-3">
         <p>
-          Encontre as melhores ofertas de <strong>{name}</strong> com precos comparados em tempo real.
+          Encontre as melhores ofertas de <strong>{name}</strong> com preços comparados em tempo real.
           {productCount > 0 && (
-            <> Atualmente temos <strong>{productCount} produto{productCount !== 1 ? "s" : ""}</strong> indexados nesta categoria, com historico de precos, cupons e alertas de queda de preco.</>
+            <> Atualmente temos <strong>{productCount} produto{productCount !== 1 ? "s" : ""}</strong> indexados nesta categoria, com histórico de preços, cupons e alertas de queda de preço.</>
           )}
         </p>
 
         {melhoresLinks.length > 0 && (
           <p>
-            Confira tambem nossos rankings:{" "}
+            Confira também nossos rankings:{" "}
             {melhoresLinks.map((link, i) => (
               <span key={link.href}>
                 {i > 0 && ", "}
@@ -596,7 +596,7 @@ function CategorySEOBlock({
         )}
 
         <p>
-          Explore por faixa de preco:{" "}
+          Explore por faixa de preço:{" "}
           {priceRangeLinks.map((link, i) => (
             <span key={link.href}>
               {i > 0 && " · "}
@@ -609,9 +609,9 @@ function CategorySEOBlock({
         </p>
 
         <p>
-          Todos os precos sao monitorados automaticamente em lojas como Amazon, Mercado Livre, Magazine Luiza e mais.
-          Use o <Link href="/busca" className="text-accent-blue hover:underline">comparador de precos</Link> para encontrar
-          exatamente o que voce procura, ou confira as{" "}
+          Todos os preços são monitorados automaticamente em lojas como Amazon, Mercado Livre, Magazine Luiza e mais.
+          Use o <Link href="/busca" className="text-accent-blue hover:underline">comparador de preços</Link> para encontrar
+          exatamente o que você procura, ou confira as{" "}
           <Link href="/ofertas" className="text-accent-blue hover:underline">ofertas do dia</Link> e os{" "}
           <Link href="/mais-vendidos" className="text-accent-blue hover:underline">mais vendidos</Link>.
         </p>

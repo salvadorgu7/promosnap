@@ -17,33 +17,33 @@ export function generateProductFAQs(product: {
   const faqs: FAQItem[] = [];
 
   faqs.push({
-    q: `Onde encontrar o melhor preco de ${name}?`,
-    a: `O PromoSnap compara precos de ${name} em dezenas de lojas como Amazon, Mercado Livre, Magalu, Americanas e outras. Mostramos o preco mais baixo verificado e o historico de precos para que voce compre no melhor momento.`,
+    q: `Onde encontrar o melhor preço de ${name}?`,
+    a: `O PromoSnap compara preços de ${name} em dezenas de lojas como Amazon, Mercado Livre, Magalu, Americanas e outras. Mostramos o preço mais baixo verificado e o histórico de preços para que você compre no melhor momento.`,
   });
 
   if (price && price > 0) {
     faqs.push({
-      q: `${name} esta com bom preco agora?`,
-      a: `O preco atual de ${name} e a partir de R$ ${price.toFixed(2).replace(".", ",")}. Recomendamos verificar o historico de precos no PromoSnap para confirmar se esta abaixo da media dos ultimos 30 dias. Ative um alerta de preco para ser notificado quando cair.`,
+      q: `${name} está com bom preço agora?`,
+      a: `O preço atual de ${name} é a partir de R$ ${price.toFixed(2).replace(".", ",")}. Recomendamos verificar o histórico de preços no PromoSnap para confirmar se está abaixo da média dos últimos 30 dias. Ative um alerta de preço para ser notificado quando cair.`,
     });
   }
 
   if (brand) {
     faqs.push({
-      q: `${name} da ${brand} e confiavel?`,
-      a: `${brand} e uma marca reconhecida no mercado. No PromoSnap, voce pode comparar avaliacoes, precos e verificar em quais lojas confiaveis o ${name} esta disponivel. Recomendamos comprar em lojas com boa reputacao.`,
+      q: `${name} da ${brand} é confiável?`,
+      a: `${brand} é uma marca reconhecida no mercado. No PromoSnap, você pode comparar avaliações, preços e verificar em quais lojas confiáveis o ${name} está disponível. Recomendamos comprar em lojas com boa reputação.`,
     });
   }
 
   faqs.push({
-    q: `Como receber alerta de queda de preco do ${name}?`,
-    a: `No PromoSnap, acesse a pagina do ${name} e clique em "Criar Alerta de Preco". Informe o preco desejado e seu e-mail. Avisaremos quando o preco atingir ou ficar abaixo do valor configurado.`,
+    q: `Como receber alerta de queda de preço do ${name}?`,
+    a: `No PromoSnap, acesse a página do ${name} e clique em "Criar Alerta de Preço". Informe o preço desejado e seu e-mail. Avisaremos quando o preço atingir ou ficar abaixo do valor configurado.`,
   });
 
   if (category) {
     faqs.push({
-      q: `Quais sao as alternativas ao ${name}?`,
-      a: `Na categoria ${category}, existem diversas opcoes similares. Confira a pagina de ${category} no PromoSnap para comparar precos e especificacoes de produtos semelhantes ao ${name}.`,
+      q: `Quais são as alternativas ao ${name}?`,
+      a: `Na categoria ${category}, existem diversas opções similares. Confira a página de ${category} no PromoSnap para comparar preços e especificações de produtos semelhantes ao ${name}.`,
     });
   }
 
@@ -58,16 +58,16 @@ export function generateCategoryFAQs(category: {
 
   return [
     {
-      q: `Quais sao os melhores ${name} para comprar?`,
-      a: `O PromoSnap monitora ${productCount > 0 ? `${productCount}+ produtos` : "diversos produtos"} na categoria ${name}. Nosso ranking considera preco, historico de precos, avaliacoes e disponibilidade de frete gratis para recomendar as melhores opcoes.`,
+      q: `Quais são os melhores ${name} para comprar?`,
+      a: `O PromoSnap monitora ${productCount > 0 ? `${productCount}+ produtos` : "diversos produtos"} na categoria ${name}. Nosso ranking considera preço, histórico de preços, avaliações e disponibilidade de frete grátis para recomendar as melhores opções.`,
     },
     {
       q: `Como encontrar ${name} com desconto?`,
-      a: `No PromoSnap, filtramos ${name} por maior desconto real, comparando o preco atual com a media dos ultimos 30 e 90 dias. Voce tambem pode ativar alertas de preco para ser notificado quando um produto da categoria entrar em promocao.`,
+      a: `No PromoSnap, filtramos ${name} por maior desconto real, comparando o preço atual com a média dos últimos 30 e 90 dias. Você também pode ativar alertas de preço para ser notificado quando um produto da categoria entrar em promoção.`,
     },
     {
-      q: `O PromoSnap compara precos de ${name} em quais lojas?`,
-      a: `Comparamos precos de ${name} nas principais lojas do Brasil, incluindo Amazon, Mercado Livre, Magazine Luiza, Americanas, Casas Bahia, Shopee e outras. Os precos sao atualizados diversas vezes ao dia.`,
+      q: `O PromoSnap compara preços de ${name} em quais lojas?`,
+      a: `Comparamos preços de ${name} nas principais lojas do Brasil, incluindo Amazon, Mercado Livre, Magazine Luiza, Americanas, Casas Bahia, Shopee e outras. Os preços são atualizados diversas vezes ao dia.`,
     },
   ];
 }
@@ -80,16 +80,16 @@ export function generateBrandFAQs(brand: {
 
   return [
     {
-      q: `Onde encontrar os melhores precos de ${name}?`,
-      a: `O PromoSnap compara precos de ${productCount > 0 ? `${productCount}+ produtos` : "diversos produtos"} da ${name} em dezenas de lojas como Amazon, Mercado Livre, Magalu e outras. Mostramos o preco mais baixo verificado e o historico para que voce compre no melhor momento.`,
+      q: `Onde encontrar os melhores preços de ${name}?`,
+      a: `O PromoSnap compara preços de ${productCount > 0 ? `${productCount}+ produtos` : "diversos produtos"} da ${name} em dezenas de lojas como Amazon, Mercado Livre, Magalu e outras. Mostramos o preço mais baixo verificado e o histórico para que você compre no melhor momento.`,
     },
     {
-      q: `Os descontos de ${name} no PromoSnap sao reais?`,
-      a: `Sim. Monitoramos o historico de precos e comparamos com a media dos ultimos 30 e 90 dias. Se o preco atual esta abaixo da media, o desconto e real e indicamos com badges de oferta quente.`,
+      q: `Os descontos de ${name} no PromoSnap são reais?`,
+      a: `Sim. Monitoramos o histórico de preços e comparamos com a média dos últimos 30 e 90 dias. Se o preço atual está abaixo da média, o desconto é real e indicamos com badges de oferta quente.`,
     },
     {
       q: `Como receber alertas de ofertas de ${name}?`,
-      a: `Adicione produtos de ${name} aos seus favoritos e ative notificacoes de preco. Avisaremos quando o preco cair ou surgir uma promocao imperdivel em qualquer produto da marca.`,
+      a: `Adicione produtos de ${name} aos seus favoritos e ative notificações de preço. Avisaremos quando o preço cair ou surgir uma promoção imperdível em qualquer produto da marca.`,
     },
   ];
 }

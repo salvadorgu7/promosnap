@@ -123,7 +123,7 @@ export default function SocialProof({
           </div>
         ) : (
           <div className="text-center py-5 md:py-8 text-sm text-text-muted">
-            Nenhum dado de engajamento disponivel para esta categoria ainda.
+            Nenhum dado de engajamento disponível para esta categoria ainda.
           </div>
         )}
       </div>

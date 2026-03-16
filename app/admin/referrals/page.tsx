@@ -31,10 +31,10 @@ export default async function AdminReferralsPage() {
       <div className="mb-6">
         <h1 className="heading-section flex items-center gap-2">
           <Gift className="h-6 w-6 text-accent-orange" />
-          Indicacoes
+          Indicações
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Acompanhe o programa de indicacao e os principais indicadores.
+          Acompanhe o programa de indicação e os principais indicadores.
         </p>
       </div>
 
@@ -44,7 +44,7 @@ export default async function AdminReferralsPage() {
           <div className="flex items-center gap-2 mb-2">
             <Users className="h-4 w-4 text-accent-blue" />
             <span className="text-xs font-medium text-text-muted">
-              Total Indicacoes
+              Total Indicações
             </span>
           </div>
           <p className="text-2xl font-bold font-display text-text-primary">
@@ -77,7 +77,7 @@ export default async function AdminReferralsPage() {
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="h-4 w-4 text-accent-orange" />
             <span className="text-xs font-medium text-text-muted">
-              Conversao Media
+              Conversão Média
             </span>
           </div>
           <p className="text-2xl font-bold font-display text-text-primary">
@@ -98,9 +98,9 @@ export default async function AdminReferralsPage() {
             <div className="empty-state-icon">
               <Users className="h-7 w-7 text-text-muted" />
             </div>
-            <p className="empty-state-title">Nenhuma indicacao ainda</p>
+            <p className="empty-state-title">Nenhuma indicação ainda</p>
             <p className="empty-state-text">
-              Quando usuarios compartilharem seus codigos, eles aparecerão aqui.
+              Quando usuarios compartilharem seus códigos, eles aparecerão aqui.
             </p>
           </div>
         ) : (
@@ -109,11 +109,11 @@ export default async function AdminReferralsPage() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Codigo</th>
+                  <th>Código</th>
                   <th>Email</th>
                   <th>Visitas</th>
                   <th>Clickouts</th>
-                  <th>Conversao</th>
+                  <th>Conversão</th>
                   <th>Criado em</th>
                 </tr>
               </thead>
@@ -171,7 +171,7 @@ export default async function AdminReferralsPage() {
       <div className="card">
         <div className="px-5 py-4 border-b border-surface-200">
           <h2 className="font-display font-semibold text-text-primary">
-            Indicacoes Recentes
+            Indicações Recentes
           </h2>
         </div>
         {recentReferrals.length === 0 ? (
@@ -179,9 +179,9 @@ export default async function AdminReferralsPage() {
             <div className="empty-state-icon">
               <Gift className="h-7 w-7 text-text-muted" />
             </div>
-            <p className="empty-state-title">Nenhuma indicacao recente</p>
+            <p className="empty-state-title">Nenhuma indicação recente</p>
             <p className="empty-state-text">
-              Novas indicacoes aparecerão aqui automaticamente.
+              Novas indicações aparecerão aqui automaticamente.
             </p>
           </div>
         ) : (

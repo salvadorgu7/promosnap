@@ -28,14 +28,14 @@ export function generateConversionSignals(opts: {
     signals.push({
       type: "price",
       icon: "trending-down",
-      text: "Menor preco historico",
+      text: "Menor preço histórico",
       priority: 100,
     });
   } else if (opts.avg30d && opts.currentPrice < opts.avg30d * 0.9) {
     signals.push({
       type: "price",
       icon: "trending-down",
-      text: `${Math.round(((opts.avg30d - opts.currentPrice) / opts.avg30d) * 100)}% abaixo da media`,
+      text: `${Math.round(((opts.avg30d - opts.currentPrice) / opts.avg30d) * 100)}% abaixo da média`,
       priority: 90,
     });
   }
@@ -54,7 +54,7 @@ export function generateConversionSignals(opts: {
     signals.push({
       type: "urgency",
       icon: "clock",
-      text: "Preco novo — pode mudar",
+      text: "Preço novo — pode mudar",
       priority: 80,
     });
   }
@@ -97,7 +97,7 @@ export function generateConversionSignals(opts: {
     signals.push({
       type: "trust",
       icon: "truck",
-      text: "Frete gratis",
+      text: "Frete grátis",
       priority: 50,
     });
   }
@@ -106,7 +106,7 @@ export function generateConversionSignals(opts: {
     signals.push({
       type: "trust",
       icon: "store",
-      text: `Disponivel em ${opts.sourceCount} lojas`,
+      text: `Disponível em ${opts.sourceCount} lojas`,
       priority: 40,
     });
   }

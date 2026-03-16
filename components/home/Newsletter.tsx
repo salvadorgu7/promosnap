@@ -33,7 +33,7 @@ export default function Newsletter({ variant = "hero" }: NewsletterProps) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setState("error");
-      setErrorMsg("Por favor, insira um e-mail valido.");
+      setErrorMsg("Por favor, insira um e-mail válido.");
       return;
     }
 
@@ -46,7 +46,7 @@ export default function Newsletter({ variant = "hero" }: NewsletterProps) {
     } catch (err: unknown) {
       setState("error");
       setErrorMsg(
-        err instanceof Error ? err.message : "Nao foi possivel cadastrar. Tente novamente."
+        err instanceof Error ? err.message : "Não foi possível cadastrar. Tente novamente."
       );
     }
   };

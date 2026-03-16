@@ -14,11 +14,11 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) return buildMetadata({ title: "Produto nao encontrado", noIndex: true });
+  if (!product) return buildMetadata({ title: "Produto não encontrado", noIndex: true });
 
   return buildMetadata({
-    title: `Preco de ${product.name} — Historico e Melhor Momento para Comprar`,
-    description: `Acompanhe o historico de precos de ${product.name}. Veja como o preco variou nos ultimos 90 dias e descubra o melhor momento para comprar.`,
+    title: `Preço de ${product.name} — Histórico e Melhor Momento para Comprar`,
+    description: `Acompanhe o histórico de preços de ${product.name}. Veja como o preço variou nos últimos 90 dias e descubra o melhor momento para comprar.`,
     path: `/preco/${slug}`,
     ogImage: product.imageUrl || undefined,
   });
@@ -82,12 +82,12 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
     { label: "Home", href: "/" },
     ...(product.category ? [{ label: product.category.name, href: `/categoria/${product.category.slug}` }] : []),
     { label: product.name, href: `/produto/${slug}` },
-    { label: "Historico de Preco" },
+    { label: "Histórico de Preço" },
   ];
 
   const TrendIcon = priceStats?.trend === "down" ? TrendingDown : priceStats?.trend === "up" ? TrendingUp : Minus;
   const trendColor = priceStats?.trend === "down" ? "text-accent-green" : priceStats?.trend === "up" ? "text-accent-red" : "text-text-muted";
-  const trendLabel = priceStats?.trend === "down" ? "Em queda" : priceStats?.trend === "up" ? "Em alta" : "Estavel";
+  const trendLabel = priceStats?.trend === "down" ? "Em queda" : priceStats?.trend === "up" ? "Em alta" : "Estável";
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -97,7 +97,7 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
           { name: "Home", url: "/" },
           ...(product.category ? [{ name: product.category.name, url: `/categoria/${product.category.slug}` }] : []),
           { name: product.name, url: `/produto/${slug}` },
-          { name: "Historico de Preco", url: `/preco/${slug}` },
+          { name: "Histórico de Preço", url: `/preco/${slug}` },
         ])),
       }} />
 
@@ -108,7 +108,7 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
       </div>
 
       <h1 className="font-display font-bold text-2xl md:text-3xl text-text-primary mb-2">
-        Historico de Preco: {product.name}
+        Histórico de Preço: {product.name}
       </h1>
       {product.brand && (
         <p className="text-sm text-text-muted mb-6">{product.brand.name}</p>
@@ -118,7 +118,7 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
       {priceStats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           <div className="card p-4">
-            <p className="text-xs text-text-muted mb-1">Preco Atual</p>
+            <p className="text-xs text-text-muted mb-1">Preço Atual</p>
             <p className="font-display font-bold text-xl text-accent-blue">{formatPrice(priceStats.current)}</p>
             <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${trendColor}`}>
               <TrendIcon className="w-3.5 h-3.5" /> {trendLabel}
@@ -128,14 +128,14 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
             <p className="text-xs text-text-muted mb-1">Menor 30 dias</p>
             <p className="font-display font-bold text-xl text-accent-green">{formatPrice(priceStats.min30d)}</p>
             {priceStats.current <= priceStats.min30d * 1.02 && (
-              <p className="text-xs text-accent-green font-medium mt-1">Proximo do menor!</p>
+              <p className="text-xs text-accent-green font-medium mt-1">Próximo do menor!</p>
             )}
           </div>
           <div className="card p-4">
-            <p className="text-xs text-text-muted mb-1">Media 30 dias</p>
+            <p className="text-xs text-text-muted mb-1">Média 30 dias</p>
             <p className="font-display font-bold text-xl text-text-primary">{formatPrice(priceStats.avg30d)}</p>
             {priceStats.current < priceStats.avg30d && (
-              <p className="text-xs text-accent-green font-medium mt-1">Abaixo da media</p>
+              <p className="text-xs text-accent-green font-medium mt-1">Abaixo da média</p>
             )}
           </div>
           <div className="card p-4">
@@ -148,7 +148,7 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
       {/* Chart */}
       <div className="card p-6 mb-8">
         <h2 className="text-lg font-bold font-display text-text-primary mb-4 flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-text-muted" /> Evolucao do Preco (90 dias)
+          <BarChart3 className="h-5 w-5 text-text-muted" /> Evolução do Preço (90 dias)
         </h2>
         {priceHistory.length >= 2 && priceStats ? (
           <PriceChart data={priceHistory} stats={priceStats} />
@@ -156,8 +156,8 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
           <div className="flex items-center gap-3 justify-center py-10 text-text-muted">
             <Clock className="h-5 w-5" />
             <div>
-              <p className="text-sm font-medium">Monitorando precos...</p>
-              <p className="text-xs mt-1">O historico estara disponivel em breve.</p>
+              <p className="text-sm font-medium">Monitorando preços...</p>
+              <p className="text-xs mt-1">O histórico estará disponível em breve.</p>
             </div>
           </div>
         )}
@@ -177,7 +177,7 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
               <div>
                 <p className="text-sm font-semibold text-accent-green">Bom momento para comprar!</p>
                 <p className="text-sm text-text-muted mt-1">
-                  O preco esta em tendencia de queda e abaixo da media dos ultimos 30 dias.
+                  O preço está em tendência de queda e abaixo da média dos últimos 30 dias.
                   Este pode ser um bom momento para aproveitar.
                 </p>
               </div>
@@ -188,9 +188,9 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
                 <TrendingUp className="w-5 h-5 text-accent-orange" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-accent-orange">Preco em alta — considere esperar</p>
+                <p className="text-sm font-semibold text-accent-orange">Preço em alta — considere esperar</p>
                 <p className="text-sm text-text-muted mt-1">
-                  O preco esta acima da media recente. Pode valer a pena ativar um alerta
+                  O preço está acima da média recente. Pode valer a pena ativar um alerta
                   e esperar uma queda.
                 </p>
               </div>
@@ -201,9 +201,9 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
                 <Minus className="w-5 h-5 text-text-muted" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-text-primary">Preco estavel</p>
+                <p className="text-sm font-semibold text-text-primary">Preço estável</p>
                 <p className="text-sm text-text-muted mt-1">
-                  O preco tem se mantido estavel. Se precisar do produto, pode ser um momento ok.
+                  O preço tem se mantido estável. Se precisar do produto, pode ser um momento ok.
                   Ative um alerta para ser avisado de quedas.
                 </p>
               </div>
@@ -216,14 +216,14 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
       {allOffers.length > 1 && (
         <div className="card p-6 mb-8">
           <h2 className="text-lg font-bold font-display text-text-primary mb-4">
-            Preco por Loja
+            Preço por Loja
           </h2>
           <div className="space-y-3">
             {allOffers.map((offer, i) => (
               <div key={offer.id} className={`flex items-center justify-between py-2 ${i > 0 ? "border-t border-surface-100" : ""}`}>
                 <div>
                   <p className="text-sm font-semibold text-text-primary">{offer.sourceName}</p>
-                  {offer.isFreeShipping && <span className="text-[10px] text-accent-purple font-medium">Frete gratis</span>}
+                  {offer.isFreeShipping && <span className="text-[10px] text-accent-purple font-medium">Frete grátis</span>}
                 </div>
                 <div className="text-right">
                   <p className={`font-display font-bold ${i === 0 ? "text-accent-blue" : "text-text-primary"}`}>
@@ -258,28 +258,28 @@ export default async function PrecoPage({ params }: { params: Promise<{ slug: st
         <div className="space-y-3">
           <details className="group">
             <summary className="cursor-pointer text-sm font-semibold text-text-primary py-2 hover:text-accent-blue">
-              O preco mostrado e confiavel?
+              O preço mostrado é confiável?
             </summary>
             <p className="text-sm text-text-muted pb-2 pl-4">
-              Sim. Os precos sao coletados diretamente das APIs e paginas dos marketplaces parceiros.
+              Sim. Os preços são coletados diretamente das APIs e páginas dos marketplaces parceiros.
               No entanto, eles podem variar entre o momento da consulta e a compra.
             </p>
           </details>
           <details className="group">
             <summary className="cursor-pointer text-sm font-semibold text-text-primary py-2 hover:text-accent-blue">
-              Como funciona o alerta de preco?
+              Como funciona o alerta de preço?
             </summary>
             <p className="text-sm text-text-muted pb-2 pl-4">
-              Voce define um preco alvo e seu email. Quando o preco atingir esse valor, enviamos
+              Você define um preço alvo e seu email. Quando o preço atingir esse valor, enviamos
               um email avisando. Simples e sem spam.
             </p>
           </details>
           <details className="group">
             <summary className="cursor-pointer text-sm font-semibold text-text-primary py-2 hover:text-accent-blue">
-              A tendencia indica que o preco vai cair?
+              A tendência indica que o preço vai cair?
             </summary>
             <p className="text-sm text-text-muted pb-2 pl-4">
-              A tendencia mostra o comportamento recente, nao e uma previsao. Um preco em queda
+              A tendência mostra o comportamento recente, não é uma previsão. Um preço em queda
               pode estabilizar ou subir a qualquer momento.
             </p>
           </details>

@@ -20,15 +20,15 @@ interface BadgeInfo {
 const BADGES: BadgeInfo[] = [
   {
     type: "free-shipping",
-    label: "Frete Gratis",
-    shortLabel: "Gratis",
+    label: "Frete Grátis",
+    shortLabel: "Grátis",
     icon: Truck,
     color: "text-green-700 bg-green-50 border-green-200",
   },
   {
     type: "fast-delivery",
-    label: "Entrega Rapida",
-    shortLabel: "Rapido",
+    label: "Entrega Rápida",
+    shortLabel: "Rápido",
     icon: Zap,
     color: "text-blue-700 bg-blue-50 border-blue-200",
   },

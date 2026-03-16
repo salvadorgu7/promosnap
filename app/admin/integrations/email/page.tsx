@@ -31,7 +31,7 @@ const TEMPLATES = [
   { key: 'welcome', label: 'Welcome', description: 'Email de boas-vindas' },
   { key: 'daily-deals', label: 'Daily Deals', description: 'Ofertas do dia' },
   { key: 'campaign', label: 'Campaign', description: 'Email de campanha' },
-  { key: 'alert', label: 'Alert', description: 'Alerta de preco' },
+  { key: 'alert', label: 'Alert', description: 'Alerta de preço' },
 ] as const
 
 type TemplateKey = (typeof TEMPLATES)[number]['key']
@@ -98,13 +98,13 @@ export default function EmailIntegrationPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Email / Resend</h1>
-          <p className="text-sm text-gray-500">Integracao de email transacional</p>
+          <p className="text-sm text-gray-500">Integração de email transacional</p>
         </div>
       </div>
 
       {/* Provider info */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Configuracao</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Configuração</h2>
         <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
           {/* Provider */}
           <div className="flex items-center gap-3 px-4 py-3">
@@ -131,7 +131,7 @@ export default function EmailIntegrationPage() {
                   ? 'Verificando...'
                   : configTest?.success
                     ? 'Configurada'
-                    : 'Nao configurada'}
+                    : 'Não configurada'}
               </p>
             </div>
           </div>
@@ -142,7 +142,7 @@ export default function EmailIntegrationPage() {
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">EMAIL_FROM</p>
               <p className="text-xs text-gray-500">
-                Verificado via teste de configuracao
+                Verificado via teste de configuração
               </p>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function EmailIntegrationPage() {
         <div className="rounded-xl border border-gray-200 p-6 text-center">
           <Clock className="mx-auto h-8 w-8 text-gray-300" />
           <p className="mt-2 text-sm text-gray-500">
-            O log de envios e mantido em memoria no servidor.
+            O log de envios é mantido em memoria no servidor.
           </p>
           <p className="text-xs text-gray-400">
             Use o teste de templates acima para gerar entradas.

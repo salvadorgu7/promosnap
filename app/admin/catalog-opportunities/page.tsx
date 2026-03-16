@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 const PRIORITY_CONFIG: Record<OpportunityPriority, { label: string; color: string; icon: typeof ArrowUpCircle }> = {
   high: { label: "Alta", color: "bg-red-100 text-red-700 border-red-200", icon: ArrowUpCircle },
-  medium: { label: "Media", color: "bg-amber-100 text-amber-700 border-amber-200", icon: MinusCircle },
+  medium: { label: "Média", color: "bg-amber-100 text-amber-700 border-amber-200", icon: MinusCircle },
   low: { label: "Baixa", color: "bg-gray-100 text-gray-600 border-gray-200", icon: ArrowDownCircle },
 };
 
@@ -27,7 +27,7 @@ const TYPE_CONFIG: Record<string, { label: string; icon: typeof FolderOpen; colo
   "empty-category": { label: "Categorias com poucos produtos", icon: FolderOpen, color: "text-blue-600 bg-blue-50" },
   "sparse-brand": { label: "Marcas com poucos produtos", icon: Tag, color: "text-purple-600 bg-purple-50" },
   "unmatched-search": { label: "Buscas sem resultados", icon: Search, color: "text-amber-600 bg-amber-50" },
-  "trending-without-products": { label: "Tendencias sem cobertura", icon: TrendingUp, color: "text-green-600 bg-green-50" },
+  "trending-without-products": { label: "Tendências sem cobertura", icon: TrendingUp, color: "text-green-600 bg-green-50" },
 };
 
 function PriorityBadge({ priority }: { priority: OpportunityPriority }) {
@@ -127,9 +127,9 @@ export default async function CatalogOpportunitiesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold font-display text-text-primary">Oportunidades de Catalogo</h1>
+        <h1 className="text-2xl font-bold font-display text-text-primary">Oportunidades de Catálogo</h1>
         <p className="text-sm text-text-muted">
-          Lacunas e oportunidades para expandir o catalogo com base em dados reais
+          Lacunas e oportunidades para expandir o catálogo com base em dados reais
         </p>
       </div>
 
@@ -145,7 +145,7 @@ export default async function CatalogOpportunitiesPage() {
         </div>
         <div className="card p-4 border-amber-200">
           <p className="text-3xl font-bold font-display text-amber-600">{mediumPriority.length}</p>
-          <p className="text-xs text-text-muted">Media prioridade</p>
+          <p className="text-xs text-text-muted">Média prioridade</p>
         </div>
         <div className="card p-4">
           <p className="text-3xl font-bold font-display text-gray-500">{lowPriority.length}</p>
@@ -158,7 +158,7 @@ export default async function CatalogOpportunitiesPage() {
         <div className="card p-8 text-center">
           <Lightbulb className="h-10 w-10 mx-auto mb-3 text-surface-300" />
           <p className="text-text-muted">
-            Nenhuma oportunidade identificada no momento. O catalogo esta bem coberto.
+            Nenhuma oportunidade identificada no momento. O catálogo esta bem coberto.
           </p>
         </div>
       )}

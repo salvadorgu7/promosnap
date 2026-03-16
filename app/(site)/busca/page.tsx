@@ -54,7 +54,7 @@ function buildRelatedSearches(query: string): { label: string; href: string }[] 
   results.push(
     { label: `Melhores ${query}`, href: `/busca?q=melhores+${encodeURIComponent(query)}` },
     { label: `Ofertas ${query}`, href: `/busca?q=ofertas+${encodeURIComponent(query)}` },
-    { label: `${query} menor preco`, href: `/busca?q=${encodeURIComponent(query)}+menor+preco` },
+    { label: `${query} menor preço`, href: `/busca?q=${encodeURIComponent(query)}+menor+preco` },
   );
 
   // Deduplicate by href and limit to 8
@@ -82,15 +82,15 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   return buildMetadata({
     title: q ? `${q} - Busca` : "Buscar Ofertas",
     description: q
-      ? `Compare precos de "${q}" nas melhores lojas do Brasil. Encontre o menor preco.`
-      : "Busque e compare precos de milhares de produtos nas melhores lojas.",
+      ? `Compare preços de "${q}" nas melhores lojas do Brasil. Encontre o menor preço.`
+      : "Busque e compare preços de milhares de produtos nas melhores lojas.",
     path: `/busca${q ? `?q=${encodeURIComponent(q)}` : ""}`,
   });
 }
 
 const SORT_OPTIONS = [
-  { value: "relevance", label: "Relevancia" },
-  { value: "price_asc", label: "Menor Preco" },
+  { value: "relevance", label: "Relevância" },
+  { value: "price_asc", label: "Menor Preço" },
   { value: "score", label: "Melhor Oferta" },
   { value: "discount", label: "Maior Desconto" },
 ];
@@ -167,7 +167,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
   }
   if (freeShipping) {
     activeFilters.push({
-      label: "Frete Gratis",
+      label: "Frete Grátis",
       clearUrl: buildSearchUrl(params, { freeShipping: undefined, page: "1" }),
     });
   }
@@ -231,7 +231,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
         <div className="mt-2 p-4 bg-white rounded-xl border border-surface-200 shadow-sm space-y-4">
           {/* Price range */}
           <div className="space-y-2">
-            <p className="text-xs font-medium text-text-secondary">Faixa de Preco</p>
+            <p className="text-xs font-medium text-text-secondary">Faixa de Preço</p>
             <form className="flex gap-2">
               <input type="hidden" name="q" value={query} />
               {sort !== "relevance" && <input type="hidden" name="sort" value={sort} />}
@@ -258,7 +258,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
           {/* Free shipping */}
           <Link href={buildSearchUrl(params, { freeShipping: freeShipping ? undefined : "true", page: "1" })}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${freeShipping ? "bg-brand-50 text-brand-600 border-brand-500/20" : "bg-surface-50 text-text-muted border-surface-200 hover:bg-surface-100"}`}>
-            <Truck className="h-3.5 w-3.5" /> Frete Gratis
+            <Truck className="h-3.5 w-3.5" /> Frete Grátis
           </Link>
         </div>
       </details>
@@ -273,7 +273,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
 
             {/* Price range */}
             <div className="space-y-2 mb-5">
-              <p className="text-xs font-medium text-text-secondary">Faixa de Preco</p>
+              <p className="text-xs font-medium text-text-secondary">Faixa de Preço</p>
               <form className="flex gap-2">
                 <input type="hidden" name="q" value={query} />
                 {sort !== "relevance" && <input type="hidden" name="sort" value={sort} />}
@@ -368,7 +368,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                   />
                 </span>
                 <Truck className="h-3.5 w-3.5" />
-                Frete Gratis
+                Frete Grátis
               </Link>
             </div>
           </div>
@@ -432,7 +432,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                   )}
                   {withFreeShipping > 0 && (
                     <span className="text-xs text-text-muted">
-                      {withFreeShipping} com frete gratis
+                      {withFreeShipping} com frete grátis
                     </span>
                   )}
                 </div>
@@ -492,7 +492,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                       href={buildSearchUrl(params, { page: String(page + 1) })}
                       className="btn-secondary px-4 py-2 text-sm"
                     >
-                      Proximo
+                      Próximo
                     </Link>
                   )}
                 </div>
@@ -503,7 +503,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
               <EmptyState
                 icon={Search}
                 title="Nenhum resultado encontrado"
-                description={`Nao encontramos ofertas para "${query}". Tente buscar com termos diferentes, verificar a ortografia ou remover filtros aplicados.`}
+                description={`Não encontramos ofertas para "${query}". Tente buscar com termos diferentes, verificar a ortografia ou remover filtros aplicados.`}
                 ctaLabel="Limpar filtros"
                 ctaHref={`/busca?q=${encodeURIComponent(query)}`}
               />
@@ -514,7 +514,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             <EmptyState
               icon={Search}
               title="Busque um produto"
-              description="Digite o nome do produto, marca ou categoria para comparar precos nas melhores lojas do Brasil."
+              description="Digite o nome do produto, marca ou categoria para comparar preços nas melhores lojas do Brasil."
             />
           )}
 

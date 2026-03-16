@@ -28,7 +28,7 @@ export function buildProductCard(p: any): ProductCard | null {
   const badges: Badge[] = []
   if (best.offerScore >= 80) badges.push({ type: 'hot_deal', label: 'Oferta Quente', color: 'red' })
   if (discount && discount >= 40) badges.push({ type: 'price_drop', label: `${discount}% OFF`, color: 'green' })
-  if (best.isFreeShipping) badges.push({ type: 'free_shipping', label: 'Frete Gratis', color: 'purple' })
+  if (best.isFreeShipping) badges.push({ type: 'free_shipping', label: 'Frete Grátis', color: 'purple' })
   if (best.couponText) badges.push({ type: 'coupon', label: 'Cupom', color: 'orange' })
   if (p.listings?.[0]?.salesCountEstimate > 5000) badges.push({ type: 'best_seller', label: 'Mais Vendido', color: 'yellow' })
 
@@ -190,7 +190,9 @@ export async function getRecentlyImported(limit = 16): Promise<ProductCard[]> {
 
   try {
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
-    const products = await prisma.product.findMany({
+
+    // Try imported products first
+    let products = await prisma.product.findMany({
       where: {
         status: 'ACTIVE',
         originType: 'imported',
@@ -201,6 +203,20 @@ export async function getRecentlyImported(limit = 16): Promise<ProductCard[]> {
       orderBy: { importedAt: 'desc' },
       take: limit,
     })
+
+    // Fallback: if no imported products, show most recently updated active products
+    if (products.length === 0) {
+      products = await prisma.product.findMany({
+        where: {
+          status: 'ACTIVE',
+          listings: { some: { offers: { some: { isActive: true } } } },
+        },
+        select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+        orderBy: { updatedAt: 'desc' },
+        take: limit,
+      })
+    }
+
     const result = products.map(buildProductCard).filter(Boolean) as ProductCard[]
     memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
     return result

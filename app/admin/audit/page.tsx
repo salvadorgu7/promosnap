@@ -48,7 +48,7 @@ export default async function AuditPage() {
           <RunAuditButton />
         </div>
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-          <p className="text-red-600 font-medium">Nao foi possivel gerar o relatorio de auditoria.</p>
+          <p className="text-red-600 font-medium">Não foi possível gerar o relatório de auditoria.</p>
           <p className="text-red-500 text-sm mt-1">Verifique os logs do servidor para mais detalhes.</p>
         </div>
       </div>
@@ -64,7 +64,7 @@ export default async function AuditPage() {
         <div>
           <h1 className="text-2xl font-bold font-display text-text-primary">Auditoria</h1>
           <p className="text-sm text-text-muted mt-1">
-            Ultima execucao: {new Date(report.timestamp).toLocaleString("pt-BR")}
+            Última execução: {new Date(report.timestamp).toLocaleString("pt-BR")}
           </p>
         </div>
         <RunAuditButton />
@@ -89,7 +89,7 @@ export default async function AuditPage() {
       {/* Critical Issues */}
       {report.criticalIssues.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-red-700 mb-3">Problemas Criticos</h2>
+          <h2 className="text-lg font-semibold text-red-700 mb-3">Problemas Críticos</h2>
           <div className="space-y-2">
             {report.criticalIssues.map((issue, i) => (
               <IssueRow key={i} issue={issue} />
@@ -124,7 +124,7 @@ export default async function AuditPage() {
 
       {/* Section Breakdown */}
       <div>
-        <h2 className="text-lg font-semibold text-text-primary mb-4">Detalhamento por Area</h2>
+        <h2 className="text-lg font-semibold text-text-primary mb-4">Detalhamento por Área</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sections.map((section) => (
             <SectionCard key={section.name} section={section} />

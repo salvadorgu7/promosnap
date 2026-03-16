@@ -25,11 +25,11 @@ import {
 } from "@/lib/admin/severity"
 
 const GROUP_META: Record<CheckGroup, { label: string; icon: typeof Server; description: string }> = {
-  infrastructure: { label: "Infraestrutura", icon: Server, description: "Servidores, deploy e ambiente de execucao" },
-  data: { label: "Dados", icon: Database, description: "Banco de dados, ingestao e integridade" },
-  security: { label: "Seguranca", icon: Shield, description: "Headers, autenticacao e protecao" },
+  infrastructure: { label: "Infraestrutura", icon: Server, description: "Servidores, deploy e ambiente de execução" },
+  data: { label: "Dados", icon: Database, description: "Banco de dados, ingestão e integridade" },
+  security: { label: "Segurança", icon: Shield, description: "Headers, autenticação e proteção" },
   seo: { label: "SEO", icon: Globe, description: "Sitemap, meta tags e canonical URLs" },
-  integrations: { label: "Integracoes", icon: Plug, description: "APIs externas, email e cron" },
+  integrations: { label: "Integrações", icon: Plug, description: "APIs externas, email e cron" },
 }
 
 const GROUP_ORDER: CheckGroup[] = [
@@ -69,17 +69,17 @@ function productionGuidance(check: ProductionCheck): string | null {
   if (check.status === "pass") return null
   const name = check.name.toLowerCase()
   if (name.includes("database") || name.includes("db"))
-    return "Verifique DATABASE_URL e que o banco esteja acessivel."
+    return "Verifique DATABASE_URL e que o banco esteja acessível."
   if (name.includes("cron"))
     return "Defina CRON_SECRET para ativar jobs agendados. Sem isso, dados ficam desatualizados."
   if (name.includes("email") || name.includes("resend"))
     return "Configure RESEND_API_KEY para habilitar envio de emails."
   if (name.includes("sitemap"))
-    return "Execute o job de sitemap. Essencial para indexacao no Google."
+    return "Execute o job de sitemap. Essencial para indexação no Google."
   if (name.includes("canonical") || name.includes("domain"))
-    return "Defina NEXT_PUBLIC_APP_URL com o dominio de producao."
+    return "Defina NEXT_PUBLIC_APP_URL com o domínio de produção."
   if (name.includes("security") || name.includes("header"))
-    return "Revise o middleware de seguranca e headers HTTP."
+    return "Revise o middleware de segurança e headers HTTP."
   if (name.includes("source") || name.includes("provider"))
     return "Configure as credenciais da API ou ative fontes em /admin/fontes."
   return null
@@ -140,7 +140,7 @@ export default function ProductionPage() {
               Production Readiness
             </h1>
             <p className="text-xs text-text-muted">
-              Verificacao completa do ambiente de producao
+              Verificação completa do ambiente de produção
             </p>
           </div>
         </div>
@@ -160,10 +160,10 @@ export default function ProductionPage() {
           <div className="flex items-start gap-3 text-red-700">
             <XCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold">Erro ao carregar verificacao</p>
+              <p className="text-sm font-semibold">Erro ao carregar verificação</p>
               <p className="text-xs mt-0.5">{error}</p>
               <p className="text-xs mt-1 opacity-70">
-                Verifique se o secret esta correto na URL (?secret=...) e se a API esta acessivel.
+                Verifique se o secret está correto na URL (?secret=...) e se a API está acessível.
               </p>
             </div>
           </div>
@@ -222,11 +222,11 @@ export default function ProductionPage() {
               <div className="flex items-center gap-2 mb-1">
                 {report.ready ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm font-semibold border border-emerald-200">
-                    <CheckCircle2 className="h-4 w-4" /> Pronto para producao
+                    <CheckCircle2 className="h-4 w-4" /> Pronto para produção
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 text-sm font-semibold border border-red-200">
-                    <XCircle className="h-4 w-4" /> Nao pronto
+                    <XCircle className="h-4 w-4" /> Não pronto
                   </span>
                 )}
               </div>
@@ -241,7 +241,7 @@ export default function ProductionPage() {
               </p>
               {!report.ready && (
                 <p className="text-xs text-red-600 mt-2">
-                  Resolva os itens em vermelho abaixo antes de ir para producao.
+                  Resolva os itens em vermelho abaixo antes de ir para produção.
                 </p>
               )}
             </div>

@@ -79,7 +79,7 @@ export default async function AdminConfigPage() {
       configured: !!process.env.DATABASE_URL,
       required: true,
       group: "Core",
-      hint: "String de conexao PostgreSQL. Sem ela, nenhuma funcionalidade de dados funciona.",
+      hint: "String de conexão PostgreSQL. Sem ela, nenhuma funcionalidade de dados funciona.",
     },
     {
       name: "ADMIN_SECRET",
@@ -93,49 +93,49 @@ export default async function AdminConfigPage() {
       configured: !!process.env.CRON_SECRET,
       required: true,
       group: "Core",
-      hint: "Autoriza execucao dos jobs agendados. Sem ela, cron nao executa e precos ficam desatualizados.",
+      hint: "Autoriza execução dos jobs agendados. Sem ela, cron não executa e preços ficam desatualizados.",
     },
     {
       name: "ML_CLIENT_ID",
       configured: !!process.env.MERCADOLIVRE_CLIENT_ID,
       required: false,
-      group: "Integracoes",
-      hint: "Client ID do app Mercado Livre. Necessario para ingestao de dados reais do ML.",
+      group: "Integrações",
+      hint: "Client ID do app Mercado Livre. Necessário para ingestão de dados reais do ML.",
     },
     {
       name: "ML_CLIENT_SECRET",
       configured: !!process.env.MERCADOLIVRE_CLIENT_SECRET,
       required: false,
-      group: "Integracoes",
+      group: "Integrações",
       hint: "Client Secret do app Mercado Livre. Use junto com ML_CLIENT_ID.",
     },
     {
       name: "RESEND_API_KEY",
       configured: !!process.env.RESEND_API_KEY,
       required: false,
-      group: "Integracoes",
-      hint: "Chave da API Resend para envio de emails. Sem ela, alertas de preco por email nao serao enviados.",
+      group: "Integrações",
+      hint: "Chave da API Resend para envio de emails. Sem ela, alertas de preço por email não serão enviados.",
     },
     {
       name: "NEXT_PUBLIC_APP_URL",
       configured: !!process.env.NEXT_PUBLIC_APP_URL,
       required: false,
       group: "App",
-      hint: "URL publica do site (ex: https://promosnap.com.br). Usada para SEO, sitemap e links em emails.",
+      hint: "URL pública do site (ex: https://promosnap.com.br). Usada para SEO, sitemap e links em emails.",
     },
     {
       name: "APP_URL",
       configured: !!process.env.APP_URL,
       required: false,
       group: "App",
-      hint: "URL interna do app. Fallback para NEXT_PUBLIC_APP_URL quando nao definida.",
+      hint: "URL interna do app. Fallback para NEXT_PUBLIC_APP_URL quando não definida.",
     },
     {
       name: "NEXT_PUBLIC_GA_ID",
       configured: !!process.env.NEXT_PUBLIC_GA_ID,
       required: false,
       group: "App",
-      hint: "ID do Google Analytics (ex: G-XXXXXXX). Sem ele, nao ha tracking de uso.",
+      hint: "ID do Google Analytics (ex: G-XXXXXXX). Sem ele, não há tracking de uso.",
     },
   ];
 
@@ -180,7 +180,7 @@ export default async function AdminConfigPage() {
   const quickActions = [
     { label: "Executar Jobs", href: "/admin/jobs", icon: Play },
     { label: "Ver Sitemap", href: "/sitemap.xml", icon: Globe },
-    { label: "Ingestao", href: "/admin/ingestao", icon: ExternalLink },
+    { label: "Ingestão", href: "/admin/ingestao", icon: ExternalLink },
   ];
 
   const hasCron = !!process.env.CRON_SECRET;
@@ -192,10 +192,10 @@ export default async function AdminConfigPage() {
       <div>
         <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
           <Settings className="h-6 w-6 text-text-muted" />
-          Sistema &amp; Configuracoes
+          Sistema &amp; Configurações
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Status do ambiente, seguranca, banco de dados e integracoes
+          Status do ambiente, segurança, banco de dados e integrações
         </p>
       </div>
 
@@ -205,7 +205,7 @@ export default async function AdminConfigPage() {
           <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-red-800">
-              {requiredMissing.length} variavel(is) obrigatoria(s) ausente(s)
+              {requiredMissing.length} variável(is) obrigatória(s) ausente(s)
             </p>
             <ul className="mt-1 space-y-1">
               {requiredMissing.map((e) => (
@@ -223,10 +223,10 @@ export default async function AdminConfigPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
           <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-800">Cron nao configurado</p>
+            <p className="text-sm font-semibold text-amber-800">Cron não configurado</p>
             <p className="text-xs text-amber-700 mt-0.5">
-              Sem <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">CRON_SECRET</code>, os jobs agendados nao executam automaticamente.
-              Precos, scores e sitemap nao serao atualizados. Configure no painel do Vercel ou no .env.
+              Sem <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">CRON_SECRET</code>, os jobs agendados não executam automaticamente.
+              Preços, scores e sitemap não serão atualizados. Configure no painel do Vercel ou no .env.
             </p>
           </div>
         </div>
@@ -236,9 +236,9 @@ export default async function AdminConfigPage() {
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex items-start gap-3">
           <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-blue-800">Email nao configurado</p>
+            <p className="text-sm font-semibold text-blue-800">Email não configurado</p>
             <p className="text-xs text-blue-700 mt-0.5">
-              Sem <code className="font-mono bg-blue-100 px-1 py-0.5 rounded">RESEND_API_KEY</code>, alertas de preco e notificacoes por email nao serao enviados.
+              Sem <code className="font-mono bg-blue-100 px-1 py-0.5 rounded">RESEND_API_KEY</code>, alertas de preço e notificações por email não serão enviados.
               Crie uma conta em resend.com e adicione a chave ao .env.
             </p>
           </div>
@@ -249,10 +249,10 @@ export default async function AdminConfigPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
           <Globe className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-800">Dominio canonico nao definido</p>
+            <p className="text-sm font-semibold text-amber-800">Domínio canônico não definido</p>
             <p className="text-xs text-amber-700 mt-0.5">
-              Sem <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">NEXT_PUBLIC_APP_URL</code>, o sitemap e meta tags SEO usarao URLs relativas.
-              Defina o dominio final (ex: https://promosnap.com.br) para SEO correto.
+              Sem <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">NEXT_PUBLIC_APP_URL</code>, o sitemap e meta tags SEO usarão URLs relativas.
+              Defina o domínio final (ex: https://promosnap.com.br) para SEO correto.
             </p>
           </div>
         </div>
@@ -311,7 +311,7 @@ export default async function AdminConfigPage() {
           <StatusBadge ok={hasCron} />
           {!hasCron && (
             <p className="text-xs text-red-600 mt-2">
-              Jobs nao executam. Defina CRON_SECRET no .env.
+              Jobs não executam. Defina CRON_SECRET no .env.
             </p>
           )}
         </div>
@@ -322,10 +322,10 @@ export default async function AdminConfigPage() {
             <Mail className={`h-4 w-4 ${hasEmail ? "text-emerald-600" : "text-blue-600"}`} />
             <span className="text-xs text-text-muted uppercase tracking-wider">Email</span>
           </div>
-          <StatusBadge ok={hasEmail} label={hasEmail ? "Resend ativo" : "Nao configurado"} />
+          <StatusBadge ok={hasEmail} label={hasEmail ? "Resend ativo" : "Não configurado"} />
           {!hasEmail && (
             <p className="text-xs text-blue-600 mt-2">
-              Alertas de preco funcionam, mas emails nao serao enviados.
+              Alertas de preço funcionam, mas emails não serão enviados.
             </p>
           )}
         </div>
@@ -349,7 +349,7 @@ export default async function AdminConfigPage() {
           <div>
             <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Canonical Domain</p>
             <p className="font-mono text-text-primary truncate">
-              {canonicalDomain || <span className="text-amber-600 italic">nao definido</span>}
+              {canonicalDomain || <span className="text-amber-600 italic">não definido</span>}
             </p>
           </div>
           <div>
@@ -363,14 +363,14 @@ export default async function AdminConfigPage() {
       <div className="rounded-xl border border-surface-200 bg-white p-5">
         <h2 className="text-lg font-semibold font-display text-text-primary mb-4 flex items-center gap-2">
           <Key className="h-4 w-4 text-text-muted" />
-          Variaveis de Ambiente ({configuredCount}/{envChecks.length})
+          Variáveis de Ambiente ({configuredCount}/{envChecks.length})
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-surface-200">
                 <th className="text-left py-2 px-3 text-xs text-text-muted uppercase tracking-wider font-medium">
-                  Variavel
+                  Variável
                 </th>
                 <th className="text-left py-2 px-3 text-xs text-text-muted uppercase tracking-wider font-medium">
                   Grupo
@@ -389,7 +389,7 @@ export default async function AdminConfigPage() {
                         {env.name}
                       </code>
                       {env.required && (
-                        <span className="ml-1.5 text-[10px] text-red-500 font-medium">obrigatoria</span>
+                        <span className="ml-1.5 text-[10px] text-red-500 font-medium">obrigatória</span>
                       )}
                     </div>
                     {!env.configured && (
@@ -434,7 +434,7 @@ export default async function AdminConfigPage() {
             <Database className="h-8 w-8 mx-auto mb-2 text-text-muted opacity-30" />
             <p className="text-sm text-text-muted">
               {dbConnected
-                ? "Nenhum dado encontrado. Execute a ingestao para popular o banco."
+                ? "Nenhum dado encontrado. Execute a ingestão para popular o banco."
                 : "Banco desconectado. Verifique DATABASE_URL e tente novamente."}
             </p>
           </div>
@@ -445,7 +445,7 @@ export default async function AdminConfigPage() {
       <div className="rounded-xl border border-surface-200 bg-white p-5">
         <h2 className="text-lg font-semibold font-display text-text-primary mb-4 flex items-center gap-2">
           <Cpu className="h-4 w-4 text-text-muted" />
-          Acoes Rapidas
+          Ações Rápidas
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           {quickActions.map((action) => {
@@ -464,7 +464,7 @@ export default async function AdminConfigPage() {
         </div>
       </div>
 
-      {/* ── Integracoes readiness summary ── */}
+      {/* ── Integrações readiness summary ── */}
       <IntegrationReadinessSummary />
     </div>
   );
@@ -491,7 +491,7 @@ function IntegrationReadinessSummary() {
     <div className="rounded-xl border border-surface-200 bg-white p-5">
       <h2 className="text-lg font-semibold font-display text-text-primary mb-4 flex items-center gap-2">
         <Plug className="h-4 w-4 text-text-muted" />
-        Integracoes
+        Integrações
       </h2>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
@@ -501,7 +501,7 @@ function IntegrationReadinessSummary() {
         </div>
         <div className="p-3 rounded-lg bg-emerald-50 text-center">
           <p className="text-2xl font-bold font-display text-emerald-700">{ready}</p>
-          <p className="text-xs text-emerald-600">Producao</p>
+          <p className="text-xs text-emerald-600">Produção</p>
         </div>
         <div className="p-3 rounded-lg bg-amber-50 text-center">
           <p className="text-2xl font-bold font-display text-amber-700">{partial}</p>
@@ -509,7 +509,7 @@ function IntegrationReadinessSummary() {
         </div>
         <div className="p-3 rounded-lg bg-red-50 text-center">
           <p className="text-2xl font-bold font-display text-red-700">{missing}</p>
-          <p className="text-xs text-red-600">Nao configurado</p>
+          <p className="text-xs text-red-600">Não configurado</p>
         </div>
       </div>
 
@@ -519,14 +519,14 @@ function IntegrationReadinessSummary() {
           className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
         >
           <ArrowRight className="h-4 w-4" />
-          Ativacao da Plataforma
+          Ativação da Plataforma
         </Link>
         <Link
           href="/admin/integrations"
           className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
         >
           <ArrowRight className="h-4 w-4" />
-          Painel de Integracoes
+          Painel de Integrações
         </Link>
       </div>
     </div>

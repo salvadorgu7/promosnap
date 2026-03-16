@@ -13,14 +13,14 @@ export async function generateMetadata() {
   return buildMetadata({
     title: "Ofertas Quentes",
     description:
-      "As melhores ofertas verificadas do momento. Descontos reais com historico de precos.",
+      "As melhores ofertas verificadas do momento. Descontos reais com histórico de preços.",
     path: "/ofertas",
   });
 }
 
 const SORT_OPTIONS = [
   { value: "score", label: "Melhor Oferta" },
-  { value: "price_asc", label: "Menor Preco" },
+  { value: "price_asc", label: "Menor Preço" },
   { value: "discount", label: "Maior Desconto" },
 ];
 
@@ -161,7 +161,7 @@ export default async function OfertasPage({
                   href={buildUrl({ page: page + 1 })}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-surface-100 text-text-secondary hover:bg-surface-200 transition-colors"
                 >
-                  Proximo
+                  Próximo
                 </Link>
               )}
             </nav>
@@ -169,7 +169,7 @@ export default async function OfertasPage({
         </>
       ) : (
         <EmptyState
-          title="Nenhuma oferta disponivel"
+          title="Nenhuma oferta disponível"
           description="Estamos buscando as melhores ofertas. Volte em breve!"
           ctaLabel="Ir para Home"
           ctaHref="/"

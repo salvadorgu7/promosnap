@@ -68,7 +68,7 @@ export default async function DistributionPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold font-display text-text-primary">
-          Distribuicao
+          Distribuição
         </h1>
         <p className="text-sm text-text-muted">
           Publique ofertas nos canais configurados — Telegram, WhatsApp, e-mail
@@ -132,7 +132,7 @@ export default async function DistributionPage() {
           <div className="flex items-center gap-2 mb-3">
             <Star className="w-4 h-4 text-brand-500" />
             <h2 className="text-sm font-semibold text-text-primary">
-              Proxima Melhor Oferta para Distribuir
+              Próxima Melhor Oferta para Distribuir
             </h2>
           </div>
           <div className="flex items-start justify-between">
@@ -158,7 +158,7 @@ export default async function DistributionPage() {
               <div className="flex items-center gap-3 mt-1 text-xs text-text-muted">
                 <span>Score: {offers[0].offerScore}</span>
                 <span>{offers[0].sourceName}</span>
-                {offers[0].isFreeShipping && <span className="text-green-600">Frete gratis</span>}
+                {offers[0].isFreeShipping && <span className="text-green-600">Frete grátis</span>}
                 {offers[0].couponText && <span className="text-purple-600">Cupom: {offers[0].couponText}</span>}
               </div>
             </div>
@@ -177,11 +177,11 @@ export default async function DistributionPage() {
         <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-text-muted" />
           <h2 className="text-sm font-semibold text-text-primary">
-            Segmento de Distribuicao
+            Segmento de Distribuição
           </h2>
         </div>
         <p className="text-xs text-text-muted mb-3">
-          Filtre ofertas por segmento para enviar conteudo direcionado a cada
+          Filtre ofertas por segmento para enviar conteúdo direcionado a cada
           canal de categoria.
         </p>
         <div className="flex flex-wrap gap-2">
@@ -199,7 +199,7 @@ export default async function DistributionPage() {
         <p className="text-[10px] text-text-muted mt-2">
           Selecao de segmento ativa via API — use
           getReadyOffersBySegment(segment, limit) para filtrar ofertas por
-          segmento no codigo.
+          segmento no código.
         </p>
       </div>
 
@@ -208,7 +208,7 @@ export default async function DistributionPage() {
         <div className="px-5 py-4 border-b border-surface-100 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-text-primary flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-accent-blue" />
-            Ofertas Prontas para Distribuicao
+            Ofertas Prontas para Distribuição
           </h2>
           <span className="text-xs text-text-muted">
             Top {offers.length} por score
@@ -218,7 +218,7 @@ export default async function DistributionPage() {
           {offers.length === 0 && (
             <div className="px-5 py-12 text-center text-sm text-text-muted">
               <Zap className="w-8 h-8 mx-auto mb-3 text-surface-300" />
-              <p>Nenhuma oferta elegivel para distribuicao.</p>
+              <p>Nenhuma oferta elegivel para distribuição.</p>
               <p className="text-xs mt-1">
                 Ofertas precisam de score minimo de 30 e produto ativo.
               </p>
@@ -255,7 +255,7 @@ export default async function DistributionPage() {
                       <span>Score: {offer.offerScore}</span>
                       <span>{offer.sourceName}</span>
                       {offer.isFreeShipping && (
-                        <span className="text-green-600">Frete gratis</span>
+                        <span className="text-green-600">Frete grátis</span>
                       )}
                       {offer.couponText && (
                         <span className="text-purple-600">
@@ -327,13 +327,13 @@ export default async function DistributionPage() {
         <div className="px-5 py-4 border-b border-surface-100">
           <h2 className="text-sm font-semibold text-text-primary flex items-center gap-2">
             <Clock className="w-4 h-4 text-text-muted" />
-            Historico de Distribuicao
+            Histórico de Distribuição
           </h2>
         </div>
         <div className="divide-y divide-surface-100">
           {history.length === 0 && (
             <div className="px-5 py-8 text-center text-sm text-text-muted">
-              Nenhuma distribuicao realizada ainda.
+              Nenhuma distribuição realizada ainda.
             </div>
           )}
           {history.map((post) => {

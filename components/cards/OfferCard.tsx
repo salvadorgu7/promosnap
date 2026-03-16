@@ -183,7 +183,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
           {bestOffer.isFreeShipping && (
             <p className="text-[10px] text-accent-green font-semibold mt-0.5 flex items-center gap-0.5">
               <Truck className="h-2.5 w-2.5" />
-              Frete Gratis
+              Frete Grátis
             </p>
           )}
         </div>
@@ -213,17 +213,17 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
             {discount && discount >= 20 && (
               <p className="text-[9px] text-center text-text-muted flex items-center justify-center gap-0.5">
                 <Clock className="w-2.5 h-2.5" />
-                Preco pode mudar a qualquer momento
+                Preço pode mudar a qualquer momento
               </p>
             )}
           </div>
         ) : (
           <Link
             href={`/produto/${product.slug}`}
-            aria-label={`Comparar precos de ${product.name}`}
+            aria-label={`Comparar preços de ${product.name}`}
             className="btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold flex items-center justify-center gap-1.5 touch-target"
           >
-            Comparar Precos
+            Comparar Preços
             <ExternalLink className="w-3 h-3" />
           </Link>
         )}

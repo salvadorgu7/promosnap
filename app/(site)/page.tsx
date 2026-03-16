@@ -159,7 +159,7 @@ export default async function HomePage() {
               </span>
               {stats.activeOffers > 0
                 ? `${formatNumber(stats.activeOffers)} ofertas verificadas`
-                : "Ofertas verificadas com historico real"}
+                : "Ofertas verificadas com histórico real"}
             </div>
 
             <h1 className="font-display font-extrabold text-3xl md:text-5xl text-surface-900 tracking-tight leading-[1.1]">
@@ -168,7 +168,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="mt-2 text-surface-500 text-base max-w-lg mx-auto">
-              Compare precos entre Amazon, Mercado Livre, Shopee e Shein. Historico de 90 dias para voce saber se o desconto e real.
+              Compare preços entre Amazon, Mercado Livre, Shopee e Shein. Histórico de 90 dias para você saber se o desconto é real.
             </p>
 
             <div className="mt-6 max-w-xl mx-auto">
@@ -274,7 +274,7 @@ export default async function HomePage() {
                 <Search className="w-7 h-7 text-brand-500" />
               </div>
               <h2 className="font-display font-bold text-lg text-text-primary mb-1">Comece explorando</h2>
-              <p className="text-sm text-text-muted mb-4">Nosso sistema esta coletando e verificando precos. Use a busca para encontrar produtos especificos.</p>
+              <p className="text-sm text-text-muted mb-4">Nosso sistema está coletando e verificando preços. Use a busca para encontrar produtos específicos.</p>
               <div className="max-w-md mx-auto">
                 <SearchBar large />
               </div>
@@ -327,7 +327,7 @@ export default async function HomePage() {
       {/* ===== 7. PROMOÇÕES FRESQUINHAS ===== */}
       {recentlyImported.length > 0 && (
         <div id="recently-imported" className="py-4">
-          <RailSection title="Promoções Fresquinhas" subtitle="Acabaram de chegar — ultimos 7 dias" href="/ofertas" icon={Sparkles} iconColor="text-accent-green">
+          <RailSection title="Adicionados Recentemente" subtitle="Novidades dos últimos dias" href="/ofertas" icon={Sparkles} iconColor="text-accent-green">
             {recentlyImported.map((p) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="recently-imported" />
@@ -348,7 +348,7 @@ export default async function HomePage() {
       {/* ===== 10. MENOR PRECO HISTORICO ===== */}
       {lowestPrices.length > 0 && (
         <div id="lowest-prices" className="py-4">
-          <RailSection title="Menor Preco Historico" subtitle="Nunca estiveram tao baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
+          <RailSection title="Menor Preço Histórico" subtitle="Nunca estiveram tão baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
             {lowestPrices.map((p) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="lowest-prices" />
@@ -374,7 +374,7 @@ export default async function HomePage() {
       {/* ===== 12. MELHOR CUSTO-BENEFICIO ===== */}
       {bestValue.length > 0 && (
         <div id="best-value" className="py-4">
-          <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" href="/ofertas" icon={Percent} iconColor="text-accent-purple">
+          <RailSection title="Melhor Custo-Benefício" subtitle="Maior desconto com frete grátis" href="/ofertas" icon={Percent} iconColor="text-accent-purple">
             {bestValue.map((p) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="best-value" />
@@ -453,7 +453,7 @@ export default async function HomePage() {
                 icon={Tag}
                 iconColor="text-accent-orange"
                 title="Cupons Ativos"
-                subtitle="Economize com codigos de desconto"
+                subtitle="Economize com códigos de desconto"
               />
               <Link href="/cupons" className="text-sm text-accent-blue hover:text-brand-500 font-medium">
                 Ver todos
@@ -507,12 +507,12 @@ export default async function HomePage() {
       <section id="seo" className="py-8 section-alt">
         <div className="max-w-7xl mx-auto px-4 max-w-3xl">
           <h2 className="font-display font-bold text-xl text-text-primary mb-2">
-            PromoSnap — Ofertas reais com historico de preco
+            PromoSnap — Ofertas reais com histórico de preço
           </h2>
           <p className="text-sm text-text-muted leading-relaxed">
             O PromoSnap monitora os maiores marketplaces do Brasil para encontrar ofertas reais.
-            Comparamos precos da Amazon, Mercado Livre, Shopee e Shein, calculamos um score de oferta
-            baseado em dados reais e mostramos os produtos mais vendidos, menor preco historico e cupons ativos.
+            Comparamos preços da Amazon, Mercado Livre, Shopee e Shein, calculamos um score de oferta
+            baseado em dados reais e mostramos os produtos mais vendidos, menor preço histórico e cupons ativos.
           </p>
         </div>
       </section>

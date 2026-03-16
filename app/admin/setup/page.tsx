@@ -36,10 +36,10 @@ export const dynamic = "force-dynamic";
 // ---------------------------------------------------------------------------
 
 const statusLabel: Record<IntegrationStatus, string> = {
-  NOT_CONFIGURED: "Nao configurado",
+  NOT_CONFIGURED: "Não configurado",
   CONFIG_PARTIAL: "Parcial",
   READY_TO_TEST: "Pronto p/ teste",
-  READY_PRODUCTION: "Producao",
+  READY_PRODUCTION: "Produção",
   BLOCKED_EXTERNAL: "Bloqueado externo",
 };
 
@@ -84,8 +84,8 @@ function buildGlobalChecklist(): ChecklistItem[] {
   return [
     { label: "Database", ok: true, detail: "Prisma conectado" },
     { label: "Dominio (APP_URL)", ok: !!(process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL), detail: process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || undefined },
-    { label: "CRON_SECRET", ok: !!process.env.CRON_SECRET, detail: !process.env.CRON_SECRET ? "Cron acessivel sem auth" : undefined },
-    { label: "ADMIN_SECRET", ok: !!adminSecret && !adminWeak, partial: !!adminSecret && adminWeak, detail: adminWeak ? "Valor padrao — trocar em producao" : undefined },
+    { label: "CRON_SECRET", ok: !!process.env.CRON_SECRET, detail: !process.env.CRON_SECRET ? "Cron acessível sem auth" : undefined },
+    { label: "ADMIN_SECRET", ok: !!adminSecret && !adminWeak, partial: !!adminSecret && adminWeak, detail: adminWeak ? "Valor padrão — trocar em produção" : undefined },
     { label: "Email (RESEND_API_KEY)", ok: !!process.env.RESEND_API_KEY },
     { label: "ML OAuth (ML_CLIENT_ID)", ok: !!(process.env.ML_CLIENT_ID || process.env.MERCADOLIVRE_APP_ID) },
     { label: "Analytics (GA_ID)", ok: !!process.env.NEXT_PUBLIC_GA_ID },
@@ -133,13 +133,13 @@ function buildRecommendations(checklist: ChecklistItem[], catalog: Awaited<Retur
   const mlConfigured = !!(process.env.ML_CLIENT_ID || process.env.MERCADOLIVRE_APP_ID);
   const emailConfigured = !!process.env.RESEND_API_KEY;
 
-  if (!mlConfigured) recs.push("Configurar ML_CLIENT_ID + ML_CLIENT_SECRET para habilitar discovery automatico de produtos");
+  if (!mlConfigured) recs.push("Configurar ML_CLIENT_ID + ML_CLIENT_SECRET para habilitar discovery automático de produtos");
   if (!emailConfigured) recs.push("Configurar RESEND_API_KEY para envio de alertas e newsletters");
-  if (catalog.realImported === 0) recs.push("Rodar discover-import para popular o catalogo com produtos reais do Mercado Livre");
+  if (catalog.realImported === 0) recs.push("Rodar discover-import para popular o catálogo com produtos reais do Mercado Livre");
   if (catalog.clickouts === 0 && catalog.products > 0) recs.push("Verificar tracking de affiliate links — nenhum clickout registrado");
-  if (catalog.subscribers === 0) recs.push("Captar assinantes de newsletter para distribuicao de ofertas");
-  if (catalog.alerts === 0 && catalog.realImported > 0) recs.push("Criar alertas de preco para engajar usuarios");
-  if (catalog.recentJobs.length === 0) recs.push("Executar cron manualmente em /admin/jobs para inicializar a automacao");
+  if (catalog.subscribers === 0) recs.push("Captar assinantes de newsletter para distribuição de ofertas");
+  if (catalog.alerts === 0 && catalog.realImported > 0) recs.push("Criar alertas de preço para engajar usuários");
+  if (catalog.recentJobs.length === 0) recs.push("Executar cron manualmente em /admin/jobs para inicializar a automação");
   if (!process.env.CRON_SECRET) recs.push("Configurar CRON_SECRET para proteger endpoints de cron");
   if (!process.env.NEXT_PUBLIC_GA_ID) recs.push("Configurar NEXT_PUBLIC_GA_ID para habilitar analytics");
 
@@ -179,10 +179,10 @@ export default async function AdminSetupPage() {
           <div>
             <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
               <Settings className="h-6 w-6 text-text-muted" />
-              Ativacao da Plataforma
+              Ativação da Plataforma
             </h1>
             <p className="text-sm text-text-muted mt-1">
-              Visao geral de todas as integracoes e requisitos de ativacao
+              Visão geral de todas as integrações e requisitos de ativação
             </p>
           </div>
           <div className="flex flex-col items-center">
@@ -236,7 +236,7 @@ export default async function AdminSetupPage() {
       {/* ── Catalog Stats ── */}
       <div className="stat-card">
         <h2 className="text-lg font-semibold font-display text-text-primary mb-4">
-          Estado do Catalogo
+          Estado do Catálogo
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
@@ -262,13 +262,13 @@ export default async function AdminSetupPage() {
         )}
       </div>
 
-      {/* ── Proximos Passos ── */}
+      {/* ── Próximos Passos ── */}
       {recommendations.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <Rocket className="h-5 w-5 text-amber-700" />
             <h2 className="text-lg font-semibold font-display text-amber-800">
-              Proximos Passos
+              Próximos Passos
             </h2>
             <span className="ml-auto text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
               {recommendations.length} pendente{recommendations.length > 1 ? "s" : ""}
@@ -340,7 +340,7 @@ export default async function AdminSetupPage() {
               {/* Next steps */}
               {integ.nextSteps.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-text-muted mb-1">Proximos passos:</p>
+                  <p className="text-xs font-medium text-text-muted mb-1">Próximos passos:</p>
                   <ul className="space-y-0.5">
                     {integ.nextSteps.map((step) => (
                       <li key={step} className="text-xs text-text-secondary flex items-start gap-1">
@@ -362,7 +362,7 @@ export default async function AdminSetupPage() {
           href="/admin/config"
           className="text-sm text-blue-600 hover:text-blue-800 underline underline-offset-2"
         >
-          Configuracoes do sistema
+          Configurações do sistema
         </Link>
       </div>
     </div>

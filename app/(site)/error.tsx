@@ -28,7 +28,7 @@ export default function SiteError({
           Ops! Algo deu errado
         </h1>
         <p className="text-sm text-text-muted mb-6">
-          Tivemos um problema ao carregar esta pagina. Tente novamente ou busque outro produto.
+          Tivemos um problema ao carregar esta página. Tente novamente ou busque outro produto.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
@@ -44,7 +44,7 @@ export default function SiteError({
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-surface-200 text-sm font-medium text-text-secondary hover:bg-surface-50 transition-colors touch-target"
           >
             <Home className="w-4 h-4" />
-            Inicio
+            Início
           </Link>
         </div>
 

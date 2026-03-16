@@ -175,7 +175,7 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
 
     // Extract ALL prices — pick the lowest as current, highest as original
     const priceMatches = [...fullText.matchAll(/R\$\s*([\d.,]+)/g)];
-    if (priceMatches.length === 0) { warnings.push('Sem preco detectado'); continue; }
+    if (priceMatches.length === 0) { warnings.push('Sem preço detectado'); continue; }
 
     const prices = priceMatches
       .map(m => parseFloat(m[1].replace(/\./g, '').replace(',', '.')))
@@ -214,7 +214,7 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
       title = scored[0].line;
     }
 
-    if (!title || title.length < 3) { warnings.push('Titulo nao detectado'); continue; }
+    if (!title || title.length < 3) { warnings.push('Título não detectado'); continue; }
 
     // Clean title
     title = title
@@ -252,9 +252,9 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
     if (coupon) confidence += 5;
     confidence = Math.min(100, confidence);
 
-    if (title.length < 10) warnings.push('Titulo curto');
-    if (!brand) warnings.push('Marca nao detectada');
-    if (!category) warnings.push('Categoria nao detectada');
+    if (title.length < 10) warnings.push('Título curto');
+    if (!brand) warnings.push('Marca não detectada');
+    if (!category) warnings.push('Categoria não detectada');
 
     products.push({ title, price, originalPrice, url, coupon, category, brand, confidence, originalText: fullText.slice(0, 300), warnings });
   }
@@ -266,7 +266,7 @@ const emptyManualItem = (): ManualItem => ({
   title: "", price: "", url: "", imageUrl: "", originalPrice: "",
 });
 
-export default function AdminIngestaoPage() {
+export default function AdminIngestãoPage() {
   const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed" | "json" | "whatsapp">("seed");
 
   // ID mode state
@@ -559,8 +559,8 @@ export default function AdminIngestaoPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold font-display text-text-primary">Ingestao Manual</h1>
-        <p className="text-sm text-text-muted">Importe produtos do Mercado Livre por busca, IDs, tendencias ou entrada manual</p>
+        <h1 className="text-2xl font-bold font-display text-text-primary">Ingestão Manual</h1>
+        <p className="text-sm text-text-muted">Importe produtos do Mercado Livre por busca, IDs, tendências ou entrada manual</p>
       </div>
 
       {/* Mode tabs */}
@@ -571,7 +571,7 @@ export default function AdminIngestaoPage() {
           { key: "json", icon: ClipboardPaste, label: "Cola JSON" },
           { key: "manual", icon: PenLine, label: "Manual" },
           { key: "search", icon: Search, label: "Busca" },
-          { key: "trends", icon: TrendingUp, label: "Tendencias" },
+          { key: "trends", icon: TrendingUp, label: "Tendências" },
           { key: "ids", icon: Upload, label: "Por IDs" },
         ] as const).map(({ key, icon: Icon, label }) => (
           <button
@@ -682,7 +682,7 @@ export default function AdminIngestaoPage() {
           <div className="p-3 bg-amber-50 rounded-lg flex items-start gap-2">
             <Info className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
             <p className="text-xs text-amber-700">
-              Usa a API <code className="bg-amber-100 px-1 rounded">/trends/MLB</code> (funciona sem OAuth) + scraping da pagina publica do ML para obter dados dos produtos.
+              Usa a API <code className="bg-amber-100 px-1 rounded">/trends/MLB</code> (funciona sem OAuth) + scraping da página pública do ML para obter dados dos produtos.
             </p>
           </div>
 
@@ -692,9 +692,9 @@ export default function AdminIngestaoPage() {
             className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-2 disabled:opacity-50"
           >
             {isRunning ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Importando tendencias...</>
+              <><Loader2 className="h-4 w-4 animate-spin" /> Importando tendências...</>
             ) : (
-              <><TrendingUp className="h-4 w-4" /> Importar Tendencias</>
+              <><TrendingUp className="h-4 w-4" /> Importar Tendências</>
             )}
           </button>
         </div>
@@ -784,7 +784,7 @@ export default function AdminIngestaoPage() {
           <div className="p-3 bg-green-50 rounded-lg flex items-start gap-2">
             <CheckCircle className="h-4 w-4 text-accent-green mt-0.5 flex-shrink-0" />
             <p className="text-xs text-green-700">
-              <strong>Funciona sempre!</strong> Usa dados pre-carregados — nao depende da API do ML nem de scraping.
+              <strong>Funciona sempre!</strong> Usa dados pré-carregados — não depende da API do ML nem de scraping.
               Ideal para popular o site rapidamente.
             </p>
           </div>
@@ -820,7 +820,7 @@ export default function AdminIngestaoPage() {
               Importar do WhatsApp
             </label>
             <p className="text-xs text-text-muted">
-              Cole o texto copiado de um grupo de promos do WhatsApp. O parser extrai titulo, preco e link automaticamente.
+              Cole o texto copiado de um grupo de promos do WhatsApp. O parser extrai título, preço e link automaticamente.
             </p>
           </div>
 
@@ -958,7 +958,7 @@ export default function AdminIngestaoPage() {
           {whatsappInput.trim() && whatsappProducts.length === 0 && (
             <div className="flex items-center gap-2 text-amber-500 text-xs">
               <AlertTriangle className="h-4 w-4" />
-              Nenhum produto encontrado. Verifique se o texto contem titulo, preco (R$) e link.
+              Nenhum produto encontrado. Verifique se o texto contem título, preço (R$) e link.
             </div>
           )}
 
@@ -1066,7 +1066,7 @@ export default function AdminIngestaoPage() {
           <div className="p-3 bg-blue-50 rounded-lg flex items-start gap-2">
             <Info className="h-4 w-4 text-accent-blue mt-0.5 flex-shrink-0" />
             <p className="text-xs text-blue-700">
-              Abra o produto no Mercado Livre, copie o titulo, preco e URL, e cole nos campos abaixo.
+              Abra o produto no Mercado Livre, copie o título, preço e URL, e cole nos campos abaixo.
             </p>
           </div>
 
@@ -1086,7 +1086,7 @@ export default function AdminIngestaoPage() {
                   type="text"
                   value={item.title}
                   onChange={(e) => updateManualItem(i, "title", e.target.value)}
-                  placeholder="Titulo do produto *"
+                  placeholder="Título do produto *"
                   className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30"
                 />
                 <div className="grid grid-cols-2 gap-3">
@@ -1094,14 +1094,14 @@ export default function AdminIngestaoPage() {
                     type="text"
                     value={item.price}
                     onChange={(e) => updateManualItem(i, "price", e.target.value)}
-                    placeholder="Preco atual (R$) *"
+                    placeholder="Preço atual (R$) *"
                     className="px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30"
                   />
                   <input
                     type="text"
                     value={item.originalPrice}
                     onChange={(e) => updateManualItem(i, "originalPrice", e.target.value)}
-                    placeholder="Preco original (opcional)"
+                    placeholder="Preço original (opcional)"
                     className="px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30"
                   />
                 </div>
@@ -1150,7 +1150,7 @@ export default function AdminIngestaoPage() {
         <div className="card p-5 border-red-200 bg-red-50 space-y-2">
           <div className="flex items-center gap-2 text-red-600">
             <XCircle className="h-5 w-5" />
-            <p className="font-medium">Erro na ingestao</p>
+            <p className="font-medium">Erro na ingestão</p>
           </div>
           <p className="text-sm text-red-500">{error.error}</p>
           {error.hint && (
@@ -1161,7 +1161,7 @@ export default function AdminIngestaoPage() {
           )}
           {error.trends && error.trends.length > 0 && (
             <div className="p-3 bg-white/60 rounded-lg">
-              <p className="text-xs text-text-muted font-medium mb-1">Tendencias encontradas:</p>
+              <p className="text-xs text-text-muted font-medium mb-1">Tendências encontradas:</p>
               <div className="flex flex-wrap gap-1.5">
                 {error.trends.map((t) => (
                   <span key={t} className="inline-block px-2 py-0.5 rounded bg-amber-100 text-xs text-amber-700">{t}</span>

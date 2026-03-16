@@ -340,26 +340,26 @@ export default async function CompararPage({
           <div className="flex items-center gap-2 mb-3">
             <Zap className="w-5 h-5 text-accent-orange" />
             <h2 className="text-lg font-bold font-display text-text-primary">
-              Conclusao Rapida
+              Conclusão Rápida
             </h2>
           </div>
           <p className="text-sm text-text-secondary leading-relaxed mb-4">
             {bestA.bestOffer.price <= bestB.bestOffer.price ? (
               <>
-                O <strong>{def.productA.name}</strong> esta mais barato agora por{" "}
+                O <strong>{def.productA.name}</strong> está mais barato agora por{" "}
                 <strong className="text-accent-green">{formatPrice(bestA.bestOffer.price)}</strong>
                 {bestB.bestOffer.price > bestA.bestOffer.price && (
                   <>, economizando{" "}
-                  <strong>{formatPrice(bestB.bestOffer.price - bestA.bestOffer.price)}</strong> em relacao ao {def.productB.name}</>
+                  <strong>{formatPrice(bestB.bestOffer.price - bestA.bestOffer.price)}</strong> em relação ao {def.productB.name}</>
                 )}.
               </>
             ) : (
               <>
-                O <strong>{def.productB.name}</strong> esta mais barato agora por{" "}
+                O <strong>{def.productB.name}</strong> está mais barato agora por{" "}
                 <strong className="text-accent-green">{formatPrice(bestB.bestOffer.price)}</strong>
                 {bestA.bestOffer.price > bestB.bestOffer.price && (
                   <>, economizando{" "}
-                  <strong>{formatPrice(bestA.bestOffer.price - bestB.bestOffer.price)}</strong> em relacao ao {def.productA.name}</>
+                  <strong>{formatPrice(bestA.bestOffer.price - bestB.bestOffer.price)}</strong> em relação ao {def.productA.name}</>
                 )}.
               </>
             )}
@@ -373,7 +373,7 @@ export default async function CompararPage({
                          bg-accent-orange text-white text-sm font-bold hover:bg-accent-orange/90 transition-all shadow-md"
             >
               <Trophy className="w-4 h-4" />
-              Ver melhor preco ({formatPrice(Math.min(bestA.bestOffer.price, bestB.bestOffer.price))})
+              Ver melhor preço ({formatPrice(Math.min(bestA.bestOffer.price, bestB.bestOffer.price))})
             </a>
           </div>
         </div>
@@ -384,7 +384,7 @@ export default async function CompararPage({
         <div className="flex-1 relative">
           {bestA && bestB && bestA.bestOffer.price <= bestB.bestOffer.price && (
             <div className="absolute -top-3 left-4 z-10 flex items-center gap-1 px-3 py-1 rounded-full bg-accent-green text-white text-xs font-bold shadow-md">
-              <Trophy className="w-3 h-3" /> Melhor Preco
+              <Trophy className="w-3 h-3" /> Melhor Preço
             </div>
           )}
           <ProductSideCard label={def.productA.name} products={productsA} />
@@ -397,7 +397,7 @@ export default async function CompararPage({
         <div className="flex-1 relative">
           {bestA && bestB && bestB.bestOffer.price < bestA.bestOffer.price && (
             <div className="absolute -top-3 left-4 z-10 flex items-center gap-1 px-3 py-1 rounded-full bg-accent-green text-white text-xs font-bold shadow-md">
-              <Trophy className="w-3 h-3" /> Melhor Preco
+              <Trophy className="w-3 h-3" /> Melhor Preço
             </div>
           )}
           <ProductSideCard label={def.productB.name} products={productsB} />
@@ -428,7 +428,7 @@ export default async function CompararPage({
             </thead>
             <tbody>
               <ComparisonRow
-                label="Melhor Preco"
+                label="Melhor Preço"
                 valueA={formatPrice(bestA.bestOffer.price)}
                 valueB={formatPrice(bestB.bestOffer.price)}
                 highlight={bestA.bestOffer.price <= bestB.bestOffer.price ? "a" : "b"}
@@ -445,9 +445,9 @@ export default async function CompararPage({
                 highlight={bestA.bestOffer.offerScore >= bestB.bestOffer.offerScore ? "a" : "b"}
               />
               <ComparisonRow
-                label="Frete Gratis"
-                valueA={bestA.bestOffer.isFreeShipping ? "Sim" : "Nao"}
-                valueB={bestB.bestOffer.isFreeShipping ? "Sim" : "Nao"}
+                label="Frete Grátis"
+                valueA={bestA.bestOffer.isFreeShipping ? "Sim" : "Não"}
+                valueB={bestB.bestOffer.isFreeShipping ? "Sim" : "Não"}
                 highlight={
                   bestA.bestOffer.isFreeShipping && !bestB.bestOffer.isFreeShipping
                     ? "a"
@@ -466,7 +466,7 @@ export default async function CompararPage({
                 }
               />
               <ComparisonRow
-                label="Ofertas Disponiveis"
+                label="Ofertas Disponíveis"
                 valueA={`${productsA.reduce((acc, p) => acc + p.offersCount, 0)} ofertas`}
                 valueB={`${productsB.reduce((acc, p) => acc + p.offersCount, 0)} ofertas`}
               />

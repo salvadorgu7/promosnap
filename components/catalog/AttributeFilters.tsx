@@ -136,7 +136,7 @@ export default function AttributeFilters({
   const activePills: { key: string; value: string; label: string }[] = [];
   for (const f of filters) {
     if (f.key === "freeShipping" && activeFilters.freeShipping) {
-      activePills.push({ key: f.key, value: "true", label: "Frete Gratis" });
+      activePills.push({ key: f.key, value: "true", label: "Frete Grátis" });
     } else if (f.key === "minRating" && activeFilters.minRating !== undefined) {
       activePills.push({
         key: f.key,

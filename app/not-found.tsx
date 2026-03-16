@@ -11,10 +11,10 @@ export default function NotFound() {
 
         <div>
           <h1 className="text-2xl font-bold font-display text-text-primary mb-2">
-            Pagina nao encontrada
+            Página não encontrada
           </h1>
           <p className="text-text-secondary text-sm leading-relaxed">
-            A pagina que voce procura nao existe ou foi movida. Tente buscar o que precisa.
+            A página que você procura não existe ou foi movida. Tente buscar o que precisa.
           </p>
         </div>
 
@@ -24,7 +24,7 @@ export default function NotFound() {
             className="btn-primary flex items-center gap-2 text-sm"
           >
             <Home className="h-4 w-4" />
-            Inicio
+            Início
           </Link>
           <Link
             href="/busca"
