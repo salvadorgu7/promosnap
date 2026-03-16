@@ -278,38 +278,40 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== 3. DEAL OF THE DAY (moved up — hero → deal → carousel for immediate value) ===== */}
-      {dealOfTheDay && (
+      {/* ===== 3. OFERTA DO DIA — auto-rotates top 6 deals ===== */}
+      {hotOffers.length > 0 && (
         <section id="deal-of-the-day" className="py-4">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="mb-2 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-accent-orange" />
-              <span className="text-xs font-semibold text-accent-orange uppercase tracking-wide">Oferta destaque do dia</span>
-            </div>
             <DealOfTheDay
               product={{
-                id: dealOfTheDay.id,
-                name: dealOfTheDay.name,
-                slug: dealOfTheDay.slug,
-                imageUrl: dealOfTheDay.imageUrl,
-                price: dealOfTheDay.bestOffer.price,
-                originalPrice: dealOfTheDay.bestOffer.originalPrice,
-                discount: dealOfTheDay.bestOffer.discount,
-                sourceName: dealOfTheDay.bestOffer.sourceName,
-                offerScore: dealOfTheDay.bestOffer.offerScore,
-                isFreeShipping: dealOfTheDay.bestOffer.isFreeShipping,
-                offerId: dealOfTheDay.bestOffer.offerId,
+                id: hotOffers[0].id,
+                name: hotOffers[0].name,
+                slug: hotOffers[0].slug,
+                imageUrl: hotOffers[0].imageUrl,
+                price: hotOffers[0].bestOffer.price,
+                originalPrice: hotOffers[0].bestOffer.originalPrice,
+                discount: hotOffers[0].bestOffer.discount,
+                sourceName: hotOffers[0].bestOffer.sourceName,
+                offerScore: hotOffers[0].bestOffer.offerScore,
+                isFreeShipping: hotOffers[0].bestOffer.isFreeShipping,
+                offerId: hotOffers[0].bestOffer.offerId,
               }}
+              extraDeals={hotOffers.slice(1, 6).map(p => ({
+                id: p.id,
+                name: p.name,
+                slug: p.slug,
+                imageUrl: p.imageUrl,
+                price: p.bestOffer.price,
+                originalPrice: p.bestOffer.originalPrice,
+                discount: p.bestOffer.discount,
+                sourceName: p.bestOffer.sourceName,
+                offerScore: p.bestOffer.offerScore,
+                isFreeShipping: p.bestOffer.isFreeShipping,
+                offerId: p.bestOffer.offerId,
+              }))}
             />
           </div>
         </section>
-      )}
-
-      {/* ===== 4. OFFER CAROUSEL ===== */}
-      {hotOffers.length > 0 && (
-        <div id="carousel" className="section-energy">
-          <OfferCarousel offers={hotOffers.slice(0, 5)} />
-        </div>
       )}
 
       {/* ===== Empty state if no offers at all ===== */}
@@ -364,7 +366,7 @@ export default async function HomePage() {
         <div id="hot-offers" className="section-alt py-4">
           <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
             {hotOffers.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
                 <OfferCard product={p} page="home" railSource="hot-offers" />
               </div>
             ))}
@@ -372,12 +374,12 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* ===== 7. IMPORTADOS RECENTEMENTE ===== */}
+      {/* ===== 7. PROMOÇÕES FRESQUINHAS ===== */}
       {recentlyImported.length > 0 && (
         <div id="recently-imported" className="py-4">
-          <RailSection title="Importados Recentemente" subtitle="Produtos reais dos ultimos 7 dias" href="/ofertas" icon={Package} iconColor="text-accent-green">
+          <RailSection title="Promoções Fresquinhas" subtitle="Acabaram de chegar — ultimos 7 dias" href="/ofertas" icon={Sparkles} iconColor="text-accent-green">
             {recentlyImported.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
                 <OfferCard product={p} page="home" railSource="recently-imported" />
               </div>
             ))}
@@ -398,7 +400,7 @@ export default async function HomePage() {
         <div id="lowest-prices" className="py-4">
           <RailSection title="Menor Preco Historico" subtitle="Nunca estiveram tao baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
             {lowestPrices.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
                 <OfferCard product={p} page="home" railSource="lowest-prices" />
               </div>
             ))}
@@ -411,7 +413,7 @@ export default async function HomePage() {
         <div id="best-sellers" className="section-alt py-4">
           <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
             {bestSellers.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
                 <OfferCard product={p} page="home" railSource="best-sellers" />
               </div>
             ))}
@@ -424,7 +426,7 @@ export default async function HomePage() {
         <div id="best-value" className="py-4">
           <RailSection title="Melhor Custo-Beneficio" subtitle="Maior desconto com frete gratis" href="/ofertas" icon={Percent} iconColor="text-accent-purple">
             {bestValue.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
                 <OfferCard product={p} page="home" railSource="best-value" />
               </div>
             ))}
@@ -437,7 +439,7 @@ export default async function HomePage() {
         <div id="ready-for-campaign" className="section-alt py-4">
           <RailSection title="Prontos para Comprar" subtitle="Com desconto e link direto para a loja" href="/ofertas" icon={Star} iconColor="text-accent-blue">
             {readyForCampaign.map((p) => (
-              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0">
+              <div key={p.id} className="w-[160px] md:w-[200px] flex-shrink-0 h-full">
                 <OfferCard product={p} page="home" railSource="ready-for-campaign" />
               </div>
             ))}
@@ -479,7 +481,14 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* ===== 15b. SMART SUGGESTIONS ===== */}
+      {/* ===== 15b. DESTAQUE CAROUSEL (spread away from Oferta do Dia) ===== */}
+      {hotOffers.length > 6 && (
+        <div id="carousel" className="section-energy">
+          <OfferCarousel offers={hotOffers.slice(6, 12)} />
+        </div>
+      )}
+
+      {/* ===== 15c. SMART SUGGESTIONS ===== */}
       <SmartSuggestions />
 
       {/* ===== 16. PERSONALIZED RAILS ===== */}

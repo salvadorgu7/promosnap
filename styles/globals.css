@@ -211,12 +211,13 @@
 
   /* ---- Horizontal rail ---- */
   .rail {
-    @apply flex gap-3 md:gap-4 overflow-x-auto pb-4 snap-x snap-proximity;
+    @apply flex items-stretch gap-3 md:gap-4 overflow-x-auto pb-4 snap-x snap-proximity;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
   .rail::-webkit-scrollbar { display: none; }
-  .rail > * { @apply snap-start flex-shrink-0; }
+  .rail > * { @apply snap-start flex-shrink-0 h-auto; }
+  .rail > * > .card { @apply h-full; }
 
   /* ---- Shimmer loading ---- */
   .shimmer {

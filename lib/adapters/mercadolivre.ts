@@ -232,7 +232,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       return data.results.map(mlToAdapterResult)
     } catch (error) {
       console.error(`[ML] search error:`, error)
-      return []
+      throw error
     }
   }
 
@@ -241,21 +241,18 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
   // ---------------------------------------------------------------------------
 
   async getProduct(externalId: string): Promise<AdapterResult | null> {
-    try {
-      const headers = await getAuthHeaders()
-      const res = await fetch(`${ML_API_BASE}/items/${externalId}`, { headers })
+    const headers = await getAuthHeaders()
+    const res = await fetch(`${ML_API_BASE}/items/${externalId}`, { headers })
 
-      if (!res.ok) {
-        console.error(`[ML] getProduct(${externalId}) failed: ${res.status}`)
-        return null
-      }
-
-      const item: MLItemResponse = await res.json()
-      return mlItemToAdapterResult(item)
-    } catch (error) {
-      console.error(`[ML] getProduct error:`, error)
-      return null
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '')
+      const msg = `[ML] getProduct(${externalId}) failed: ${res.status} — ${errText.slice(0, 200)}`
+      console.error(msg)
+      throw new Error(msg)
     }
+
+    const item: MLItemResponse = await res.json()
+    return mlItemToAdapterResult(item)
   }
 
   // ---------------------------------------------------------------------------

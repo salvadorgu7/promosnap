@@ -78,7 +78,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
   const isHotDiscount = discount && discount >= 20;
 
   return (
-    <div className="card group flex flex-col w-full overflow-hidden">
+    <div className="card group flex flex-col w-full h-full overflow-hidden">
       {/* Badges */}
       {badges.length > 0 && (
         <div className="flex items-center gap-1 px-1.5 pt-1.5 flex-wrap">

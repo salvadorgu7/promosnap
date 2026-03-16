@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
   try {
     const results = await adapter.search(q, { limit })
     items = results.map(adapterResultToImportItem)
-  } catch (err) {
-    return NextResponse.json({ error: 'Falha ao buscar dados da API ML' }, { status: 502 })
+  } catch (err: any) {
+    return NextResponse.json({ error: `Falha ao buscar da API ML: ${err.message || 'erro desconhecido'}` }, { status: 502 })
   }
 
   if (items.length === 0) {
@@ -121,15 +121,22 @@ export async function POST(request: NextRequest) {
       if (result) {
         items.push(adapterResultToImportItem(result))
       } else {
-        errors.push(`${id}: nao encontrado`)
+        errors.push(`${id}: nao encontrado na API ML`)
       }
-    } catch (err) {
-      errors.push(`${id}: falha ao buscar`)
+    } catch (err: any) {
+      errors.push(`${id}: ${err.message || 'falha ao buscar'}`)
     }
   }
 
   if (items.length === 0) {
-    return NextResponse.json({ error: 'Nenhum item encontrado para os IDs fornecidos', errors }, { status: 404 })
+    return NextResponse.json({
+      error: 'Nenhum item encontrado para os IDs fornecidos',
+      hint: errors.length > 0
+        ? 'Verifique se os IDs estao corretos e se as credenciais ML estao configuradas (ML_CLIENT_ID / ML_CLIENT_SECRET)'
+        : 'Verifique se os IDs ML estao no formato correto (ex: MLB1234567890)',
+      errors,
+      configured: adapter.isConfigured(),
+    }, { status: 404 })
   }
 
   try {
