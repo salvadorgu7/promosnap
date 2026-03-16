@@ -98,7 +98,8 @@ export async function GET(request: NextRequest) {
         WHERE p."originType" = 'imported' AND p.status = 'ACTIVE'
       `;
       importedCategories = new Set((catResults as any[]).map(r => r.name?.toLowerCase()).filter(Boolean));
-    } catch {
+    } catch (err) {
+      console.error('[trending] Error:', err instanceof Error ? err.message : err);
       // originType column may not exist — skip
     }
 

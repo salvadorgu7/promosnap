@@ -12,7 +12,10 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[PromoSnap] Unhandled error:", error);
+    // Log error digest only (no sensitive details to client console)
+    if (error.digest) {
+      console.error("[PromoSnap] Error digest:", error.digest);
+    }
   }, [error]);
 
   return (

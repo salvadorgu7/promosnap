@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
 
     // ML espera 200 para confirmar recebimento
     return NextResponse.json({ ok: true })
-  } catch {
+  } catch (err) {
+    console.error('[webhook/ml] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ ok: true }) // sempre 200 para o ML nao retentar
   }
 }

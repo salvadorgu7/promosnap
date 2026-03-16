@@ -43,7 +43,8 @@ export async function GET(
     });
 
     return withRateLimitHeaders(response, rl);
-  } catch {
+  } catch (err) {
+    console.error('[price-history] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: "Falha ao buscar historico de precos" },
       { status: 500 }

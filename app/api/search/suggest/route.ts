@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
   try {
     const suggestions = await getSearchSuggestions(q, 8)
     return NextResponse.json(suggestions)
-  } catch {
+  } catch (err) {
+    console.error('[search/suggest] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to fetch suggestions' }, { status: 500 })
   }
 }

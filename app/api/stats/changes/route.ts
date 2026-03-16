@@ -45,7 +45,8 @@ export async function GET(req: NextRequest) {
       alertsTriggeredRecently,
       updatedAt: new Date().toISOString(),
     });
-  } catch {
+  } catch (err) {
+    console.error('[stats/changes] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({
       priceDropsToday: 0,
       newOffersToday: 0,

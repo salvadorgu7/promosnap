@@ -14,12 +14,22 @@ import { getIntegritySummary } from "@/lib/project/integrity";
 
 export const dynamic = "force-dynamic";
 
-const REVENUE_RATES: Record<string, number> = {
+// Revenue rates per source (overridable via REVENUE_RATES env var as JSON)
+const DEFAULT_REVENUE_RATES: Record<string, number> = {
   "amazon-br": 0.04,
   mercadolivre: 0.03,
   shopee: 0.025,
   shein: 0.03,
 };
+
+const REVENUE_RATES: Record<string, number> = (() => {
+  try {
+    const envRates = process.env.REVENUE_RATES;
+    return envRates ? { ...DEFAULT_REVENUE_RATES, ...JSON.parse(envRates) } : DEFAULT_REVENUE_RATES;
+  } catch {
+    return DEFAULT_REVENUE_RATES;
+  }
+})();
 
 const DEFAULT_RATE = 0.03;
 

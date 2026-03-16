@@ -39,7 +39,8 @@ function appendAffiliateParams(url: string, sourceSlug: string): string {
     }
 
     return parsed.toString();
-  } catch {
+  } catch (err) {
+    console.error('[clickout] Error:', err instanceof Error ? err.message : err);
     return url; // If URL parsing fails, return as-is
   }
 }
