@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Star, ShieldCheck, Store, Truck, Flame as FireIcon, ThumbsUp } from "lucide-react";
+import { ExternalLink, Star, ShieldCheck, Store, Truck, Flame as FireIcon, ThumbsUp, Zap, Clock } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import FavoriteButton from "@/components/ui/FavoriteButton";
@@ -76,6 +76,13 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
   const ctaUrl = buildCtaUrl();
   const hasDirectLink = bestOffer.affiliateUrl && bestOffer.affiliateUrl !== "#";
   const isHotDiscount = discount && discount >= 20;
+
+  // Dynamic CTA text based on deal quality
+  const ctaLabel = bestOffer.offerScore >= 80
+    ? "Aproveitar Agora"
+    : discount && discount >= 30
+      ? "Garantir Desconto"
+      : "Ver Oferta";
 
   return (
     <div className="card group flex flex-col w-full h-full overflow-hidden">
@@ -186,9 +193,12 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
             href={ctaUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold"
+            className={`btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold ${
+              bestOffer.offerScore >= 80 ? "animate-pulse-subtle" : ""
+            }`}
           >
-            Ver Oferta
+            {bestOffer.offerScore >= 80 && <Zap className="w-3 h-3" />}
+            {ctaLabel}
             <ExternalLink className="w-3 h-3" />
           </a>
         ) : (

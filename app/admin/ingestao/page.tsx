@@ -59,98 +59,188 @@ function extractMlIds(input: string): string[] {
 interface ParsedWhatsAppProduct {
   title: string;
   price: number;
+  originalPrice?: number;
   url: string;
   coupon?: string;
+  category?: string;
+  brand?: string;
+  confidence: number; // 0-100
   originalText: string;
+  warnings: string[];
+}
+
+// ─── Category detection from title ──────────────────────────────────────────
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  celulares: ['celular', 'smartphone', 'iphone', 'galaxy s', 'moto g', 'redmi', 'poco', 'pixel'],
+  notebooks: ['notebook', 'laptop', 'macbook', 'chromebook', 'ideapad', 'inspiron'],
+  'tv-audio': ['fone', 'headset', 'caixa de som', 'soundbar', 'smart tv', 'tv 4k', 'jbl', 'airpods', 'earbuds', 'speaker', 'echo dot'],
+  eletronicos: ['smartwatch', 'watch', 'kindle', 'tablet', 'ipad', 'fire tv', 'camera', 'gopro', 'drone'],
+  casa: ['air fryer', 'fritadeira', 'cafeteira', 'aspirador', 'liquidificador', 'panela', 'microondas', 'ventilador', 'purificador'],
+  gamer: ['playstation', 'ps5', 'ps4', 'xbox', 'nintendo', 'switch', 'controle', 'headset gamer', 'mouse gamer', 'teclado gamer'],
+  esportes: ['tenis', 'nike', 'adidas', 'mochila', 'garrafa', 'bicicleta', 'esteira', 'haltere', 'whey'],
+  informatica: ['ssd', 'hd externo', 'pendrive', 'monitor', 'mouse', 'teclado', 'webcam', 'roteador', 'impressora'],
+  beleza: ['perfume', 'maquiagem', 'protetor solar', 'shampoo', 'hidratante', 'secador', 'chapinha'],
+};
+
+const BRAND_PATTERNS = [
+  'apple', 'samsung', 'xiaomi', 'motorola', 'lg', 'sony', 'jbl', 'philips', 'dell', 'lenovo',
+  'asus', 'hp', 'acer', 'logitech', 'razer', 'corsair', 'nike', 'adidas', 'oster', 'philco',
+  'mondial', 'electrolux', 'brastemp', 'consul', 'tramontina', 'positivo', 'multilaser',
+  'intelbras', 'britania', 'midea', 'cadence', 'walita', 'arno', 'google', 'amazon', 'anker',
+  'bose', 'sennheiser', 'hyperx', 'nintendo', 'microsoft', 'realme', 'infinix', 'stanley',
+  'garmin', 'fitbit', 'gopro', 'canon', 'nikon', 'epson', 'brother', 'under armour', 'new balance',
+];
+
+function detectCategory(title: string): string | undefined {
+  const lower = title.toLowerCase();
+  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (keywords.some(kw => lower.includes(kw))) return cat;
+  }
+  return undefined;
+}
+
+function detectBrandFromTitle(title: string): string | undefined {
+  const lower = title.toLowerCase();
+  return BRAND_PATTERNS.find(b => lower.includes(b));
 }
 
 function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
   const products: ParsedWhatsAppProduct[] = [];
+  const seenUrls = new Set<string>();
 
-  // Split into message blocks — each product message typically has a URL
-  // Strategy: find all URLs first, then work backwards to find title + price
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-  // Collect blocks: a "block" is a group of lines that form one product message
-  // We detect block boundaries by looking for time stamps (HH:MM) or sender changes
+  // Collect blocks with improved boundary detection
   const blocks: string[][] = [];
   let currentBlock: string[] = [];
 
   for (const line of lines) {
-    // Skip phone numbers, timestamps, sender names, "Encaminhada", etc
+    // Skip noise lines
     if (/^\+55\s/.test(line)) continue;
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(line)) continue; // date lines
     if (/^\d{1,2}:\d{2}$/.test(line)) {
-      if (currentBlock.length > 0) {
-        blocks.push(currentBlock);
-        currentBlock = [];
-      }
+      if (currentBlock.length > 0) { blocks.push(currentBlock); currentBlock = []; }
       continue;
     }
-    if (/^(Adm|TEM|Hoje|Você|Encaminhada|Promos do dia)/.test(line)) {
+    if (/^(Adm|TEM |Hoje|Você|Encaminhada|Promos do dia|Mensagem apagada|Arquivo de midia|Figurinha omitida)/i.test(line)) {
       if (currentBlock.length > 0 && currentBlock.some(l => /https?:\/\//.test(l))) {
         blocks.push(currentBlock);
         currentBlock = [];
       }
       continue;
     }
-    if (/^tempromo\.app\.br$/.test(line)) continue;
+    if (/^tempromo\.app\.br$/i.test(line)) continue;
+    if (/^[-—=]{3,}$/.test(line)) continue; // separator lines
+    if (/^(👆|👇|⬆|⬇|🔗|💰|🔥|⚡|🏷|📌|✅|❌)\s*$/.test(line)) continue; // emoji-only lines
+
+    // New block if line contains URL and current block already has a URL
+    if (/https?:\/\//.test(line) && currentBlock.some(l => /https?:\/\//.test(l))) {
+      blocks.push(currentBlock);
+      currentBlock = [];
+    }
+
     currentBlock.push(line);
   }
   if (currentBlock.length > 0) blocks.push(currentBlock);
 
-  // Now parse each block
   for (const block of blocks) {
     const fullText = block.join('\n');
+    const warnings: string[] = [];
 
-    // Extract URL
-    const urlMatch = fullText.match(/https?:\/\/[^\s_]+/);
-    if (!urlMatch) continue;
-    const url = urlMatch[0];
+    // Extract ALL URLs
+    const urls = fullText.match(/https?:\/\/[^\s\]_)>]+/g);
+    if (!urls || urls.length === 0) continue;
+    const url = urls[0].replace(/[.,;:!?]+$/, ''); // clean trailing punctuation
 
-    // Extract price — look for R$ pattern
-    const priceMatch = fullText.match(/R\$\s*([\d.,]+)/);
-    if (!priceMatch) continue;
-    const priceStr = priceMatch[1].replace(/\./g, '').replace(',', '.');
-    const price = parseFloat(priceStr);
-    if (isNaN(price) || price <= 0) continue;
+    // Dedup by URL
+    const urlKey = url.replace(/[?#].*$/, '').replace(/\/+$/, '');
+    if (seenUrls.has(urlKey)) continue;
+    seenUrls.add(urlKey);
 
-    // Extract title — the longest line that's not a URL, price line, or instruction
-    // Also try the meta title pattern "Product Name - Tem Promô"
+    // Extract ALL prices — pick the lowest as current, highest as original
+    const priceMatches = [...fullText.matchAll(/R\$\s*([\d.,]+)/g)];
+    if (priceMatches.length === 0) { warnings.push('Sem preco detectado'); continue; }
+
+    const prices = priceMatches
+      .map(m => parseFloat(m[1].replace(/\./g, '').replace(',', '.')))
+      .filter(p => !isNaN(p) && p > 0 && p < 500000)
+      .sort((a, b) => a - b);
+
+    if (prices.length === 0) continue;
+    const price = prices[0];
+    const originalPrice = prices.length > 1 ? prices[prices.length - 1] : undefined;
+
+    // Title extraction with better heuristics
     let title = '';
-
-    // Look for the line that's the product title (usually the most descriptive, longest line)
     const titleCandidates = block.filter(l =>
       !l.startsWith('http') &&
       !/^R\$/.test(l) &&
-      !/^Use o cupom/.test(l) &&
-      !/^Compre aqui/.test(l) &&
-      !/^(Voltou|BAIXOU|Menos|Últimas|Combo|Linha|Tem o|Nike por|540G|3 Litros|18 Mil|SB Dunk)/.test(l) &&
+      !/^(Use o? cupom|Compre aqui|Clique aqui|Link|Acesse|Aproveite|Garanta|Corra)/i.test(l) &&
+      !/^(De R\$|Por R\$|Antes|Agora|Era|Preço)/i.test(l) &&
       !l.includes('tempromo.app.br') &&
+      !/^[🔥⚡💰🏷📌✅🎯👆👇⬆⬇🔗]+\s*$/.test(l) &&
       l.length > 5
     );
 
-    // Prefer lines ending with " - Tem Promô" (meta title from link preview)
-    const metaTitle = titleCandidates.find(l => l.includes(' - Tem Promô'));
+    // Prefer " - Tem Promô" meta titles, then " | " separated titles
+    const metaTitle = titleCandidates.find(l => /\s-\s(Tem Promô|Promoção|Oferta|Mercado Livre|Amazon|Shopee)/i.test(l));
     if (metaTitle) {
-      title = metaTitle.replace(/ - Tem Promô$/, '').trim();
+      title = metaTitle.replace(/\s[-|]\s(Tem Promô|Promoção|Oferta|Mercado Livre|Amazon|Shopee).*$/i, '').trim();
     } else if (titleCandidates.length > 0) {
-      // Pick the longest candidate that looks like a product name
-      title = titleCandidates.sort((a, b) => b.length - a.length)[0];
+      // Score candidates: prefer longer, with brand names, without excessive caps
+      const scored = titleCandidates.map(l => {
+        let s = l.length;
+        if (BRAND_PATTERNS.some(b => l.toLowerCase().includes(b))) s += 20;
+        if (/\d+(gb|tb|ml|kg|w|v|pol|")/i.test(l)) s += 15; // has specs
+        if (l === l.toUpperCase() && l.length > 20) s -= 10; // all caps penalty
+        return { line: l, score: s };
+      }).sort((a, b) => b.score - a.score);
+      title = scored[0].line;
     }
 
-    if (!title || title.length < 3) continue;
+    if (!title || title.length < 3) { warnings.push('Titulo nao detectado'); continue; }
 
-    // Clean up title — remove trailing junk
+    // Clean title
     title = title
-      .replace(/ - Tem Promô$/i, '')
+      .replace(/\s*[-|]\s*(Tem Promô|Promoção).*$/i, '')
       .replace(/\s*\.\.\.$/, '')
+      .replace(/^[🔥⚡💰🏷📌✅🎯]+\s*/, '') // leading emojis
+      .replace(/\s{2,}/g, ' ')
       .trim();
 
-    // Extract coupon if present
-    const couponMatch = fullText.match(/cupom:\s*(\S+)/i);
-    const coupon = couponMatch ? couponMatch[1] : undefined;
+    // Extract coupon — multiple patterns
+    const couponPatterns = [
+      /cupom[:\s]+([A-Z0-9_-]{3,30})/i,
+      /c[oó]digo[:\s]+([A-Z0-9_-]{3,30})/i,
+      /desconto[:\s]+([A-Z0-9_-]{3,30})/i,
+      /use[:\s]+([A-Z0-9_-]{4,30})/i,
+    ];
+    let coupon: string | undefined;
+    for (const pattern of couponPatterns) {
+      const match = fullText.match(pattern);
+      if (match) { coupon = match[1].toUpperCase(); break; }
+    }
 
-    products.push({ title, price, url, coupon, originalText: fullText.slice(0, 200) });
+    // Detect category and brand
+    const category = detectCategory(title);
+    const brand = detectBrandFromTitle(title);
+
+    // Compute confidence score (0-100)
+    let confidence = 30; // base
+    if (title.length > 15) confidence += 10;
+    if (title.length > 30) confidence += 10;
+    if (brand) confidence += 15;
+    if (category) confidence += 10;
+    if (url.includes('mercadolivre') || url.includes('amazon') || url.includes('shopee')) confidence += 10;
+    if (originalPrice && originalPrice > price) confidence += 10;
+    if (coupon) confidence += 5;
+    confidence = Math.min(100, confidence);
+
+    if (title.length < 10) warnings.push('Titulo curto');
+    if (!brand) warnings.push('Marca nao detectada');
+    if (!category) warnings.push('Categoria nao detectada');
+
+    products.push({ title, price, originalPrice, url, coupon, category, brand, confidence, originalText: fullText.slice(0, 300), warnings });
   }
 
   return products;
@@ -402,6 +492,8 @@ export default function AdminIngestaoPage() {
             title: p.title,
             price: p.price,
             url: p.url,
+            originalPrice: p.originalPrice || undefined,
+            category: p.category || undefined,
           })),
         }),
       });
@@ -728,27 +820,43 @@ export default function AdminIngestaoPage() {
 
           {whatsappProducts.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-text-primary">
-                  {whatsappProducts.length} {whatsappProducts.length === 1 ? "produto encontrado" : "produtos encontrados"}
-                </p>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <p className="text-sm font-medium text-text-primary">
+                    {whatsappProducts.length} {whatsappProducts.length === 1 ? "produto" : "produtos"}
+                  </p>
+                  <span className="text-xs text-text-muted">
+                    Conf. media: {Math.round(whatsappProducts.reduce((s, p) => s + p.confidence, 0) / whatsappProducts.length)}%
+                  </span>
+                  {whatsappProducts.filter(p => p.category).length > 0 && (
+                    <span className="text-xs text-text-muted">
+                      {whatsappProducts.filter(p => p.category).length} c/ categoria
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setWhatsappSelected(new Set(whatsappProducts.map((_, i) => i)))}
                     className="text-xs text-accent-blue hover:underline"
                   >
-                    Selecionar todos
+                    Todos
+                  </button>
+                  <button
+                    onClick={() => setWhatsappSelected(new Set(whatsappProducts.filter(p => p.confidence >= 50).map((_, i) => i)))}
+                    className="text-xs text-accent-green hover:underline"
+                  >
+                    Conf. &gt;50%
                   </button>
                   <button
                     onClick={() => setWhatsappSelected(new Set())}
                     className="text-xs text-text-muted hover:underline"
                   >
-                    Limpar selecao
+                    Nenhum
                   </button>
                 </div>
               </div>
 
-              <div className="max-h-80 overflow-y-auto space-y-2">
+              <div className="max-h-[28rem] overflow-y-auto space-y-2">
                 {whatsappProducts.map((product, i) => (
                   <label
                     key={i}
@@ -765,17 +873,59 @@ export default function AdminIngestaoPage() {
                       className="mt-1 rounded border-surface-300 text-green-500 focus:ring-green-500/30"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-text-primary truncate">{product.title}</p>
+                      {/* Title + confidence badge */}
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-text-primary truncate flex-1">{product.title}</p>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                          product.confidence >= 70 ? "bg-green-100 text-green-700" :
+                          product.confidence >= 45 ? "bg-amber-100 text-amber-700" :
+                          "bg-red-100 text-red-600"
+                        }`}>
+                          {product.confidence}%
+                        </span>
+                      </div>
+
+                      {/* Price row */}
                       <div className="flex items-center gap-3 mt-1">
                         <span className="text-sm font-bold text-accent-green">
                           R$ {product.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </span>
+                        {product.originalPrice && product.originalPrice > product.price && (
+                          <span className="text-xs text-text-muted line-through">
+                            R$ {product.originalPrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </span>
+                        )}
+                        {product.originalPrice && product.originalPrice > product.price && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
+                            -{Math.round(100 - (product.price / product.originalPrice) * 100)}%
+                          </span>
+                        )}
                         {product.coupon && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-accent-orange/10 text-accent-orange font-medium">
-                            Cupom: {product.coupon}
+                            {product.coupon}
                           </span>
                         )}
                       </div>
+
+                      {/* Tags: category, brand */}
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {product.category && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-100 text-brand-700 font-medium">
+                            {product.category}
+                          </span>
+                        )}
+                        {product.brand && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium capitalize">
+                            {product.brand}
+                          </span>
+                        )}
+                        {product.warnings.length > 0 && product.warnings.map((w, wi) => (
+                          <span key={wi} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600">
+                            {w}
+                          </span>
+                        ))}
+                      </div>
+
                       <p className="text-xs text-text-muted mt-1 truncate">{product.url}</p>
                     </div>
                   </label>
