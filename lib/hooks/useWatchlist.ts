@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useFavorites } from "./useFavorites"
+import { logger } from "@/lib/logger"
 
 // ============================================
 // WATCHLIST HOOK — Enhanced favorites with price tracking
@@ -50,7 +51,7 @@ function readJson<T>(key: string, fallback: T): T {
 function writeJson(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value))
-  } catch {}
+  } catch (err) { logger.debug("watchlist.failed", { error: err }) }
 }
 
 export function useWatchlist() {

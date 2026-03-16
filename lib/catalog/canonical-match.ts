@@ -8,6 +8,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger"
 import {
   extractBrand,
   normalizeTitle,
@@ -418,9 +419,7 @@ export async function findCanonicalCandidates(
           matchedOn: ["ean"],
         }));
       }
-    } catch {
-      // EAN JSON path query may fail if not indexed — fall through
-    }
+    } catch (err) { logger.debug("canonical-match.failed", { error: err }) }
   }
 
   // Build search conditions — conservative: require at least brand or category match

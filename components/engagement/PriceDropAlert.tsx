@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TrendingDown, Bell, X } from "lucide-react";
 import Link from "next/link";
+import { logger } from "@/lib/logger"
 
 interface PriceDropAlertProps {
   productSlug: string;
@@ -25,7 +26,7 @@ export default function PriceDropAlert({ productSlug, productName, currentPrice 
         }
       }
       localStorage.setItem(key, String(currentPrice));
-    } catch {}
+    } catch (err) { logger.debug("price-drop-alert.failed", { error: err }) }
   }, [productSlug, currentPrice]);
 
   if (!previousPrice || dismissed) return null;

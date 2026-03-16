@@ -1,24 +1,26 @@
 import { BaseAdapter } from '../shared/base'
 import type { RawListing, SearchOptions, FetchOffersParams, HealthCheckResult } from '@/types'
 
+/**
+ * Shein adapter — stub.
+ * Real Shein products enter via WhatsApp/Cola JSON ingest.
+ */
 export class SheinAdapter extends BaseAdapter {
   name = 'Shein'
   slug = 'shein'
-  isEnabled = true
+  isEnabled = false
 
   private affiliateId = process.env.SHEIN_AFFILIATE_ID || ''
 
-  async searchProducts(query: string, options?: SearchOptions): Promise<RawListing[]> {
-    this.log(`Searching: "${query}"`, options)
+  async searchProducts(_query: string, _options?: SearchOptions): Promise<RawListing[]> {
     return []
   }
 
-  async fetchProductById(externalId: string): Promise<RawListing | null> {
-    this.log(`Fetching: ${externalId}`)
+  async fetchProductById(_externalId: string): Promise<RawListing | null> {
     return null
   }
 
-  async fetchOffers(params?: FetchOffersParams): Promise<RawListing[]> {
+  async fetchOffers(_params?: FetchOffersParams): Promise<RawListing[]> {
     return []
   }
 
@@ -28,6 +30,6 @@ export class SheinAdapter extends BaseAdapter {
   }
 
   async healthCheck(): Promise<HealthCheckResult> {
-    return { status: "MOCK", latencyMs: 0, message: "Adapter not yet implemented" }
+    return { status: "BLOCKED", latencyMs: 0, message: "Shein API not configured" }
   }
 }

@@ -2,6 +2,7 @@
 
 import { ExternalLink, Bell, Heart, Share2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger"
 
 interface MobileProductActionsProps {
   offerId: string;
@@ -26,7 +27,7 @@ export default function MobileProductActions({
     try {
       const favorites = JSON.parse(localStorage.getItem("ps_favorites") || "[]");
       setIsFavorited(favorites.some((f: any) => (f.slug || f) === productSlug));
-    } catch {}
+    } catch (err) { logger.debug("mobile-actions.failed", { error: err }) }
   }, [productSlug]);
 
   const toggleFavorite = () => {
@@ -41,7 +42,7 @@ export default function MobileProductActions({
         localStorage.setItem("ps_favorites", JSON.stringify(favorites));
         setIsFavorited(true);
       }
-    } catch {}
+    } catch (err) { logger.debug("mobile-actions.failed", { error: err }) }
   };
 
   const handleShare = async () => {
@@ -55,7 +56,7 @@ export default function MobileProductActions({
       } else {
         await navigator.clipboard.writeText(window.location.href);
       }
-    } catch {}
+    } catch (err) { logger.debug("mobile-actions.failed", { error: err }) }
   };
 
   const clickoutUrl = `/api/clickout/${offerId}?page=product&product=${productSlug}&origin=mobile_bar`;

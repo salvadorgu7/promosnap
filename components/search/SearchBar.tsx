@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, TrendingUp, Clock, Tag, Package } from "lucide-react";
 import VoiceSearch from "./VoiceSearch";
 import { analytics } from "@/lib/analytics/events";
+import { logger } from "@/lib/logger"
 
 interface Suggestion {
   text: string;
@@ -107,7 +108,7 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
           const prev: string[] = raw ? JSON.parse(raw) : [];
           const next = [term.trim(), ...prev.filter((s) => s !== term.trim())].slice(0, MAX);
           localStorage.setItem(KEY, JSON.stringify(next));
-        } catch {}
+        } catch (err) { logger.debug("search-bar.failed", { error: err }) }
       }
     },
     [router]

@@ -3,6 +3,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger"
 
 export interface OpportunityScore {
   score: number;
@@ -146,7 +147,7 @@ export async function getPrioritizedCategories(): Promise<
       ORDER BY count DESC
       LIMIT 200
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   let clickoutsByCategory: { slug: string; clicks: number }[] = [];
   try {
@@ -160,7 +161,7 @@ export async function getPrioritizedCategories(): Promise<
       WHERE c."clickedAt" > NOW() - INTERVAL '30 days'
       GROUP BY c2.slug
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   const categories = await prisma.category.findMany({
     include: {
@@ -178,7 +179,7 @@ export async function getPrioritizedCategories(): Promise<
       WHERE pa."isActive" = true AND p."categoryId" IS NOT NULL
       GROUP BY p."categoryId"
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   const clickMap = new Map(clickoutsByCategory.map((c) => [c.slug, c.clicks]));
   const alertMap = new Map(
@@ -232,7 +233,7 @@ export async function getPrioritizedBrands(): Promise<
       ORDER BY count DESC
       LIMIT 200
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   let clickoutsByBrand: { brandId: string; clicks: number }[] = [];
   try {
@@ -246,7 +247,7 @@ export async function getPrioritizedBrands(): Promise<
       AND p."brandId" IS NOT NULL
       GROUP BY p."brandId"
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   const brands = await prisma.brand.findMany({
     include: {
@@ -264,7 +265,7 @@ export async function getPrioritizedBrands(): Promise<
       WHERE o."isActive" = true AND p."brandId" IS NOT NULL
       GROUP BY p."brandId"
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   const clickMap = new Map(
     clickoutsByBrand.map((c) => [c.brandId, c.clicks])
@@ -329,7 +330,7 @@ export async function getPrioritizedProducts(): Promise<
       ORDER BY searches DESC
       LIMIT 50
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   let clickoutsByProduct: { productId: string; clicks: number }[] = [];
   try {
@@ -342,7 +343,7 @@ export async function getPrioritizedProducts(): Promise<
       WHERE c."clickedAt" > NOW() - INTERVAL '30 days'
       GROUP BY p.id
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   let offersByProduct: {
     productId: string;
@@ -358,7 +359,7 @@ export async function getPrioritizedProducts(): Promise<
       WHERE o."isActive" = true
       GROUP BY p.id
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   let alertsByProduct: { productId: string; cnt: number }[] = [];
   try {
@@ -370,7 +371,7 @@ export async function getPrioritizedProducts(): Promise<
       WHERE pa."isActive" = true
       GROUP BY p.id
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   const clickMap = new Map(
     clickoutsByProduct.map((c) => [c.productId, c.clicks])
@@ -454,7 +455,7 @@ export async function getKeywordOpportunities(): Promise<
       ORDER BY count DESC
       LIMIT 100
     `;
-  } catch {}
+  } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
   // Check which keywords have landing pages (category or article)
   const categorySlugs = new Set(
@@ -492,7 +493,7 @@ export async function getKeywordOpportunities(): Promise<
         AND LOWER(name) LIKE '%' || ${kw.term.toLowerCase()} || '%'
       `;
       productCount = result[0]?.cnt ?? 0;
-    } catch {}
+    } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
     // Count active offers for these products
     let offerCount = 0;
@@ -507,7 +508,7 @@ export async function getKeywordOpportunities(): Promise<
         AND LOWER(p.name) LIKE '%' || ${kw.term.toLowerCase()} || '%'
       `;
       offerCount = result[0]?.cnt ?? 0;
-    } catch {}
+    } catch (err) { logger.debug("prioritization.query-failed", { error: err }) }
 
     const entity: EntityInput = {
       id: kwSlug,

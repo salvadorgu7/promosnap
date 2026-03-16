@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { logger } from "@/lib/logger"
 
 const STORAGE_KEY = "ps_decisions"
 const MAX_DECISIONS = 50
@@ -20,7 +21,7 @@ function logDecisionToStorage(entry: Omit<DecisionEntry, "timestamp">) {
     const prev: DecisionEntry[] = raw ? JSON.parse(raw) : []
     const next = [{ ...entry, timestamp: Date.now() }, ...prev].slice(0, MAX_DECISIONS)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-  } catch {}
+  } catch (err) { logger.debug("decision-tracker.failed", { error: err }) }
 }
 
 // Expose globally so clickout links can call it
@@ -46,7 +47,7 @@ export default function DecisionTracker({
         d => d.type === "view_price" && d.productId === productId
       )
       if (lastSame && Date.now() - lastSame.timestamp < 5 * 60 * 1000) return
-    } catch {}
+    } catch (err) { logger.debug("decision-tracker.failed", { error: err }) }
 
     logDecisionToStorage({
       type: "view_price",

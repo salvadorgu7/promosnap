@@ -1,5 +1,6 @@
 import prisma from "@/lib/db/prisma";
 import type { Scorecard, ScorecardItem, MetricStatus } from "./types";
+import { logger } from "@/lib/logger"
 
 // ============================================
 // Helpers

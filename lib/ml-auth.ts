@@ -2,6 +2,7 @@
 // Priority: 1) OAuth user token (DB) → 2) App token (client_credentials)
 
 import prisma from '@/lib/db/prisma'
+import { logger } from '@/lib/logger'
 
 const ML_TOKEN_KEY = 'ml_oauth_token'
 
@@ -63,8 +64,8 @@ class MLTokenStore {
     this.cache = null
     try {
       await prisma.systemSetting.deleteMany({ where: { key: ML_TOKEN_KEY } })
-    } catch {
-      // ignore
+    } catch (err) {
+      logger.warn("ml-auth.clear-failed", { error: err })
     }
   }
 }

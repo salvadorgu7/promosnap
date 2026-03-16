@@ -2,6 +2,8 @@
 // CATALOG VALIDATION — ingest quality gates
 // ============================================
 
+import { logger } from "@/lib/logger"
+
 // ============================================
 // Title validation
 // ============================================

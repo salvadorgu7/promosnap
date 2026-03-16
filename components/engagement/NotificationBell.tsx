@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Bell, Tag, TrendingDown, Flame, X, Check } from "lucide-react";
+import { logger } from "@/lib/logger"
 
 interface Notification {
   id: string;
@@ -32,7 +33,7 @@ export default function NotificationBell() {
         const stored: Notification[] = JSON.parse(raw);
         setNotifications(stored);
       }
-    } catch {}
+    } catch (err) { logger.debug("notification-bell.failed", { error: err }) }
   }, []);
 
   // Fetch server-side notifications for favorited products (once per session)
@@ -59,7 +60,7 @@ export default function NotificationBell() {
           });
         })
         .catch(() => {}); // Silent fail
-    } catch {}
+    } catch (err) { logger.debug("notification-bell.failed", { error: err }) }
   }, []);
 
   // Close dropdown on outside click

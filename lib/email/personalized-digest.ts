@@ -1,4 +1,5 @@
 import prisma from "@/lib/db/prisma"
+import { logger } from "@/lib/logger"
 
 export interface PersonalizedDigestData {
   priceDrops: Array<{ name: string; price: number; previousPrice: number; url: string }>
@@ -111,9 +112,7 @@ export async function buildPersonalizedDigest(
         })
       }
     }
-  } catch {
-    // Graceful fallback
-  }
+  } catch (err) { logger.debug("personalized-digest.failed", { error: err }) }
 
   return result
 }

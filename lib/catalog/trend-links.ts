@@ -1,4 +1,5 @@
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -185,9 +186,7 @@ export async function getTrendCatalogGaps(): Promise<TrendCatalogGaps> {
         }
       }
     }
-  } catch {
-    // Return empty on any error — page will show empty state
-  }
+  } catch (err) { logger.debug("trend-links.query-failed", { error: err }) }
 
   // Sort each group by priority
   const sortByPriority = (a: TrendCatalogGap, b: TrendCatalogGap) => {

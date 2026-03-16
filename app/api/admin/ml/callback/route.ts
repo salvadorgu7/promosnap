@@ -14,10 +14,21 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
   const error = req.nextUrl.searchParams.get('error')
+  const state = req.nextUrl.searchParams.get('state')
 
   if (error) {
     return NextResponse.json(
       { error: 'ML OAuth denied', detail: error },
+      { status: 403 }
+    )
+  }
+
+  // Validate CSRF state parameter
+  const storedState = req.cookies.get('ml_oauth_state')?.value
+  if (!state || !storedState || state !== storedState) {
+    logger.warn("ml-callback.invalid-state", { hasState: !!state, hasStoredState: !!storedState })
+    return NextResponse.json(
+      { error: 'Invalid OAuth state — possible CSRF attack. Start the flow again from /api/admin/ml/auth' },
       { status: 403 }
     )
   }
@@ -141,9 +152,12 @@ export async function GET(req: NextRequest) {
 </div>
 </body></html>`
 
-    return new NextResponse(html, {
+    const response = new NextResponse(html, {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
+    // Clear the state cookie
+    response.cookies.delete('ml_oauth_state')
+    return response
 
   } catch (err) {
     logger.error("ml-callback.failed", { error: err })

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Flame, X } from "lucide-react";
 import Link from "next/link";
+import { logger } from "@/lib/logger"
 
 export default function StickyAlertBar() {
   const [alert, setAlert] = useState<{ text: string; href: string } | null>(null);
@@ -34,7 +35,7 @@ export default function StickyAlertBar() {
           href: "/radar",
         });
       }
-    } catch {}
+    } catch (err) { logger.debug("sticky-alert.failed", { error: err }) }
   }, []);
 
   if (!alert || dismissed) return null;

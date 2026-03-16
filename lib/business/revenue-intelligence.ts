@@ -3,6 +3,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -366,9 +367,7 @@ export async function getRevenueOpportunities(
         });
       }
     }
-  } catch {
-    // Fail silently
-  }
+  } catch (err) { logger.debug("revenue.query-failed", { error: err }) }
 
   return opportunities
     .sort((a, b) => (b.estimatedPotential - a.estimatedPotential))

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Bell, Radar, Calendar } from "lucide-react"
+import { logger } from "@/lib/logger"
 
 type HookType = "price_alert" | "radar_update" | "weekly_check"
 
@@ -19,7 +20,7 @@ function readJson<T>(key: string, fallback: T): T {
     const raw = localStorage.getItem(key)
     if (!raw) return fallback
     return JSON.parse(raw) as T
-  } catch { return fallback }
+  } catch (err) { logger.debug("return-hook.failed", { error: err }); return fallback }
 }
 
 export default function ReturnHook() {

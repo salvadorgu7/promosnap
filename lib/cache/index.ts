@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger'
+
 /**
  * Hybrid cache: tries Redis first (if available), falls back to in-memory Map with TTL.
  *
@@ -86,7 +88,8 @@ async function tryInitRedis(): Promise<boolean> {
     redisCache = redis
     redisAvailable = true
     return true
-  } catch {
+  } catch (err) {
+    logger.debug("cache.redis-init-failed", { error: err })
     redisAvailable = false
     return false
   }
@@ -127,7 +130,9 @@ export const cache = {
           return parsed
         }
       }
-    } catch {}
+    } catch (err) {
+      logger.warn("cache.redis-get-failed", { key, error: err })
+    }
 
     return null
   },
@@ -142,7 +147,9 @@ export const cache = {
       if (hasRedis && redisCache) {
         await redisCache.set(`promosnap:${key}`, JSON.stringify(value), 'EX', ttlSeconds)
       }
-    } catch {}
+    } catch (err) {
+      logger.warn("cache.redis-set-failed", { key, error: err })
+    }
   },
 
   /**
@@ -167,7 +174,9 @@ export const cache = {
       if (hasRedis && redisCache) {
         await redisCache.del(`promosnap:${key}`)
       }
-    } catch {}
+    } catch (err) {
+      logger.warn("cache.redis-del-failed", { key, error: err })
+    }
   },
 
   /**

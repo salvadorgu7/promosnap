@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { logger } from "@/lib/logger"
 import {
   Heart,
   Search,
@@ -112,7 +113,7 @@ export default function GrowthBanner() {
         const index = Math.floor(Date.now() / 86400000) % available.length;
         setActiveBanner(available[index]);
       }
-    } catch {}
+    } catch (err) { logger.debug("growth-banner.failed", { error: err }) }
   }, []);
 
   function dismiss() {
@@ -127,7 +128,7 @@ export default function GrowthBanner() {
         "ps_dismissed_banners",
         JSON.stringify(dismissedIds)
       );
-    } catch {}
+    } catch (err) { logger.debug("growth-banner.failed", { error: err }) }
   }
 
   if (!activeBanner || dismissed) return null;

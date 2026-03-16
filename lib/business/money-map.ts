@@ -3,6 +3,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -187,9 +188,7 @@ export async function getMoneyMap(): Promise<MoneyMapResult> {
 
       return { label: r.name, slug: r.slug, interestScore: interest, revenueScore: revenue, gapScore: gap, action };
     });
-  } catch {
-    // fail gracefully
-  }
+  } catch (err) { logger.debug("money-map.query-failed", { error: err }) }
 
   // Sort all by gap descending
   result.byCategory.sort((a, b) => b.gapScore - a.gapScore);
@@ -328,9 +327,7 @@ export async function getCompoundingRevenue(): Promise<CompoundingRevenueResult>
         trend,
       };
     });
-  } catch {
-    // fail gracefully
-  }
+  } catch (err) { logger.debug("money-map.query-failed", { error: err }) }
 
   return result;
 }

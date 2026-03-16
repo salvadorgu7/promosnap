@@ -15,6 +15,7 @@ import {
 import RailSection from "@/components/home/RailSection"
 import OfferCard from "@/components/cards/OfferCard"
 import type { ProductCard } from "@/types"
+import { logger } from "@/lib/logger"
 
 const LAST_VISIT_KEY = "promosnap_last_visit"
 
@@ -65,7 +66,7 @@ export default function SinceLastVisit() {
     try {
       const favCats = localStorage.getItem("promosnap_fav_categories")
       if (favCats) categories = JSON.parse(favCats).slice(0, 5)
-    } catch {}
+    } catch (err) { logger.debug("since-last-visit.failed", { error: err }) }
 
     const params = new URLSearchParams({ since: String(lastVisit), limit: "10" })
     if (categories.length > 0) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
+import { randomBytes } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,11 +46,25 @@ export async function GET(req: NextRequest) {
     }, { status: 400 })
   }
 
+  // Generate CSRF state token
+  const state = randomBytes(32).toString('hex')
+
   // Build ML authorization URL
   const authUrl = new URL('https://auth.mercadolibre.com.br/authorization')
   authUrl.searchParams.set('response_type', 'code')
   authUrl.searchParams.set('client_id', clientId)
   authUrl.searchParams.set('redirect_uri', redirectUri)
+  authUrl.searchParams.set('state', state)
 
-  return NextResponse.redirect(authUrl.toString())
+  // Store state in cookie for validation on callback
+  const response = NextResponse.redirect(authUrl.toString())
+  response.cookies.set('ml_oauth_state', state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 600, // 10 minutes
+    path: '/api/admin/ml',
+  })
+
+  return response
 }

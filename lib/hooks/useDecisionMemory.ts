@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { logger } from "@/lib/logger"
 
 const STORAGE_KEY = "ps_decisions"
 const MAX_DECISIONS = 50
@@ -28,7 +29,7 @@ function readDecisions(): DecisionEntry[] {
 function writeDecisions(entries: DecisionEntry[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
-  } catch {}
+  } catch (err) { logger.debug("decision-memory.failed", { error: err }) }
 }
 
 export function useDecisionMemory() {

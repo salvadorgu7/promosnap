@@ -1,28 +1,31 @@
 import { BaseAdapter } from '../shared/base'
 import type { RawListing, SearchOptions, FetchOffersParams, HealthCheckResult } from '@/types'
+import { logger } from '@/lib/logger'
 
+/**
+ * Mercado Livre adapter — stub.
+ * Real imports use the admin ingest pipeline (seed, ML search, WhatsApp, Cola JSON).
+ * Direct ML API calls happen in app/api/admin/ml/* routes with OAuth tokens.
+ */
 export class MercadoLivreAdapter extends BaseAdapter {
   name = 'Mercado Livre'
   slug = 'mercadolivre'
-  isEnabled = true
+  isEnabled = false
 
   private affiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID || ''
   private affiliateWord = process.env.MERCADOLIVRE_AFFILIATE_WORD || ''
 
-  async searchProducts(query: string, options?: SearchOptions): Promise<RawListing[]> {
-    this.log(`Searching: "${query}"`, options)
-    // TODO: Implement ML public API: GET /sites/MLB/search?q=...
+  async searchProducts(query: string, _options?: SearchOptions): Promise<RawListing[]> {
+    logger.debug("ml-adapter.search-not-implemented", { query })
     return []
   }
 
   async fetchProductById(externalId: string): Promise<RawListing | null> {
-    this.log(`Fetching product: ${externalId}`)
-    // TODO: Implement ML API: GET /items/{id}
+    logger.debug("ml-adapter.fetch-not-implemented", { externalId })
     return null
   }
 
   async fetchByItemIds(ids: string[]): Promise<RawListing[]> {
-    this.log(`Fetching items by IDs: ${ids.length}`)
     const results: RawListing[] = []
     for (const id of ids) {
       const item = await this.fetchProductById(id)
@@ -31,14 +34,12 @@ export class MercadoLivreAdapter extends BaseAdapter {
     return results
   }
 
-  async fetchOffers(params?: FetchOffersParams): Promise<RawListing[]> {
-    this.log('Fetching offers', params)
+  async fetchOffers(_params?: FetchOffersParams): Promise<RawListing[]> {
     return []
   }
 
   buildAffiliateUrl(productUrl: string): string {
     if (!this.affiliateId) return productUrl
-    // ML affiliate format: matt_tool (numeric ID) + matt_word (username)
     const sep = productUrl.includes('?') ? '&' : '?'
     const params = [`matt_tool=${this.affiliateId}`]
     if (this.affiliateWord) params.push(`matt_word=${this.affiliateWord}`)
@@ -46,6 +47,6 @@ export class MercadoLivreAdapter extends BaseAdapter {
   }
 
   async healthCheck(): Promise<HealthCheckResult> {
-    return { status: "MOCK", latencyMs: 0, message: "Adapter not yet implemented" }
+    return { status: "BLOCKED", latencyMs: 0, message: "Use admin ingest pipeline instead" }
   }
 }

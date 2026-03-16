@@ -1,4 +1,5 @@
 import Redis from 'ioredis'
+import { logger } from "@/lib/logger"
 
 const globalForRedis = globalThis as unknown as { redis: Redis | null | undefined }
 
@@ -39,12 +40,12 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 
 export async function cacheSet(key: string, value: unknown, ttlSeconds = 300): Promise<void> {
   if (!redis) return
-  try { await redis.set(`promosnap:${key}`, JSON.stringify(value), 'EX', ttlSeconds) } catch {}
+  try { await redis.set(`promosnap:${key}`, JSON.stringify(value), 'EX', ttlSeconds) } catch (err) { logger.debug("redis.op-failed", { error: err }) }
 }
 
 export async function cacheDelete(key: string): Promise<void> {
   if (!redis) return
-  try { await redis.del(`promosnap:${key}`) } catch {}
+  try { await redis.del(`promosnap:${key}`) } catch (err) { logger.debug("redis.op-failed", { error: err }) }
 }
 
 export default redis

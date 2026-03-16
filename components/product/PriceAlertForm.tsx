@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Bell, BellRing, X, Loader2, TrendingDown } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { analytics } from "@/lib/analytics/events";
+import { logger } from "@/lib/logger"
 
 interface Props {
   listingId: string;
@@ -87,7 +88,7 @@ export default function PriceAlertForm({ listingId, currentPrice, productName }:
       // Persist email for convenience
       try {
         localStorage.setItem("ps_email", email.trim());
-      } catch {}
+      } catch (err) { logger.debug("price-alert-form.failed", { error: err }) }
 
       const res = await fetch("/api/alerts", {
         method: "POST",

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger"
 import prisma from "@/lib/db/prisma";
 import type { MetricResult, MetricStatus, BusinessMetrics } from "./types";
 
@@ -468,7 +469,7 @@ export async function getOperationalMetrics(): Promise<MetricResult[]> {
         SELECT COUNT(*)::int AS cnt FROM offers WHERE "isActive" = true
       `;
       activeOffers = offerRows[0]?.cnt ?? 0;
-    } catch {}
+    } catch (err) { logger.debug("metrics.query-failed", { error: err }) }
 
     return [
       metric(activeProducts, "Active Products", 0, 0, computeStatus(activeProducts, 100, 20), "number"),

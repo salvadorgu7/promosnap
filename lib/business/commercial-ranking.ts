@@ -3,6 +3,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -279,9 +280,7 @@ export async function getCommercialRanking(): Promise<CommercialRanking> {
         potential: scorePotential(score),
       };
     });
-  } catch {
-    // Return empty ranking on error
-  }
+  } catch (err) { logger.debug("commercial-ranking.query-failed", { error: err }) }
 
   return ranking;
 }
