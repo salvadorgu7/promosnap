@@ -2,7 +2,7 @@
 // Uses ML OAuth token for authenticated requests + public API for search
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
-import { getMLToken } from '@/lib/ml-auth'
+import { getMLToken, getMLAppToken } from '@/lib/ml-auth'
 
 // Accept both naming conventions for ML env vars
 function getMLEnv(key: string): string | undefined {
@@ -81,7 +81,8 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
     const token = await getMLToken()
     return { Authorization: `Bearer ${token}` }
-  } catch {
+  } catch (err) {
+    console.warn('[ML] getAuthHeaders failed, will try unauthenticated:', err instanceof Error ? err.message : err)
     return {}
   }
 }
@@ -209,22 +210,48 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       if (options?.sortBy === 'price_asc') url.searchParams.set('sort', 'price_asc')
       if (options?.sortBy === 'price_desc') url.searchParams.set('sort', 'price_desc')
 
-      const authHeaders = await getAuthHeaders()
-
       console.log(`[ML] search("${query}") limit=${limit} offset=${offset}`)
 
-      let res = await fetch(url.toString(), { headers: authHeaders })
+      // Strategy: try with auth token → try app token directly → try without auth
+      let res: Response | null = null
+      let lastErr = ''
 
-      // If auth token is expired/invalid, retry WITHOUT auth — ML search is public
-      if ((res.status === 401 || res.status === 403) && Object.keys(authHeaders).length > 0) {
-        console.warn(`[ML] search auth failed (${res.status}), retrying without token...`)
-        res = await fetch(url.toString())
+      // Attempt 1: full auth (user token → app token via getMLToken)
+      const authHeaders = await getAuthHeaders()
+      if (Object.keys(authHeaders).length > 0) {
+        res = await fetch(url.toString(), { headers: authHeaders })
+        if (res.ok) { /* success */ }
+        else {
+          lastErr = `auth(${res.status})`
+          console.warn(`[ML] search with auth failed: ${res.status}`)
+          res = null
+        }
       }
 
-      if (!res.ok) {
-        const errText = await res.text()
-        console.error(`[ML] search failed: ${res.status} — ${errText}`)
-        throw new Error(`ML API retornou ${res.status}: ${errText.slice(0, 200)}`)
+      // Attempt 2: explicit app token (client_credentials)
+      if (!res) {
+        try {
+          const appToken = await getMLAppToken()
+          res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${appToken}` } })
+          if (res.ok) { /* success */ }
+          else {
+            lastErr = `app_token(${res.status})`
+            console.warn(`[ML] search with app token failed: ${res.status}`)
+            res = null
+          }
+        } catch (e) {
+          console.warn(`[ML] app token fetch failed:`, e instanceof Error ? e.message : e)
+        }
+      }
+
+      // Attempt 3: no auth at all (ML search is a public API)
+      if (!res) {
+        res = await fetch(url.toString())
+        if (!res.ok) {
+          const errText = await res.text()
+          console.error(`[ML] search all attempts failed. Last: ${lastErr}, noAuth: ${res.status} — ${errText}`)
+          throw new Error(`ML API retornou ${res.status}: ${errText.slice(0, 200)}`)
+        }
       }
 
       const data: MLSearchResponse = await res.json()
@@ -242,13 +269,36 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
   // ---------------------------------------------------------------------------
 
   async getProduct(externalId: string): Promise<AdapterResult | null> {
-    const headers = await getAuthHeaders()
-    let res = await fetch(`${ML_API_BASE}/items/${externalId}`, { headers })
+    const itemUrl = `${ML_API_BASE}/items/${externalId}`
+    let res: Response | null = null
 
-    // If auth token is expired/invalid, retry WITHOUT auth — ML items API works for public listings
-    if ((res.status === 401 || res.status === 403) && Object.keys(headers).length > 0) {
-      console.warn(`[ML] getProduct auth failed (${res.status}), retrying without token...`)
-      res = await fetch(`${ML_API_BASE}/items/${externalId}`)
+    // Attempt 1: full auth
+    const headers = await getAuthHeaders()
+    if (Object.keys(headers).length > 0) {
+      res = await fetch(itemUrl, { headers })
+      if (!res.ok) {
+        console.warn(`[ML] getProduct(${externalId}) auth failed: ${res.status}`)
+        res = null
+      }
+    }
+
+    // Attempt 2: explicit app token
+    if (!res) {
+      try {
+        const appToken = await getMLAppToken()
+        res = await fetch(itemUrl, { headers: { Authorization: `Bearer ${appToken}` } })
+        if (!res.ok) {
+          console.warn(`[ML] getProduct(${externalId}) app token failed: ${res.status}`)
+          res = null
+        }
+      } catch (e) {
+        console.warn(`[ML] app token fetch failed:`, e instanceof Error ? e.message : e)
+      }
+    }
+
+    // Attempt 3: no auth
+    if (!res) {
+      res = await fetch(itemUrl)
     }
 
     if (!res.ok) {
