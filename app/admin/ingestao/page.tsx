@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X, Sparkles } from "lucide-react";
+import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X, Sparkles, ClipboardPaste } from "lucide-react";
 
 interface IngestResult {
   mode?: string;
@@ -60,7 +60,7 @@ const emptyManualItem = (): ManualItem => ({
 });
 
 export default function AdminIngestaoPage() {
-  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed">("seed");
+  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed" | "json">("seed");
 
   // ID mode state
   const [rawInput, setRawInput] = useState("");
@@ -77,6 +77,11 @@ export default function AdminIngestaoPage() {
 
   // Trends mode state
   const [trendsLimit, setTrendsLimit] = useState(20);
+
+  // JSON paste mode state
+  const [jsonInput, setJsonInput] = useState("");
+  const [jsonParsedCount, setJsonParsedCount] = useState<number | null>(null);
+  const [jsonParseError, setJsonParseError] = useState<string | null>(null);
 
   // Shared state
   const [isRunning, setIsRunning] = useState(false);
@@ -206,11 +211,62 @@ export default function AdminIngestaoPage() {
     }
   }
 
+  function handleJsonValidate(input: string) {
+    setJsonInput(input);
+    setJsonParseError(null);
+    setJsonParsedCount(null);
+    if (!input.trim()) return;
+    try {
+      const parsed = JSON.parse(input);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      const valid = arr.filter((i: any) => i.title && i.price && i.url);
+      if (valid.length === 0) {
+        setJsonParseError("Nenhum item valido encontrado. Cada item precisa de: title, price, url");
+      } else {
+        setJsonParsedCount(valid.length);
+      }
+    } catch {
+      setJsonParseError("JSON invalido — verifique a formatacao");
+    }
+  }
+
+  async function handleIngestJson() {
+    if (!jsonInput.trim()) return;
+    setIsRunning(true); setResult(null); setError(null);
+
+    try {
+      const parsed = JSON.parse(jsonInput);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      const validItems = arr.filter((i: any) => i.title && i.price && i.url);
+
+      const res = await fetch("/api/admin/ingest", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: validItems.map((i: any) => ({
+            title: String(i.title).trim(),
+            price: typeof i.price === "number" ? i.price : parseFloat(String(i.price).replace(",", ".")),
+            url: String(i.url).trim(),
+            imageUrl: i.imageUrl ? String(i.imageUrl).trim() : undefined,
+            originalPrice: i.originalPrice ? (typeof i.originalPrice === "number" ? i.originalPrice : parseFloat(String(i.originalPrice).replace(",", "."))) : undefined,
+          })),
+        }),
+      });
+      const data = await res.json();
+      res.ok ? setResult(data) : setError(data);
+    } catch (err: any) {
+      setError({ error: err.message || "Erro de rede" });
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
   function handleClear() {
     setRawInput(""); setSearchQuery("");
     setParsedIds([]); setInvalidLines([]);
     setIsParsed(false); setResult(null); setError(null);
     setManualItems([emptyManualItem()]);
+    setJsonInput(""); setJsonParsedCount(null); setJsonParseError(null);
   }
 
   function updateManualItem(index: number, field: keyof ManualItem, value: string) {
@@ -244,6 +300,7 @@ export default function AdminIngestaoPage() {
       <div className="flex gap-1 bg-surface-100 rounded-lg p-1 w-fit flex-wrap">
         {([
           { key: "seed", icon: Sparkles, label: "Seed \u2728" },
+          { key: "json", icon: ClipboardPaste, label: "Cola JSON" },
           { key: "manual", icon: PenLine, label: "Manual" },
           { key: "search", icon: Search, label: "Busca" },
           { key: "trends", icon: TrendingUp, label: "Tendencias" },
@@ -483,6 +540,75 @@ export default function AdminIngestaoPage() {
               <><Sparkles className="h-4 w-4" /> Importar 20 Produtos Populares</>
             )}
           </button>
+        </div>
+      )}
+
+      {/* JSON PASTE MODE */}
+      {mode === "json" && (
+        <div className="card p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              <ClipboardPaste className="inline h-4 w-4 mr-1.5 -mt-0.5 text-accent-blue" />
+              Colar JSON de Produtos
+            </label>
+            <p className="text-xs text-text-muted">
+              Cole o JSON gerado pelos scripts locais ou monte seu proprio array.
+            </p>
+          </div>
+
+          <div className="p-3 bg-blue-50 rounded-lg space-y-2">
+            <p className="text-xs text-blue-700 font-medium">Como usar:</p>
+            <div className="text-xs text-blue-600 space-y-1 font-mono">
+              <p>1. Busca: <code className="bg-blue-100 px-1 rounded">node scripts/scrape-search.mjs &quot;iphone 15&quot; &quot;notebook&quot;</code></p>
+              <p>2. Por IDs: <code className="bg-blue-100 px-1 rounded">node scripts/scrape-ids.mjs MLB123 MLB456</code></p>
+              <p>3. Copie o JSON gerado e cole abaixo</p>
+            </div>
+          </div>
+
+          <div className="p-3 bg-green-50 rounded-lg flex items-start gap-2">
+            <CheckCircle className="h-4 w-4 text-accent-green mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-green-700">
+              <strong>Funciona sempre!</strong> Os scripts rodam no seu PC (sem bloqueio do ML) e o JSON e importado direto no banco.
+            </p>
+          </div>
+
+          <textarea
+            value={jsonInput}
+            onChange={(e) => handleJsonValidate(e.target.value)}
+            placeholder={'[\n  { "title": "iPhone 15 128gb", "price": 4299, "url": "https://...", "imageUrl": "https://..." },\n  { "title": "Outro produto", "price": 199.90, "url": "https://..." }\n]'}
+            className="w-full h-48 px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue/30 font-mono resize-y"
+          />
+
+          {jsonParseError && (
+            <div className="flex items-center gap-2 text-red-500 text-xs">
+              <XCircle className="h-4 w-4" />
+              {jsonParseError}
+            </div>
+          )}
+
+          {jsonParsedCount !== null && (
+            <div className="flex items-center gap-2 text-accent-green text-xs">
+              <CheckCircle className="h-4 w-4" />
+              {jsonParsedCount} {jsonParsedCount === 1 ? "produto valido" : "produtos validos"} encontrados
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleIngestJson}
+              disabled={!jsonParsedCount || isRunning}
+              className="btn-primary text-sm px-5 py-2.5 inline-flex items-center gap-2 disabled:opacity-50"
+            >
+              {isRunning ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</>
+              ) : (
+                <><Upload className="h-4 w-4" /> Importar {jsonParsedCount || 0} produtos</>
+              )}
+            </button>
+            <button onClick={handleClear} className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5 text-text-muted">
+              <Trash2 className="h-4 w-4" /> Limpar
+            </button>
+          </div>
         </div>
       )}
 
