@@ -132,7 +132,7 @@ export default function SinceLastVisit() {
                   iconColor="text-accent-green"
                 >
                   {priceDrops.map((p) => (
-                    <div key={p.id} className="w-[200px] md:w-[240px] flex-shrink-0">
+                    <div key={p.id} className="rail-card">
                       <div className="relative">
                         <OfferCard product={p} />
                         {/* Price drop indicator */}
@@ -165,7 +165,7 @@ export default function SinceLastVisit() {
                   iconColor="text-accent-purple"
                 >
                   {newProducts.map((p) => (
-                    <div key={p.id} className="w-[200px] md:w-[240px] flex-shrink-0">
+                    <div key={p.id} className="rail-card">
                       <OfferCard product={p} />
                     </div>
                   ))}

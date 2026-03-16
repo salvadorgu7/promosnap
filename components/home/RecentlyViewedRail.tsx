@@ -30,7 +30,9 @@ export default function RecentlyViewedRail() {
       iconColor="text-text-muted"
     >
       {products.map((p) => (
-        <OfferCard key={p.id} product={p} />
+        <div key={p.id} className="rail-card">
+          <OfferCard product={p} />
+        </div>
       ))}
     </RailSection>
   )

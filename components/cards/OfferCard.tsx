@@ -119,7 +119,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
 
       {/* Content */}
       <div className="flex-1 flex flex-col px-1.5 pt-1.5 pb-2">
-        <div className="flex items-center gap-1 text-[11px] text-text-muted mb-1 flex-wrap">
+        <div className="flex items-center gap-1 text-[11px] text-text-muted mb-1 flex-wrap overflow-hidden max-h-[3.5rem]">
           <span className="inline-flex items-center gap-0.5 font-semibold text-text-secondary">
             <Store className="h-2.5 w-2.5" />
             {bestOffer.sourceName}
@@ -193,7 +193,8 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
             href={ctaUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className={`btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold ${
+            aria-label={`${ctaLabel} - ${product.name}`}
+            className={`btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold touch-target ${
               bestOffer.offerScore >= 80 ? "animate-pulse-subtle" : ""
             }`}
           >
@@ -204,7 +205,8 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
         ) : (
           <Link
             href={`/produto/${product.slug}`}
-            className="btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold flex items-center justify-center gap-1.5"
+            aria-label={`Comparar precos de ${product.name}`}
+            className="btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold flex items-center justify-center gap-1.5 touch-target"
           >
             Comparar Precos
             <ExternalLink className="w-3 h-3" />

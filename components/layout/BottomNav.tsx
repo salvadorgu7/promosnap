@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Flame, Heart, Grid3X3, X, Smartphone, Laptop, Footprints, Tag, Trophy, TrendingDown, Bell, ChevronRight } from "lucide-react";
+import { Home, Flame, Heart, Grid3X3, X, Smartphone, Laptop, Footprints, Tag, Trophy, TrendingDown, Bell, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 const tabs = [
   { href: "/", label: "Inicio", icon: Home },
-  { href: "/busca", label: "Busca", icon: Search },
   { href: "/ofertas", label: "Ofertas", icon: Flame },
   { href: "/favoritos", label: "Favoritos", icon: Heart },
 ] as const;
@@ -43,11 +42,15 @@ export default function BottomNav() {
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setMenuOpen(false)}
+            aria-label="Fechar menu"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Escape" && setMenuOpen(false)}
           />
           <div className="absolute bottom-16 left-4 right-4 bg-white rounded-xl shadow-xl border border-surface-200 p-4 animate-in slide-in-from-bottom-4">
             {/* Priority categories */}
             <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">Categorias em Destaque</p>
-            <nav className="flex flex-col gap-0.5 mb-3">
+            <nav aria-label="Categorias em destaque" className="flex flex-col gap-0.5 mb-3">
               {categoryLinks.map((link) => {
                 const Icon = link.icon;
                 return (
@@ -55,7 +58,7 @@ export default function BottomNav() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors touch-target ${
                       pathname.startsWith(link.href)
                         ? "bg-accent-blue/10 text-brand-500"
                         : "text-surface-700 hover:bg-surface-50"
@@ -72,7 +75,7 @@ export default function BottomNav() {
             <div className="h-px bg-surface-200 mb-3" />
 
             {/* Other links */}
-            <nav className="flex flex-col gap-0.5">
+            <nav aria-label="Links rapidos" className="flex flex-col gap-0.5">
               {menuLinks.map((link) => {
                 const Icon = link.icon;
                 return (
@@ -80,7 +83,7 @@ export default function BottomNav() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors touch-target ${
                       pathname.startsWith(link.href)
                         ? "bg-accent-blue/10 text-brand-500"
                         : "text-surface-700 hover:bg-surface-50"
@@ -97,7 +100,7 @@ export default function BottomNav() {
       )}
 
       {/* Bottom nav bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-md border-t border-surface-200/80 safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-md border-t border-surface-200/80 safe-area-bottom" aria-label="Navegacao principal">
         <div className="flex items-center justify-around h-14 px-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -106,7 +109,9 @@ export default function BottomNav() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
+                aria-label={tab.label}
+                aria-current={active ? "page" : undefined}
+                className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors touch-target ${
                   active
                     ? "text-brand-500"
                     : "text-surface-400 hover:text-surface-600"
@@ -124,7 +129,9 @@ export default function BottomNav() {
           {/* Categories toggle */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
+            aria-label={menuOpen ? "Fechar categorias" : "Abrir categorias"}
+            aria-expanded={menuOpen}
+            className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors touch-target ${
               menuOpen
                 ? "text-brand-500"
                 : "text-surface-400 hover:text-surface-600"
@@ -135,7 +142,7 @@ export default function BottomNav() {
             ) : (
               <Grid3X3 className="w-5 h-5" />
             )}
-            <span className={`text-[10px] ${menuOpen ? "font-bold" : "font-medium"}`}>Categorias</span>
+            <span className={`text-[10px] ${menuOpen ? "font-bold" : "font-medium"}`}>Mais</span>
           </button>
         </div>
       </nav>

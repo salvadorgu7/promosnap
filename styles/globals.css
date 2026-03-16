@@ -150,7 +150,7 @@
 
   /* ---- Badges (consistent height: h-6, px-2.5, py-0.5) ---- */
   .badge-hot {
-    @apply inline-flex items-center gap-1 h-6 px-2.5 py-0.5 rounded-md text-xs font-bold;
+    @apply inline-flex items-center gap-1 h-6 px-2.5 py-0.5 rounded-md text-xs font-semibold;
     background: linear-gradient(135deg, rgba(240,68,56,0.16) 0%, rgba(240,68,56,0.08) 100%);
     color: #C42B20;
     border: 1px solid rgba(240,68,56,0.25);
@@ -647,9 +647,15 @@
   /* ---- Button sizes ---- */
   .btn-sm {
     @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold;
+    min-height: 32px;
+  }
+  .btn-md {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold;
+    min-height: 40px;
   }
   .btn-lg {
     @apply inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl text-base font-semibold;
+    min-height: 48px;
   }
 
   /* ---- Input base — consistent input styling ---- */
@@ -1587,4 +1593,32 @@
 }
 .animate-pulse-subtle {
   animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* ============================================
+   RESPONSIVE RAIL CARDS
+   ============================================ */
+.rail-card {
+  width: 160px;
+  flex-shrink: 0;
+}
+@media (min-width: 640px) {
+  .rail-card { width: 190px; }
+}
+@media (min-width: 768px) {
+  .rail-card { width: 210px; }
+}
+@media (min-width: 1280px) {
+  .rail-card { width: 230px; }
+}
+@media (min-width: 1536px) {
+  .rail-card { width: 260px; }
+}
+
+/* ============================================
+   TOUCH TARGET — minimum 44px
+   ============================================ */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
 }

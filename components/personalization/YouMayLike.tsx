@@ -122,14 +122,14 @@ export default function YouMayLike({ currentProduct, categorySlugs, title }: You
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="flex-shrink-0 w-[200px] md:w-[220px] h-[340px] rounded-xl bg-surface-100 animate-pulse"
+              className="rail-card h-[340px] rounded-xl bg-surface-100 animate-pulse"
             />
           ))}
         </div>
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
           {products.map((product) => (
-            <div key={product.id} className="flex-shrink-0 w-[200px] md:w-[220px]">
+            <div key={product.id} className="rail-card">
               <OfferCard product={product} />
             </div>
           ))}

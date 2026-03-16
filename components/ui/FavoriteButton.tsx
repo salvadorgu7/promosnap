@@ -12,7 +12,7 @@ export default function FavoriteButton({ productId, size = "sm" }: Props) {
   const { isFavorite, toggleFavorite } = useFavorites()
   const favorited = isFavorite(productId)
 
-  const sizeClasses = size === "sm" ? "h-8 w-8" : "h-10 w-10"
+  const sizeClasses = size === "sm" ? "h-8 w-8 touch-target" : "h-10 w-10 touch-target"
   const iconSize = size === "sm" ? "w-4 h-4" : "w-5 h-5"
 
   return (

@@ -44,7 +44,8 @@ export default function RailSection({ title, subtitle, href, icon: Icon, iconCol
           {href && (
             <Link
               href={href}
-              className="flex items-center gap-1 text-sm text-accent-blue hover:text-brand-500 transition-colors duration-200 font-medium group/link px-3 py-1.5 rounded-lg hover:bg-accent-blue/5"
+              aria-label={`Ver tudo em ${title}`}
+              className="flex items-center gap-1 text-sm text-accent-blue hover:text-brand-500 transition-colors duration-200 font-medium group/link px-3 py-1.5 rounded-lg hover:bg-accent-blue/5 touch-target"
             >
               Ver tudo
               <ChevronRight className="w-4 h-4 group-hover/link:translate-x-0.5 transition-transform" />
