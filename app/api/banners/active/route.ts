@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/db/prisma"
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -10,6 +11,9 @@ export const dynamic = "force-dynamic"
  * Filters by isActive, date range, and optional bannerType.
  */
 export async function GET(req: NextRequest) {
+  const rl = rateLimit(req, "public");
+  if (!rl.success) return rateLimitResponse(rl);
+
   const type = req.nextUrl.searchParams.get("type") || undefined
   const limit = Math.min(Number(req.nextUrl.searchParams.get("limit") || 5), 10)
 

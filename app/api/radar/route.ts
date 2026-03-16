@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit"
 
 export async function GET(req: NextRequest) {
+  const rl = rateLimit(req, "public");
+  if (!rl.success) return rateLimitResponse(rl);
+
   const { searchParams } = req.nextUrl;
   const ids = searchParams.get("ids")?.split(",").filter(Boolean) || [];
   const categories = searchParams.get("categories")?.split(",").filter(Boolean) || [];

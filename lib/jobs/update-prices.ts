@@ -80,8 +80,8 @@ export async function updatePrices(): Promise<JobResult> {
       await ctx.updateProgress(processed, staleOffers.length);
     }
 
-    // Create price snapshots for still-active offers
-    ctx.log('Creating price snapshots for active offers...');
+    // Create price snapshots ONLY when price changed since last snapshot
+    ctx.log('Creating price snapshots for active offers with price changes...');
 
     const activeOffers = await prisma.offer.findMany({
       where: { isActive: true },
@@ -92,21 +92,44 @@ export async function updatePrices(): Promise<JobResult> {
       },
     });
 
+    let skipped = 0;
+
     for (let i = 0; i < activeOffers.length; i += BATCH_SIZE) {
       const batch = activeOffers.slice(i, i + BATCH_SIZE);
 
+      // Fetch last snapshot for each offer in batch
+      const lastSnapshots = await prisma.priceSnapshot.findMany({
+        where: { offerId: { in: batch.map((o) => o.id) } },
+        orderBy: { capturedAt: 'desc' },
+        distinct: ['offerId'],
+        select: { offerId: true, price: true, originalPrice: true },
+      });
+
+      const lastByOffer = new Map(lastSnapshots.map((s) => [s.offerId, s]));
+
+      // Only create snapshots where price actually changed
+      const changed = batch.filter((offer) => {
+        const last = lastByOffer.get(offer.id);
+        if (!last) return true; // No snapshot yet — create first one
+        return last.price !== offer.currentPrice || last.originalPrice !== offer.originalPrice;
+      });
+
+      skipped += batch.length - changed.length;
+
+      if (changed.length === 0) continue;
+
       try {
         await prisma.priceSnapshot.createMany({
-          data: batch.map((offer) => ({
+          data: changed.map((offer) => ({
             offerId: offer.id,
             price: offer.currentPrice,
             originalPrice: offer.originalPrice,
           })),
         });
-        snapshotsCreated += batch.length;
+        snapshotsCreated += changed.length;
       } catch {
         // Some offers may have been deleted — fall back to individual creates
-        for (const offer of batch) {
+        for (const offer of changed) {
           try {
             await prisma.priceSnapshot.create({
               data: {
@@ -124,13 +147,13 @@ export async function updatePrices(): Promise<JobResult> {
     }
 
     ctx.log(
-      `Done: ${deactivated} deactivated, ${needsUpdate} need update, ${snapshotsCreated} snapshots created`
+      `Done: ${deactivated} deactivated, ${needsUpdate} need update, ${snapshotsCreated} snapshots created, ${skipped} unchanged skipped`
     );
 
     return {
       itemsTotal: staleOffers.length + activeOffers.length,
       itemsDone: processed + snapshotsCreated,
-      metadata: { deactivated, needsUpdate, snapshotsCreated },
+      metadata: { deactivated, needsUpdate, snapshotsCreated, skipped },
     };
   });
 }

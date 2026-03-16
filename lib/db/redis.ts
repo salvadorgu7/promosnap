@@ -1,19 +1,19 @@
-import Redis from 'ioredis'
 import { logger } from "@/lib/logger"
 
-const globalForRedis = globalThis as unknown as { redis: Redis | null | undefined }
+type RedisClient = import('ioredis').default
 
-function createRedisClient(): Redis | null {
+const globalForRedis = globalThis as unknown as { redis: RedisClient | null | undefined }
+
+async function createRedisClient(): Promise<RedisClient | null> {
   const url = process.env.REDIS_URL
-  if (!url) {
-    // No Redis configured — all cache ops gracefully return null/void
-    return null
-  }
+  if (!url) return null
+
   try {
+    const { default: Redis } = await import('ioredis')
     const client = new Redis(url, {
       maxRetriesPerRequest: 3,
       retryStrategy(times) {
-        if (times > 3) return null // stop retrying
+        if (times > 3) return null
         return Math.min(times * 200, 2000)
       },
       lazyConnect: true,
@@ -27,25 +27,40 @@ function createRedisClient(): Redis | null {
   }
 }
 
-export const redis = globalForRedis.redis !== undefined ? globalForRedis.redis : createRedisClient()
-if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redis
+let redisPromise: Promise<RedisClient | null> | null = null
+
+function getRedis(): Promise<RedisClient | null> {
+  if (globalForRedis.redis !== undefined) return Promise.resolve(globalForRedis.redis)
+  if (!redisPromise) {
+    redisPromise = createRedisClient().then(client => {
+      if (process.env.NODE_ENV !== 'production') globalForRedis.redis = client
+      return client
+    })
+  }
+  return redisPromise
+}
+
+export const redis: RedisClient | null = null // Keep export for backward compat
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
-  if (!redis) return null
+  const r = await getRedis()
+  if (!r) return null
   try {
-    const data = await redis.get(`promosnap:${key}`)
+    const data = await r.get(`promosnap:${key}`)
     return data ? JSON.parse(data) : null
   } catch { return null }
 }
 
 export async function cacheSet(key: string, value: unknown, ttlSeconds = 300): Promise<void> {
-  if (!redis) return
-  try { await redis.set(`promosnap:${key}`, JSON.stringify(value), 'EX', ttlSeconds) } catch (err) { logger.debug("redis.op-failed", { error: err }) }
+  const r = await getRedis()
+  if (!r) return
+  try { await r.set(`promosnap:${key}`, JSON.stringify(value), 'EX', ttlSeconds) } catch (err) { logger.debug("redis.op-failed", { error: err }) }
 }
 
 export async function cacheDelete(key: string): Promise<void> {
-  if (!redis) return
-  try { await redis.del(`promosnap:${key}`) } catch (err) { logger.debug("redis.op-failed", { error: err }) }
+  const r = await getRedis()
+  if (!r) return
+  try { await r.del(`promosnap:${key}`) } catch (err) { logger.debug("redis.op-failed", { error: err }) }
 }
 
 export default redis

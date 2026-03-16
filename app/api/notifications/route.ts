@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateNotificationsForProducts } from "@/lib/notifications/generator";
 import { logger } from "@/lib/logger";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit"
 
 export async function GET(req: NextRequest) {
+  const rl = rateLimit(req, "public");
+  if (!rl.success) return rateLimitResponse(rl);
+
   const ids =
     req.nextUrl.searchParams
       .get("ids")

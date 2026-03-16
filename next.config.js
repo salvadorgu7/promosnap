@@ -37,6 +37,8 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
               "frame-ancestors 'none'",
+              "worker-src 'self'",
+              "object-src 'none'",
             ].join("; "),
           },
         ],

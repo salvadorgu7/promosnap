@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/db/prisma"
 import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries"
 import { logger } from "@/lib/logger"
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit"
 
 // ============================================
 // PUBLIC API: Updates since last visit
@@ -9,6 +10,9 @@ import { logger } from "@/lib/logger"
 // ============================================
 
 export async function GET(request: NextRequest) {
+  const rl = rateLimit(request, "public");
+  if (!rl.success) return rateLimitResponse(rl);
+
   const { searchParams } = new URL(request.url)
   const sinceParam = searchParams.get("since")
   const categoriesParam = searchParams.get("categories")

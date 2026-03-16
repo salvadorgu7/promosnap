@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSearchSuggestions } from '@/lib/db/queries'
 import { logger } from '@/lib/logger'
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit"
 
 export async function GET(request: NextRequest) {
+  const rl = rateLimit(request, "public");
+  if (!rl.success) return rateLimitResponse(rl);
+
   const q = request.nextUrl.searchParams.get('q') || ''
 
   if (q.length < 2) {

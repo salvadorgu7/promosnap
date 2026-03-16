@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual, createHash } from "crypto";
 
+/** Common weak/placeholder secrets that MUST be rejected in production */
+const BLOCKED_SECRETS = new Set([
+  "changeme", "admin", "secret", "password", "123456",
+  "admin123", "test", "placeholder", "your-secret-here",
+]);
+
 /**
  * Timing-safe string comparison to prevent timing attacks.
  */
@@ -29,6 +35,12 @@ export function safeCompare(a: string, b: string): boolean {
 export function validateAdmin(req: NextRequest): NextResponse | null {
   const secret = process.env.ADMIN_SECRET;
   if (!secret) return null; // No secret configured = open (dev mode)
+
+  // Block weak/placeholder secrets in production
+  if (process.env.NODE_ENV === "production" && (secret.length < 12 || BLOCKED_SECRETS.has(secret.toLowerCase()))) {
+    console.error("[SECURITY] ADMIN_SECRET is too weak or a placeholder. Access blocked in production.");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
 
   // Method 1: Header-based auth (timing-safe)
   const headerSecret = req.headers.get("x-admin-secret");

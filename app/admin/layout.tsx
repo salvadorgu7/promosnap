@@ -35,6 +35,19 @@ import {
   Play,
   Plug,
   Search,
+  Briefcase,
+  Edit,
+  Lightbulb,
+  Sliders,
+  Layers,
+  MailPlus,
+  RefreshCw,
+  Sprout,
+  Repeat,
+  ListChecks,
+  Factory,
+  Megaphone,
+  Cpu,
 } from "lucide-react";
 import LogoIcon from "@/components/ui/LogoIcon";
 
@@ -118,9 +131,13 @@ export const metadata: Metadata = {
 // Advanced items — collapsed by default
 const experimentalItems: NavItem[] = [
   { href: "/admin/cockpit", label: "Cockpit", icon: Gauge },
+  { href: "/admin/config", label: "Config", icon: Sliders },
+  { href: "/admin/imports", label: "Imports", icon: Layers },
   { href: "/admin/catalog-quality", label: "Qualidade", icon: Gauge },
   { href: "/admin/catalog-intelligence", label: "Intelligence", icon: Brain },
   { href: "/admin/catalog-governance", label: "Governance", icon: ShieldCheck },
+  { href: "/admin/catalog-edit", label: "Catalog Edit", icon: Edit },
+  { href: "/admin/catalog-opportunities", label: "Oportunidades", icon: Lightbulb },
   { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
   { href: "/admin/seo-gaps", label: "SEO Gaps", icon: SearchX },
   { href: "/admin/automation", label: "Automacao", icon: Zap },
@@ -128,6 +145,19 @@ const experimentalItems: NavItem[] = [
   { href: "/admin/performance", label: "Performance", icon: Activity },
   { href: "/admin/artigos", label: "Artigos", icon: FileText },
   { href: "/admin/audit", label: "Audit", icon: ClipboardCheck },
+  { href: "/admin/business", label: "Business", icon: Briefcase },
+  { href: "/admin/inteligencia", label: "Inteligencia", icon: Brain },
+  { href: "/admin/email-intelligence", label: "Email Intel", icon: MailPlus },
+  { href: "/admin/feed-sync", label: "Feed Sync", icon: RefreshCw },
+  { href: "/admin/growth", label: "Growth", icon: Sprout },
+  { href: "/admin/habit-loops", label: "Habit Loops", icon: Repeat },
+  { href: "/admin/decisoes", label: "Decisoes", icon: ListChecks },
+  { href: "/admin/content", label: "Content", icon: FileText },
+  { href: "/admin/merchandising", label: "Merchandising", icon: Megaphone },
+  { href: "/admin/prioridades", label: "Prioridades", icon: Target },
+  { href: "/admin/production", label: "Production", icon: Factory },
+  { href: "/admin/runtime", label: "Runtime", icon: Cpu },
+  { href: "/admin/release", label: "Release", icon: Rocket },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
