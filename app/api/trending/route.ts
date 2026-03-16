@@ -3,6 +3,7 @@ import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/securi
 import prisma from "@/lib/db/prisma";
 import { getHotOffers, getBestSellers } from "@/lib/db/queries";
 import { cache } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 
 const TRENDING_CACHE_TTL = 180; // 3 minutes
 
@@ -99,7 +100,7 @@ export async function GET(request: NextRequest) {
       `;
       importedCategories = new Set((catResults as any[]).map(r => r.name?.toLowerCase()).filter(Boolean));
     } catch (err) {
-      console.error('[trending] Error:', err instanceof Error ? err.message : err);
+      logger.error("trending.imported-categories-failed", { error: err });
       // originType column may not exist — skip
     }
 
@@ -190,7 +191,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.json(responseData);
     return withRateLimitHeaders(response, rl);
   } catch (error) {
-    console.error("[api/trending] Error:", error instanceof Error ? error.message : error);
+    logger.error("trending.failed", { error });
     return NextResponse.json(
       { error: "Erro ao buscar trending. Tente novamente." },
       { status: 500 }

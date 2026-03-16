@@ -7,6 +7,7 @@ import {
   formatForChannel,
 } from "@/lib/distribution/engine";
 import type { DistributionChannel } from "@/lib/distribution/types";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
       history,
     });
   } catch (error) {
-    console.error("[Distribution API] Error:", error);
+    logger.error("distribution.get-failed", { error });
     return NextResponse.json(
       { error: "Falha ao carregar dados de distribuicao" },
       { status: 500 }

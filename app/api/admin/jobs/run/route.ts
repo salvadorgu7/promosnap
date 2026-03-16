@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import prisma from '@/lib/db/prisma'
+import { logger } from '@/lib/logger'
 
 // Job metadata for admin visibility
 interface JobInfo {
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest) {
     const { captureError } = await import('@/lib/monitoring')
     await captureError(error, { route: '/api/admin/jobs/run', job: jobName })
     const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error(`[admin/jobs/run] Job "${jobName}" failed:`, errorMessage)
+    logger.error("jobs-run.failed", { error, job: jobName })
     return NextResponse.json(
       { error: 'Falha ao executar job', job: jobName, durationMs, detail: errorMessage },
       { status: 500 }

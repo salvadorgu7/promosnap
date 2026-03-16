@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { validateAdmin } from "@/lib/auth/admin";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   _req: NextRequest,
@@ -66,7 +67,7 @@ export async function PUT(
 
     return NextResponse.json({ article });
   } catch (error) {
-    console.error("Error updating article:", error);
+    logger.error("articles.update-failed", { error, articleId: id });
     return NextResponse.json(
       { error: "Failed to update article" },
       { status: 500 }
@@ -97,7 +98,7 @@ export async function DELETE(
 
     return NextResponse.json({ article, message: "Article archived" });
   } catch (error) {
-    console.error("Error archiving article:", error);
+    logger.error("articles.archive-failed", { error, articleId: id });
     return NextResponse.json(
       { error: "Failed to archive article" },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateAdmin } from "@/lib/auth/admin";
 import { getRateLimitStats } from "@/lib/security/rate-limit";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
       stats,
     });
   } catch (error) {
-    console.error("[admin/rate-limits] Error:", error);
+    logger.error("rate-limits.failed", { error });
     return NextResponse.json(
       { error: "Failed to fetch rate-limit stats" },
       { status: 500 }

@@ -3,6 +3,7 @@ import prisma from "@/lib/db/prisma";
 import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { captureError, logWarn } from "@/lib/monitoring";
 import { enrichClickoutAttribution } from "@/lib/attribution/engine";
+import { logger } from "@/lib/logger";
 import type { PageType, ChannelOrigin } from "@/lib/attribution/engine";
 
 /**
@@ -40,7 +41,7 @@ function appendAffiliateParams(url: string, sourceSlug: string): string {
 
     return parsed.toString();
   } catch (err) {
-    console.error('[clickout] Error:', err instanceof Error ? err.message : err);
+    logger.error("clickout.affiliate-params-failed", { error: err });
     return url; // If URL parsing fails, return as-is
   }
 }

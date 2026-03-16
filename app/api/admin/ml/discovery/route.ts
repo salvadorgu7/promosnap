@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import { runDiscovery } from '@/lib/ml-discovery'
 import type { DiscoveryMode } from '@/lib/ml-discovery'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
       meta: result.meta,
     })
   } catch (error) {
-    console.error('[ml-discovery-api] Pipeline error:', error)
+    logger.error("ml-discovery.pipeline-failed", { error })
     return NextResponse.json(
       { error: 'Falha no pipeline de discovery' },
       { status: 500 }

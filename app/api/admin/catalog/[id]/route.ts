@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { validateAdmin } from "@/lib/auth/admin";
+import { logger } from "@/lib/logger";
 
 export async function PUT(
   req: NextRequest,
@@ -54,7 +55,7 @@ export async function PUT(
 
     return NextResponse.json({ product });
   } catch (error) {
-    console.error("Error updating product:", error);
+    logger.error("catalog-product.update-failed", { error, productId: id });
     return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
   }
 }

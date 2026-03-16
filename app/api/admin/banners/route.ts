@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { validateAdmin } from "@/lib/auth/admin";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const denied = validateAdmin(req);
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ banner }, { status: 201 });
   } catch (error) {
-    console.error("Error creating banner:", error);
+    logger.error("banners.create-failed", { error });
     return NextResponse.json({ error: "Failed to create banner" }, { status: 500 });
   }
 }

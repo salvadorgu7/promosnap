@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateAdmin } from "@/lib/auth/admin";
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +108,7 @@ export async function GET(req: NextRequest) {
       count: withPotentialScore.length,
     });
   } catch (error) {
-    console.error("[revenue/potential] Error:", error);
+    logger.error("revenue-potential.failed", { error });
     return NextResponse.json(
       { error: "Failed to fetch revenue potential data" },
       { status: 500 }

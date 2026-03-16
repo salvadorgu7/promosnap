@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSearchSuggestions } from '@/lib/db/queries'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get('q') || ''
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const suggestions = await getSearchSuggestions(q, 8)
     return NextResponse.json(suggestions)
   } catch (err) {
-    console.error('[search/suggest] Error:', err instanceof Error ? err.message : err);
+    logger.error("search-suggest.failed", { error: err });
     return NextResponse.json({ error: 'Failed to fetch suggestions' }, { status: 500 })
   }
 }

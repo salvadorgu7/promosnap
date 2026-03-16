@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import { runDiscovery, getAllCategories, fetchTrendingSignals } from '@/lib/ml-discovery'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -88,7 +89,7 @@ export async function GET(req: NextRequest) {
       results,
     })
   } catch (error) {
-    console.error('[ml-search] Exception:', error instanceof Error ? error.message : error)
+    logger.error("ml-search.failed", { error, query })
     return NextResponse.json({
       error: 'Falha ao buscar ML',
       query,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import prisma from '@/lib/db/prisma'
 import { getCatalogHealth, findZeroResultSearches } from '@/lib/discovery'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,7 +121,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (err) {
-    console.error('[admin/observability] Error:', err instanceof Error ? err.message : err)
+    logger.error("observability.failed", { error: err })
     return NextResponse.json({ error: 'Erro ao gerar observabilidade' }, { status: 500 })
   }
 }

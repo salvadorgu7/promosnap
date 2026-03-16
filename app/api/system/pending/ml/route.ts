@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import prisma from '@/lib/db/prisma'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -136,7 +137,7 @@ export async function GET(req: NextRequest) {
       })),
     })
   } catch (error) {
-    console.error('[system/pending/ml] Error:', error)
+    logger.error("system-pending-ml.failed", { error })
     return NextResponse.json(
       { error: 'Falha ao verificar pendencias ML' },
       { status: 500 }

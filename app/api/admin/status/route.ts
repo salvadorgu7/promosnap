@@ -3,6 +3,7 @@ import { validateAdmin } from '@/lib/auth/admin'
 import prisma from '@/lib/db/prisma'
 import { cache } from '@/lib/cache'
 import { getAllFlags } from '@/lib/config/feature-flags'
+import { logger } from '@/lib/logger'
 
 const CACHE_KEY = 'admin:status'
 const CACHE_TTL = 60 // 60 seconds
@@ -307,7 +308,7 @@ export async function GET(req: NextRequest) {
     await cache.set(CACHE_KEY, responseData, CACHE_TTL)
     return NextResponse.json(responseData)
   } catch (error) {
-    console.error('[admin/status] Error:', error)
+    logger.error("status.failed", { error })
     return NextResponse.json({ error: 'Failed to get status' }, { status: 500 })
   }
 }

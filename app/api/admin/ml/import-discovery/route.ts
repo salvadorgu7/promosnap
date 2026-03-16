@@ -4,6 +4,7 @@ import { runImportPipeline, type ImportItem } from '@/lib/import'
 import { runDiscovery } from '@/lib/ml-discovery'
 import type { MLProduct, DiscoveryMode } from '@/lib/ml-discovery'
 import { resolveMLCategorySlug } from '@/lib/ml-discovery/categories'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -263,7 +264,7 @@ export async function POST(req: NextRequest) {
       details: { discarded },
     })
   } catch (error) {
-    console.error('[ml-import-discovery] Error:', error instanceof Error ? error.message : String(error))
+    logger.error("ml-import-discovery.failed", { error })
     return NextResponse.json(
       { error: 'Falha na importacao' },
       { status: 500 }

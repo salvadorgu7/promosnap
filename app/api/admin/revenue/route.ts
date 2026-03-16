@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { validateAdmin } from "@/lib/auth/admin";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -178,7 +179,7 @@ export async function GET(req: NextRequest) {
       topProducts,
     });
   } catch (error) {
-    console.error("Revenue API error:", error);
+    logger.error("revenue.failed", { error });
     return NextResponse.json(
       { error: "Failed to fetch revenue data" },
       { status: 500 }

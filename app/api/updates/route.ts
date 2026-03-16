@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/db/prisma"
 import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries"
+import { logger } from "@/lib/logger"
 
 // ============================================
 // PUBLIC API: Updates since last visit
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
       since: effectiveSince.toISOString(),
     })
   } catch (error) {
-    console.error("Failed to fetch updates:", error)
+    logger.error("updates.fetch-failed", { error })
     return NextResponse.json({ error: "Failed to fetch updates" }, { status: 500 })
   }
 }

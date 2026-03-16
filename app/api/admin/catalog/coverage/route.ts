@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateAdmin } from "@/lib/auth/admin";
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const denied = validateAdmin(req);
@@ -169,7 +170,7 @@ export async function GET(req: NextRequest) {
       gaps,
     });
   } catch (error) {
-    console.error("[admin/catalog/coverage] Error:", error);
+    logger.error("catalog-coverage.failed", { error });
     return NextResponse.json(
       { error: "Failed to generate catalog coverage report" },
       { status: 500 }

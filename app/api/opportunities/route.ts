@@ -4,6 +4,7 @@ import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
 import { calculateCommercialScore, type CommercialSignals } from "@/lib/ranking/commercial";
 import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/security/rate-limit";
 import type { ProductCard } from "@/types";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -369,7 +370,7 @@ export async function GET(request: NextRequest) {
       enrichedOpportunities,
     }), rl);
   } catch (error) {
-    console.error("[API/opportunities] Error:", error);
+    logger.error("opportunities.failed", { error });
     return NextResponse.json({ opportunities: [], enrichedOpportunities: [] });
   }
 }

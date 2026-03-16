@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import { fetchTrendingSignals } from '@/lib/ml-discovery'
 import prisma from '@/lib/db/prisma'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
       hint: 'Use GET /api/admin/ml/discovery?q={keyword} para descobrir produtos de cada tendencia.',
     })
   } catch (err) {
-    console.error('[admin/trends] Error:', err instanceof Error ? err.message : err)
+    logger.error("trends.failed", { error: err })
     return NextResponse.json({ error: 'Erro ao buscar tendencias' }, { status: 500 })
   }
 }

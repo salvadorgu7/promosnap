@@ -6,6 +6,7 @@ import {
   getCategoryQueries,
   getAvailableCategorySlugs,
 } from "@/lib/jobs/category-fill";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 min for Vercel
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[fill-category] Priority fill failed:", msg);
+      logger.error("fill-category.priority-fill-failed", { error: err });
       return NextResponse.json(
         { error: `Priority fill failed: ${msg}` },
         { status: 500 }
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[fill-category] Fill failed for "${categorySlug}":`, msg);
+    logger.error("fill-category.fill-failed", { error: err, categorySlug });
     return NextResponse.json(
       { error: `Fill failed: ${msg}` },
       { status: 500 }

@@ -4,6 +4,7 @@ import prisma from "@/lib/db/prisma";
 import { getTopOpportunities, summarizeOpportunities } from "@/lib/opportunity/engine";
 import { findZeroResultSearches } from "@/lib/discovery";
 import { cache } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 
 const CACHE_KEY = "admin:cockpit";
 const CACHE_TTL = 60; // 60 seconds
@@ -358,7 +359,7 @@ export async function GET(req: NextRequest) {
     await cache.set(CACHE_KEY, responseData, CACHE_TTL);
     return NextResponse.json(responseData);
   } catch (error) {
-    console.error("[cockpit] Error:", error);
+    logger.error("cockpit.failed", { error });
     return NextResponse.json(
       { error: "Failed to load cockpit data" },
       { status: 500 }

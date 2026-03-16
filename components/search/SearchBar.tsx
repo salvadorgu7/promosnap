@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, TrendingUp, Clock, Tag, Package } from "lucide-react";
 import VoiceSearch from "./VoiceSearch";
+import { analytics } from "@/lib/analytics/events";
 
 interface Suggestion {
   text: string;
@@ -97,6 +98,7 @@ export default function SearchBar({ large = false }: { large?: boolean }) {
         setSuggestions([]);
         setHighlightIndex(-1);
         router.push(`/busca?q=${encodeURIComponent(term.trim())}`);
+        analytics.searchPerformed({ query: term.trim(), resultCount: -1 });
         // Log search to localStorage
         try {
           const KEY = "ps_searches";

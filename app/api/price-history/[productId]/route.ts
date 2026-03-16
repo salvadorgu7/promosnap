@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/security/rate-limit";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   request: NextRequest,
@@ -44,7 +45,7 @@ export async function GET(
 
     return withRateLimitHeaders(response, rl);
   } catch (err) {
-    console.error('[price-history] Error:', err instanceof Error ? err.message : err);
+    logger.error("price-history.failed", { error: err });
     return NextResponse.json(
       { error: "Falha ao buscar historico de precos" },
       { status: 500 }

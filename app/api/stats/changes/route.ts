@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateAdmin } from "@/lib/auth/admin";
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
       updatedAt: new Date().toISOString(),
     });
   } catch (err) {
-    console.error('[stats/changes] Error:', err instanceof Error ? err.message : err);
+    logger.error("stats-changes.failed", { error: err });
     return NextResponse.json({
       priceDropsToday: 0,
       newOffersToday: 0,

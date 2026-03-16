@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { validateAdmin } from "@/lib/auth/admin";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   req: NextRequest,
@@ -59,7 +60,7 @@ export async function PUT(
 
     return NextResponse.json({ banner });
   } catch (error) {
-    console.error("Error updating banner:", error);
+    logger.error("banners.update-failed", { error, bannerId: id });
     return NextResponse.json({ error: "Failed to update banner" }, { status: 500 });
   }
 }
@@ -82,7 +83,7 @@ export async function DELETE(
     await prisma.banner.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting banner:", error);
+    logger.error("banners.delete-failed", { error, bannerId: id });
     return NextResponse.json({ error: "Failed to delete banner" }, { status: 500 });
   }
 }

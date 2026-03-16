@@ -11,6 +11,7 @@ import { getCanonicalStats, mergeIntoCanonical } from "@/lib/catalog/canonical-g
 import { canonicalMatch } from "@/lib/catalog/canonical-match";
 import { extractAndStoreAttributes } from "@/lib/catalog/product-attributes";
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 // ─── GET /api/admin/canonical — stats + recent weak matches ──────────────────
 
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
       })),
     });
   } catch (e) {
-    console.error("[admin/canonical] GET error:", e);
+    logger.error("canonical.get-failed", { error: e });
     return NextResponse.json(
       { error: "Erro ao buscar dados canonicos" },
       { status: 500 }
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
             failed++;
           }
         } catch (e) {
-          console.error(`[canonical] recalculate error for listing ${listing.id}:`, e);
+          logger.error("canonical.recalculate-listing-failed", { error: e, listingId: listing.id });
           failed++;
         }
       }
@@ -183,7 +184,7 @@ export async function POST(request: NextRequest) {
         results: results.slice(0, 50),
       });
     } catch (e) {
-      console.error("[admin/canonical] recalculate error:", e);
+      logger.error("canonical.recalculate-failed", { error: e });
       return NextResponse.json(
         { error: "Erro ao recalcular matches" },
         { status: 500 }
@@ -214,7 +215,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ action: "merge", result });
     } catch (e) {
-      console.error("[admin/canonical] merge error:", e);
+      logger.error("canonical.merge-failed", { error: e });
       return NextResponse.json(
         { error: "Erro ao fazer merge de produtos" },
         { status: 500 }
@@ -250,7 +251,7 @@ export async function POST(request: NextRequest) {
           if (attrs) extracted++;
           else failed++;
         } catch (e) {
-          console.error(`[canonical] extract-attributes error for ${product.id}:`, e);
+          logger.error("canonical.extract-attributes-item-failed", { error: e, productId: product.id });
           failed++;
         }
       }
@@ -262,7 +263,7 @@ export async function POST(request: NextRequest) {
         failed,
       });
     } catch (e) {
-      console.error("[admin/canonical] extract-attributes error:", e);
+      logger.error("canonical.extract-attributes-failed", { error: e });
       return NextResponse.json(
         { error: "Erro ao extrair atributos" },
         { status: 500 }

@@ -9,6 +9,7 @@ import {
   getTopPerformingPages,
   getChannelROI,
 } from "@/lib/attribution/revenue-attribution";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const authError = validateAdmin(req);
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
       channelROI,
     });
   } catch (error) {
-    console.error("[api/admin/attribution] Error:", error);
+    logger.error("attribution.failed", { error });
     return NextResponse.json(
       { error: "Failed to fetch attribution data" },
       { status: 500 }

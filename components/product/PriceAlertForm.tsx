@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, BellRing, X, Loader2, TrendingDown } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { analytics } from "@/lib/analytics/events";
 
 interface Props {
   listingId: string;
@@ -95,6 +96,7 @@ export default function PriceAlertForm({ listingId, currentPrice, productName }:
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao criar alerta");
+      analytics.priceAlertSet({ productId: listingId, targetPrice });
       setSuccess(true);
       setTimeout(() => {
         setOpen(false);

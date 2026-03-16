@@ -7,6 +7,7 @@ import {
   retryExecution,
 } from "@/lib/execution/engine";
 import type { ExecutionType, ExecutionOrigin } from "@/lib/execution/types";
+import { logger } from "@/lib/logger";
 
 const VALID_TYPES: ExecutionType[] = [
   "create_banner",
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error("[executions] GET error:", error);
+    logger.error("executions.get-failed", { error });
     return NextResponse.json(
       { error: "Failed to load executions" },
       { status: 500 }
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ execution: record });
   } catch (error) {
-    console.error("[executions] POST error:", error);
+    logger.error("executions.post-failed", { error });
     return NextResponse.json(
       { error: "Execution failed" },
       { status: 500 }

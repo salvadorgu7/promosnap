@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { mlTokenStore } from '@/lib/ml-auth'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,14 +11,14 @@ export async function GET(req: NextRequest) {
   const adminPage = `${appUrl}/admin/integrations/ml`
 
   if (!code) {
-    console.error('[ml-auth] Callback missing code param')
+    logger.error("ml-auth.missing-code")
     return NextResponse.redirect(`${adminPage}?auth=error&reason=missing_code`)
   }
 
   // Validate state against cookie (CSRF protection)
   const savedState = req.cookies.get('ml_oauth_state')?.value
   if (!state || !savedState || state !== savedState) {
-    console.error('[ml-auth] State mismatch')
+    logger.error("ml-auth.state-mismatch")
     return NextResponse.redirect(`${adminPage}?auth=error&reason=state_mismatch`)
   }
 
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
     process.env.NEXT_PUBLIC_APP_URL + '/api/auth/ml/callback'
 
   if (!clientId || !clientSecret) {
-    console.error('[ml-auth] Missing env vars')
+    logger.error("ml-auth.missing-env-vars")
     return NextResponse.redirect(`${adminPage}?auth=error&reason=missing_env`)
   }
 
@@ -49,13 +50,13 @@ export async function GET(req: NextRequest) {
     const body = await res.json()
 
     if (!res.ok) {
-      console.error('[ml-auth] Token exchange failed:', res.status)
+      logger.error("ml-auth.token-exchange-failed", { status: res.status })
       return NextResponse.redirect(`${adminPage}?auth=error&reason=exchange_failed`)
     }
 
     // Validate token structure
     if (!body.access_token) {
-      console.error('[ml-auth] Token exchange returned 200 but no access_token')
+      logger.error("ml-auth.no-access-token")
       return NextResponse.redirect(`${adminPage}?auth=error&reason=no_access_token`)
     }
 
@@ -73,10 +74,10 @@ export async function GET(req: NextRequest) {
       console.log('[ml-auth] Token validation /users/me:', testRes.status)
       if (!testRes.ok) {
         const testBody = await testRes.text()
-        console.error('[ml-auth] Token validation failed:', testBody)
+        logger.error("ml-auth.token-validation-failed", { response: testBody.slice(0, 500) })
       }
     } catch (testErr) {
-      console.error('[ml-auth] Token validation exception:', testErr)
+      logger.error("ml-auth.token-validation-exception", { error: testErr })
     }
 
     // Clear the state cookie and redirect back to admin
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
     response.cookies.delete('ml_oauth_state')
     return response
   } catch (error) {
-    console.error('[ml-auth] Callback exception:', error)
+    logger.error("ml-auth.callback-failed", { error })
     return NextResponse.redirect(`${adminPage}?auth=error&reason=exception`)
   }
 }

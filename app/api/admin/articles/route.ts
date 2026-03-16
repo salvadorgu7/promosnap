@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { validateAdmin } from "@/lib/auth/admin";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const denied = validateAdmin(req);
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ article }, { status: 201 });
   } catch (error) {
-    console.error("Error creating article:", error);
+    logger.error("articles.create-failed", { error });
     return NextResponse.json(
       { error: "Failed to create article" },
       { status: 500 }

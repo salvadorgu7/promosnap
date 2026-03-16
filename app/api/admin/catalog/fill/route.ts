@@ -4,6 +4,7 @@ import { runImportPipeline, type ImportItem } from "@/lib/import";
 import { mlFetch, batchHydrateItems, type HydrateEntry } from "@/lib/ml-discovery/items";
 import { mlCategoryToSlug } from "@/lib/ml-discovery/categories";
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 min for Vercel
@@ -220,7 +221,7 @@ export async function POST(req: NextRequest) {
       agg.failed += r.failed;
     } catch (err) {
       agg.failed += Math.min(BATCH, importItems.length - i);
-      console.error(`[catalog/fill] Batch import failed:`, err);
+      logger.error("catalog-fill.batch-import-failed", { error: err });
     }
   }
 
@@ -259,7 +260,7 @@ export async function POST(req: NextRequest) {
     if (backfilled > 0 || orphanCount > 0) {
     }
   } catch (err) {
-    console.error(`[catalog/fill] Category backfill error:`, err);
+    logger.error("catalog-fill.category-backfill-failed", { error: err });
   }
 
   return NextResponse.json({

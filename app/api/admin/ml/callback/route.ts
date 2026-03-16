@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { mlTokenStore } from '@/lib/ml-auth'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     if (!res.ok) {
       const errText = await res.text()
-      console.error('[ml-callback] Token exchange failed:', res.status, errText)
+      logger.error("ml-callback.token-exchange-failed", { status: res.status, detail: errText.slice(0, 500) })
       return NextResponse.json(
         { error: 'Token exchange failed', status: res.status, detail: errText.slice(0, 500) },
         { status: 502 }
@@ -145,7 +146,7 @@ export async function GET(req: NextRequest) {
     })
 
   } catch (err) {
-    console.error('[ml-callback] Error:', err)
+    logger.error("ml-callback.failed", { error: err })
     return NextResponse.json(
       { error: 'Callback processing failed', detail: err instanceof Error ? err.message : String(err) },
       { status: 500 }

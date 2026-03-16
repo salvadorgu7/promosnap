@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/security/rate-limit";
 import { searchProducts } from "@/lib/search/engine";
+import { logger } from "@/lib/logger";
 
 /** Check if request has valid admin secret */
 function isAdminRequest(request: NextRequest): boolean {
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
     });
     return withRateLimitHeaders(response, rl);
   } catch (error) {
-    console.error("[api/search] Error:", error instanceof Error ? error.message : error);
+    logger.error("search.failed", { error });
     return NextResponse.json(
       { error: "Erro ao processar busca. Tente novamente." },
       { status: 500 }

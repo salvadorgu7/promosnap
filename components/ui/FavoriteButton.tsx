@@ -2,6 +2,7 @@
 
 import { Heart } from "lucide-react"
 import { useFavorites } from "@/lib/hooks/useFavorites"
+import { analytics } from "@/lib/analytics/events"
 
 interface Props {
   productId: string
@@ -21,7 +22,9 @@ export default function FavoriteButton({ productId, size = "sm" }: Props) {
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
+        const wasFavorited = favorited
         toggleFavorite(productId)
+        analytics.favoriteToggle({ productId, action: wasFavorited ? "remove" : "add" })
       }}
       className={`${sizeClasses} flex items-center justify-center rounded-full
         bg-white/80 backdrop-blur-sm border border-surface-200

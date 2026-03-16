@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { rateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
+import { logger } from '@/lib/logger'
 
 const WEBHOOK_SECRET = process.env.ML_WEBHOOK_SECRET
 
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     // ML espera 200 para confirmar recebimento
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('[webhook/ml] Error:', err instanceof Error ? err.message : err);
+    logger.error("webhook-ml.failed", { error: err });
     return NextResponse.json({ ok: true }) // sempre 200 para o ML nao retentar
   }
 }

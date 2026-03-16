@@ -8,6 +8,7 @@ import {
 } from "@/lib/distribution/engine";
 import { sendTelegramMessage } from "@/lib/distribution/telegram";
 import type { DistributionChannel } from "@/lib/distribution/types";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest) {
         );
     }
   } catch (error) {
-    console.error("[Distribution Send] Error:", error);
+    logger.error("distribution-send.failed", { error });
     return NextResponse.json(
       { error: "Falha ao enviar distribuicao" },
       { status: 500 }

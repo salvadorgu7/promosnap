@@ -22,6 +22,7 @@ import {
 import { adapterRegistry } from "@/lib/adapters/registry";
 import { getSyncPipelines } from "@/lib/adapters/sync-architecture";
 import { getSyncRecommendations } from "@/lib/sourcing/sync-recommendations";
+import { logger } from "@/lib/logger";
 
 // ─── GET /api/admin/sourcing ────────────────────────────────────────────────
 
@@ -140,7 +141,7 @@ export async function GET(request: NextRequest) {
       syncHistory: [],
     });
   } catch (err) {
-    console.error("[sourcing API] GET error:", err);
+    logger.error("sourcing.get-failed", { error: err });
     return NextResponse.json(
       { error: 'Erro ao carregar dados de sourcing' },
       { status: 500 }
@@ -412,7 +413,7 @@ export async function POST(request: NextRequest) {
         );
     }
   } catch (err) {
-    console.error("[sourcing API] POST error:", err);
+    logger.error("sourcing.post-failed", { error: err });
     return NextResponse.json(
       { error: 'Erro interno na operacao de sourcing' },
       { status: 500 }

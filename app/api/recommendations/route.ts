@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/db/prisma"
 import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries"
 import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit"
+import { logger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   const rl = rateLimit(request, "public")
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(cards.slice(0, limit))
   } catch (error) {
-    console.error("Failed to fetch recommendations:", error)
+    logger.error("recommendations.fetch-failed", { error })
     return NextResponse.json({ error: "Failed to fetch recommendations" }, { status: 500 })
   }
 }

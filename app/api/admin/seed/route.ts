@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import prisma from '@/lib/db/prisma'
 import { MercadoLivreAdapter } from '@/adapters/mercadolivre'
 import { validateAdmin } from '@/lib/auth/admin'
+import { logger } from '@/lib/logger'
 
 interface SeedProduct {
   externalId: string
@@ -259,7 +260,7 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ ok: true, upserted, total: ML_PRODUCTS.length, errors })
   } catch (err) {
-    console.error("[seed] Error:", err)
+    logger.error("seed.failed", { error: err })
     return Response.json({ error: 'Erro interno ao executar seed' }, { status: 500 })
   }
 }

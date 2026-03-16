@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import prisma from '@/lib/db/prisma'
 import { MercadoLivreSourceAdapter } from '@/lib/adapters/mercadolivre'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 export const preferredRegion = 'gru1' // São Paulo — ML blocks non-Brazilian IPs
@@ -198,7 +199,7 @@ export async function POST(req: NextRequest) {
       message: `${imported} produtos importados, ${skipped} atualizados`,
     })
   } catch (error) {
-    console.error('[ml-import] Error:', error)
+    logger.error("ml-import.failed", { error })
     return NextResponse.json(
       { error: 'Falha na importacao' },
       { status: 500 }

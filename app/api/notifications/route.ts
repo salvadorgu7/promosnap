@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateNotificationsForProducts } from "@/lib/notifications/generator";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const ids =
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     const notifications = await generateNotificationsForProducts(ids);
     return NextResponse.json(notifications);
   } catch (err) {
-    console.error('[notifications] Failed to generate:', err instanceof Error ? err.message : err)
+    logger.error("notifications.generate-failed", { error: err })
     return NextResponse.json([]);
   }
 }

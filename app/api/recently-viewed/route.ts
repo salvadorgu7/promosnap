@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/db/prisma"
 import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries"
+import { logger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(ordered)
   } catch (error) {
-    console.error("Failed to fetch recently viewed:", error)
+    logger.error("recently-viewed.fetch-failed", { error })
     return NextResponse.json({ error: "Failed to fetch recently viewed" }, { status: 500 })
   }
 }

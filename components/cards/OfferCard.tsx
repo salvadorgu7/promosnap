@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import FavoriteButton from "@/components/ui/FavoriteButton";
 import ShippingBadge from "@/components/product/ShippingBadge";
+import { analytics } from "@/lib/analytics/events";
 import type { ProductCard, Badge } from "@/types";
 
 function BadgeChip({ badge }: { badge: Badge }) {
@@ -194,6 +195,12 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
             target="_blank"
             rel="noopener noreferrer nofollow"
             aria-label={`${ctaLabel} - ${product.name}`}
+            onClick={() => analytics.offerClick({
+              offerId: bestOffer.offerId || "",
+              productId: product.id,
+              store: bestOffer.sourceName,
+              price: bestOffer.price,
+            })}
             className={`btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold touch-target ${
               bestOffer.offerScore >= 80 ? "animate-pulse-subtle" : ""
             }`}

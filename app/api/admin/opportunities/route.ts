@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import { generateOpportunityReport } from '@/lib/discovery'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
       generatedAt: report.generatedAt,
     })
   } catch (err) {
-    console.error('[admin/opportunities] Error:', err instanceof Error ? err.message : err)
+    logger.error("opportunities.failed", { error: err })
     return NextResponse.json({ error: 'Erro ao gerar relatório de oportunidades' }, { status: 500 })
   }
 }

@@ -4,6 +4,7 @@ import {
   getAllIntegrationReadiness,
   getActivationScore,
 } from "@/lib/integrations/readiness";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const denied = validateAdmin(req);
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ integrations, score });
   } catch (err) {
-    console.error("[admin/setup] Error:", err);
+    logger.error("setup.failed", { error: err });
     return NextResponse.json(
       { error: "Failed to fetch setup readiness" },
       { status: 500 },
