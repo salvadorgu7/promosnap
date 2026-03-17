@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X, Sparkles, ClipboardPaste, MessageCircle } from "lucide-react";
 
+interface ImportedItem {
+  externalId: string;
+  action: 'created' | 'updated' | 'skipped' | 'failed';
+  productId?: string;
+  reason?: string;
+  category?: string;
+  title?: string;
+}
+
 interface IngestResult {
   mode?: string;
   query?: string;
@@ -18,6 +27,7 @@ interface IngestResult {
   invalidIds?: string[];
   errors?: string[];
   categories?: string[];
+  importedItems?: ImportedItem[];
   brandStats?: { detected: number; unknown: number };
   categoryStats?: { resolved: number; unresolved: number };
   priceStats?: { min: number; max: number; avg: number };
@@ -1370,6 +1380,55 @@ export default function AdminIngestãoPage() {
                 {[...(result.fetchErrors || []), ...(result.searchErrors || [])].map((e, i) => (
                   <p key={i} className="text-xs text-red-500 font-mono">{e}</p>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Per-item results table */}
+          {result.importedItems && result.importedItems.length > 0 && (
+            <div>
+              <p className="text-xs text-text-muted font-medium mb-2">Detalhes ({result.importedItems.length} itens):</p>
+              <div className="max-h-64 overflow-y-auto border border-border-default rounded-lg">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-surface-50">
+                    <tr className="text-left text-text-muted">
+                      <th className="px-3 py-2 font-medium">Produto</th>
+                      <th className="px-3 py-2 font-medium">Categoria</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-default">
+                    {result.importedItems.map((item, i) => (
+                      <tr key={i} className="hover:bg-surface-50/50">
+                        <td className="px-3 py-1.5 text-text-primary max-w-[300px] truncate" title={item.title || item.externalId}>
+                          {item.title || item.externalId}
+                        </td>
+                        <td className="px-3 py-1.5">
+                          {item.category ? (
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-brand-100 text-brand-700 font-medium">{item.category}</span>
+                          ) : (
+                            <span className="text-text-muted">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <span className={`inline-block px-1.5 py-0.5 rounded font-medium ${
+                            item.action === 'created' ? 'bg-green-100 text-green-700' :
+                            item.action === 'updated' ? 'bg-blue-100 text-blue-700' :
+                            item.action === 'skipped' ? 'bg-amber-100 text-amber-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {item.action === 'created' ? 'Criado' :
+                             item.action === 'updated' ? 'Atualizado' :
+                             item.action === 'skipped' ? 'Ignorado' : 'Falhou'}
+                          </span>
+                          {item.reason && (
+                            <span className="ml-1 text-text-muted" title={item.reason}>({item.reason})</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

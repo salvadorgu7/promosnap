@@ -164,6 +164,7 @@ export async function POST(request: NextRequest) {
       failed: result.failed,
       durationMs: result.durationMs,
       ...pipelineStats(result),
+      importedItems: result.items,
       ...(errors.length > 0 && { fetchErrors: errors }),
     })
   } catch (err) {
@@ -245,6 +246,7 @@ export async function PUT(request: NextRequest) {
       failed: result.failed,
       durationMs: result.durationMs,
       ...pipelineStats(result),
+      importedItems: result.items,
     })
   } catch (err) {
     return NextResponse.json({ error: 'Erro interno ao processar ingestao manual' }, { status: 500 })
@@ -332,6 +334,7 @@ export async function PATCH(request: NextRequest) {
       failed: result.failed,
       durationMs: result.durationMs,
       ...pipelineStats(result),
+      importedItems: result.items,
       ...(errors.length > 0 && { searchErrors: errors }),
     })
   } catch (err) {
@@ -381,6 +384,7 @@ export async function DELETE(request: NextRequest) {
       failed: result.failed,
       durationMs: result.durationMs,
       ...pipelineStats(result),
+      importedItems: result.items,
       categories: [...new Set(selected.map(p => p.category))],
     })
   } catch (err) {

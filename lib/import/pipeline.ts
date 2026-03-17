@@ -36,6 +36,8 @@ export interface ImportItemResult {
   action: 'created' | 'updated' | 'skipped' | 'failed'
   productId?: string
   reason?: string
+  category?: string
+  title?: string
 }
 
 export interface ImportPipelineResult {
@@ -348,7 +350,7 @@ export async function runImportPipeline(
               where: { id: existing.productId },
               data: productUpdate,
             })
-            results.push({ externalId: item.externalId, action: 'updated', productId: existing.productId })
+            results.push({ externalId: item.externalId, action: 'updated', productId: existing.productId, category: item.categorySlug, title: item.title })
             updated++
           } else {
             // Same price — just touch lastSeenAt, but still backfill category/brand
@@ -363,15 +365,15 @@ export async function runImportPipeline(
                 where: { id: existing.productId },
                 data: productUpdate,
               })
-              results.push({ externalId: item.externalId, action: 'updated', productId: existing.productId, reason: 'backfill category/brand' })
+              results.push({ externalId: item.externalId, action: 'updated', productId: existing.productId, reason: 'backfill category/brand', category: item.categorySlug, title: item.title })
               updated++
             } else {
-              results.push({ externalId: item.externalId, action: 'skipped', reason: 'price unchanged' })
+              results.push({ externalId: item.externalId, action: 'skipped', reason: 'price unchanged', category: item.categorySlug, title: item.title })
               skipped++
             }
           }
         } else {
-          results.push({ externalId: item.externalId, action: 'skipped', reason: 'no productId' })
+          results.push({ externalId: item.externalId, action: 'skipped', reason: 'no productId', category: item.categorySlug, title: item.title })
           skipped++
         }
         continue
@@ -567,11 +569,11 @@ export async function runImportPipeline(
         },
       })
 
-      results.push({ externalId: item.externalId, action: 'created', productId: dbProduct.id })
+      results.push({ externalId: item.externalId, action: 'created', productId: dbProduct.id, category: item.categorySlug, title: item.title })
       created++
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      results.push({ externalId: item.externalId || 'unknown', action: 'failed', reason: msg })
+      results.push({ externalId: item.externalId || 'unknown', action: 'failed', reason: msg, category: item.categorySlug, title: item.title })
       failed++
     }
   }
