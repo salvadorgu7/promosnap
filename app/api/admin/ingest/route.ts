@@ -340,9 +340,26 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // === Step 5: Build import item ===
-    // Skip items with no marketplace URL — they'll fail in the pipeline anyway
-    if (!cleanUrl && !externalId) {
+    // === Step 5: Enrich with API data when we have an ML ID ===
+    let imageUrl = item.imageUrl || undefined
+    let enrichedTitle = item.title
+    let enrichedOriginalPrice = item.originalPrice
+    if (externalId?.startsWith('MLB') && adapterConfigured && !imageUrl) {
+      try {
+        const product = await adapter.getProduct(externalId)
+        if (product) {
+          imageUrl = product.imageUrl || imageUrl
+          if (!enrichedTitle || enrichedTitle.length < 10) enrichedTitle = product.title
+          if (!enrichedOriginalPrice && product.originalPrice) enrichedOriginalPrice = product.originalPrice
+        }
+      } catch {
+        // Non-blocking — enrichment is best-effort
+      }
+    }
+
+    // === Step 6: Build import item ===
+    // Skip items with no marketplace URL — they'll fail in the pipeline (Missing productUrl)
+    if (!cleanUrl) {
       resolveErrors.push(`"${item.title.slice(0, 40)}": sem URL de marketplace resolvida`)
       continue
     }
@@ -351,11 +368,11 @@ export async function PUT(request: NextRequest) {
 
     items.push({
       externalId,
-      title: item.title,
+      title: enrichedTitle,
       currentPrice: item.price,
-      originalPrice: item.originalPrice,
-      productUrl: cleanUrl || "",
-      imageUrl: item.imageUrl,
+      originalPrice: enrichedOriginalPrice,
+      productUrl: cleanUrl,
+      imageUrl,
       availability: 'in_stock' as const,
       sourceSlug: cleanUrl ? detectSource(cleanUrl) : 'mercadolivre',
       discoverySource: item.needsServerResolve ? 'whatsapp_resolved' : 'manual_entry',

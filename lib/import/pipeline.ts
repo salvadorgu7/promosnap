@@ -3,6 +3,7 @@
 // ============================================================================
 
 import prisma from '@/lib/db/prisma'
+import type { Source } from '@prisma/client'
 import { canonicalMatch } from '@/lib/catalog/canonical-match'
 import { KNOWN_BRANDS as SHARED_BRANDS, BRAND_CASING as SHARED_BRAND_CASING, detectBrand as sharedDetectBrand } from '@/lib/brands'
 import { logger } from '@/lib/logger'
@@ -242,17 +243,28 @@ export async function runImportPipeline(
 
   const sourceSlug = items[0].sourceSlug
 
-  // Ensure source exists
-  let source = await prisma.source.findUnique({ where: { slug: sourceSlug } })
-  if (!source) {
-    const sourceName = sourceSlug.charAt(0).toUpperCase() + sourceSlug.slice(1).replace(/-/g, ' ')
-    source = await prisma.source.create({
-      data: { name: sourceName, slug: sourceSlug, status: 'ACTIVE' },
-    })
+  // Ensure source exists — cache per slug to support mixed-source batches (e.g. WhatsApp with ML + Shopee)
+  const sourceCache: Record<string, Source> = {}
+  async function getOrCreateSource(slug: string): Promise<Source> {
+    if (sourceCache[slug]) return sourceCache[slug]!
+    let s = await prisma.source.findUnique({ where: { slug } })
+    if (!s) {
+      const name = slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' ')
+      s = await prisma.source.create({ data: { name, slug, status: 'ACTIVE' } })
+    }
+    sourceCache[slug] = s
+    return s
   }
+
+  let source = await getOrCreateSource(sourceSlug)
 
   for (const item of items) {
     try {
+      // Resolve per-item source (supports mixed-source batches like WhatsApp)
+      const itemSource = item.sourceSlug !== sourceSlug
+        ? await getOrCreateSource(item.sourceSlug)
+        : source
+
       // Validate
       const validationError = validateItem(item)
       if (validationError) {
@@ -273,7 +285,7 @@ export async function runImportPipeline(
 
       // Check existing listing
       const existing = await prisma.listing.findUnique({
-        where: { sourceId_externalId: { sourceId: source.id, externalId: item.externalId } },
+        where: { sourceId_externalId: { sourceId: itemSource.id, externalId: item.externalId } },
         include: { offers: { where: { isActive: true }, orderBy: { createdAt: 'desc' }, take: 1, select: { id: true, currentPrice: true, offerScore: true } } },
       })
 
@@ -513,7 +525,7 @@ export async function runImportPipeline(
       // Create listing
       const listing = await prisma.listing.create({
         data: {
-          sourceId: source.id,
+          sourceId: itemSource.id,
           productId: dbProduct.id,
           externalId: item.externalId,
           rawTitle: item.title,

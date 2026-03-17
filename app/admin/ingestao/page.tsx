@@ -169,7 +169,7 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
     if (allUrls.length === 0) continue;
 
     // Blocked domains: competitor trackers that should never be used as product URLs
-    const BLOCKED_DOMAINS = ['tempromo.app.br', 'tempromo.com.br', 'pelando.com.br', 'promobit.com.br', 'gatry.com', 'ctt.cx', 'bit.ly', 'cutt.ly', 'is.gd', 't.co', 'tinyurl.com', 'encurtador.com.br', 'go.hotmart.com'];
+    const BLOCKED_DOMAINS = ['tempromo.app.br', 'tempromo.com.br', 'pelando.com.br', 'promobit.com.br', 'gatry.com', 'ctt.cx', 'bit.ly', 'cutt.ly', 'is.gd', 't.co', 'tinyurl.com', 'encurtador.com.br', 'go.hotmart.com', 's.shopee.com.br', 'amzn.to', 'amzn.divulguei.app', 'divulguei.app'];
     // Marketplace domains: these are the real product URLs we want
     const MARKETPLACE_DOMAINS = ['mercadolivre.com.br', 'mercadolibre.com', 'mercadolibre.com.br', 'produto.mercadolivre.com.br', 'amazon.com.br', 'shopee.com.br', 'magazineluiza.com.br', 'magalu.com', 'americanas.com.br', 'casasbahia.com.br', 'kabum.com.br', 'aliexpress.com'];
     // ML click/redirect domains count as marketplace (they resolve to ML)
