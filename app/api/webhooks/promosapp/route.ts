@@ -20,11 +20,13 @@ function verifySignature(req: NextRequest): boolean {
   try {
     const expected = Buffer.from(WEBHOOK_SECRET, 'utf-8')
     const received = Buffer.from(signature, 'utf-8')
-    if (expected.length !== received.length) {
-      timingSafeEqual(expected, expected) // constant time
-      return false
-    }
-    return timingSafeEqual(expected, received)
+    // Pad both to same length for constant-time comparison regardless of input length
+    const maxLen = Math.max(expected.length, received.length)
+    const a = Buffer.alloc(maxLen)
+    const b = Buffer.alloc(maxLen)
+    expected.copy(a)
+    received.copy(b)
+    return expected.length === received.length && timingSafeEqual(a, b)
   } catch {
     return false
   }

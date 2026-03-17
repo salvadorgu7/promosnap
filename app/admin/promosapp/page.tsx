@@ -99,6 +99,15 @@ export default function PromosAppPage() {
   const [reviewStatus, setReviewStatus] = useState("PENDING");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Error toast state
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  useEffect(() => {
+    if (errorMsg) {
+      const t = setTimeout(() => setErrorMsg(null), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [errorMsg]);
+
   // Stats state
   const [stats, setStats] = useState<Stats | null>(null);
 
@@ -144,9 +153,13 @@ export default function PromosAppPage() {
       });
 
       const data = await res.json();
-      setIngestResult(data);
+      if (!res.ok) {
+        setIngestResult({ error: data.error || `HTTP ${res.status}` });
+      } else {
+        setIngestResult(data);
+      }
     } catch (err) {
-      setIngestResult({ error: String(err) });
+      setIngestResult({ error: `Falha na requisição: ${String(err)}` });
     } finally {
       setLoading(false);
     }
@@ -160,12 +173,17 @@ export default function PromosAppPage() {
       const res = await fetch(
         `/api/admin/promosapp/review?status=${reviewStatus}&limit=50`
       );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data.error || `Falha ao carregar revisão (HTTP ${res.status})`);
+        return;
+      }
       const data = await res.json();
       setReviewItems(data.items || []);
       setReviewTotal(data.total || 0);
       setSelectedIds(new Set());
     } catch (err) {
-      console.error("Failed to fetch review:", err);
+      setErrorMsg(`Falha ao carregar revisão: ${String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -180,10 +198,15 @@ export default function PromosAppPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: Array.from(selectedIds), action }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data.error || `Falha ao ${action === "approve" ? "aprovar" : "rejeitar"} (HTTP ${res.status})`);
+        return;
+      }
       await res.json();
       await fetchReview();
     } catch (err) {
-      console.error("Review action failed:", err);
+      setErrorMsg(`Falha na ação: ${String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -195,10 +218,15 @@ export default function PromosAppPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/promosapp");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data.error || `Falha ao carregar stats (HTTP ${res.status})`);
+        return;
+      }
       const data = await res.json();
       setStats(data);
     } catch (err) {
-      console.error("Failed to fetch stats:", err);
+      setErrorMsg(`Falha ao carregar stats: ${String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -227,6 +255,17 @@ export default function PromosAppPage() {
           Radar de promocoes — ingestao, scoring e revisao de ofertas
         </p>
       </div>
+
+      {/* Error Toast */}
+      {errorMsg && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-red-500/95 text-white px-4 py-3 rounded-lg shadow-lg text-sm max-w-md animate-in slide-in-from-right">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <p className="flex-1">{errorMsg}</p>
+          <button onClick={() => setErrorMsg(null)} className="text-white/70 hover:text-white">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-surface-200">

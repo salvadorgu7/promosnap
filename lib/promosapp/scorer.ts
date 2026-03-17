@@ -4,6 +4,7 @@
 
 import { logger } from '@/lib/logger'
 import { canonicalMatch } from '@/lib/catalog/canonical-match'
+import prisma from '@/lib/db/prisma'
 import type {
   PromosAppNormalizedItem,
   PromosAppScore,
@@ -91,11 +92,39 @@ function scoreVolumeSold(_item: PromosAppNormalizedItem): number {
   return 0
 }
 
-function scoreMultiSource(_item: PromosAppNormalizedItem): number {
-  // 10 pts max
-  // TODO: Check DB for same dedupeKey from different sourceChannels
-  // For now, single occurrence = 0
-  return 0
+async function scoreMultiSource(item: PromosAppNormalizedItem): Promise<number> {
+  // 10 pts max — same product seen across multiple channels = higher confidence
+  if (item.dedupeKey.startsWith('hash:')) return 0 // Can't match without real external ID
+
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    // dedupeKey is stored as externalId in CatalogCandidate
+    const candidates = await prisma.catalogCandidate.findMany({
+      where: {
+        externalId: item.dedupeKey,
+        sourceSlug: 'promosapp',
+        status: { not: 'REJECTED' },
+        createdAt: { gte: sevenDaysAgo },
+      },
+      select: { enrichedData: true },
+    })
+
+    // Count distinct sourceChannels from enrichedData JSON
+    const channels = new Set<string>()
+    for (const c of candidates) {
+      const data = c.enrichedData as Record<string, any> | null
+      const ch = data?.sourceChannel
+      if (ch) channels.add(ch)
+    }
+    // Include current item's channel
+    if (item.rawEvent.sourceChannel) channels.add(item.rawEvent.sourceChannel)
+
+    if (channels.size >= 3) return 10
+    if (channels.size === 2) return 6
+    return 0
+  } catch {
+    return 0
+  }
 }
 
 function scoreNoSpam(item: PromosAppNormalizedItem): number {
@@ -141,7 +170,7 @@ export async function scoreItem(
     realDiscount: scoreRealDiscount(item),
     sellerTrusted: scoreSellerTrusted(item),
     volumeSold: scoreVolumeSold(item),
-    multiSourceRepetition: scoreMultiSource(item),
+    multiSourceRepetition: await scoreMultiSource(item),
     noSpamSignals: scoreNoSpam(item),
     hasImage: scoreHasImage(item),
     couponConfirmed: scoreCouponConfirmed(item),
