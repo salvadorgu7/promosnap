@@ -20,8 +20,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import prisma from "@/lib/db/prisma";
-import { existsSync } from "fs";
-import { ML_TOKEN_PATH } from "@/lib/constants/ml-token-path";
+// ML auth token is stored in DB (systemSetting key: "ml_oauth_token")
 import {
   toSeverity,
   severityBadge,
@@ -66,10 +65,11 @@ export default async function AdminConfigPage() {
     dbProductCount = await prisma.product.count();
   } catch {}
 
-  // ── ML auth status ──
+  // ── ML auth status (token stored in DB, not filesystem) ──
   let mlTokenExists = false;
   try {
-    mlTokenExists = existsSync(ML_TOKEN_PATH);
+    const mlToken = await prisma.systemSetting.findUnique({ where: { key: "ml_oauth_token" } });
+    mlTokenExists = !!mlToken?.value;
   } catch {}
 
   // ── ENV checks with operational hints ──
