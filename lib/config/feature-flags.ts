@@ -22,6 +22,10 @@ export interface FeatureFlags {
   originTracking: boolean
   /** Show debug info in API responses */
   debugMode: boolean
+  /** Enable PromosApp integration (ingestion, scoring, review queue) */
+  promosappEnabled: boolean
+  /** Enable automatic publication of high-confidence PromosApp items (requires promosappEnabled) */
+  promosappAutoPublish: boolean
 }
 
 function envBool(key: string): boolean {
@@ -41,6 +45,8 @@ export function getAllFlags(): FeatureFlags {
     searchIntelligence: envBool('FF_SEARCH_INTELLIGENCE'),
     originTracking: envBool('FF_ORIGIN_TRACKING'),
     debugMode: envBool('FF_DEBUG_MODE'),
+    promosappEnabled: envBool('FF_PROMOSAPP_ENABLED'),
+    promosappAutoPublish: envBool('FF_PROMOSAPP_AUTO_PUBLISH'),
   }
 }
 

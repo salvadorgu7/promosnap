@@ -61,6 +61,8 @@ export async function GET(req: NextRequest) {
     ['backfill-images', () => import('@/lib/jobs/backfill-images').then(m => m.backfillImages())],
     // sitemap: SUPPORT — regenerates XML sitemap
     ['sitemap', () => import('@/lib/jobs/generate-sitemap').then(m => m.generateSitemap())],
+    // process-promosapp: VALUE — processes approved PromosApp candidates into import pipeline (behind feature flag)
+    ['process-promosapp', () => import('@/lib/jobs/process-promosapp').then(m => m.processPromosApp())],
   ]
 
   // Filter to requested subset if ?jobs= is provided
