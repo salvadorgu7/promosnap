@@ -42,7 +42,6 @@ import {
   Layers,
   MailPlus,
   RefreshCw,
-  Sprout,
   Repeat,
   ListChecks,
   Factory,
@@ -70,27 +69,26 @@ const navGroups: NavGroup[] = [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/setup", label: "Setup", icon: Settings },
       { href: "/admin/health", label: "Health", icon: HeartPulse },
+      { href: "/admin/config", label: "Configurações", icon: Sliders },
     ],
   },
   {
-    title: "Catalogo",
+    title: "Catálogo",
     items: [
       { href: "/admin/produtos", label: "Produtos", icon: Package },
       { href: "/admin/ofertas", label: "Ofertas", icon: Tag },
       { href: "/admin/fontes", label: "Fontes", icon: Store },
-      { href: "/admin/ingestao", label: "Ingestao", icon: Upload },
-      { href: "/admin/sourcing", label: "Sourcing", icon: Package },
+      { href: "/admin/ingestao", label: "Ingestão", icon: Upload },
       { href: "/admin/banners", label: "Banners", icon: Image },
-      { href: "/admin/catalog-density", label: "Densidade", icon: BarChart3 },
       { href: "/admin/supply", label: "Supply", icon: Layers },
     ],
   },
   {
-    title: "Monetizacao",
+    title: "Monetização",
     items: [
-      { href: "/admin/attribution", label: "Attribution", icon: Target },
-      { href: "/admin/monetizacao", label: "Monetizacao", icon: DollarSign },
+      { href: "/admin/monetizacao", label: "Monetização", icon: DollarSign },
       { href: "/admin/analytics", label: "Analytics", icon: Activity },
+      { href: "/admin/attribution", label: "Attribution", icon: Target },
       { href: "/admin/seo", label: "SEO", icon: Globe },
       { href: "/admin/amazon", label: "Amazon", icon: ShoppingBag },
     ],
@@ -99,27 +97,19 @@ const navGroups: NavGroup[] = [
     title: "Growth",
     items: [
       { href: "/admin/growth-ops", label: "Growth & Ops", icon: Rocket },
-      { href: "/admin/query-intelligence", label: "Query Intel", icon: Search },
-      { href: "/admin/tendencias", label: "Tendencias", icon: TrendingUp },
+      { href: "/admin/tendencias", label: "Tendências", icon: TrendingUp },
       { href: "/admin/email", label: "Email", icon: Mail },
       { href: "/admin/alertas", label: "Alertas", icon: Bell },
-      { href: "/admin/referrals", label: "Referrals", icon: Gift },
-      { href: "/admin/distribution", label: "Distribuicao", icon: Radio },
+      { href: "/admin/distribution", label: "Distribuição", icon: Radio },
     ],
   },
   {
-    title: "Integracoes",
-    items: [
-      { href: "/admin/integrations", label: "Integracoes", icon: Plug },
-      { href: "/admin/multi-source", label: "Multi-Source", icon: Store },
-    ],
-  },
-  {
-    title: "Operacao",
+    title: "Operação",
     items: [
       { href: "/admin/jobs", label: "Jobs", icon: Clock },
-      { href: "/admin/executions", label: "Execucoes", icon: Play },
+      { href: "/admin/executions", label: "Execuções", icon: Play },
       { href: "/admin/monitoring", label: "Monitoring", icon: MonitorDot },
+      { href: "/admin/integrations", label: "Integrações", icon: Plug },
     ],
   },
 ];
@@ -129,36 +119,44 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Advanced items — collapsed by default
+// Advanced items — collapsed by default, organized by function
 const experimentalItems: NavItem[] = [
+  // Catálogo avançado
   { href: "/admin/cockpit", label: "Cockpit", icon: Gauge },
-  { href: "/admin/config", label: "Config", icon: Sliders },
-  { href: "/admin/imports", label: "Imports", icon: Layers },
   { href: "/admin/catalog-quality", label: "Qualidade", icon: Gauge },
-  { href: "/admin/catalog-intelligence", label: "Intelligence", icon: Brain },
+  { href: "/admin/catalog-intelligence", label: "Inteligência", icon: Brain },
   { href: "/admin/catalog-governance", label: "Governance", icon: ShieldCheck },
-  { href: "/admin/catalog-edit", label: "Catalog Edit", icon: Edit },
+  { href: "/admin/catalog-edit", label: "Editor", icon: Edit },
   { href: "/admin/catalog-opportunities", label: "Oportunidades", icon: Lightbulb },
-  { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
+  { href: "/admin/catalog-density", label: "Densidade", icon: BarChart3 },
+  // SEO & Content
   { href: "/admin/seo-gaps", label: "SEO Gaps", icon: SearchX },
-  { href: "/admin/automation", label: "Automacao", icon: Zap },
-  { href: "/admin/rate-limits", label: "Rate Limits", icon: ShieldAlert },
-  { href: "/admin/performance", label: "Performance", icon: Activity },
-  { href: "/admin/artigos", label: "Artigos", icon: FileText },
-  { href: "/admin/audit", label: "Audit", icon: ClipboardCheck },
-  { href: "/admin/business", label: "Business", icon: Briefcase },
-  { href: "/admin/inteligencia", label: "Inteligencia", icon: Brain },
-  { href: "/admin/email-intelligence", label: "Email Intel", icon: MailPlus },
-  { href: "/admin/feed-sync", label: "Feed Sync", icon: RefreshCw },
-  { href: "/admin/growth", label: "Growth", icon: Sprout },
-  { href: "/admin/habit-loops", label: "Habit Loops", icon: Repeat },
-  { href: "/admin/decisoes", label: "Decisoes", icon: ListChecks },
   { href: "/admin/content", label: "Content", icon: FileText },
+  { href: "/admin/artigos", label: "Artigos", icon: FileText },
+  // Growth avançado
+  { href: "/admin/query-intelligence", label: "Query Intel", icon: Search },
+  { href: "/admin/email-intelligence", label: "Email Intel", icon: MailPlus },
+  { href: "/admin/referrals", label: "Referrals", icon: Gift },
   { href: "/admin/merchandising", label: "Merchandising", icon: Megaphone },
-  { href: "/admin/prioridades", label: "Prioridades", icon: Target },
-  { href: "/admin/production", label: "Production", icon: Factory },
+  { href: "/admin/habit-loops", label: "Habit Loops", icon: Repeat },
+  // Operação avançada
+  { href: "/admin/sourcing", label: "Sourcing", icon: Package },
+  { href: "/admin/multi-source", label: "Multi-Source", icon: Store },
+  { href: "/admin/feed-sync", label: "Feed Sync", icon: RefreshCw },
+  { href: "/admin/automation", label: "Automação", icon: Zap },
+  { href: "/admin/imports", label: "Imports", icon: Layers },
+  // Diagnóstico
+  { href: "/admin/data-trust", label: "Data Trust", icon: Shield },
+  { href: "/admin/performance", label: "Performance", icon: Activity },
+  { href: "/admin/rate-limits", label: "Rate Limits", icon: ShieldAlert },
+  { href: "/admin/audit", label: "Audit", icon: ClipboardCheck },
   { href: "/admin/runtime", label: "Runtime", icon: Cpu },
+  { href: "/admin/production", label: "Production", icon: Factory },
   { href: "/admin/release", label: "Release", icon: Rocket },
+  // Estratégia
+  { href: "/admin/business", label: "Business", icon: Briefcase },
+  { href: "/admin/decisoes", label: "Decisões", icon: ListChecks },
+  { href: "/admin/prioridades", label: "Prioridades", icon: Target },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -215,10 +213,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
         <div className="p-3 border-t border-surface-200">
           <Link
-            href="/admin/config"
+            href="/"
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-muted hover:text-text-secondary transition-colors"
           >
-            <Settings className="h-4 w-4" /> Configuracoes
+            <Globe className="h-4 w-4" /> Ver Site
           </Link>
         </div>
       </aside>

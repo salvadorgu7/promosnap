@@ -8,22 +8,9 @@ import {
 } from "lucide-react";
 import { formatPrice, formatNumber } from "@/lib/utils";
 import prisma from "@/lib/db/prisma";
+import { getCommissionRate, estimateRevenue } from "@/lib/commerce/commission-rates";
 
 export const dynamic = "force-dynamic";
-
-const REVENUE_RATES: Record<string, number> = {
-  "amazon-br": 0.04,
-  mercadolivre: 0.03,
-  shopee: 0.025,
-  shein: 0.03,
-};
-
-const DEFAULT_RATE = 0.03;
-
-function getRate(slug: string | null): number {
-  if (!slug) return DEFAULT_RATE;
-  return REVENUE_RATES[slug] ?? DEFAULT_RATE;
-}
 
 export default async function MonetizacaoPage() {
   const now = new Date();
@@ -61,22 +48,17 @@ export default async function MonetizacaoPage() {
     `.catch(() => [] as SourceRow[]),
   ]);
 
-  const calcRevenue = (rows: SourceRow[]) =>
-    rows.reduce((sum, r) => {
-      return sum + Number(r.clickouts) * (r.avgPrice ?? 0) * getRate(r.sourceSlug);
-    }, 0);
-
-  const revenueToday = calcRevenue(bySourceTodayRaw);
-  const revenue7d = calcRevenue(bySource7dRaw);
-  const revenue30d = calcRevenue(bySource30dRaw);
+  const revenueToday = estimateRevenue(bySourceTodayRaw);
+  const revenue7d = estimateRevenue(bySource7dRaw);
+  const revenue30d = estimateRevenue(bySource30dRaw);
 
   // By source table (30d)
   const bySource = bySource30dRaw.map((r) => ({
     source: r.sourceSlug ?? "unknown",
     clickouts: Number(r.clickouts),
     avgPrice: r.avgPrice ?? 0,
-    rate: getRate(r.sourceSlug),
-    estimatedRevenue: Number(r.clickouts) * (r.avgPrice ?? 0) * getRate(r.sourceSlug),
+    rate: getCommissionRate(r.sourceSlug),
+    estimatedRevenue: Number(r.clickouts) * (r.avgPrice ?? 0) * getCommissionRate(r.sourceSlug),
   }));
 
   // By category (30d)
@@ -95,7 +77,7 @@ export default async function MonetizacaoPage() {
     const existing = catMap.get(cat) ?? { clickouts: 0, estimatedRevenue: 0 };
     const clicks = Number(r.clickouts);
     existing.clickouts += clicks;
-    existing.estimatedRevenue += clicks * (r.avgPrice ?? 0) * getRate(r.sourceSlug);
+    existing.estimatedRevenue += clicks * (r.avgPrice ?? 0) * getCommissionRate(r.sourceSlug);
     catMap.set(cat, existing);
   }
   const byCategory = Array.from(catMap.entries())
@@ -120,7 +102,7 @@ export default async function MonetizacaoPage() {
     name: r.name ?? "Produto sem nome",
     slug: r.slug ?? "",
     clickouts: Number(r.clickouts),
-    estimatedRevenue: Number(r.clickouts) * (r.avgPrice ?? 0) * getRate(r.sourceSlug),
+    estimatedRevenue: Number(r.clickouts) * (r.avgPrice ?? 0) * getCommissionRate(r.sourceSlug),
   }));
 
   const statCards = [

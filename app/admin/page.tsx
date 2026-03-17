@@ -11,32 +11,9 @@ import { formatNumber, formatPrice, timeAgo } from "@/lib/utils";
 import prisma from "@/lib/db/prisma";
 import { classifyCriticalPending } from "@/lib/project/pending-audit";
 import { getIntegritySummary } from "@/lib/project/integrity";
+import { getCommissionRate, estimateRevenue } from "@/lib/commerce/commission-rates";
 
 export const dynamic = "force-dynamic";
-
-// Revenue rates per source (overridable via REVENUE_RATES env var as JSON)
-const DEFAULT_REVENUE_RATES: Record<string, number> = {
-  "amazon-br": 0.04,
-  mercadolivre: 0.03,
-  shopee: 0.025,
-  shein: 0.03,
-};
-
-const REVENUE_RATES: Record<string, number> = (() => {
-  try {
-    const envRates = process.env.REVENUE_RATES;
-    return envRates ? { ...DEFAULT_REVENUE_RATES, ...JSON.parse(envRates) } : DEFAULT_REVENUE_RATES;
-  } catch {
-    return DEFAULT_REVENUE_RATES;
-  }
-})();
-
-const DEFAULT_RATE = 0.03;
-
-function getRate(slug: string | null): number {
-  if (!slug) return DEFAULT_RATE;
-  return REVENUE_RATES[slug] ?? DEFAULT_RATE;
-}
 
 export default async function AdminDashboard() {
   const data = await getAdminDashboardData();
@@ -90,11 +67,8 @@ export default async function AdminDashboard() {
     prisma.catalogCandidate.count({ where: { status: "IMPORTED", updatedAt: { gte: today } } }).catch(() => 0),
   ]);
 
-  const calcRevenue = (rows: SourceRow[]) =>
-    rows.reduce((sum, r) => sum + Number(r.clickouts) * (r.avgPrice ?? 0) * getRate(r.sourceSlug), 0);
-
-  const revenueToday = calcRevenue(revTodayRaw);
-  const revenue7d = calcRevenue(rev7dRaw);
+  const revenueToday = estimateRevenue(revTodayRaw);
+  const revenue7d = estimateRevenue(rev7dRaw);
 
   const activeSources = sourcesHealth.filter((s) => s.status === "ACTIVE").length;
   const errorSources = sourcesHealth.filter((s) => s.status === "ERROR").length;
@@ -321,7 +295,7 @@ export default async function AdminDashboard() {
                   <p className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-2">Revenue por Fonte (7d)</p>
                   <div className="space-y-1.5">
                     {rev7dRaw.sort((a, b) => Number(b.clickouts) - Number(a.clickouts)).map((row) => {
-                      const srcRevenue = Number(row.clickouts) * (row.avgPrice ?? 0) * getRate(row.sourceSlug);
+                      const srcRevenue = Number(row.clickouts) * (row.avgPrice ?? 0) * getCommissionRate(row.sourceSlug);
                       return (
                         <div key={row.sourceSlug || "unknown"} className="flex items-center justify-between text-xs">
                           <span className="text-text-secondary">{row.sourceSlug || "desconhecida"}</span>
