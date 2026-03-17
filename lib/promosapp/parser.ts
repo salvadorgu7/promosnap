@@ -235,6 +235,72 @@ function detectMarketplace(url: string): { slug: string; name: string; externalI
   return null
 }
 
+// ── Title Cleaning ────────────────────────────────────────────────────────
+
+const PROMO_PREFIX_PATTERNS = [
+  /^\*?(?:OFERTA|MEGA\s*OFERTA|SUPER\s*OFERTA|PROMO[ÇC][ÃA]O|PROMO)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:SUA\s+CHANCE|MENOR\s+PRE[ÇC][OÔ]*O*|IMPERD[ÍI]VEL|FLASH\s+SALE|BAIXOU)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:OFERTA\s+DA\s+SH[OÔ]|CORRE\s+QUE|[ÚU]LTIMA\s+CHANCE|REL[ÂA]MPAGO)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:PAGAR\s+BARATO|BEST\s+SELLER|MAIS\s+VENDIDO|TOP\s+OFERTA)\b[^a-záàâãéèêíïóôõöúç]*/i,
+]
+
+const PROMO_SUFFIX_PATTERNS = [
+  /\s*[-–—]\s*(?:Tem\s+Prom[oô]|Promo[çc][ãa]o|PromosApp|Link\s+na\s+Bio).*$/i,
+  /\s*(?:Compre\s+aqui|Clique\s+aqui|Aproveite|Garanta\s+(?:j[áa]|o\s+seu)|Corre|Confira)[\s:!]*$/i,
+  /\s*(?:Use\s+(?:o\s+)?cup[oã]m|Frete\s+gr[áa]tis).*$/i,
+]
+
+/**
+ * Clean marketing copy from a raw title, leaving only the product name.
+ * Handles WhatsApp-style promo messages with bold markers, emojis, and CTAs.
+ */
+function cleanPromoTitle(raw: string): string {
+  let title = raw
+
+  // Remove URLs first
+  title = title.replace(/https?:\/\/\S+/g, '')
+
+  // Remove WhatsApp bold markers
+  title = title.replace(/\*/g, '')
+
+  // Take only the first meaningful line (product name is usually first)
+  const lines = title.split('\n').map(l => l.trim()).filter(l => l.length > 3)
+  if (lines.length > 1) {
+    // Skip lines that are purely price/CTA, pick first product-like line
+    const productLine = lines.find(l =>
+      !(/^(?:De|Por|Apenas|R\$|Compre|Clique|Use|Frete|Cupom)/i.test(l)) &&
+      !(/^\d{1,3}(?:\.\d{3})*,\d{2}$/.test(l))
+    )
+    if (productLine) title = productLine
+  }
+
+  // Remove leading emojis and special chars
+  title = title.replace(/^[\s\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}✨💖🔥🐾🎁🚨⚡💥🛒💰🏷️☀️⭐🌟💫❤️💜💙💚💛🧡🤍🖤🤎🎉🎊🎯✅❌⚠️📦📱💻🏠👗👟👜🧴🪥🎮📺🔊🎧⌚️🕶️💎👑🏆🥇🥈🥉📌📣📢🔔]+/u, '')
+
+  // Remove trailing emojis
+  title = title.replace(/[\s\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}✨💖🔥🐾🎁🚨⚡💥🛒💰🏷️☀️⭐🌟💫❤️💜💙💚💛🧡🤍🖤🤎🎉🎊🎯✅❌⚠️📦📱💻🏠👗👟👜🧴🪥🎮📺🔊🎧⌚️🕶️💎👑🏆🥇🥈🥉📌📣📢🔔]+$/u, '')
+
+  // Remove promo prefixes
+  for (const pattern of PROMO_PREFIX_PATTERNS) {
+    title = title.replace(pattern, '')
+  }
+
+  // Remove promo suffixes
+  for (const pattern of PROMO_SUFFIX_PATTERNS) {
+    title = title.replace(pattern, '')
+  }
+
+  // Remove inline price mentions
+  title = title.replace(/R\$\s*[\d.,]+/g, '')
+  title = title.replace(/\b\d{1,3}(?:\.\d{3})*,\d{2}\b/g, '')
+
+  // Clean up whitespace and leading/trailing punctuation
+  title = title.replace(/\s+/g, ' ').trim()
+  title = title.replace(/^[\s\-–—:,;!.•·]+/, '').replace(/[\s\-–—:,;!.•·]+$/, '')
+
+  return title || raw.replace(/https?:\/\/\S+/g, '').replace(/\*/g, '').trim().slice(0, 200)
+}
+
 // ── Main Parser ────────────────────────────────────────────────────────────
 
 /**
@@ -297,8 +363,8 @@ export function parseRawEvent(event: PromosAppRawEvent): PromosAppNormalizedItem
   const currentPrice = priceFromField || pricesFromText.current
   const originalPrice = origFromField || pricesFromText.original
 
-  // 4. Build title
-  const title = (event.rawTitle || text.slice(0, 200)).replace(/https?:\/\/\S+/g, '').trim()
+  // 4. Build title (clean marketing copy from WhatsApp messages)
+  const title = cleanPromoTitle(event.rawTitle || text.slice(0, 200))
 
   if (!title) {
     errors.push('Could not extract title')

@@ -109,7 +109,7 @@ export async function processPromosAppBatch(
 ): Promise<PromosAppPipelineResult> {
   const startTime = Date.now()
   const config: PromosAppPipelineConfig = {
-    autoApproveThreshold: configOverrides?.autoApproveThreshold ?? 70,
+    autoApproveThreshold: configOverrides?.autoApproveThreshold ?? 40,
     rejectThreshold: configOverrides?.rejectThreshold ?? 40,
     maxBatchSize: configOverrides?.maxBatchSize ?? 200,
     autoPublish: configOverrides?.autoPublish ?? getFlag('promosappAutoPublish'),
@@ -207,7 +207,11 @@ export async function processPromosAppBatch(
     const toImport: PromosAppNormalizedItem[] = []
 
     for (const { item, score } of scored) {
-      const decision = decideAction(score, config)
+      const rawDecision = decideAction(score, config)
+      // Gate: auto_approve items without image → downgrade to pending_review
+      const decision = (rawDecision === 'auto_approve' && !item.imageUrl)
+        ? 'pending_review' as const
+        : rawDecision
 
       let candidateId: string | undefined
       let importedProductId: string | undefined

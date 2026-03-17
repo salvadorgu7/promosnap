@@ -92,10 +92,15 @@ function extractEvolutionMessage(
     ? new Date(typeof ts === 'string' ? parseInt(ts, 10) * 1000 : ts * 1000).toISOString()
     : new Date().toISOString()
 
+  // Extract first non-empty line as rawTitle hint (product name is usually first line)
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3)
+  const rawTitle = lines.length > 0 && lines[0].length < 200 ? lines[0] : undefined
+
   return {
     capturedAt,
     sourceChannel: 'whatsapp-group',
     rawText: text,
+    rawTitle,
     rawUrl: urlHint || undefined,
     rawPayload: data as unknown as Record<string, unknown>,
     // messageHash will be computed by the parser
