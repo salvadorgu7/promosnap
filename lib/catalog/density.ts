@@ -393,10 +393,7 @@ export async function getCategoryDensity(
       },
     };
   } catch (error) {
-    console.error(
-      `[catalog-density] Error getting density for "${categorySlug}":`,
-      error
-    );
+    logger.error("catalog-density.get-density.error", { categorySlug, error });
     return null;
   }
 }
@@ -412,10 +409,7 @@ export async function getAllPriorityCategoryDensities(): Promise<
     );
     return results.filter((r): r is CategoryDensity => r !== null);
   } catch (error) {
-    console.error(
-      "[catalog-density] Error getting all priority densities:",
-      error
-    );
+    logger.error("catalog-density.all-priority-densities.error", { error });
     return [];
   }
 }
@@ -520,10 +514,7 @@ export async function getCategoryExpansionPlan(categorySlug: string): Promise<{
       priceRangeGaps,
     };
   } catch (error) {
-    console.error(
-      `[catalog-density] Error getting expansion plan for "${categorySlug}":`,
-      error
-    );
+    logger.error("catalog-density.expansion-plan.error", { categorySlug, error });
     return {
       category: categorySlug,
       currentCount: 0,

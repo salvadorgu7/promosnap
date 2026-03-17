@@ -5,6 +5,7 @@
 import prisma from "@/lib/db/prisma";
 import { sendEmail, isEmailConfigured } from "@/lib/email/send";
 import { alertTriggeredEmail, alertEmailSubject } from "@/lib/email/templates";
+import { logger } from "@/lib/logger";
 
 /**
  * Checks all active price alerts. When an offer's current price drops
@@ -16,9 +17,7 @@ export async function runAlertCheckJob(): Promise<{
   checked: number;
 }> {
   if (!isEmailConfigured()) {
-    console.warn(
-      "[alert-checker] Email provider not configured. Skipping alert check job."
-    );
+    logger.warn("alert-checker.email-not-configured");
     return { triggered: 0, checked: 0 };
   }
 

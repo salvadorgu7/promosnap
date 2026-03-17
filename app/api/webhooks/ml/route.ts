@@ -15,11 +15,11 @@ export async function POST(req: NextRequest) {
   if (WEBHOOK_SECRET) {
     const token = req.headers.get('x-webhook-token')
     if (token !== WEBHOOK_SECRET) {
-      console.warn('[webhook:ml] Unauthorized request — invalid or missing token')
+      logger.warn("webhook-ml.unauthorized")
       return NextResponse.json({ ok: false }, { status: 401 })
     }
   } else {
-    console.warn('[webhook:ml] ML_WEBHOOK_SECRET not configured — accepting request without token validation')
+    logger.warn("webhook-ml.no-secret-configured")
   }
 
   try {
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const resourceId = typeof body?.resource === 'string'
       ? body.resource.split('/').pop()
       : ''
-    console.log(`[webhook:ml] topic=${topic} resource_id=${resourceId}`)
+    logger.info("webhook-ml.received", { topic, resourceId })
 
     // Store notification for async processing
     if (body?.topic) {

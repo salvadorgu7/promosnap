@@ -5,6 +5,7 @@
 import type { MLHighlightEntry } from './types'
 import { mlFetch } from './items'
 import { FALLBACK_CATEGORIES } from './categories'
+import { logger } from '@/lib/logger'
 
 const ML_API = 'https://api.mercadolibre.com'
 
@@ -42,14 +43,14 @@ export async function fetchHighlightsForCategory(
   // Try fallback categories
   const fallbacks = FALLBACK_CATEGORIES[categoryId]
   if (fallbacks && fallbacks.length > 0) {
-    console.log(`[ml-discovery] [highlights] ${categoryId} returned ${httpStatus} — trying ${fallbacks.length} fallbacks`)
+    logger.debug("ml-discovery.highlights-fallback-attempt", { categoryId, httpStatus, fallbackCount: fallbacks.length })
     for (const fbId of fallbacks) {
       const fbRes = await mlFetch(`${ML_API}/highlights/MLB/category/${fbId}`)
       if (fbRes.ok) {
         const fbData = await fbRes.json()
         const fbEntries = (fbData.content || []) as MLHighlightEntry[]
         if (fbEntries.length > 0) {
-          console.log(`[ml-discovery] [highlights] fallback ${fbId} succeeded with ${fbEntries.length} entries`)
+          logger.debug("ml-discovery.highlights-fallback-success", { categoryId, fallbackId: fbId, entries: fbEntries.length })
           return {
             entries: fbEntries,
             stats: { categoryId, status: 'fallback', highlightCount: fbEntries.length, fallbackUsed: fbId, httpStatus },
@@ -59,7 +60,7 @@ export async function fetchHighlightsForCategory(
     }
   }
 
-  console.warn(`[ml-discovery] [highlights] ${categoryId}: failed (${httpStatus}), no fallback available`)
+  logger.warn("ml-discovery.highlights-failed", { categoryId, httpStatus })
   return {
     entries: [],
     stats: { categoryId, status: 'failed', highlightCount: 0, httpStatus },

@@ -6,6 +6,7 @@ import prisma from '@/lib/db/prisma'
 import { dailyDealsEmail } from '@/lib/email/templates'
 import { sendEmail, isEmailConfigured } from '@/lib/email/send'
 import { segmentSubscribers, getSegmentedDeals } from '@/lib/email/segmentation'
+import { logger } from '@/lib/logger'
 
 interface SendResult {
   sent: number
@@ -21,7 +22,7 @@ export async function runDailyDealsJob(): Promise<SendResult> {
   const result: SendResult = { sent: 0, failed: 0, skipped: 0 }
 
   if (!isEmailConfigured()) {
-    console.warn('[email-jobs] Email provider not configured. Skipping daily deals job.')
+    logger.warn("email-jobs.daily-deals-skipped", { reason: "email not configured" })
     return result
   }
 
@@ -93,7 +94,7 @@ export async function runDailyDealsJob(): Promise<SendResult> {
       }
     }
   } catch (error) {
-    console.error('[email-jobs] Daily deals job error:', error)
+    logger.error("email-jobs.daily-deals-error", { error })
   }
 
   return result
@@ -107,7 +108,7 @@ export async function runCampaignEmailJob(campaignId: string): Promise<SendResul
   const result: SendResult = { sent: 0, failed: 0, skipped: 0 }
 
   if (!isEmailConfigured()) {
-    console.warn('[email-jobs] Email provider not configured. Skipping campaign job.')
+    logger.warn("email-jobs.campaign-skipped", { reason: "email not configured" })
     return result
   }
 
@@ -118,7 +119,7 @@ export async function runCampaignEmailJob(campaignId: string): Promise<SendResul
     })
 
     if (alreadySent > 0) {
-      console.warn(`[email-jobs] Campaign ${campaignId} already sent (${alreadySent} emails found)`)
+      logger.warn("email-jobs.campaign-already-sent", { campaignId, alreadySent })
       return result
     }
 
@@ -127,7 +128,7 @@ export async function runCampaignEmailJob(campaignId: string): Promise<SendResul
     const deals = await getSegmentedDeals(genericSegment)
 
     if (deals.length === 0) {
-      console.warn('[email-jobs] No deals found for campaign')
+      logger.warn("email-jobs.campaign-no-deals")
       return result
     }
 
@@ -149,7 +150,7 @@ export async function runCampaignEmailJob(campaignId: string): Promise<SendResul
       else result.failed++
     }
   } catch (error) {
-    console.error('[email-jobs] Campaign job error:', error)
+    logger.error("email-jobs.campaign-error", { error })
   }
 
   return result
@@ -163,7 +164,7 @@ export async function runSegmentedNewsletterJob(): Promise<SendResult> {
   const result: SendResult = { sent: 0, failed: 0, skipped: 0 }
 
   if (!isEmailConfigured()) {
-    console.warn('[email-jobs] Email provider not configured. Skipping newsletter job.')
+    logger.warn("email-jobs.newsletter-skipped", { reason: "email not configured" })
     return result
   }
 
@@ -207,7 +208,7 @@ export async function runSegmentedNewsletterJob(): Promise<SendResult> {
     const notReached = subscribers.filter((s) => !sentEmails.has(s.email))
     result.skipped += notReached.length
   } catch (error) {
-    console.error('[email-jobs] Newsletter job error:', error)
+    logger.error("email-jobs.newsletter-error", { error })
   }
 
   return result

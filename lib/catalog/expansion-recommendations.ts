@@ -4,6 +4,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -150,10 +151,7 @@ async function getNextImportRecommendations(): Promise<
 
     return recommendations;
   } catch (e) {
-    console.error(
-      "[expansion-recommendations] getNextImportRecommendations error:",
-      e
-    );
+    logger.error("expansion-recommendations.next-imports.error", { error: e });
     return [];
   }
 }
@@ -225,10 +223,7 @@ async function getCategoryStrengthRecommendations(): Promise<
     recommendations.sort((a, b) => b.priority - a.priority);
     return recommendations.slice(0, 5);
   } catch (e) {
-    console.error(
-      "[expansion-recommendations] getCategoryStrengthRecommendations error:",
-      e
-    );
+    logger.error("expansion-recommendations.category-strength.error", { error: e });
     return [];
   }
 }
@@ -309,10 +304,7 @@ async function getMissingBrandRecommendations(): Promise<
 
     return recommendations;
   } catch (e) {
-    console.error(
-      "[expansion-recommendations] getMissingBrandRecommendations error:",
-      e
-    );
+    logger.error("expansion-recommendations.missing-brands.error", { error: e });
     return [];
   }
 }
@@ -397,10 +389,7 @@ async function getGroupingRecommendations(): Promise<
 
     return recommendations.slice(0, 5);
   } catch (e) {
-    console.error(
-      "[expansion-recommendations] getGroupingRecommendations error:",
-      e
-    );
+    logger.error("expansion-recommendations.grouping.error", { error: e });
     return [];
   }
 }

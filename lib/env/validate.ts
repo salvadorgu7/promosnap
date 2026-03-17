@@ -5,6 +5,8 @@
  * Used at startup and in admin health checks.
  */
 
+import { logger } from "@/lib/logger";
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type EnvStatus = "ok" | "missing" | "warning";
@@ -146,14 +148,10 @@ export function validateRequiredEnvs(): EnvValidationReport {
 
   // Log warnings at startup
   if (missingRequired.length > 0) {
-    console.error(
-      `[env] ERRO: Variaveis obrigatorias faltando: ${missingRequired.join(", ")}`
-    );
+    logger.error("env.missing-required", { vars: missingRequired });
   }
   if (missingOptional.length > 0) {
-    console.warn(
-      `[env] Aviso: Variaveis opcionais faltando: ${missingOptional.join(", ")}`
-    );
+    logger.warn("env.missing-optional", { vars: missingOptional });
   }
 
   return {

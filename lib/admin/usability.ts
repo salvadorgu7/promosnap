@@ -6,6 +6,7 @@
  */
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 import { getIntegritySummary } from "@/lib/project/integrity";
 import { classifyCriticalPending } from "@/lib/project/pending-audit";
 
@@ -85,7 +86,7 @@ export async function getAdminHealthSummary(): Promise<AdminHealthSummary> {
       criticalPendingCount: criticalOpen,
     };
   } catch (error) {
-    console.error("[admin-usability] Error getting health summary:", error);
+    logger.error("admin-usability.health-summary.error", { error });
     const integrity = getIntegritySummary();
     const pending = classifyCriticalPending();
 
@@ -227,7 +228,7 @@ export async function getQuickAccessItems(): Promise<QuickAccessItem[]> {
       reason: "Auditoria do sistema",
     });
   } catch (error) {
-    console.error("[admin-usability] Error getting quick access:", error);
+    logger.error("admin-usability.quick-access.error", { error });
     // Fallback static items
     items.push(
       {

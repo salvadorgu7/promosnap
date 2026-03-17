@@ -1,4 +1,5 @@
 import type { MarketplaceAdapter, RawListing, SearchOptions, FetchOffersParams, HealthCheckResult } from '@/types'
+import { logger } from '@/lib/logger'
 
 export abstract class BaseAdapter implements MarketplaceAdapter {
   abstract name: string
@@ -32,6 +33,6 @@ export abstract class BaseAdapter implements MarketplaceAdapter {
     return parseFloat(value.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.')) || 0
   }
 
-  protected log(msg: string, data?: unknown) { console.log(`[Adapter:${this.slug}] ${msg}`, data ?? '') }
-  protected warn(msg: string, data?: unknown) { console.warn(`[Adapter:${this.slug}] ${msg}`, data ?? '') }
+  protected log(msg: string, data?: unknown) { logger.info(`adapter.${this.slug}`, { message: msg, ...(data != null ? { data } : {}) }) }
+  protected warn(msg: string, data?: unknown) { logger.warn(`adapter.${this.slug}`, { message: msg, ...(data != null ? { data } : {}) }) }
 }

@@ -38,7 +38,7 @@ class MLTokenStore {
       })
       // Token persisted to DB
     } catch (err) {
-      console.error('[ml-auth] Failed to save token to DB:', err)
+      logger.error("ml-auth.save-token-failed", { error: err })
     }
   }
 
@@ -54,7 +54,7 @@ class MLTokenStore {
         return this.cache
       }
     } catch (err) {
-      console.error('[ml-auth] Failed to read token from DB:', err)
+      logger.error("ml-auth.read-token-failed", { error: err })
     }
 
     return null
@@ -123,7 +123,7 @@ export async function getMLAppToken(): Promise<string> {
     expiresAt: Date.now() + (data.expires_in || 21600) * 1000,
   }
 
-  console.log(`[ml-auth] App token obtained, expires_in=${data.expires_in}s`)
+  logger.info("ml-auth.app-token-obtained", { expiresIn: data.expires_in })
   return data.access_token
 }
 
@@ -186,11 +186,11 @@ export async function getMLToken(): Promise<string> {
         const fresh = await refreshUserToken(token)
         return fresh.access_token
       } catch (refreshErr) {
-        console.warn('[ml-auth] User token refresh failed, falling back to app token:', refreshErr)
+        logger.warn("ml-auth.refresh-failed-fallback", { error: refreshErr })
       }
     }
   } catch (dbErr) {
-    console.warn('[ml-auth] User token read failed:', dbErr)
+    logger.warn("ml-auth.user-token-read-failed", { error: dbErr })
   }
 
   // Try 2: App token (client_credentials)

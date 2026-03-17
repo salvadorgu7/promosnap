@@ -3,6 +3,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 import type {
   CatalogState,
   CatalogHealthReport,
@@ -124,7 +125,7 @@ export async function getCatalogHealthReport(): Promise<CatalogHealthReport> {
       }
     }
   } catch (e) {
-    console.error("[governance] getCatalogHealthReport error:", e);
+    logger.error("governance.health-report.error", { error: e });
   }
 
   // Orphan listings (no productId)
@@ -134,7 +135,7 @@ export async function getCatalogHealthReport(): Promise<CatalogHealthReport> {
       where: { productId: null },
     });
   } catch (e) {
-    console.error("[governance] orphan count error:", e);
+    logger.error("governance.orphan-count.error", { error: e });
   }
 
   return {
@@ -174,7 +175,7 @@ export async function getOrphanListings(): Promise<GovernanceIssue[]> {
       details: `Listing "${l.rawTitle}" (${l.externalId}) sem produto canonico`,
     }));
   } catch (e) {
-    console.error("[governance] getOrphanListings error:", e);
+    logger.error("governance.orphan-listings.error", { error: e });
     return [];
   }
 }
@@ -217,7 +218,7 @@ export async function getStaleOffers(
       details: `Oferta ${s.offerId} sem atualizacao desde ${s.lastUpdate.toISOString().split("T")[0]}`,
     }));
   } catch (e) {
-    console.error("[governance] getStaleOffers error:", e);
+    logger.error("governance.stale-offers.error", { error: e });
     return [];
   }
 }
@@ -253,7 +254,7 @@ export async function getWeakCanonicals(): Promise<GovernanceIssue[]> {
       details: `Apenas ${w.sourceCount} fonte — expandir para mais marketplaces`,
     }));
   } catch (e) {
-    console.error("[governance] getWeakCanonicals error:", e);
+    logger.error("governance.weak-canonicals.error", { error: e });
     return [];
   }
 }
@@ -278,7 +279,7 @@ export async function getProductsWithoutImage(): Promise<GovernanceIssue[]> {
       details: "Produto sem imagem principal",
     }));
   } catch (e) {
-    console.error("[governance] getProductsWithoutImage error:", e);
+    logger.error("governance.products-without-image.error", { error: e });
     return [];
   }
 }
@@ -299,7 +300,7 @@ export async function getProductsWithoutBrand(): Promise<GovernanceIssue[]> {
       details: "Produto sem marca definida",
     }));
   } catch (e) {
-    console.error("[governance] getProductsWithoutBrand error:", e);
+    logger.error("governance.products-without-brand.error", { error: e });
     return [];
   }
 }
@@ -320,7 +321,7 @@ export async function getProductsWithoutCategory(): Promise<GovernanceIssue[]> {
       details: "Produto sem categoria definida",
     }));
   } catch (e) {
-    console.error("[governance] getProductsWithoutCategory error:", e);
+    logger.error("governance.products-without-category.error", { error: e });
     return [];
   }
 }

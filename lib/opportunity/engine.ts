@@ -3,6 +3,7 @@
 // ============================================================================
 
 import prisma from '@/lib/db/prisma'
+import { logger } from '@/lib/logger'
 import type { Opportunity, OpportunitySummary, OpportunityPriority } from './types'
 
 /**
@@ -108,7 +109,7 @@ export async function getTopOpportunities(limit = 10): Promise<Opportunity[]> {
       })
     }
   } catch (err) {
-    console.warn('[opportunity] Error fetching opportunities:', err)
+    logger.warn("opportunity.fetch-error", { error: err })
   }
 
   // Sort by priority

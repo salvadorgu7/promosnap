@@ -6,6 +6,7 @@ import prisma from "@/lib/db/prisma";
 import { runImportPipeline, type ImportItem } from "@/lib/import";
 import { MercadoLivreSourceAdapter } from "@/lib/adapters/mercadolivre";
 import { getPrioritizedCategories } from "@/lib/catalog/prioritization";
+import { logger } from "@/lib/logger";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -162,9 +163,7 @@ export async function fillCategory(config: FillConfig): Promise<FillResult> {
     return result;
   }
 
-  console.log(
-    `[category-fill] Starting fill for "${config.categorySlug}" with ${config.queries.length} queries (max ${config.maxPerQuery}/query, dryRun=${!!config.dryRun})`
-  );
+  logger.info("category-fill.start", { category: config.categorySlug, queries: config.queries.length, maxPerQuery: config.maxPerQuery, dryRun: !!config.dryRun });
 
   const allImportItems: ImportItem[] = [];
 
@@ -177,9 +176,7 @@ export async function fillCategory(config: FillConfig): Promise<FillResult> {
       result.queriesProcessed++;
       result.productsFound += searchResults.length;
 
-      console.log(
-        `[category-fill] Query "${query}" returned ${searchResults.length} results`
-      );
+      logger.debug("category-fill.query-results", { query, results: searchResults.length });
 
       for (const item of searchResults) {
         // Build affiliate URL (adapter already includes it if configured)
@@ -202,25 +199,21 @@ export async function fillCategory(config: FillConfig): Promise<FillResult> {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       result.errors.push(`Query "${query}" failed: ${msg}`);
-      console.error(`[category-fill] Query "${query}" error:`, msg);
+      logger.error("category-fill.query-error", { query, error: msg });
     }
   }
 
   if (allImportItems.length === 0) {
-    console.log(`[category-fill] No products found for "${config.categorySlug}"`);
+    logger.info("category-fill.no-products", { category: config.categorySlug });
     return result;
   }
 
   // Deduplicate by externalId before importing
   const uniqueItems = deduplicateByExternalId(allImportItems);
-  console.log(
-    `[category-fill] ${uniqueItems.length} unique products (${allImportItems.length - uniqueItems.length} duplicates removed)`
-  );
+  logger.debug("category-fill.deduplication", { unique: uniqueItems.length, duplicatesRemoved: allImportItems.length - uniqueItems.length });
 
   if (config.dryRun) {
-    console.log(
-      `[category-fill] Dry run — skipping import of ${uniqueItems.length} products`
-    );
+    logger.info("category-fill.dry-run", { products: uniqueItems.length });
     result.productsFound = uniqueItems.length;
     return result;
   }
@@ -234,19 +227,15 @@ export async function fillCategory(config: FillConfig): Promise<FillResult> {
       result.productsCreated += importResult.created;
       result.productsUpdated += importResult.updated;
 
-      console.log(
-        `[category-fill] Batch ${Math.floor(i / BATCH) + 1}: created=${importResult.created} updated=${importResult.updated} skipped=${importResult.skipped} failed=${importResult.failed}`
-      );
+      logger.debug("category-fill.batch-result", { batch: Math.floor(i / BATCH) + 1, created: importResult.created, updated: importResult.updated, skipped: importResult.skipped, failed: importResult.failed });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       result.errors.push(`Import batch failed: ${msg}`);
-      console.error(`[category-fill] Import batch error:`, msg);
+      logger.error("category-fill.import-batch-error", { error: msg });
     }
   }
 
-  console.log(
-    `[category-fill] Completed "${config.categorySlug}": found=${result.productsFound} created=${result.productsCreated} updated=${result.productsUpdated} errors=${result.errors.length}`
-  );
+  logger.info("category-fill.completed", { category: config.categorySlug, found: result.productsFound, created: result.productsCreated, updated: result.productsUpdated, errors: result.errors.length });
 
   return result;
 }
@@ -272,10 +261,7 @@ export async function fillPriorityCategories(
       .slice(0, 15) // top 15 categories
       .map((c) => ({ slug: c.slug, name: c.name }));
   } catch (err) {
-    console.warn(
-      `[category-fill] Could not fetch prioritized categories, falling back to known slugs:`,
-      err instanceof Error ? err.message : err
-    );
+    logger.warn("category-fill.prioritization-fallback", { error: err instanceof Error ? err.message : err });
     // Fallback: use the keys from CATEGORY_QUERIES
     priorityCategories = Object.keys(CATEGORY_QUERIES).map((slug) => ({
       slug,
@@ -291,9 +277,7 @@ export async function fillPriorityCategories(
     }));
   }
 
-  console.log(
-    `[category-fill] Filling ${priorityCategories.length} priority categories (maxPerQuery=${maxPerQuery})`
-  );
+  logger.info("category-fill.priority-start", { categories: priorityCategories.length, maxPerQuery });
 
   for (const cat of priorityCategories) {
     const queries = CATEGORY_QUERIES[cat.slug];
@@ -321,9 +305,7 @@ export async function fillPriorityCategories(
   const totalCreated = results.reduce((s, r) => s + r.productsCreated, 0);
   const totalUpdated = results.reduce((s, r) => s + r.productsUpdated, 0);
   const totalErrors = results.reduce((s, r) => s + r.errors.length, 0);
-  console.log(
-    `[category-fill] Priority fill complete: ${results.length} categories, ${totalCreated} created, ${totalUpdated} updated, ${totalErrors} errors`
-  );
+  logger.info("category-fill.priority-complete", { categories: results.length, created: totalCreated, updated: totalUpdated, errors: totalErrors });
 
   return results;
 }

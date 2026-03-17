@@ -7,6 +7,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 // ============================================
 // Types
@@ -761,7 +762,7 @@ export async function getCanonicalStats(): Promise<CanonicalStats> {
       weakMatchCount = Number(confidenceRows[0].weak);
     }
   } catch (e) {
-    console.error("[canonical-graph] confidence query error:", e);
+    logger.error("canonical-graph.confidence-query.error", { error: e });
   }
 
   // Products with listings from 2+ sources
@@ -779,7 +780,7 @@ export async function getCanonicalStats(): Promise<CanonicalStats> {
     `;
     productsWithMultipleSources = Number(multiSourceResult[0]?.cnt ?? 0);
   } catch (e) {
-    console.error("[canonical-graph] multiSource query error:", e);
+    logger.error("canonical-graph.multi-source-query.error", { error: e });
   }
 
   // V19: Products with at least one variant
@@ -790,7 +791,7 @@ export async function getCanonicalStats(): Promise<CanonicalStats> {
     `;
     productsWithVariants = Number(variantResult[0]?.cnt ?? 0);
   } catch (e) {
-    console.error("[canonical-graph] variantsCount query error:", e);
+    logger.error("canonical-graph.variants-count-query.error", { error: e });
   }
 
   return {

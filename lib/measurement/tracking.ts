@@ -6,6 +6,7 @@
  */
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -212,7 +213,7 @@ export async function getConversionFunnel(): Promise<ConversionFunnel> {
       overall,
     };
   } catch (error) {
-    console.error("[measurement] Error building conversion funnel:", error);
+    logger.error("measurement.conversion-funnel-error", { error });
     return {
       period: "7d",
       byCategory: {},

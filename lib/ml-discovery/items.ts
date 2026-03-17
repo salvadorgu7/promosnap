@@ -4,6 +4,7 @@
 
 import type { MLProduct } from './types'
 import { getMLToken } from '@/lib/ml-auth'
+import { logger } from '@/lib/logger'
 
 const ML_API = 'https://api.mercadolibre.com'
 
@@ -45,7 +46,7 @@ async function multiGetItems(ids: string[]): Promise<MLProduct[]> {
     const res = await mlFetch(`${ML_API}/items?ids=${idsParam}&attributes=${attrs}`)
 
     if (!res.ok) {
-      console.error(`[ml-discovery] multi-get failed: ${res.status}`)
+      logger.error("ml-discovery.multi-get-failed", { status: res.status })
       continue
     }
 
@@ -253,7 +254,7 @@ export async function batchHydrateItems(
         if (!gotIds.has(id)) failed.push(id)
       }
     } catch (err) {
-      console.error('[ml-discovery] multi-get error:', err)
+      logger.error("ml-discovery.multi-get-error", { error: err })
       // Fall back to individual
       for (const id of itemIds) failed.push(id)
     }

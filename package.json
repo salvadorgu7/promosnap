@@ -25,14 +25,12 @@
   "dependencies": {
     "@prisma/client": "6.2.1",
     "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
     "ioredis": "^5.4.0",
     "lucide-react": "^0.469.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.0",
-    "slugify": "^1.6.6",
     "tailwind-merge": "^2.6.0"
   },
   "prisma": {

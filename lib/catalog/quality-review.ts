@@ -3,6 +3,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -184,7 +185,7 @@ export async function getQualityIssues(): Promise<QualityReport> {
       else poor++;
     }
   } catch (e) {
-    console.error("[quality-review] score distribution error:", e);
+    logger.error("quality-review.score-distribution.error", { error: e });
   }
 
   return {
@@ -235,7 +236,7 @@ async function getWeakMatchIssues(): Promise<QualityIssue[]> {
         details: `Match ${((l.matchConfidence ?? 0) * 100).toFixed(0)}% com listing "${l.rawTitle}"`,
       }));
   } catch (e) {
-    console.error("[quality-review] getWeakMatchIssues error:", e);
+    logger.error("quality-review.weak-match-issues.error", { error: e });
     return [];
   }
 }
@@ -279,7 +280,7 @@ async function getMissingAttributeIssues(): Promise<QualityIssue[]> {
       };
     });
   } catch (e) {
-    console.error("[quality-review] getMissingAttributeIssues error:", e);
+    logger.error("quality-review.missing-attribute-issues.error", { error: e });
     return [];
   }
 }
@@ -331,7 +332,7 @@ export async function getDuplicateCandidates(): Promise<QualityIssue[]> {
 
     return duplicates;
   } catch (e) {
-    console.error("[quality-review] getDuplicateCandidates error:", e);
+    logger.error("quality-review.duplicate-candidates.error", { error: e });
     return [];
   }
 }
@@ -390,7 +391,7 @@ export async function getImageQualityIssues(): Promise<QualityIssue[]> {
       details: p.imageUrl ? "Imagem parece ser placeholder" : "Sem imagem principal",
     }));
   } catch (e) {
-    console.error("[quality-review] getImageQualityIssues error:", e);
+    logger.error("quality-review.image-quality-issues.error", { error: e });
     return [];
   }
 }
@@ -440,7 +441,7 @@ async function getWeakAffiliateUrlIssues(): Promise<QualityIssue[]> {
 
     return issues;
   } catch (e) {
-    console.error("[quality-review] getWeakAffiliateUrlIssues error:", e);
+    logger.error("quality-review.weak-affiliate-url-issues.error", { error: e });
     return [];
   }
 }
@@ -473,7 +474,7 @@ async function getInconsistentSourceIssues(): Promise<QualityIssue[]> {
       details: `Listing ativo de fonte inativa: ${r.sourceName}`,
     }));
   } catch (e) {
-    console.error("[quality-review] getInconsistentSourceIssues error:", e);
+    logger.error("quality-review.inconsistent-source-issues.error", { error: e });
     return [];
   }
 }

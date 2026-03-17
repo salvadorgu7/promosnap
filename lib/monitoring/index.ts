@@ -13,6 +13,7 @@ import type {
   ErrorStats,
   MonitoringReport,
 } from "./types";
+import { logger } from "@/lib/logger";
 
 // ── In-memory buffers ──
 
@@ -36,21 +37,21 @@ const isProduction = process.env.NODE_ENV === "production";
  */
 export function logDebug(tag: string, message: string, data?: Record<string, unknown>): void {
   if (isProduction) return;
-  console.log(`[${tag}] ${message}`, data ? JSON.stringify(data) : "");
+  logger.debug(`${tag}.${message.replace(/\s+/g, '-').toLowerCase()}`, data);
 }
 
 /**
  * Log at info level — always shown, but kept concise.
  */
 export function logInfo(tag: string, message: string, data?: Record<string, unknown>): void {
-  console.log(`[${tag}] ${message}`, data ? JSON.stringify(data) : "");
+  logger.info(`${tag}.${message.replace(/\s+/g, '-').toLowerCase()}`, data);
 }
 
 /**
  * Log at warn level — indicates a recoverable problem.
  */
 export function logWarn(tag: string, message: string, data?: Record<string, unknown>): void {
-  console.warn(`[${tag}] ${message}`, data ? JSON.stringify(data) : "");
+  logger.warn(`${tag}.${message.replace(/\s+/g, '-').toLowerCase()}`, data);
 }
 
 // ── Sentry integration (lazy, optional) ──
@@ -105,11 +106,12 @@ export async function captureError(
   }
 
   // Structured console output
-  console.error(
-    `[error] ${captured.type}: ${captured.message}`,
-    context?.route ? `route=${context.route}` : "",
-    context?.job ? `job=${context.job}` : ""
-  );
+  logger.error("monitoring.error-captured", {
+    type: captured.type,
+    message: captured.message,
+    ...(context?.route ? { route: context.route } : {}),
+    ...(context?.job ? { job: context.job } : {}),
+  });
 
   // Forward to Sentry if available
   try {
@@ -150,7 +152,7 @@ export function captureEvent(
   if (isRoutine && isProduction) {
     // Suppress routine event logs in production — they're still in the buffer
   } else {
-    console.log(`[event] ${name}`, data ? JSON.stringify(data) : "");
+    logger.info(`event.${name}`, data);
   }
 }
 

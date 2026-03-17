@@ -6,6 +6,7 @@
  */
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 // ── Types ──
 
@@ -128,7 +129,7 @@ export async function getTopDemandQueries(
     scored.sort((a, b) => b.demandScore - a.demandScore);
     return scored.slice(0, limit);
   } catch (error) {
-    console.error("[demand/intelligence] getTopDemandQueries error:", error);
+    logger.error("demand.intelligence.top-queries.error", { error });
     return [];
   }
 }
@@ -176,7 +177,7 @@ export async function getDemandGaps(limit: number = 20): Promise<DemandGap[]> {
       }))
       .slice(0, limit);
   } catch (error) {
-    console.error("[demand/intelligence] getDemandGaps error:", error);
+    logger.error("demand.intelligence.demand-gaps.error", { error });
     return [];
   }
 }
@@ -252,7 +253,7 @@ export async function getDemandOpportunities(
 
     return opportunities.slice(0, limit);
   } catch (error) {
-    console.error("[demand/intelligence] getDemandOpportunities error:", error);
+    logger.error("demand.intelligence.demand-opportunities.error", { error });
     return [];
   }
 }
@@ -375,7 +376,7 @@ export async function getGrowthLoops(
 
     return loops;
   } catch (error) {
-    console.error("[demand/intelligence] getGrowthLoops error:", error);
+    logger.error("demand.intelligence.growth-loops.error", { error });
     return [];
   }
 }

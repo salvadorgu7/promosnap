@@ -7,6 +7,9 @@
 //   See: https://affiliate.shein.com/ for API documentation
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
+import { logger } from '@/lib/logger'
+
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 const REQUIRED_ENV_VARS = ['SHEIN_API_KEY'] as const
 
@@ -36,42 +39,32 @@ export class SheinSourceAdapter implements SourceAdapter {
 
   async search(query: string, options?: AdapterSearchOptions): Promise<AdapterResult[]> {
     if (!this.isConfigured()) {
-      console.log(`[SourceAdapter:${this.slug}] Not configured — returning mock data for "${query}"`)
+      if (IS_PRODUCTION) {
+        logger.warn('shein.search.skipped', { query, reason: 'not configured in production' })
+        return []
+      }
+      logger.debug('shein.search.mock', { query })
       return this.getMockResults(query, options?.limit)
     }
 
     // NOT IMPLEMENTED: Requires Shein Affiliate API /products/search endpoint
-    // https://api.shein.com/affiliate/v1/products/search
-    //
-    // const res = await fetch('https://api.shein.com/affiliate/v1/products/search', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'x-api-key': process.env.SHEIN_API_KEY!,
-    //   },
-    //   body: JSON.stringify({
-    //     keyword: query,
-    //     page: options?.page ?? 1,
-    //     pageSize: options?.limit ?? 10,
-    //     country: 'BR',
-    //     currency: 'BRL',
-    //     language: 'pt',
-    //   }),
-    // })
-
-    console.log(`[SourceAdapter:${this.slug}] search("${query}") — Shein API integration pending`)
-    return this.getMockResults(query, options?.limit)
+    logger.info('shein.search.pending', { query, message: 'Shein API integration pending' })
+    return []
   }
 
   async getProduct(externalId: string): Promise<AdapterResult | null> {
     if (!this.isConfigured()) {
-      console.log(`[SourceAdapter:${this.slug}] Not configured — returning mock for ${externalId}`)
+      if (IS_PRODUCTION) {
+        logger.warn('shein.getProduct.skipped', { externalId, reason: 'not configured in production' })
+        return null
+      }
+      logger.debug('shein.getProduct.mock', { externalId })
       return this.getMockProduct(externalId)
     }
 
     // NOT IMPLEMENTED: Requires Shein Affiliate API /products/detail endpoint
-    console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — Shein API integration pending`)
-    return this.getMockProduct(externalId)
+    logger.info('shein.getProduct.pending', { externalId, message: 'Shein API integration pending' })
+    return null
   }
 
   // ---------------------------------------------------------------------------
@@ -103,7 +96,7 @@ export class SheinSourceAdapter implements SourceAdapter {
   // ---------------------------------------------------------------------------
 
   async syncFeed(): Promise<SyncResult> {
-    console.log(`[SourceAdapter:${this.slug}] syncFeed() — Shein Affiliate API integration pending (mock)`)
+    logger.info('shein.syncFeed.pending', { configured: this.isConfigured() })
     return {
       synced: 0,
       failed: 0,
@@ -115,7 +108,7 @@ export class SheinSourceAdapter implements SourceAdapter {
   }
 
   async importBatch(items: AdapterResult[]): Promise<SyncResult> {
-    console.log(`[SourceAdapter:${this.slug}] importBatch(${items.length} items) — mock`)
+    logger.info('shein.importBatch.pending', { count: items.length })
     return {
       synced: items.length,
       failed: 0,
@@ -125,8 +118,8 @@ export class SheinSourceAdapter implements SourceAdapter {
   }
 
   async refreshOffer(offerId: string): Promise<AdapterResult | null> {
-    console.log(`[SourceAdapter:${this.slug}] refreshOffer(${offerId}) — mock`)
-    return this.getMockProduct(offerId)
+    logger.debug('shein.refreshOffer.pending', { offerId })
+    return IS_PRODUCTION ? null : this.getMockProduct(offerId)
   }
 
   getCapabilityTruth(): SourceCapabilityTruth {

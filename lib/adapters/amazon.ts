@@ -21,6 +21,7 @@ import type {
   SyncResult,
   SourceCapabilityTruth,
 } from "./types"
+import { logger } from "@/lib/logger"
 import {
   AMAZON_TRACKING_TAG,
   detectAmazonApiPath,
@@ -94,19 +95,19 @@ export class AmazonSourceAdapter implements SourceAdapter {
 
     if (path === "creators") {
       // Creators API search — not yet implemented
-      console.log(`[Amazon:creators] search("${query}") — implementation pending`)
+      logger.debug("amazon.creators.search.pending", { query })
       return []
     }
 
     if (path === "pa-api") {
       // PA-API 5.0 SearchItems — not yet implemented
       // https://webservices.amazon.com/paapi5/documentation/search-items.html
-      console.log(`[Amazon:pa-api] search("${query}") — implementation pending`)
+      logger.debug("amazon.pa-api.search.pending", { query })
       return []
     }
 
     // Affiliate-only: no search capability
-    console.log(`[Amazon:affiliate-only] search not available — use manual import`)
+    logger.debug("amazon.affiliate-only.search.unavailable")
     return []
   }
 
@@ -115,7 +116,7 @@ export class AmazonSourceAdapter implements SourceAdapter {
 
     if (path === "creators" || path === "pa-api") {
       // API lookup — not yet implemented
-      console.log(`[Amazon:${path}] getProduct(${externalId}) — implementation pending`)
+      logger.debug("amazon.getProduct.pending", { path, externalId })
       return null
     }
 
@@ -191,7 +192,7 @@ export class AmazonSourceAdapter implements SourceAdapter {
         errors: ["Feed sync requer Creators API ou PA-API — apenas affiliate-only disponível"],
       }
     }
-    console.log(`[Amazon:${path}] syncFeed() — implementation pending`)
+    logger.debug("amazon.syncFeed.pending", { path })
     return {
       synced: 0,
       failed: 0,
@@ -201,7 +202,7 @@ export class AmazonSourceAdapter implements SourceAdapter {
   }
 
   async importBatch(items: AdapterResult[]): Promise<SyncResult> {
-    console.log(`[Amazon] importBatch(${items.length} items) — stub`)
+    logger.debug("amazon.importBatch.stub", { count: items.length })
     return {
       synced: 0,
       failed: items.length,
@@ -212,7 +213,7 @@ export class AmazonSourceAdapter implements SourceAdapter {
 
   async refreshOffer(offerId: string): Promise<AdapterResult | null> {
     if (!this.hasApiAccess()) return null
-    console.log(`[Amazon:${this.getApiPath()}] refreshOffer(${offerId}) — implementation pending`)
+    logger.debug("amazon.refreshOffer.pending", { path: this.getApiPath(), offerId })
     return null
   }
 

@@ -8,9 +8,10 @@ import { fetchTrendingSignals, getTrendCategories } from './trends'
 import { fetchHighlightsForCategories } from './highlights'
 import { batchHydrateItems, normalizeItem, type HydrateEntry } from './items'
 import { rankDiscoveryResults, deduplicateProducts } from './ranking'
+import { logger } from '@/lib/logger'
 
 function log(stage: string, msg: string, extra?: Record<string, unknown>) {
-  console.log(`[ml-discovery] [${stage}] ${msg}`, extra ? JSON.stringify(extra) : '')
+  logger.debug(`ml-discovery.${stage}`, { message: msg, ...extra })
 }
 
 // ============================================================================

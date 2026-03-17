@@ -5,6 +5,7 @@
 import type { MLTrend } from './types'
 import { resolveIntentToCategories } from './categories'
 import { mlFetch } from './items'
+import { logger } from '@/lib/logger'
 
 /**
  * Fetch trending keywords from ML /trends/MLB endpoint.
@@ -14,7 +15,7 @@ export async function fetchTrendingSignals(): Promise<MLTrend[]> {
   const res = await mlFetch('https://api.mercadolibre.com/trends/MLB')
 
   if (!res.ok) {
-    console.error(`[ml-discovery] trends failed: ${res.status}`)
+    logger.error("ml-discovery.trends-failed", { status: res.status })
     return []
   }
 

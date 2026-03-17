@@ -6,6 +6,7 @@
  */
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 // ── Types ──
 
@@ -200,7 +201,7 @@ export async function categoryMaturity(
       score: Math.min(100, score),
     };
   } catch (error) {
-    console.error("[catalog/quality] categoryMaturity error:", error);
+    logger.error("catalog.quality.category-maturity.error", { error });
     return {
       categoryId,
       categoryName: "Unknown",
@@ -316,7 +317,7 @@ export async function catalogOverallScore(): Promise<CatalogOverallResult> {
       score: Math.min(100, score),
     };
   } catch (error) {
-    console.error("[catalog/quality] catalogOverallScore error:", error);
+    logger.error("catalog.quality.overall-score.error", { error });
     return {
       totalProducts: 0,
       activeProducts: 0,

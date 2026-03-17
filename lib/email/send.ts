@@ -4,6 +4,7 @@
 // ============================================
 
 import prisma from '@/lib/db/prisma'
+import { logger } from '@/lib/logger'
 
 const FROM_EMAIL = 'PromoSnap <noreply@promosnap.com.br>'
 
@@ -24,7 +25,7 @@ export async function sendEmail(opts: {
   template: string
 }): Promise<boolean> {
   if (!isEmailConfigured()) {
-    console.warn('[email] RESEND_API_KEY not configured, skipping send')
+    logger.warn("email.resend-not-configured")
     return false
   }
 
@@ -60,7 +61,7 @@ export async function sendEmail(opts: {
 
     return ok
   } catch (error) {
-    console.error('[email] Send failed:', error)
+    logger.error("email.send-failed", { error })
 
     try {
       await prisma.emailLog.create({

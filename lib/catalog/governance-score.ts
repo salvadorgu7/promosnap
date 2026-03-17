@@ -4,6 +4,7 @@
 
 import prisma from "@/lib/db/prisma";
 import { Prisma } from "@prisma/client";
+import { logger } from "@/lib/logger";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -197,7 +198,7 @@ export async function getCatalogGovernanceScore(): Promise<GovernanceScore> {
       generatedAt: new Date(),
     };
   } catch (e) {
-    console.error("[governance-score] getCatalogGovernanceScore error:", e);
+    logger.error("governance-score.catalog-score.error", { error: e });
     return {
       overall: 0,
       breakdown: {
@@ -344,7 +345,7 @@ export async function getGovernanceBreakdown(): Promise<
       },
     ];
   } catch (e) {
-    console.error("[governance-score] getGovernanceBreakdown error:", e);
+    logger.error("governance-score.breakdown.error", { error: e });
     return [];
   }
 }
@@ -423,7 +424,7 @@ export async function getGovernanceTrend(): Promise<GovernanceTrend> {
       delta: current.overall - prevOverall,
     };
   } catch (e) {
-    console.error("[governance-score] getGovernanceTrend error:", e);
+    logger.error("governance-score.trend.error", { error: e });
     return {
       current,
       previous: null,

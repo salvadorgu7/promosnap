@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic"
 
 import prisma from "@/lib/db/prisma"
+import { logger } from "@/lib/logger"
 import { runFullAudit } from "@/lib/audit/runner"
 import type { AuditReport, AuditSection, AuditIssue } from "@/lib/audit/types"
 import { RunAuditButton } from "./run-button"
@@ -34,7 +35,7 @@ export default async function AuditPage() {
   try {
     report = await runFullAudit()
   } catch (error) {
-    console.error("[admin/audit] error running audit:", error)
+    logger.error("admin-audit.run-failed", { error })
   }
 
   if (!report) {

@@ -591,7 +591,7 @@ export async function batchCanonicalMatch(
         candidatesCount: candidates.length,
       });
     } catch (err) {
-      console.error(`[batchCanonicalMatch] error for listing ${listing.id}:`, err);
+      logger.error("canonical-match.batch.error", { listingId: listing.id, error: err });
       results.push({
         listingId: listing.id,
         match: null,

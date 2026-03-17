@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SlidersHorizontal, Brain, TrendingDown, Truck, Scale, Award, Flame, Tag, BadgePercent } from "lucide-react";
+import { logger } from "@/lib/logger";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
@@ -22,7 +23,7 @@ export async function generateStaticParams() {
     });
     return categories.map((c) => ({ slug: c.slug }));
   } catch (err) {
-    console.warn('[build] generateStaticParams: DB unreachable, skipping static generation', err instanceof Error ? err.message : err);
+    logger.warn("build.generateStaticParams-failed", { error: err instanceof Error ? err.message : err });
     return [];
   }
 }

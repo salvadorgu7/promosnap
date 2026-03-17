@@ -10,6 +10,7 @@ import {
   markStaleItems,
   getFeedSyncStats,
 } from "./engine";
+import { logger } from "@/lib/logger";
 import type { FeedItem, FeedBatchResult, FeedSyncJob, SyncJobStatus } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -382,7 +383,7 @@ export function registerSyncJobs(): void {
     },
   });
 
-  console.log(`[FeedSync] ${jobRegistry.size} jobs registrados`);
+  logger.info("feed-sync.jobs-registered", { count: jobRegistry.size });
 }
 
 // Auto-register on module load

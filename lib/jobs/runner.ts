@@ -1,4 +1,5 @@
 import prisma from '@/lib/db/prisma';
+import { logger } from '@/lib/logger';
 
 export interface JobContext {
   log: (msg: string) => void;
@@ -35,15 +36,15 @@ export async function runJob(
 
   const ctx: JobContext = {
     log: (msg: string) => {
-      console.log(`[job:${name}] ${msg}`);
+      logger.info(`job.${name}`, { message: msg });
       logs.push(`[INFO] ${msg}`);
     },
     warn: (msg: string) => {
-      console.warn(`[job:${name}] WARN: ${msg}`);
+      logger.warn(`job.${name}`, { message: msg });
       logs.push(`[WARN] ${msg}`);
     },
     error: (msg: string) => {
-      console.error(`[job:${name}] ERROR: ${msg}`);
+      logger.error(`job.${name}`, { message: msg });
       logs.push(`[ERROR] ${msg}`);
     },
     updateProgress: async (done: number, total: number) => {

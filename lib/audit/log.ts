@@ -1,5 +1,7 @@
 // Structured audit logging for admin actions.
-// Currently outputs to console; ready for persistence layer later.
+// Currently outputs via structured logger; ready for persistence layer later.
+
+import { logger } from "@/lib/logger"
 
 export function auditLog(
   action: string,
@@ -12,5 +14,5 @@ export function auditLog(
     userId: userId ?? 'system',
     ...details,
   }
-  console.log(`[AUDIT] ${entry.timestamp} ${action}`, JSON.stringify(entry))
+  logger.info("audit.action", entry)
 }

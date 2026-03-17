@@ -6,6 +6,7 @@
 import prisma from "@/lib/db/prisma";
 import { sendEmail, isEmailConfigured } from "@/lib/email/send";
 import { weeklyDigestEmail } from "@/lib/email/templates";
+import { logger } from "@/lib/logger";
 
 interface SendResult {
   sent: number;
@@ -21,9 +22,7 @@ export async function runWeeklyDigestJob(): Promise<SendResult> {
   const result: SendResult = { sent: 0, failed: 0, skipped: 0 };
 
   if (!isEmailConfigured()) {
-    console.warn(
-      "[email-jobs] Email provider not configured. Skipping weekly digest job."
-    );
+    logger.warn("email-jobs.weekly-digest-skipped", { reason: "email not configured" });
     return result;
   }
 
@@ -123,7 +122,7 @@ export async function runWeeklyDigestJob(): Promise<SendResult> {
       else result.failed++;
     }
   } catch (error) {
-    console.error("[email-jobs] Weekly digest job error:", error);
+    logger.error("email-jobs.weekly-digest-error", { error });
   }
 
   return result;

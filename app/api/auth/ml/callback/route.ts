@@ -64,14 +64,14 @@ export async function GET(req: NextRequest) {
     body.obtained_at = Date.now()
     await mlTokenStore.set(body)
 
-    console.log(`[ml-auth] Token obtained, expires_in=${body.expires_in}s, type=${body.token_type}`)
+    logger.info("ml-auth.token-obtained", { expiresIn: body.expires_in, tokenType: body.token_type })
 
     // Quick validation: test token against ML API
     try {
       const testRes = await fetch('https://api.mercadolibre.com/users/me', {
         headers: { Authorization: `Bearer ${body.access_token}` },
       })
-      console.log('[ml-auth] Token validation /users/me:', testRes.status)
+      logger.debug("ml-auth.token-validation", { status: testRes.status })
       if (!testRes.ok) {
         const testBody = await testRes.text()
         logger.error("ml-auth.token-validation-failed", { response: testBody.slice(0, 500) })

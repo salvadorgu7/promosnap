@@ -6,6 +6,7 @@
  */
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 
 // ── Types ──
 
@@ -93,7 +94,7 @@ export async function getClickoutsByRail(
       percentage: total > 0 ? Math.round((r._count.id / total) * 10000) / 100 : 0,
     }));
   } catch (error) {
-    console.error("[analytics/attribution] getClickoutsByRail error:", error);
+    logger.error("analytics.attribution.clickouts-by-rail.error", { error });
     return [];
   }
 }
@@ -124,10 +125,7 @@ export async function getClickoutsByCategory(
       percentage: total > 0 ? Math.round((r._count.id / total) * 10000) / 100 : 0,
     }));
   } catch (error) {
-    console.error(
-      "[analytics/attribution] getClickoutsByCategory error:",
-      error
-    );
+    logger.error("analytics.attribution.clickouts-by-category.error", { error });
     return [];
   }
 }
@@ -195,10 +193,7 @@ export async function getClickoutsByProduct(
       .sort((a, b) => b.clickouts - a.clickouts)
       .slice(0, limit);
   } catch (error) {
-    console.error(
-      "[analytics/attribution] getClickoutsByProduct error:",
-      error
-    );
+    logger.error("analytics.attribution.clickouts-by-product.error", { error });
     return [];
   }
 }
@@ -231,7 +226,7 @@ export async function getClickoutsByQuery(
       clickouts: r._count.id,
     }));
   } catch (error) {
-    console.error("[analytics/attribution] getClickoutsByQuery error:", error);
+    logger.error("analytics.attribution.clickouts-by-query.error", { error });
     return [];
   }
 }
@@ -273,10 +268,7 @@ export async function getClickoutConversionRate(
       period: days,
     };
   } catch (error) {
-    console.error(
-      "[analytics/attribution] getClickoutConversionRate error:",
-      error
-    );
+    logger.error("analytics.attribution.conversion-rate.error", { error });
     return {
       totalSearches: 0,
       searchesWithClickout: 0,
@@ -382,10 +374,7 @@ export async function getUnderperformingProducts(
       .sort((a, b) => b.searchAppearances - a.searchAppearances)
       .slice(0, limit);
   } catch (error) {
-    console.error(
-      "[analytics/attribution] getUnderperformingProducts error:",
-      error
-    );
+    logger.error("analytics.attribution.underperforming-products.error", { error });
     return [];
   }
 }
@@ -458,10 +447,7 @@ export async function getRevenueOpportunities(
       .sort((a, b) => b.discountPct - a.discountPct)
       .slice(0, limit);
   } catch (error) {
-    console.error(
-      "[analytics/attribution] getRevenueOpportunities error:",
-      error
-    );
+    logger.error("analytics.attribution.revenue-opportunities.error", { error });
     return [];
   }
 }

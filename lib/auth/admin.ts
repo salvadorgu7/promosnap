@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual, createHash } from "crypto";
+import { logger } from "@/lib/logger";
 
 /** Common weak/placeholder secrets that MUST be rejected in production */
 const BLOCKED_SECRETS = new Set([
@@ -38,7 +39,7 @@ export function validateAdmin(req: NextRequest): NextResponse | null {
 
   // Block weak/placeholder secrets in production
   if (process.env.NODE_ENV === "production" && (secret.length < 12 || BLOCKED_SECRETS.has(secret.toLowerCase()))) {
-    console.error("[SECURITY] ADMIN_SECRET is too weak or a placeholder. Access blocked in production.");
+    logger.error("security.admin-secret.weak", { message: "ADMIN_SECRET is too weak or a placeholder. Access blocked in production." });
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
 

@@ -3,6 +3,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 import type { GovernanceRecommendation } from "./governance-types";
 
 // ============================================
@@ -33,7 +34,7 @@ export async function generateCatalogRecommendations(): Promise<
       });
     }
   } catch (e) {
-    console.error("[recommendations] noImage error:", e);
+    logger.error("recommendations.no-image.error", { error: e });
   }
 
   // Missing brand
@@ -55,7 +56,7 @@ export async function generateCatalogRecommendations(): Promise<
       });
     }
   } catch (e) {
-    console.error("[recommendations] noBrand error:", e);
+    logger.error("recommendations.no-brand.error", { error: e });
   }
 
   // Missing category
@@ -77,7 +78,7 @@ export async function generateCatalogRecommendations(): Promise<
       });
     }
   } catch (e) {
-    console.error("[recommendations] noCategory error:", e);
+    logger.error("recommendations.no-category.error", { error: e });
   }
 
   // Orphan listings
@@ -99,7 +100,7 @@ export async function generateCatalogRecommendations(): Promise<
       });
     }
   } catch (e) {
-    console.error("[recommendations] orphans error:", e);
+    logger.error("recommendations.orphans.error", { error: e });
   }
 
   // Weak canonicals — single source
@@ -128,7 +129,7 @@ export async function generateCatalogRecommendations(): Promise<
       });
     }
   } catch (e) {
-    console.error("[recommendations] weak error:", e);
+    logger.error("recommendations.weak.error", { error: e });
   }
 
   // Stale offers — 30+ days without update
@@ -160,7 +161,7 @@ export async function generateCatalogRecommendations(): Promise<
       });
     }
   } catch (e) {
-    console.error("[recommendations] stale error:", e);
+    logger.error("recommendations.stale.error", { error: e });
   }
 
   // Sort by priority: high > medium > low

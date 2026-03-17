@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 type JobEntry = {
   fn: () => Promise<any>;
   intervalMs: number;
@@ -14,31 +16,31 @@ class JobScheduler {
       intervalMs: intervalMinutes * 60 * 1000,
       running: false,
     });
-    console.log(`[scheduler] Registered job: ${name} (every ${intervalMinutes}m)`);
+    logger.info("scheduler.registered", { name, intervalMinutes });
   }
 
   start(): void {
-    console.log('[scheduler] Starting all jobs...');
+    logger.info("scheduler.starting-all");
     for (const [name, job] of this.jobs.entries()) {
       if (job.timer) continue;
       job.timer = setInterval(async () => {
         if (job.running) {
-          console.log(`[scheduler] Skipping ${name} — already running`);
+          logger.debug("scheduler.skipping-already-running", { name });
           return;
         }
         await this.executeJob(name, job);
       }, job.intervalMs);
-      console.log(`[scheduler] Started job: ${name}`);
+      logger.info("scheduler.started", { name });
     }
   }
 
   stop(): void {
-    console.log('[scheduler] Stopping all jobs...');
+    logger.info("scheduler.stopping-all");
     for (const [name, job] of this.jobs.entries()) {
       if (job.timer) {
         clearInterval(job.timer);
         job.timer = undefined;
-        console.log(`[scheduler] Stopped job: ${name}`);
+        logger.info("scheduler.stopped", { name });
       }
     }
   }
@@ -49,7 +51,7 @@ class JobScheduler {
       throw new Error(`[scheduler] Job not found: ${name}`);
     }
     if (job.running) {
-      console.log(`[scheduler] Job ${name} is already running, skipping`);
+      logger.debug("scheduler.already-running", { name });
       return null;
     }
     return this.executeJob(name, job);
@@ -57,13 +59,13 @@ class JobScheduler {
 
   private async executeJob(name: string, job: JobEntry): Promise<any> {
     job.running = true;
-    console.log(`[scheduler] Running job: ${name}`);
+    logger.info("scheduler.running", { name });
     try {
       const result = await job.fn();
-      console.log(`[scheduler] Job ${name} completed`);
+      logger.info("scheduler.completed", { name });
       return result;
     } catch (err) {
-      console.error(`[scheduler] Job ${name} failed:`, err);
+      logger.error("scheduler.job-failed", { name, error: err });
       throw err;
     } finally {
       job.running = false;

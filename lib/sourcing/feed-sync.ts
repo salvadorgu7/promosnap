@@ -4,6 +4,8 @@
 // Architecture-only module — no real external fetches yet.
 // Defines config, status tracking, and placeholder sync logic.
 
+import { logger } from '@/lib/logger';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -154,9 +156,7 @@ export async function runFeedSync(
     new URL(config.url)
 
     // Simulate processing delay
-    console.log(
-      `[FeedSync] ${config.sourceName}: sync placeholder — format=${config.format}, url=${config.url}`
-    )
+    logger.debug("feed-sync.placeholder", { source: config.sourceName, format: config.format, url: config.url })
 
     // Mark success (placeholder)
     const successEntry: FeedSyncStatusEntry = {

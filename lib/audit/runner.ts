@@ -3,6 +3,7 @@
 // ============================================
 
 import prisma from '@/lib/db/prisma'
+import { logger } from '@/lib/logger'
 import { getCatalogHealthReport } from '@/lib/catalog/governance'
 import { auditSEOHealth, calculateSEOScore } from '@/lib/seo/governance'
 import { getContentHealthReport } from '@/lib/content/governance'
@@ -50,7 +51,7 @@ async function runCatalogAudit(): Promise<AuditSection> {
       },
     }
   } catch (error) {
-    console.error('[audit] catalog audit error:', error)
+    logger.error('audit.catalog.error', { error })
     return {
       name: 'Catalogo',
       score: 0,
@@ -99,7 +100,7 @@ async function runSEOAudit(): Promise<AuditSection> {
       },
     }
   } catch (error) {
-    console.error('[audit] seo audit error:', error)
+    logger.error('audit.seo.error', { error })
     return {
       name: 'SEO',
       score: 0,
@@ -138,7 +139,7 @@ async function runContentAudit(): Promise<AuditSection> {
       },
     }
   } catch (error) {
-    console.error('[audit] content audit error:', error)
+    logger.error('audit.content.error', { error })
     return {
       name: 'Conteudo',
       score: 0,
@@ -219,7 +220,7 @@ async function runSourcesAudit(): Promise<AuditSection> {
       },
     }
   } catch (error) {
-    console.error('[audit] sources audit error:', error)
+    logger.error('audit.sources.error', { error })
     return {
       name: 'Fontes',
       score: 0,
@@ -276,7 +277,7 @@ async function runQualityAudit(): Promise<AuditSection> {
       },
     }
   } catch (error) {
-    console.error('[audit] quality audit error:', error)
+    logger.error('audit.quality.error', { error })
     return {
       name: 'Qualidade',
       score: 0,
@@ -392,7 +393,7 @@ async function runDesignAudit(): Promise<AuditSection> {
       },
     }
   } catch (error) {
-    console.error('[audit] design audit error:', error)
+    logger.error('audit.design.error', { error })
     return {
       name: 'Design',
       score: 0,

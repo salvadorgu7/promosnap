@@ -3,6 +3,7 @@
 // ============================================
 
 import type { DistributableOffer } from "./types";
+import { logger } from "@/lib/logger";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br";
@@ -129,7 +130,7 @@ export async function sendTelegramMessage(
 
     if (!res.ok) {
       const body = await res.text();
-      console.error("[Telegram] Send failed:", res.status, body);
+      logger.error("telegram.send.failed", { status: res.status, body: body.slice(0, 200) });
       const httpFail: TelegramSendResult = {
         success: false,
         error: `Telegram API ${res.status}: ${body.slice(0, 200)}`,
@@ -147,7 +148,7 @@ export async function sendTelegramMessage(
     return successResult;
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro desconhecido";
-    console.error("[Telegram] Send error:", msg);
+    logger.error("telegram.send.error", { error: msg });
     const failResult: TelegramSendResult = { success: false, error: msg };
     recordTelegramSend(failResult);
     return failResult;

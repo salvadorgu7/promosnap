@@ -3,6 +3,7 @@
 // ============================================
 
 import prisma from "@/lib/db/prisma";
+import { logger } from "@/lib/logger";
 import type {
   ExecutionType,
   ExecutionStatus,
@@ -216,12 +217,12 @@ async function handleTriggerEmail(
       return { emailId: result.data?.id, sent: true };
     } catch (err) {
       // Fall through to logging — resend may not be installed
-      console.warn("[execution] Email send failed, logging intent:", err);
+      logger.warn("execution.email-send-failed", { error: err });
     }
   }
 
   // Log email intent
-  console.log(`[execution] Email intent: to=${to}, subject=${subject}`);
+  logger.debug("execution.email-intent", { to, subject });
   return { logged: true, to, subject, note: "RESEND_API_KEY not configured — email intent logged" };
 }
 

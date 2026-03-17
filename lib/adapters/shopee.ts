@@ -7,6 +7,9 @@
 //   See: https://open.shopee.com/documents/v2/ for API documentation
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
+import { logger } from '@/lib/logger'
+
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 const REQUIRED_ENV_VARS = ['SHOPEE_APP_ID', 'SHOPEE_APP_SECRET'] as const
 
@@ -36,34 +39,33 @@ export class ShopeeSourceAdapter implements SourceAdapter {
 
   async search(query: string, options?: AdapterSearchOptions): Promise<AdapterResult[]> {
     if (!this.isConfigured()) {
-      console.log(`[SourceAdapter:${this.slug}] Not configured — returning mock data for "${query}"`)
+      // In production, never return mock data — it would pollute the real database
+      if (IS_PRODUCTION) {
+        logger.warn('shopee.search.skipped', { query, reason: 'not configured in production' })
+        return []
+      }
+      logger.debug('shopee.search.mock', { query })
       return this.getMockResults(query, options?.limit)
     }
 
     // NOT IMPLEMENTED: Requires Shopee Open Platform v2.product.search_item with HMAC signing
-    // https://open.shopee.com/documents/v2/v2.product.search_item
-    //
-    // const timestamp = Math.floor(Date.now() / 1000)
-    // const sign = generateShopeeSign(timestamp)
-    // const url = new URL('https://partner.shopeemobile.com/api/v2/product/search_item')
-    // url.searchParams.set('keyword', query)
-    // url.searchParams.set('partner_id', process.env.SHOPEE_APP_ID!)
-    // url.searchParams.set('timestamp', String(timestamp))
-    // url.searchParams.set('sign', sign)
-
-    console.log(`[SourceAdapter:${this.slug}] search("${query}") — Shopee API integration pending`)
-    return this.getMockResults(query, options?.limit)
+    logger.info('shopee.search.pending', { query, message: 'Shopee API integration pending' })
+    return []
   }
 
   async getProduct(externalId: string): Promise<AdapterResult | null> {
     if (!this.isConfigured()) {
-      console.log(`[SourceAdapter:${this.slug}] Not configured — returning mock for ${externalId}`)
+      if (IS_PRODUCTION) {
+        logger.warn('shopee.getProduct.skipped', { externalId, reason: 'not configured in production' })
+        return null
+      }
+      logger.debug('shopee.getProduct.mock', { externalId })
       return this.getMockProduct(externalId)
     }
 
     // NOT IMPLEMENTED: Requires Shopee Open Platform v2.product.get_item_detail with HMAC signing
-    console.log(`[SourceAdapter:${this.slug}] getProduct(${externalId}) — Shopee API integration pending`)
-    return this.getMockProduct(externalId)
+    logger.info('shopee.getProduct.pending', { externalId, message: 'Shopee API integration pending' })
+    return null
   }
 
   // ---------------------------------------------------------------------------
@@ -95,7 +97,7 @@ export class ShopeeSourceAdapter implements SourceAdapter {
   // ---------------------------------------------------------------------------
 
   async syncFeed(): Promise<SyncResult> {
-    console.log(`[SourceAdapter:${this.slug}] syncFeed() — Shopee Open Platform integration pending (mock)`)
+    logger.info('shopee.syncFeed.pending', { configured: this.isConfigured() })
     return {
       synced: 0,
       failed: 0,
@@ -107,7 +109,7 @@ export class ShopeeSourceAdapter implements SourceAdapter {
   }
 
   async importBatch(items: AdapterResult[]): Promise<SyncResult> {
-    console.log(`[SourceAdapter:${this.slug}] importBatch(${items.length} items) — mock`)
+    logger.info('shopee.importBatch.pending', { count: items.length })
     return {
       synced: items.length,
       failed: 0,
@@ -117,8 +119,8 @@ export class ShopeeSourceAdapter implements SourceAdapter {
   }
 
   async refreshOffer(offerId: string): Promise<AdapterResult | null> {
-    console.log(`[SourceAdapter:${this.slug}] refreshOffer(${offerId}) — mock`)
-    return this.getMockProduct(offerId)
+    logger.debug('shopee.refreshOffer.pending', { offerId })
+    return IS_PRODUCTION ? null : this.getMockProduct(offerId)
   }
 
   getCapabilityTruth(): SourceCapabilityTruth {

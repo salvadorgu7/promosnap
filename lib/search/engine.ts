@@ -8,6 +8,7 @@ import { normalizeText } from '@/lib/utils'
 import { understandQuery } from '@/lib/query'
 import { calculateCommercialScore, presetForIntent, type CommercialSignals } from '@/lib/ranking/commercial'
 import { buildProductCard } from '@/lib/db/queries'
+import { logger } from '@/lib/logger'
 import type { QueryUnderstanding, SearchMetrics } from '@/lib/query/types'
 import type { ProductCard, SearchResult, SearchFilters } from '@/types'
 
@@ -311,18 +312,23 @@ async function fallbackSearch(
 // ── Log Search Metrics ─────────────────────────────────────────────────────
 
 function logSearchMetrics(metrics: SearchMetrics): void {
-  const level = metrics.zeroResult ? 'warn' : 'info'
-  const tag = metrics.zeroResult ? '[search:zero-result]' :
-    metrics.fallbackUsed ? '[search:fallback]' : '[search]'
+  const event = metrics.zeroResult ? 'search.zero-result' :
+    metrics.fallbackUsed ? 'search.fallback' : 'search.completed'
 
-  const msg = `${tag} q="${metrics.query}" intent=${metrics.intent}(${metrics.confidence}) ` +
-    `results=${metrics.resultsCount} expansions=${metrics.expansionsUsed} ` +
-    `fallback=${metrics.fallbackUsed} ${metrics.processingMs}ms`
+  const data = {
+    query: metrics.query,
+    intent: metrics.intent,
+    confidence: metrics.confidence,
+    resultsCount: metrics.resultsCount,
+    expansionsUsed: metrics.expansionsUsed,
+    fallbackUsed: metrics.fallbackUsed,
+    processingMs: metrics.processingMs,
+  }
 
-  if (level === 'warn') {
-    console.warn(msg)
+  if (metrics.zeroResult) {
+    logger.warn(event, data)
   } else {
-    console.log(msg)
+    logger.info(event, data)
   }
 }
 
