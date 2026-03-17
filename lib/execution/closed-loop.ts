@@ -173,7 +173,7 @@ async function measureFeatureOutcome(exec: ExecutionRecord): Promise<ClosedLoopE
         : 0;
 
     // Check attribution data for this product
-    const attributionEntries = getAllAttributionEntries(30);
+    const attributionEntries = await getAllAttributionEntries(30);
     const productAttributedClickouts = attributionEntries.filter(
       (e) => e.context.productId === productId
     ).length;
@@ -218,7 +218,7 @@ async function measureDistributionOutcome(exec: ExecutionRecord): Promise<Closed
     });
 
     // Also check attribution data for clickouts from this channel
-    const attributionEntries = getAllAttributionEntries(30);
+    const attributionEntries = await getAllAttributionEntries(30);
     const channelAttributed = attributionEntries.filter(
       (e) => e.context.channelOrigin === channel
     ).length;
@@ -340,7 +340,7 @@ const DEFAULT_COMMISSION = 0.03;
  */
 export async function getExecutionROI(): Promise<ExecutionROIEntry[]> {
   const closedLoop = await getClosedLoopView(200);
-  const attributionEntries = getAllAttributionEntries(30);
+  const attributionEntries = await getAllAttributionEntries(30);
 
   // Aggregate by execution type
   const byType: Record<string, { count: number; clickouts: number }> = {};
