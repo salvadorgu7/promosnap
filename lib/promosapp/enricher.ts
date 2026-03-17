@@ -156,14 +156,47 @@ export function mergeEnrichment(result: EnrichmentResult): PromosAppNormalizedIt
   return item
 }
 
-// ── og:image Fallback ─────────────────────────────────────────────────────
+// ── og:meta Scraping (Universal Fallback) ─────────────────────────────────
+
+interface OgMeta {
+  title?: string
+  image?: string
+  price?: string
+  siteName?: string
+}
 
 /**
- * Fetch og:image meta tag from a product URL as a universal image fallback.
- * Works for any marketplace that sets Open Graph meta tags (most do).
- * Returns null on failure — never throws.
+ * Extract an Open Graph meta tag value from HTML.
+ * Handles both attribute orders: property="X" content="Y" and content="Y" property="X".
  */
-async function fetchOgImage(url: string, timeoutMs = 5000): Promise<string | null> {
+function extractOgTag(html: string, property: string): string | null {
+  const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match =
+    html.match(new RegExp(`<meta\\s+property="${escaped}"\\s+content="([^"]+)"`, 'i')) ||
+    html.match(new RegExp(`<meta\\s+content="([^"]+)"\\s+property="${escaped}"`, 'i')) ||
+    html.match(new RegExp(`<meta\\s+property='${escaped}'\\s+content='([^']+)'`, 'i')) ||
+    html.match(new RegExp(`<meta\\s+content='([^']+)'\\s+property='${escaped}'`, 'i'))
+  return match?.[1] || null
+}
+
+/**
+ * Extract a generic meta tag value (name="X" content="Y").
+ */
+function extractMetaTag(html: string, name: string): string | null {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match =
+    html.match(new RegExp(`<meta\\s+name="${escaped}"\\s+content="([^"]+)"`, 'i')) ||
+    html.match(new RegExp(`<meta\\s+content="([^"]+)"\\s+name="${escaped}"`, 'i'))
+  return match?.[1] || null
+}
+
+/**
+ * Fetch og:title, og:image, and price from a product URL.
+ * This is the universal fallback — works for any marketplace with Open Graph tags.
+ * Most marketplaces (Shopee, ML, Amazon, Magalu, etc.) set these correctly.
+ * Returns partial data on partial success — never throws.
+ */
+async function fetchOgMeta(url: string, timeoutMs = 8000): Promise<OgMeta | null> {
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -171,8 +204,9 @@ async function fetchOgImage(url: string, timeoutMs = 5000): Promise<string | nul
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; PromoSnap/1.0; +https://promosnap.com.br)',
-        'Accept': 'text/html',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
       },
       redirect: 'follow',
     })
@@ -181,39 +215,86 @@ async function fetchOgImage(url: string, timeoutMs = 5000): Promise<string | nul
 
     if (!res.ok) return null
 
-    // Read only the first ~50KB to find og:image (no need to download full page)
+    // Read only first ~80KB to find meta tags in <head>
     const reader = res.body?.getReader()
     if (!reader) return null
 
     let html = ''
     const decoder = new TextDecoder()
-    const MAX_BYTES = 50_000
+    const MAX_BYTES = 80_000
 
     while (html.length < MAX_BYTES) {
       const { done, value } = await reader.read()
       if (done) break
       html += decoder.decode(value, { stream: true })
-      // Early exit if we found the closing </head>
       if (html.includes('</head>')) break
     }
 
     reader.cancel().catch(() => {})
 
-    // Extract og:image — handle both attribute orders
-    const match =
-      html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/) ||
-      html.match(/<meta\s+content="([^"]+)"\s+property="og:image"/) ||
-      html.match(/<meta\s+property='og:image'\s+content='([^']+)'/) ||
-      html.match(/<meta\s+content='([^']+)'\s+property='og:image'/)
+    const result: OgMeta = {}
 
-    if (match && match[1] && match[1].startsWith('http')) {
-      log.debug('promosapp.og-image-found', { url: url.slice(0, 60), image: match[1].slice(0, 80) })
-      return match[1]
+    // Extract og:title (real product name from the marketplace)
+    const ogTitle = extractOgTag(html, 'og:title')
+    if (ogTitle && ogTitle.length > 3) {
+      // Clean common site suffixes: "Product Name | Shopee Brasil", "Product - Amazon.com.br"
+      let cleanTitle = ogTitle
+        .replace(/\s*[|–—-]\s*(?:Shopee|Amazon|Mercado Livre|Magazine Luiza|Magalu|KaBuM|AliExpress|Shein).*$/i, '')
+        .replace(/\s*[|–—-]\s*(?:Compre|Frete|Entrega).*$/i, '')
+        .trim()
+      if (cleanTitle.length > 3) {
+        result.title = cleanTitle
+      }
     }
 
-    return null
+    // Fallback: <title> tag
+    if (!result.title) {
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
+      if (titleMatch && titleMatch[1].length > 5) {
+        let cleanTitle = titleMatch[1]
+          .replace(/\s*[|–—-]\s*(?:Shopee|Amazon|Mercado Livre|Magazine Luiza|Magalu|KaBuM|AliExpress|Shein).*$/i, '')
+          .trim()
+        if (cleanTitle.length > 5) {
+          result.title = cleanTitle
+        }
+      }
+    }
+
+    // Extract og:image
+    const ogImage = extractOgTag(html, 'og:image')
+    if (ogImage && ogImage.startsWith('http')) {
+      result.image = ogImage
+    }
+
+    // Extract price from og:price:amount or product:price:amount
+    const ogPrice =
+      extractOgTag(html, 'og:price:amount') ||
+      extractOgTag(html, 'product:price:amount') ||
+      extractMetaTag(html, 'product:price:amount') ||
+      extractMetaTag(html, 'price')
+    if (ogPrice) {
+      result.price = ogPrice
+    }
+
+    // Extract site name
+    const siteName = extractOgTag(html, 'og:site_name')
+    if (siteName) {
+      result.siteName = siteName
+    }
+
+    const hasData = result.title || result.image || result.price
+    if (hasData) {
+      log.debug('promosapp.og-meta-found', {
+        url: url.slice(0, 60),
+        title: result.title?.slice(0, 50),
+        hasImage: !!result.image,
+        price: result.price,
+      })
+    }
+
+    return hasData ? result : null
   } catch (err) {
-    log.debug('promosapp.og-image-failed', { url: url.slice(0, 60), error: String(err) })
+    log.debug('promosapp.og-meta-failed', { url: url.slice(0, 60), error: String(err) })
     return null
   }
 }
@@ -275,26 +356,50 @@ export async function enrichBatch(
     }
   }
 
-  // ── Fallback: og:image scraping for items still missing images ──
-  let ogImageFetched = 0
-  const needsImage = results.filter(item => !item.imageUrl && item.productUrl)
+  // ── og:meta scraping — fetch real product data from the page ──
+  // This is the key step: instead of trusting WhatsApp copy, we follow the link
+  // and get the real product title, image, and price from the marketplace page.
+  // Applied to ALL items with a productUrl (not just those missing data).
+  let ogMetaFetched = 0
+  const needsOgMeta = results.filter(item => item.productUrl)
 
-  if (needsImage.length > 0) {
+  if (needsOgMeta.length > 0) {
     const OG_CONCURRENCY = 3
-    for (let i = 0; i < needsImage.length; i += OG_CONCURRENCY) {
-      const batch = needsImage.slice(i, i + OG_CONCURRENCY)
+    for (let i = 0; i < needsOgMeta.length; i += OG_CONCURRENCY) {
+      const batch = needsOgMeta.slice(i, i + OG_CONCURRENCY)
       const ogResults = await Promise.allSettled(
-        batch.map(item => fetchOgImage(item.productUrl))
+        batch.map(item => fetchOgMeta(item.productUrl))
       )
       for (let j = 0; j < ogResults.length; j++) {
         const ogResult = ogResults[j]
         if (ogResult.status === 'fulfilled' && ogResult.value) {
-          batch[j].imageUrl = ogResult.value
-          ogImageFetched++
+          const meta = ogResult.value
+          ogMetaFetched++
+
+          // og:title from the marketplace is the REAL product name (replaces WhatsApp copy)
+          if (meta.title && meta.title.length > 5) {
+            batch[j].title = meta.title
+          }
+
+          // og:image — fill if missing
+          if (meta.image && !batch[j].imageUrl) {
+            batch[j].imageUrl = meta.image
+          }
+
+          // og:price — use as ground truth if we don't have adapter-confirmed price
+          if (meta.price) {
+            const ogPrice = parseFloat(meta.price.replace(/\./g, '').replace(',', '.'))
+            if (ogPrice > 0 && ogPrice < 100000) {
+              // Only override if we don't have an adapter-enriched price
+              if (!batch[j].currentPrice || batch[j].currentPrice === 0) {
+                batch[j].currentPrice = ogPrice
+              }
+            }
+          }
         }
       }
       // Small delay between batches to be respectful
-      if (i + OG_CONCURRENCY < needsImage.length) await sleep(300)
+      if (i + OG_CONCURRENCY < needsOgMeta.length) await sleep(300)
     }
   }
 
@@ -304,7 +409,7 @@ export async function enrichBatch(
     failed: failedCount,
     skipped: skippedCount,
     adapterGroups: byAdapter.size,
-    ogImageFetched,
+    ogMetaFetched,
   })
 
   return { items: results, enriched: enrichedCount, failed: failedCount, skipped: skippedCount }
