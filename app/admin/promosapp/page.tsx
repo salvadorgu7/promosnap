@@ -719,6 +719,43 @@ export default function PromosAppPage() {
             </div>
           </div>
 
+          <div className="card p-5 border-green-500/20 bg-green-500/5">
+            <div className="flex items-start gap-2">
+              <Zap className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary mb-2">
+                  WhatsApp Auto-Ingest (Evolution API)
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-text-primary font-medium">FF_WHATSAPP_AUTO_INGEST</p>
+                      <p className="text-xs text-text-muted">Ativa captura automatica via Evolution API</p>
+                    </div>
+                    <code className="text-xs bg-surface-100 px-2 py-1 rounded">
+                      Definir via env var
+                    </code>
+                  </div>
+                  <p className="text-text-secondary text-xs">
+                    Webhook: <code className="bg-surface-100 px-1.5 py-0.5 rounded text-xs">/api/webhooks/evolution</code>
+                  </p>
+                  <p className="text-text-muted text-xs">
+                    Configurar no Evolution API: URL = seu-dominio/api/webhooks/evolution,
+                    Header apikey = EVOLUTION_WEBHOOK_SECRET, Evento = messages.upsert
+                  </p>
+                  <div className="text-xs text-text-muted mt-1 space-y-0.5">
+                    <p><strong>Env vars necessarias:</strong></p>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      <li>EVOLUTION_WEBHOOK_SECRET — secret para validacao</li>
+                      <li>WHATSAPP_GROUP_JID — JID do grupo (ex: 120363XXX@g.us)</li>
+                      <li>FF_PROMOSAPP_AUTO_PUBLISH=true — para auto-publicar score alto</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="card p-5 border-accent-orange/20 bg-accent-orange/5">
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-accent-orange mt-0.5 flex-shrink-0" />

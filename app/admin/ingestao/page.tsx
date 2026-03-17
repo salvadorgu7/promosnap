@@ -131,7 +131,20 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
   const blocks: string[][] = [];
   let currentBlock: string[] = [];
 
-  for (const line of lines) {
+  for (let rawLine of lines) {
+    // WhatsApp export format: [15:00, 17/03/2026] +55 31 XXXX-XXXX: message text
+    // Detect as block boundary and strip the prefix, keeping the message content
+    const exportMatch = rawLine.match(/^\[\d{1,2}:\d{2},?\s*\d{1,2}\/\d{1,2}\/\d{2,4}\]\s*[^:]+:\s*/);
+    if (exportMatch) {
+      // This is a new message — push current block as boundary
+      if (currentBlock.length > 0) { blocks.push(currentBlock); currentBlock = []; }
+      // Strip the timestamp+sender prefix, keep only the message content
+      rawLine = rawLine.slice(exportMatch[0].length).trim();
+      if (!rawLine) continue; // empty after stripping (system message)
+    }
+
+    const line = rawLine;
+
     // Skip noise lines
     if (/^\+55\s/.test(line)) continue;
     if (/^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(line)) continue; // date lines
@@ -173,7 +186,7 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
     // Marketplace domains: these are the real product URLs we want
     const MARKETPLACE_DOMAINS = ['mercadolivre.com.br', 'mercadolibre.com', 'mercadolibre.com.br', 'produto.mercadolivre.com.br', 'amazon.com.br', 'shopee.com.br', 'magazineluiza.com.br', 'magalu.com', 'americanas.com.br', 'casasbahia.com.br', 'kabum.com.br', 'aliexpress.com'];
     // ML click/redirect domains count as marketplace (they resolve to ML)
-    const ML_REDIRECT_DOMAINS = ['click.mercadolivre.com.br', 'click.mercadolibre.com', 's.click.mercadolibre.com'];
+    const ML_REDIRECT_DOMAINS = ['click.mercadolivre.com.br', 'click.mercadolibre.com', 's.click.mercadolibre.com', 'meli.la'];
 
     const isBlockedUrl = (u: string) => { try { return BLOCKED_DOMAINS.some(d => new URL(u).hostname.includes(d)); } catch { return false; } };
     const isMarketplaceUrl = (u: string) => {
@@ -213,7 +226,18 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
     seenUrls.add(urlKey);
 
     // Extract ALL prices — pick the lowest as current, highest as original
-    const priceMatches = [...fullText.matchAll(/R\$\s*([\d.,]+)/g)];
+    // Multiple patterns to catch PromosApp format ("Por Apenas: 94,00") and standard ("R$ 94,00")
+    const PRICE_PATTERNS = [
+      /R\$\s*([\d.,]+)/g,
+      /(?:por|de|apenas)[:\s]*R?\$?\s*([\d.,]+)/gi,
+      /(\d{1,3}(?:\.\d{3})*,\d{2})/g,
+    ];
+    const priceMatches: RegExpMatchArray[] = [];
+    for (const pattern of PRICE_PATTERNS) {
+      pattern.lastIndex = 0;
+      let m;
+      while ((m = pattern.exec(fullText)) !== null) priceMatches.push(m);
+    }
     if (priceMatches.length === 0) { warnings.push('Sem preço detectado'); continue; }
 
     const prices = priceMatches
@@ -1070,7 +1094,7 @@ export default function AdminIngestãoPage() {
           {whatsappInput.trim() && whatsappProducts.length === 0 && (
             <div className="flex items-center gap-2 text-amber-500 text-xs">
               <AlertTriangle className="h-4 w-4" />
-              Nenhum produto encontrado. Verifique se o texto contem título, preço (R$) e link.
+              Nenhum produto encontrado. Verifique se o texto contem título, preço e link.
             </div>
           )}
 

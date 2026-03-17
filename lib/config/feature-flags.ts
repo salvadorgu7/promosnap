@@ -26,6 +26,8 @@ export interface FeatureFlags {
   promosappEnabled: boolean
   /** Enable automatic publication of high-confidence PromosApp items (requires promosappEnabled) */
   promosappAutoPublish: boolean
+  /** Enable WhatsApp auto-ingest via Evolution API webhook */
+  whatsappAutoIngest: boolean
 }
 
 function envBool(key: string): boolean {
@@ -47,6 +49,7 @@ export function getAllFlags(): FeatureFlags {
     debugMode: envBool('FF_DEBUG_MODE'),
     promosappEnabled: envBool('FF_PROMOSAPP_ENABLED'),
     promosappAutoPublish: envBool('FF_PROMOSAPP_AUTO_PUBLISH'),
+    whatsappAutoIngest: envBool('FF_WHATSAPP_AUTO_INGEST'),
   }
 }
 

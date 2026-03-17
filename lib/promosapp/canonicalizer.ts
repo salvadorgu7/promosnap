@@ -13,7 +13,7 @@ const SHORT_LINK_HOSTS = [
   'bit.ly', 'bitly.com', 't.co', 'tinyurl.com', 'goo.gl',
   'amzn.to', 'a.co',
   's.shopee.com.br', 'shopee.com.br/universal-link',
-  'mercadolivre.com/sec',
+  'mercadolivre.com/sec', 'meli.la',
   'shein.com/universal-link',
   's.aliexpress.com', 'a.aliexpress.com',
   'cutt.ly', 'rebrand.ly', 'ow.ly',
