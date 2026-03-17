@@ -238,8 +238,10 @@ export function detectMarketplace(url: string): { slug: string; name: string; ex
 
 // ── Title Cleaning ────────────────────────────────────────────────────────
 
-// Emoji regex range covering most emoji blocks (used to strip leading/trailing emojis)
-const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u{2702}-\u{27B0}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{231A}\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25AA}\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2614}\u{2615}\u{2648}-\u{2653}\u{267F}\u{2693}\u{26A1}\u{26AA}\u{26AB}\u{26BD}\u{26BE}\u{26C4}\u{26C5}\u{26CE}\u{26D4}\u{26EA}\u{26F2}\u{26F3}\u{26F5}\u{26FA}\u{26FD}\u{2702}\u{2705}\u{2708}-\u{270D}\u{270F}]/u
+// Pre-compiled regexes for stripping leading/trailing emojis + whitespace
+const LEADING_EMOJI_WS = /^[\s\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u{2702}-\u{27B0}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{231A}-\u{23FA}\u{25AA}-\u{25FE}\u{2614}-\u{2653}\u{267F}-\u{26FD}\u{2702}-\u{270F}]+/u
+const TRAILING_EMOJI_WS = /[\s\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u{2702}-\u{27B0}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{231A}-\u{23FA}\u{25AA}-\u{25FE}\u{2614}-\u{2653}\u{267F}-\u{26FD}\u{2702}-\u{270F}]+$/u
+const ALL_EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u{2702}-\u{27B0}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{231A}-\u{23FA}\u{25AA}-\u{25FE}\u{2614}-\u{2653}\u{267F}-\u{26FD}\u{2702}-\u{270F}]/gu
 
 /**
  * WhatsApp promo message prefixes — marketing copy before the product name.
@@ -309,7 +311,7 @@ function cleanPromoTitle(raw: string): string {
   if (shoppingBagMatch && shoppingBagMatch[1].trim().length > 5) {
     title = shoppingBagMatch[1].trim()
     // Clean remaining emojis and trim
-    title = title.replace(EMOJI_RE, ' ').replace(/\s+/g, ' ').trim()
+    title = title.replace(ALL_EMOJI, ' ').replace(/\s+/g, ' ').trim()
     // Remove trailing price patterns
     title = title.replace(/\s+(?:De|Por|Apenas)\s*R?\$.*$/i, '')
     title = title.replace(/R\$\s*[\d.,]+/g, '')
@@ -332,8 +334,8 @@ function cleanPromoTitle(raw: string): string {
   }
 
   // Remove leading/trailing emojis
-  title = title.replace(new RegExp(`^[\\s${EMOJI_RE.source}]+`, 'u'), '')
-  title = title.replace(new RegExp(`[\\s${EMOJI_RE.source}]+$`, 'u'), '')
+  title = title.replace(LEADING_EMOJI_WS, '')
+  title = title.replace(TRAILING_EMOJI_WS, '')
 
   // Remove promo prefixes (iterate until no more match)
   let changed = true
@@ -345,7 +347,7 @@ function cleanPromoTitle(raw: string): string {
       if (title !== before) changed = true
     }
     // Also strip leading emojis after each pass
-    title = title.replace(new RegExp(`^[\\s${EMOJI_RE.source}]+`, 'u'), '')
+    title = title.replace(LEADING_EMOJI_WS, '')
   }
 
   // Remove promo suffixes
@@ -370,7 +372,7 @@ function cleanPromoTitle(raw: string): string {
   if (title.length < 5) {
     // Last resort: use the raw but strip all known junk
     title = raw.replace(/https?:\/\/\S+/g, '').replace(/\*/g, '').replace(/~/g, '')
-    title = title.replace(EMOJI_RE, ' ').replace(/\s+/g, ' ').trim()
+    title = title.replace(ALL_EMOJI, ' ').replace(/\s+/g, ' ').trim()
     title = title.replace(/R\$\s*[\d.,]+/g, '').replace(/\s+/g, ' ').trim()
   }
 
