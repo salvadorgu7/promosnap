@@ -208,9 +208,9 @@ export async function processPromosAppBatch(
 
     for (const { item, score } of scored) {
       const rawDecision = decideAction(score, config)
-      // Gate: auto_approve items without image → downgrade to pending_review
-      const decision = (rawDecision === 'auto_approve' && !item.imageUrl)
-        ? 'pending_review' as const
+      // Gate: items without image → rejected (don't pollute site with placeholders)
+      const decision = (!item.imageUrl)
+        ? 'rejected' as const
         : rawDecision
 
       let candidateId: string | undefined

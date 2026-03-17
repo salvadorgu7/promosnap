@@ -156,6 +156,68 @@ export function mergeEnrichment(result: EnrichmentResult): PromosAppNormalizedIt
   return item
 }
 
+// ── og:image Fallback ─────────────────────────────────────────────────────
+
+/**
+ * Fetch og:image meta tag from a product URL as a universal image fallback.
+ * Works for any marketplace that sets Open Graph meta tags (most do).
+ * Returns null on failure — never throws.
+ */
+async function fetchOgImage(url: string, timeoutMs = 5000): Promise<string | null> {
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; PromoSnap/1.0; +https://promosnap.com.br)',
+        'Accept': 'text/html',
+      },
+      redirect: 'follow',
+    })
+
+    clearTimeout(timer)
+
+    if (!res.ok) return null
+
+    // Read only the first ~50KB to find og:image (no need to download full page)
+    const reader = res.body?.getReader()
+    if (!reader) return null
+
+    let html = ''
+    const decoder = new TextDecoder()
+    const MAX_BYTES = 50_000
+
+    while (html.length < MAX_BYTES) {
+      const { done, value } = await reader.read()
+      if (done) break
+      html += decoder.decode(value, { stream: true })
+      // Early exit if we found the closing </head>
+      if (html.includes('</head>')) break
+    }
+
+    reader.cancel().catch(() => {})
+
+    // Extract og:image — handle both attribute orders
+    const match =
+      html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/) ||
+      html.match(/<meta\s+content="([^"]+)"\s+property="og:image"/) ||
+      html.match(/<meta\s+property='og:image'\s+content='([^']+)'/) ||
+      html.match(/<meta\s+content='([^']+)'\s+property='og:image'/)
+
+    if (match && match[1] && match[1].startsWith('http')) {
+      log.debug('promosapp.og-image-found', { url: url.slice(0, 60), image: match[1].slice(0, 80) })
+      return match[1]
+    }
+
+    return null
+  } catch (err) {
+    log.debug('promosapp.og-image-failed', { url: url.slice(0, 60), error: String(err) })
+    return null
+  }
+}
+
 /**
  * Enrich a batch of items using marketplace adapters.
  * Concurrency-limited to avoid overwhelming APIs.
@@ -213,12 +275,36 @@ export async function enrichBatch(
     }
   }
 
+  // ── Fallback: og:image scraping for items still missing images ──
+  let ogImageFetched = 0
+  const needsImage = results.filter(item => !item.imageUrl && item.productUrl)
+
+  if (needsImage.length > 0) {
+    const OG_CONCURRENCY = 3
+    for (let i = 0; i < needsImage.length; i += OG_CONCURRENCY) {
+      const batch = needsImage.slice(i, i + OG_CONCURRENCY)
+      const ogResults = await Promise.allSettled(
+        batch.map(item => fetchOgImage(item.productUrl))
+      )
+      for (let j = 0; j < ogResults.length; j++) {
+        const ogResult = ogResults[j]
+        if (ogResult.status === 'fulfilled' && ogResult.value) {
+          batch[j].imageUrl = ogResult.value
+          ogImageFetched++
+        }
+      }
+      // Small delay between batches to be respectful
+      if (i + OG_CONCURRENCY < needsImage.length) await sleep(300)
+    }
+  }
+
   log.info('promosapp.enriched-batch', {
     total: items.length,
     enriched: enrichedCount,
     failed: failedCount,
     skipped: skippedCount,
     adapterGroups: byAdapter.size,
+    ogImageFetched,
   })
 
   return { items: results, enriched: enrichedCount, failed: failedCount, skipped: skippedCount }

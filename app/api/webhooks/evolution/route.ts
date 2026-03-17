@@ -45,6 +45,12 @@ interface EvolutionPayload {
         matchedText?: string
         canonicalUrl?: string
       }
+      imageMessage?: {
+        caption?: string
+        url?: string
+        mimetype?: string
+        thumbnailUrl?: string
+      }
     }
     messageTimestamp?: number | string
   }
@@ -71,14 +77,15 @@ function extractEvolutionMessage(
   // Skip messages sent by us (echoed messages)
   if (data.key?.fromMe) return null
 
-  // Extract text content from either format
+  // Extract text content from any message format (text, link preview, image with caption)
   const msg = data.message
   const text =
     msg?.conversation ||
     msg?.extendedTextMessage?.text ||
+    msg?.imageMessage?.caption ||  // Image messages often have promo text as caption
     null
 
-  // Skip media-only messages (no text = nothing to parse)
+  // Skip messages without any text content
   if (!text || text.trim().length === 0) return null
 
   // Extract URL hint from extendedTextMessage if available
