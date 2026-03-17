@@ -25,6 +25,7 @@ const MARKETPLACE_PATTERNS: MarketplacePattern[] = [
       /mercadolivre\.com\.br/i,
       /mercadolibre\.com/i,
       /produto\.mercadolivre/i,
+      /meli\.la/i,  // ML official short links (common in WhatsApp groups)
     ],
     idExtractor: (url) => {
       const match = url.pathname.match(/MLB-?(\d+)/) || url.href.match(/MLB-?(\d+)/)
