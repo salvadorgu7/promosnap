@@ -174,7 +174,46 @@ export async function POST(request: NextRequest) {
 
 // ─── PUT /api/admin/ingest ──────────────────────────────────────────────────
 // Manual entry: accepts pre-formatted product data directly
-// Body: { items: [{ title, price, url, imageUrl?, originalPrice? }] }
+// Body: { items: [{ title, price, url, imageUrl?, originalPrice?, trackerUrl?, needsServerResolve? }] }
+
+// Resolve a tracker/shortened URL by following redirects (server-side only)
+async function resolveTrackerUrl(trackerUrl: string): Promise<string | null> {
+  try {
+    // Follow redirects with HEAD to find the real marketplace URL
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000)
+    const res = await fetch(trackerUrl, {
+      method: 'HEAD',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PromoSnap/1.0)' },
+    })
+    clearTimeout(timeout)
+    const finalUrl = res.url
+    if (finalUrl && finalUrl !== trackerUrl) return finalUrl
+    return null
+  } catch {
+    // Try GET as fallback (some servers don't support HEAD)
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000)
+      const res = await fetch(trackerUrl, {
+        method: 'GET',
+        redirect: 'follow',
+        signal: controller.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PromoSnap/1.0)' },
+      })
+      clearTimeout(timeout)
+      // Read a tiny bit to trigger redirects, then abort
+      res.body?.cancel()
+      const finalUrl = res.url
+      if (finalUrl && finalUrl !== trackerUrl) return finalUrl
+      return null
+    } catch {
+      return null
+    }
+  }
+}
 
 export async function PUT(request: NextRequest) {
   const denied = validateAdmin(request)
@@ -183,7 +222,11 @@ export async function PUT(request: NextRequest) {
   const rl = rateLimit(request, 'public')
   if (!rl.success) return rateLimitResponse(rl)
 
-  let body: { items?: Array<{ title: string; price: number; url: string; imageUrl?: string; originalPrice?: number }> }
+  let body: { items?: Array<{
+    title: string; price: number; url: string; imageUrl?: string;
+    originalPrice?: number; trackerUrl?: string; needsServerResolve?: boolean;
+    category?: string;
+  }> }
   try {
     body = await request.json()
   } catch {
@@ -196,7 +239,7 @@ export async function PUT(request: NextRequest) {
   }
 
   // Known marketplace domains — only these should be used as product/affiliate URLs
-  const MARKETPLACE_HOSTS = ['mercadolivre.com.br', 'mercadolibre.com', 'amazon.com.br', 'shopee.com.br', 'magazineluiza.com.br', 'magalu.com', 'americanas.com.br', 'casasbahia.com.br', 'kabum.com.br', 'aliexpress.com']
+  const MARKETPLACE_HOSTS = ['mercadolivre.com.br', 'mercadolibre.com', 'mercadolibre.com.br', 'amazon.com.br', 'shopee.com.br', 'magazineluiza.com.br', 'magalu.com', 'americanas.com.br', 'casasbahia.com.br', 'kabum.com.br', 'aliexpress.com', 'click.mercadolivre.com.br', 'click.mercadolibre.com', 's.click.mercadolibre.com']
   const isMarketplaceUrl = (u: string) => { try { return MARKETPLACE_HOSTS.some(d => new URL(u).hostname.includes(d)) } catch { return false } }
 
   // Detect source from URL domain
@@ -211,18 +254,83 @@ export async function PUT(request: NextRequest) {
     return 'mercadolivre'
   }
 
-  const items: ImportItem[] = rawItems.map((item, i) => {
-    const mlMatch = item.url?.match(/MLB-?\d+/)
-    const externalId = mlMatch ? mlMatch[0].replace('-', '') : `MANUAL_${Date.now()}_${i}`
+  // ML adapter for title-based search fallback
+  const adapter = new MercadoLivreSourceAdapter()
+  const adapterConfigured = adapter.isConfigured()
 
-    // Only use URL as productUrl if it points to a known marketplace
-    // Competitor/tracker URLs (tempromo, pelando, etc.) are stripped
-    const cleanUrl = item.url && isMarketplaceUrl(item.url) ? item.url : (
-      // If URL is not marketplace but has MLB ID, build a ML URL from the ID
-      mlMatch ? `https://www.mercadolivre.com.br/p/${mlMatch[0].replace('-', '')}` : undefined
-    )
+  const items: ImportItem[] = []
+  const resolveErrors: string[] = []
 
-    return {
+  for (let i = 0; i < rawItems.length; i++) {
+    const item = rawItems[i]
+    let effectiveUrl = item.url
+
+    // === Step 1: Resolve tracker URLs server-side ===
+    if (item.needsServerResolve && item.trackerUrl) {
+      const resolved = await resolveTrackerUrl(item.trackerUrl)
+      if (resolved && isMarketplaceUrl(resolved)) {
+        effectiveUrl = resolved
+      } else if (resolved) {
+        // Resolved but not to marketplace — check for MLB ID
+        const mlbInResolved = resolved.match(/MLB-?\d{6,15}/i)
+        if (mlbInResolved) {
+          effectiveUrl = `https://www.mercadolivre.com.br/p/${mlbInResolved[0].replace('-', '')}`
+        }
+      }
+    }
+
+    // === Step 2: Extract MLB ID from URL ===
+    const mlMatch = effectiveUrl?.match(/MLB-?\d+/)
+    let externalId = mlMatch ? mlMatch[0].replace('-', '') : ''
+
+    // Also check title for MLB ID
+    if (!externalId) {
+      const mlbInTitle = item.title?.match(/MLB-?\d{6,15}/i)
+      if (mlbInTitle) externalId = mlbInTitle[0].replace('-', '')
+    }
+
+    // === Step 3: Build clean marketplace URL ===
+    let cleanUrl: string | undefined
+    if (effectiveUrl && isMarketplaceUrl(effectiveUrl)) {
+      cleanUrl = effectiveUrl
+    } else if (externalId) {
+      cleanUrl = `https://www.mercadolivre.com.br/p/${externalId}`
+    }
+
+    // === Step 4: Title-based search fallback via ML API ===
+    if (!cleanUrl && !externalId && adapterConfigured && item.title) {
+      try {
+        const searchResults = await adapter.search(item.title, { limit: 1 })
+        if (searchResults.length > 0) {
+          const found = searchResults[0]
+          // Use the API result — it has proper URL, ID, and metadata
+          items.push({
+            externalId: found.externalId,
+            title: found.title,
+            currentPrice: item.price || found.currentPrice,
+            originalPrice: item.originalPrice || found.originalPrice,
+            productUrl: found.productUrl,
+            imageUrl: found.imageUrl || item.imageUrl,
+            isFreeShipping: found.isFreeShipping,
+            availability: found.availability === 'in_stock' ? 'in_stock'
+              : found.availability === 'out_of_stock' ? 'out_of_stock'
+              : 'unknown',
+            sourceSlug: 'mercadolivre',
+            discoverySource: 'whatsapp_title_search',
+          })
+          continue // skip normal processing — used API result
+        } else {
+          resolveErrors.push(`"${item.title.slice(0, 40)}": sem resultado na busca ML`)
+        }
+      } catch (err: any) {
+        resolveErrors.push(`"${item.title.slice(0, 40)}": busca ML falhou — ${err.message || 'erro'}`)
+      }
+    }
+
+    // === Step 5: Build import item ===
+    if (!externalId) externalId = `MANUAL_${Date.now()}_${i}`
+
+    items.push({
       externalId,
       title: item.title,
       currentPrice: item.price,
@@ -231,9 +339,17 @@ export async function PUT(request: NextRequest) {
       imageUrl: item.imageUrl,
       availability: 'in_stock' as const,
       sourceSlug: cleanUrl ? detectSource(cleanUrl) : 'mercadolivre',
-      discoverySource: 'manual_entry',
-    }
-  })
+      discoverySource: item.needsServerResolve ? 'whatsapp_resolved' : 'manual_entry',
+    })
+  }
+
+  if (items.length === 0) {
+    return NextResponse.json({
+      error: 'Nenhum item pôde ser resolvido para URLs de marketplace',
+      hint: 'Os links de tracker não puderam ser resolvidos para URLs do Mercado Livre. Tente colar URLs diretas do ML.',
+      errors: resolveErrors,
+    }, { status: 422 })
+  }
 
   try {
     const result = await runImportPipeline(items)
@@ -247,6 +363,7 @@ export async function PUT(request: NextRequest) {
       durationMs: result.durationMs,
       ...pipelineStats(result),
       importedItems: result.items,
+      ...(resolveErrors.length > 0 && { resolveErrors }),
     })
   } catch (err) {
     return NextResponse.json({ error: 'Erro interno ao processar ingestao manual' }, { status: 500 })

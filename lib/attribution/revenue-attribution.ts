@@ -61,15 +61,15 @@ export interface ChannelROI {
 
 // ─── Revenue by Attribution ────────────────────────────────────────────────
 
-export function getRevenueByAttribution(days = 7): {
+export async function getRevenueByAttribution(days = 7): Promise<{
   bySource: RevenueAttribution[];
   byPageType: RevenueAttribution[];
   byChannel: RevenueAttribution[];
   byCampaign: RevenueAttribution[];
   byBanner: RevenueAttribution[];
   totalEstimatedRevenue: number;
-} {
-  const summary = getAttributionSummary(days);
+}> {
+  const summary = await getAttributionSummary(days);
 
   const bySource: RevenueAttribution[] = Object.entries(summary.bySource).map(
     ([key, count]) => ({
@@ -134,8 +134,8 @@ export function getRevenueByAttribution(days = 7): {
 
 // ─── Top Performing Pages ──────────────────────────────────────────────────
 
-export function getTopPerformingPages(limit = 10): TopPerformingPage[] {
-  const entries = getAllAttributionEntries(30);
+export async function getTopPerformingPages(limit = 10): Promise<TopPerformingPage[]> {
+  const entries = await getAllAttributionEntries(30);
   const byPageType: Record<string, number> = {};
 
   for (const entry of entries) {
@@ -159,7 +159,7 @@ export function getTopPerformingPages(limit = 10): TopPerformingPage[] {
 // ─── Channel ROI ────────────────────────────────────────────────────────────
 
 export async function getChannelROI(): Promise<ChannelROI[]> {
-  const entries = getAllAttributionEntries(30);
+  const entries = await getAllAttributionEntries(30);
   const channels: Record<string, number> = {};
 
   for (const entry of entries) {

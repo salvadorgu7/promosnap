@@ -93,7 +93,7 @@ async function measureBannerOutcome(exec: ExecutionRecord): Promise<ClosedLoopEn
     }
 
     // Check attribution data for clickouts from this banner
-    const attributionEntries = getAllAttributionEntries(30);
+    const attributionEntries = await getAllAttributionEntries(30);
     const bannerClickouts = attributionEntries.filter(
       (e) => e.context.bannerId === bannerId
     ).length;

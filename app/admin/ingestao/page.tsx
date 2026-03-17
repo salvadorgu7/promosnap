@@ -24,6 +24,7 @@ interface IngestResult {
   durationMs?: number;
   fetchErrors?: string[];
   searchErrors?: string[];
+  resolveErrors?: string[];
   invalidIds?: string[];
   errors?: string[];
   categories?: string[];
@@ -75,6 +76,8 @@ interface ParsedWhatsAppProduct {
   price: number;
   originalPrice?: number;
   url: string;
+  trackerUrl?: string; // original tracker URL when url was resolved/built
+  needsServerResolve?: boolean; // true when URL is a tracker that needs server-side expansion
   coupon?: string;
   category?: string;
   brand?: string;
@@ -166,21 +169,43 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
     if (allUrls.length === 0) continue;
 
     // Blocked domains: competitor trackers that should never be used as product URLs
-    const BLOCKED_DOMAINS = ['tempromo.app.br', 'tempromo.com.br', 'pelando.com.br', 'promobit.com.br', 'gatry.com', 'ctt.cx', 'bit.ly', 'cutt.ly', 'is.gd', 't.co'];
+    const BLOCKED_DOMAINS = ['tempromo.app.br', 'tempromo.com.br', 'pelando.com.br', 'promobit.com.br', 'gatry.com', 'ctt.cx', 'bit.ly', 'cutt.ly', 'is.gd', 't.co', 'tinyurl.com', 'encurtador.com.br', 'go.hotmart.com'];
     // Marketplace domains: these are the real product URLs we want
-    const MARKETPLACE_DOMAINS = ['mercadolivre.com.br', 'mercadolibre.com', 'amazon.com.br', 'shopee.com.br', 'magazineluiza.com.br', 'magalu.com', 'americanas.com.br', 'casasbahia.com.br', 'kabum.com.br', 'aliexpress.com'];
+    const MARKETPLACE_DOMAINS = ['mercadolivre.com.br', 'mercadolibre.com', 'mercadolibre.com.br', 'produto.mercadolivre.com.br', 'amazon.com.br', 'shopee.com.br', 'magazineluiza.com.br', 'magalu.com', 'americanas.com.br', 'casasbahia.com.br', 'kabum.com.br', 'aliexpress.com'];
+    // ML click/redirect domains count as marketplace (they resolve to ML)
+    const ML_REDIRECT_DOMAINS = ['click.mercadolivre.com.br', 'click.mercadolibre.com', 's.click.mercadolibre.com'];
 
     const isBlockedUrl = (u: string) => { try { return BLOCKED_DOMAINS.some(d => new URL(u).hostname.includes(d)); } catch { return false; } };
-    const isMarketplaceUrl = (u: string) => { try { return MARKETPLACE_DOMAINS.some(d => new URL(u).hostname.includes(d)); } catch { return false; } };
+    const isMarketplaceUrl = (u: string) => {
+      try {
+        const host = new URL(u).hostname;
+        return MARKETPLACE_DOMAINS.some(d => host.includes(d)) || ML_REDIRECT_DOMAINS.some(d => host.includes(d));
+      } catch { return false; }
+    };
     const hasMLBId = (u: string) => /MLB-?\d+/.test(u);
 
-    // Priority: 1) ML URL with MLB ID, 2) any marketplace URL, 3) URL with MLB ID anywhere, 4) first non-blocked URL
-    const url =
+    // Also search for MLB ID in the message text itself (not just URLs)
+    const mlbInText = fullText.match(/MLB-?\d{6,15}/i);
+
+    // Priority: 1) ML URL with MLB ID, 2) any marketplace URL, 3) URL with MLB ID, 4) non-blocked URL, 5) any URL
+    let url =
       allUrls.find(u => isMarketplaceUrl(u) && hasMLBId(u)) ||
       allUrls.find(u => isMarketplaceUrl(u)) ||
       allUrls.find(u => hasMLBId(u)) ||
       allUrls.find(u => !isBlockedUrl(u)) ||
       allUrls[0];
+
+    // If only tracker URL found, try to build ML URL from MLB ID in text
+    let needsServerResolve = false;
+    if (!isMarketplaceUrl(url) && mlbInText) {
+      const mlbId = mlbInText[0].replace('-', '');
+      url = `https://www.mercadolivre.com.br/p/${mlbId}`;
+      warnings.push('URL construída a partir do MLB ID no texto');
+    } else if (!isMarketplaceUrl(url)) {
+      // Mark that this URL needs server-side resolution
+      needsServerResolve = true;
+      warnings.push('URL de tracker — será resolvida no servidor');
+    }
 
     // Dedup by URL
     const urlKey = url.replace(/[?#].*$/, '').replace(/\/+$/, '');
@@ -270,7 +295,12 @@ function parseWhatsAppText(text: string): ParsedWhatsAppProduct[] {
     if (!brand) warnings.push('Marca não detectada');
     if (!category) warnings.push('Categoria não detectada');
 
-    products.push({ title, price, originalPrice, url, coupon, category, brand, confidence, originalText: fullText.slice(0, 300), warnings });
+    products.push({
+      title, price, originalPrice, url, coupon, category, brand, confidence,
+      originalText: fullText.slice(0, 300), warnings,
+      trackerUrl: needsServerResolve ? allUrls[0] : undefined,
+      needsServerResolve,
+    });
   }
 
   return products;
@@ -534,6 +564,8 @@ export default function AdminIngestãoPage() {
             url: p.url,
             originalPrice: p.originalPrice || undefined,
             category: p.category || undefined,
+            trackerUrl: p.trackerUrl || undefined,
+            needsServerResolve: p.needsServerResolve || undefined,
           })),
         }),
       });
@@ -1022,7 +1054,12 @@ export default function AdminIngestãoPage() {
                         ))}
                       </div>
 
-                      <p className="text-xs text-text-muted mt-1 truncate">{product.url}</p>
+                      <p className="text-xs text-text-muted mt-1 truncate">
+                        {product.needsServerResolve && (
+                          <span className="text-[10px] font-medium text-purple-600 mr-1">🔗 Resolver →</span>
+                        )}
+                        {product.url}
+                      </p>
                     </div>
                   </label>
                 ))}
@@ -1544,11 +1581,11 @@ export default function AdminIngestãoPage() {
             </div>
           )}
 
-          {(result.fetchErrors || result.searchErrors) && (
+          {(result.fetchErrors || result.searchErrors || result.resolveErrors) && (
             <div>
               <p className="text-xs text-text-muted font-medium mb-1">Erros:</p>
               <div className="space-y-0.5">
-                {[...(result.fetchErrors || []), ...(result.searchErrors || [])].map((e, i) => (
+                {[...(result.fetchErrors || []), ...(result.searchErrors || []), ...(result.resolveErrors || [])].map((e, i) => (
                   <p key={i} className="text-xs text-red-500 font-mono">{e}</p>
                 ))}
               </div>
