@@ -149,6 +149,27 @@ export default async function CategoriaPage({
         }}
       />
 
+      {/* ItemList JSON-LD for Google rich results */}
+      {products.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              name: `Melhores Ofertas de ${name}`,
+              numberOfItems: total,
+              itemListElement: products.slice(0, 10).map((p, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                name: p.name,
+                url: `https://www.promosnap.com.br/produto/${p.slug}`,
+              })),
+            }),
+          }}
+        />
+      )}
+
       <Breadcrumb
         items={[
           { label: "Home", href: "/" },

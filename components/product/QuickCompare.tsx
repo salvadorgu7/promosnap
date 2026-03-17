@@ -63,7 +63,7 @@ export default function QuickCompare({ products, title = "Compare em 10 segundos
                 <a
                   href={`/api/clickout/${p.bestOffer.offerId}?page=compare&origin=quick-compare`}
                   target="_blank"
-                  rel="noopener noreferrer nofollow"
+                  rel="noopener noreferrer nofollow sponsored"
                   className="mt-2 flex items-center justify-center gap-1 w-full py-1.5 rounded-lg text-[11px] font-semibold btn-primary"
                 >
                   Ver Oferta <ExternalLink className="h-2.5 w-2.5" />

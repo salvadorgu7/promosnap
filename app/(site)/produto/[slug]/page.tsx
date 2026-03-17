@@ -296,7 +296,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} />
 
-      {/* JSON-LD */}
+      {/* JSON-LD: Product */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -311,10 +311,55 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           ),
         }}
       />
+      {/* JSON-LD: Breadcrumb */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbSchema(breadcrumbSchemaItems)),
+        }}
+      />
+      {/* JSON-LD: FAQ — rich snippets in Google */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              {
+                "@type": "Question",
+                name: `Qual o menor preço de ${product.name}?`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: bestOffer
+                    ? `O menor preço encontrado para ${product.name} é ${formatPrice(bestPrice)} em ${bestOffer.sourceName}.${priceStats?.allTimeMin ? ` O menor preço histórico registrado foi ${formatPrice(priceStats.allTimeMin)}.` : ""}`
+                    : `Estamos monitorando os preços de ${product.name} em diversas lojas.`,
+                },
+              },
+              {
+                "@type": "Question",
+                name: `Vale a pena comprar ${product.name} agora?`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: priceStats?.trend === "down"
+                    ? `Sim, o preço de ${product.name} está em tendência de queda e abaixo da média dos últimos 30 dias.`
+                    : priceStats?.trend === "up"
+                    ? `O preço de ${product.name} está em alta. Considere ativar um alerta de preço para ser notificado quando baixar.`
+                    : `${product.name} está com preço estável. Compare ofertas em ${allOffers.length} loja${allOffers.length !== 1 ? "s" : ""} para encontrar a melhor opção.`,
+                },
+              },
+              ...(allOffers.length > 1
+                ? [{
+                    "@type": "Question",
+                    name: `Onde comprar ${product.name} mais barato?`,
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: `Comparamos preços de ${product.name} em ${allOffers.length} ofertas. O menor preço é ${formatPrice(bestPrice)} em ${bestOffer?.sourceName || "diversas lojas"}.`,
+                    },
+                  }]
+                : []),
+            ],
+          }),
         }}
       />
 
@@ -545,7 +590,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                   <a
                     href={`/api/clickout/${bestOffer.id}?page=product`}
                     target="_blank"
-                    rel="noopener noreferrer nofollow"
+                    rel="noopener noreferrer nofollow sponsored"
                     className="btn-primary flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold w-full"
                   >
                     <ExternalLink className="h-5 w-5" /> Ver Oferta
@@ -741,7 +786,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                       <a
                         href={`/api/clickout/${offer.id}?page=product`}
                         target="_blank"
-                        rel="noopener noreferrer nofollow"
+                        rel="noopener noreferrer nofollow sponsored"
                         className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                           i === 0 ? "btn-primary" : "btn-secondary"
                         }`}

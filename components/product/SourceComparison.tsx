@@ -90,7 +90,7 @@ export default function SourceComparison({ analysis, offers, productSlug }: Sour
               <a
                 href={`/api/clickout/${offer.offerId}?page=produto&rail=source_comparison`}
                 target="_blank"
-                rel="noopener noreferrer nofollow"
+                rel="noopener noreferrer nofollow sponsored"
                 className="flex-shrink-0 p-2 rounded-lg bg-brand-500 text-white hover:bg-brand-600 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />

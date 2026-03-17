@@ -42,7 +42,7 @@ export default function AmazonPromo() {
               <a
                 href="https://www.amazon.com.br/?tag=promosnap-20"
                 target="_blank"
-                rel="noopener noreferrer nofollow"
+                rel="noopener noreferrer nofollow sponsored"
                 className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#FF9900] text-white text-sm font-semibold hover:bg-[#E8890A] transition-colors whitespace-nowrap flex-1 sm:flex-initial justify-center"
               >
                 <ExternalLink className="w-3.5 h-3.5" />

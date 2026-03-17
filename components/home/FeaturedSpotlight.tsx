@@ -154,7 +154,7 @@ export default function FeaturedSpotlight({
             <a
               href={ctaUrl}
               target="_blank"
-              rel="noopener noreferrer nofollow"
+              rel="noopener noreferrer nofollow sponsored"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-accent-blue to-brand-500 text-white font-bold text-sm shadow-lg shadow-accent-blue/30 hover:shadow-xl hover:shadow-accent-blue/40 hover:from-accent-blue/90 hover:to-brand-600 active:scale-[0.97] transition-all duration-200"
             >
               Ver oferta <ExternalLink className="w-4 h-4" />

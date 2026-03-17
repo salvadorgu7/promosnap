@@ -74,7 +74,7 @@ export default function CommercialCTA({
       <a
         href={clickoutUrl}
         target="_blank"
-        rel="noopener noreferrer nofollow"
+        rel="noopener noreferrer nofollow sponsored"
         className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg bg-accent-green text-white text-sm font-bold hover:bg-green-600 transition-colors shadow-sm"
       >
         <ExternalLink className="w-4 h-4" />

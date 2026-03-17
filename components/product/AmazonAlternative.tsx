@@ -26,7 +26,7 @@ export default function AmazonAlternative({ productName, category }: AmazonAlter
         <a
           href={amazonUrl}
           target="_blank"
-          rel="noopener noreferrer nofollow"
+          rel="noopener noreferrer nofollow sponsored"
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FF9900] text-white text-xs font-semibold hover:bg-[#E8890A] transition-colors flex-shrink-0"
         >
           <ExternalLink className="w-3 h-3" />

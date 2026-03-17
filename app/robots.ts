@@ -7,7 +7,25 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/admin-login", "/api/admin", "/api/cron"],
+        disallow: [
+          "/admin",
+          "/admin-login",
+          "/api/admin",
+          "/api/cron",
+          "/api/clickout",
+          "/api/system",
+          "/api/webhooks",
+          "/minha-conta",
+          "/favoritos",
+        ],
+      },
+      {
+        userAgent: "GPTBot",
+        disallow: ["/"],
+      },
+      {
+        userAgent: "CCBot",
+        disallow: ["/"],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

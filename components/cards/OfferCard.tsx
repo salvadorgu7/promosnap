@@ -194,7 +194,7 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
             <a
               href={ctaUrl}
               target="_blank"
-              rel="noopener noreferrer nofollow"
+              rel="noopener noreferrer nofollow sponsored"
               aria-label={`${ctaLabel} - ${product.name}`}
               onClick={() => analytics.offerClick({
                 offerId: bestOffer.offerId || "",

@@ -166,7 +166,7 @@ export default function DealOfTheDay({ product, extraDeals = [] }: Props) {
                 <a
                   href={`/api/clickout/${deal.offerId}?page=home&origin=deal-of-day`}
                   target="_blank"
-                  rel="noopener noreferrer nofollow"
+                  rel="noopener noreferrer nofollow sponsored"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent-yellow text-surface-900 font-display font-bold text-sm hover:bg-yellow-300 transition-colors shadow-lg"
                 >
                   Ver Oferta

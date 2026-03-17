@@ -197,7 +197,7 @@ export default function OfferCarousel({ offers }: OfferCarouselProps) {
                 <a
                   href={ctaUrl}
                   target="_blank"
-                  rel="noopener noreferrer nofollow"
+                  rel="noopener noreferrer nofollow sponsored"
                   className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-accent-blue to-brand-500 text-white font-bold text-sm shadow-lg shadow-accent-blue/25 hover:shadow-xl hover:shadow-accent-blue/30 hover:from-accent-blue/90 hover:to-brand-600 active:scale-[0.97] transition-all duration-200"
                 >
                   Ver oferta <ExternalLink className="w-4 h-4" />

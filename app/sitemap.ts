@@ -35,6 +35,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${APP_URL}/lojas`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${APP_URL}/trending`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${APP_URL}/preco-hoje`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
+    { url: `${APP_URL}/canais`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
+    { url: `${APP_URL}/radar`, lastModified: now, changeFrequency: "daily", priority: 0.6 },
   ];
 
   // Dynamic pages from DB (graceful fallback if DB unavailable)

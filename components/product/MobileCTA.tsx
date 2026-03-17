@@ -34,7 +34,7 @@ export default function MobileCTA({ price, affiliateUrl, sourceName, offerId }: 
         <a
           href={offerId ? `/api/clickout/${offerId}?page=product&origin=mobile-cta` : affiliateUrl}
           target="_blank"
-          rel="noopener noreferrer nofollow"
+          rel="noopener noreferrer nofollow sponsored"
           className="btn-primary flex items-center gap-2 px-6 py-3 text-sm font-bold whitespace-nowrap rounded-xl min-h-[44px] shadow-md"
         >
           Ver Oferta

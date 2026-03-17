@@ -119,7 +119,7 @@ export default function MobileProductActions({
         <a
           href={clickoutUrl}
           target="_blank"
-          rel="noopener noreferrer nofollow"
+          rel="noopener noreferrer nofollow sponsored"
           className={`flex items-center gap-1.5 px-5 py-3 rounded-xl text-white text-sm font-bold transition-all shadow-lg ${
             isGreatDeal
               ? "bg-gradient-to-r from-accent-green to-green-600 shadow-green-200"

@@ -226,7 +226,7 @@ export default function CanonicalView({
                         <a
                           href={`/api/clickout/${offer.id}?page=product&origin=canonical&rail=canonical-view`}
                           target="_blank"
-                          rel="noopener noreferrer nofollow"
+                          rel="noopener noreferrer nofollow sponsored"
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold btn-secondary"
                         >
                           <ExternalLink className="h-3 w-3" /> Ver

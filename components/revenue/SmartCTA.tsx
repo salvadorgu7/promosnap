@@ -46,7 +46,7 @@ export default function SmartCTA({
     <a
       href={href}
       target="_blank"
-      rel="noopener noreferrer nofollow"
+      rel="noopener noreferrer nofollow sponsored"
       className={`${baseClasses} ${variantClasses}`}
     >
       <span>{cta.text}</span>
