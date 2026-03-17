@@ -3,6 +3,7 @@
 // ============================================================================
 
 import { logger } from '@/lib/logger'
+import { detectMarketplace } from './parser'
 import type { PromosAppNormalizedItem } from './types'
 
 const log = logger.child({ module: 'promosapp-canonicalizer' })
@@ -10,13 +11,23 @@ const log = logger.child({ module: 'promosapp-canonicalizer' })
 // ── Short Link Detection ───────────────────────────────────────────────────
 
 const SHORT_LINK_HOSTS = [
+  // Generic shorteners
   'bit.ly', 'bitly.com', 't.co', 'tinyurl.com', 'goo.gl',
+  'cutt.ly', 'rebrand.ly', 'ow.ly', 'is.gd', 'v.gd',
+  'short.io', 'bl.ink', 'soo.gd', 'clck.ru', 'rb.gy',
+  'go.ly', 'ouo.io', 'linktr.ee',
+  // Affiliate/promo shorteners common in Brazilian WhatsApp groups
+  'tidd.ly', 'magalu.lu', 'app.magalu.com',
+  // Amazon
   'amzn.to', 'a.co',
+  // Shopee
   's.shopee.com.br', 'shopee.com.br/universal-link',
+  // Mercado Livre
   'mercadolivre.com/sec', 'meli.la',
+  // Shein
   'shein.com/universal-link', 'shein.top', 'dl.shein.com',
-  's.aliexpress.com', 'a.aliexpress.com',
-  'cutt.ly', 'rebrand.ly', 'ow.ly',
+  // AliExpress
+  's.aliexpress.com', 'a.aliexpress.com', 's.click.aliexpress.com',
 ]
 
 function isShortLink(url: string): boolean {
@@ -149,22 +160,39 @@ export async function canonicalizeItems(
     const expandedUrl = expandedUrls.get(item.productUrl) || item.productUrl
     const canonicalUrl = buildCanonicalUrl(expandedUrl)
 
-    // Re-detect marketplace if URL was expanded
+    // Re-detect marketplace if URL was expanded and source is unknown
     let updatedItem = { ...item }
     if (expandedUrl !== item.productUrl) {
       updatedItem.productUrl = expandedUrl
+
+      // Re-detect marketplace from expanded URL (e.g., bit.ly → shopee.com.br)
+      if (item.sourceSlug === 'unknown') {
+        const mp = detectMarketplace(expandedUrl)
+        if (mp) {
+          updatedItem.sourceSlug = mp.slug
+          updatedItem.marketplace = mp.name
+          if (mp.externalId) {
+            updatedItem.externalId = mp.externalId
+            updatedItem.dedupeKey = `${mp.slug}:${mp.externalId}`
+          }
+          log.info('promosapp.source-redetected', {
+            from: 'unknown',
+            to: mp.slug,
+            url: expandedUrl.slice(0, 80),
+          })
+        }
+      }
     }
 
     updatedItem.canonicalUrl = canonicalUrl
 
     // Update dedupe key if we got a better external ID from expanded URL
     if (item.dedupeKey.startsWith('hash:') && expandedUrl !== item.productUrl) {
-      // Try re-extracting external ID from expanded URL
-      // (the parser already handles this — we just note it was expanded)
-      updatedItem.parseErrors = [
-        ...item.parseErrors,
-        ...(expandedUrl !== item.productUrl ? [] : []),
-      ]
+      const mp = detectMarketplace(expandedUrl)
+      if (mp?.externalId) {
+        updatedItem.externalId = mp.externalId
+        updatedItem.dedupeKey = `${mp.slug}:${mp.externalId}`
+      }
     }
 
     results.push(updatedItem)

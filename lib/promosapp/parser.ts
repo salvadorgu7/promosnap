@@ -218,7 +218,7 @@ export function computeMessageHash(text: string): string {
 
 // ── Marketplace Detection ──────────────────────────────────────────────────
 
-function detectMarketplace(url: string): { slug: string; name: string; externalId: string | null } | null {
+export function detectMarketplace(url: string): { slug: string; name: string; externalId: string | null } | null {
   let parsed: URL
   try {
     parsed = new URL(url)
@@ -238,22 +238,61 @@ function detectMarketplace(url: string): { slug: string; name: string; externalI
 
 // ── Title Cleaning ────────────────────────────────────────────────────────
 
+// Emoji regex range covering most emoji blocks (used to strip leading/trailing emojis)
+const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u{2702}-\u{27B0}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{231A}\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25AA}\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2614}\u{2615}\u{2648}-\u{2653}\u{267F}\u{2693}\u{26A1}\u{26AA}\u{26AB}\u{26BD}\u{26BE}\u{26C4}\u{26C5}\u{26CE}\u{26D4}\u{26EA}\u{26F2}\u{26F3}\u{26F5}\u{26FA}\u{26FD}\u{2702}\u{2705}\u{2708}-\u{270D}\u{270F}]/u
+
+/**
+ * WhatsApp promo message prefixes — marketing copy before the product name.
+ * These appear at the start of WhatsApp group messages, often in *bold*.
+ * Ordered from most specific to least to avoid partial matches.
+ */
 const PROMO_PREFIX_PATTERNS = [
-  /^\*?(?:OFERTA|MEGA\s*OFERTA|SUPER\s*OFERTA|PROMO[ÇC][ÃA]O|PROMO)\b[^a-záàâãéèêíïóôõöúç]*/i,
-  /^\*?(?:SUA\s+CHANCE|MENOR\s+PRE[ÇC][OÔ]*O*|IMPERD[ÍI]VEL|FLASH\s+SALE|BAIXOU)\b[^a-záàâãéèêíïóôõöúç]*/i,
-  /^\*?(?:OFERTA\s+DA\s+SH[OÔ]|CORRE\s+QUE|[ÚU]LTIMA\s+CHANCE|REL[ÂA]MPAGO)\b[^a-záàâãéèêíïóôõöúç]*/i,
-  /^\*?(?:PAGAR\s+BARATO|BEST\s+SELLER|MAIS\s+VENDIDO|TOP\s+OFERTA)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  // Multi-word expressions (must come first)
+  /^\*?(?:SUA\s+CHANCE\s+DE\s+PAGAR\s+BARATO)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:MENOR\s+PRE[ÇC][OÔ]*O*\s+DA\s+SH[OÔ])\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:OFERTA\s+DA\s+SH[OÔ])\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:EU\s+SEI\s+QUE\s+VOC[ÊE]\s+PRECISA)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:GENTE\s+OLHA\s+ISSO+)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:PERDE\s+N[ÃA]O+)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:CAIU\s+DEMAIS+)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:BAIXOU\s+DEMAIS+)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:SUA\s+CHANCE)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:CORRE\s+QUE)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:[ÚU]LTIMA\s+CHANCE)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:PAGAR\s+BARATO)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:BEST\s+SELLER|MAIS\s+VENDIDO|TOP\s+OFERTA)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:FLASH\s+SALE)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  // Single-word expressions
+  /^\*?(?:MEGA\s*OFERTA|SUPER\s*OFERTA|OFERTA|PROMO[ÇC][ÃA]O|PROMO)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:MENOR\s+PRE[ÇC][OÔ]*O*)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:IMPERD[ÍI]VEL|REL[ÂA]MPAGO)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:BAIXOU|BAIXO+U+)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:DA\s+SH[OÔ])\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:DEMAIS+)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  // Informal hooks: "Casaco baratinho!", "200ML!", "Preção nesse X!", "Custa o dobro..."
+  /^\*?(?:Cada\s+um\s+por)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:Custa\s+o\s+dobro)\b[^a-záàâãéèêíïóôõöúç]*/i,
+  /^\*?(?:Pre[çc][ãa]o\s+nesse?)\b[^a-záàâãéèêíïóôõöúç]*/i,
 ]
 
 const PROMO_SUFFIX_PATTERNS = [
   /\s*[-–—]\s*(?:Tem\s+Prom[oô]|Promo[çc][ãa]o|PromosApp|Link\s+na\s+Bio).*$/i,
-  /\s*(?:Compre\s+aqui|Clique\s+aqui|Aproveite|Garanta\s+(?:j[áa]|o\s+seu)|Corre|Confira)[\s:!]*$/i,
+  /\s*(?:Compre\s+aqui|Clique\s+aqui|Aproveite|Garanta\s+(?:j[áa]|o\s+seu)|Corre|Confira)[\s:!]*.*$/i,
   /\s*(?:Use\s+(?:o\s+)?cup[oã]m|Frete\s+gr[áa]tis).*$/i,
+  /\s*(?:Promo[çc][ãa]o\s+sujeita).*$/i,
 ]
 
 /**
  * Clean marketing copy from a raw title, leaving only the product name.
  * Handles WhatsApp-style promo messages with bold markers, emojis, and CTAs.
+ *
+ * WhatsApp promo message typical structure:
+ *   *MARKETING COPY EMOJIS* 🛍 Product Name Here Details
+ *   De ~R$ 999,99~
+ *   💸 Por *R$ 799,99*
+ *   🛒 Compre aqui: https://...
+ *
+ * The product name is AFTER the 🛍 emoji on the first content line.
  */
 function cleanPromoTitle(raw: string): string {
   let title = raw
@@ -261,29 +300,52 @@ function cleanPromoTitle(raw: string): string {
   // Remove URLs first
   title = title.replace(/https?:\/\/\S+/g, '')
 
-  // Remove WhatsApp bold markers
+  // Remove WhatsApp bold markers and strikethrough markers
   title = title.replace(/\*/g, '')
+  title = title.replace(/~/g, '')
 
-  // Take only the first meaningful line (product name is usually first)
+  // Strategy 1: Extract product name after 🛍 emoji (most reliable for WhatsApp promos)
+  const shoppingBagMatch = title.match(/🛍\s*(.+?)(?:\s*De\s+[_~]|$)/)
+  if (shoppingBagMatch && shoppingBagMatch[1].trim().length > 5) {
+    title = shoppingBagMatch[1].trim()
+    // Clean remaining emojis and trim
+    title = title.replace(EMOJI_RE, ' ').replace(/\s+/g, ' ').trim()
+    // Remove trailing price patterns
+    title = title.replace(/\s+(?:De|Por|Apenas)\s*R?\$.*$/i, '')
+    title = title.replace(/R\$\s*[\d.,]+/g, '')
+    title = title.replace(/\s+/g, ' ').trim()
+    title = title.replace(/^[\s\-–—:,;!.•·]+/, '').replace(/[\s\-–—:,;!.•·]+$/, '')
+    if (title.length > 5) return title
+  }
+
+  // Strategy 2: Multi-line message — find the product name line
   const lines = title.split('\n').map(l => l.trim()).filter(l => l.length > 3)
   if (lines.length > 1) {
-    // Skip lines that are purely price/CTA, pick first product-like line
+    // Skip lines that are: price lines, CTAs, promo copy, warnings
     const productLine = lines.find(l =>
-      !(/^(?:De|Por|Apenas|R\$|Compre|Clique|Use|Frete|Cupom)/i.test(l)) &&
-      !(/^\d{1,3}(?:\.\d{3})*,\d{2}$/.test(l))
+      !(/^(?:De|Por|Apenas|R\$|Compre|Clique|Use|Frete|Cupom|Promoção)/i.test(l)) &&
+      !(/^\d{1,3}(?:\.\d{3})*,\d{2}$/.test(l)) &&
+      !(/^⚠/.test(l)) &&
+      l.length > 10 // Product names are usually >10 chars
     )
     if (productLine) title = productLine
   }
 
-  // Remove leading emojis and special chars
-  title = title.replace(/^[\s\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}✨💖🔥🐾🎁🚨⚡💥🛒💰🏷️☀️⭐🌟💫❤️💜💙💚💛🧡🤍🖤🤎🎉🎊🎯✅❌⚠️📦📱💻🏠👗👟👜🧴🪥🎮📺🔊🎧⌚️🕶️💎👑🏆🥇🥈🥉📌📣📢🔔]+/u, '')
+  // Remove leading/trailing emojis
+  title = title.replace(new RegExp(`^[\\s${EMOJI_RE.source}]+`, 'u'), '')
+  title = title.replace(new RegExp(`[\\s${EMOJI_RE.source}]+$`, 'u'), '')
 
-  // Remove trailing emojis
-  title = title.replace(/[\s\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}✨💖🔥🐾🎁🚨⚡💥🛒💰🏷️☀️⭐🌟💫❤️💜💙💚💛🧡🤍🖤🤎🎉🎊🎯✅❌⚠️📦📱💻🏠👗👟👜🧴🪥🎮📺🔊🎧⌚️🕶️💎👑🏆🥇🥈🥉📌📣📢🔔]+$/u, '')
-
-  // Remove promo prefixes
-  for (const pattern of PROMO_PREFIX_PATTERNS) {
-    title = title.replace(pattern, '')
+  // Remove promo prefixes (iterate until no more match)
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const pattern of PROMO_PREFIX_PATTERNS) {
+      const before = title
+      title = title.replace(pattern, '').trim()
+      if (title !== before) changed = true
+    }
+    // Also strip leading emojis after each pass
+    title = title.replace(new RegExp(`^[\\s${EMOJI_RE.source}]+`, 'u'), '')
   }
 
   // Remove promo suffixes
@@ -294,12 +356,25 @@ function cleanPromoTitle(raw: string): string {
   // Remove inline price mentions
   title = title.replace(/R\$\s*[\d.,]+/g, '')
   title = title.replace(/\b\d{1,3}(?:\.\d{3})*,\d{2}\b/g, '')
+  title = title.replace(/\bDe\s+_?\s*$/i, '')
+  title = title.replace(/\bPor\s*$/i, '')
+
+  // Remove residual marketing fragments that may remain
+  title = title.replace(/^(?:e\s+bem\s+avaliado|baratinho)\s*/i, '')
 
   // Clean up whitespace and leading/trailing punctuation
   title = title.replace(/\s+/g, ' ').trim()
   title = title.replace(/^[\s\-–—:,;!.•·]+/, '').replace(/[\s\-–—:,;!.•·]+$/, '')
 
-  return title || raw.replace(/https?:\/\/\S+/g, '').replace(/\*/g, '').trim().slice(0, 200)
+  // If title is too short or empty, it means the raw was just marketing copy — try harder
+  if (title.length < 5) {
+    // Last resort: use the raw but strip all known junk
+    title = raw.replace(/https?:\/\/\S+/g, '').replace(/\*/g, '').replace(/~/g, '')
+    title = title.replace(EMOJI_RE, ' ').replace(/\s+/g, ' ').trim()
+    title = title.replace(/R\$\s*[\d.,]+/g, '').replace(/\s+/g, ' ').trim()
+  }
+
+  return title.slice(0, 200) || raw.replace(/https?:\/\/\S+/g, '').replace(/\*/g, '').trim().slice(0, 200)
 }
 
 // ── Main Parser ────────────────────────────────────────────────────────────

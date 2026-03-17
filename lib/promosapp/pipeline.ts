@@ -109,8 +109,8 @@ export async function processPromosAppBatch(
 ): Promise<PromosAppPipelineResult> {
   const startTime = Date.now()
   const config: PromosAppPipelineConfig = {
-    autoApproveThreshold: configOverrides?.autoApproveThreshold ?? 40,
-    rejectThreshold: configOverrides?.rejectThreshold ?? 40,
+    autoApproveThreshold: configOverrides?.autoApproveThreshold ?? 30,
+    rejectThreshold: configOverrides?.rejectThreshold ?? 30,
     maxBatchSize: configOverrides?.maxBatchSize ?? 200,
     autoPublish: configOverrides?.autoPublish ?? getFlag('promosappAutoPublish'),
     enrichViaAdapters: configOverrides?.enrichViaAdapters ?? true,
