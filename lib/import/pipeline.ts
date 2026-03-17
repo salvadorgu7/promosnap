@@ -75,6 +75,12 @@ const BRAND_CASING = SHARED_BRAND_CASING
 /** Clean up title before saving */
 function normalizeTitle(raw: string): string {
   let title = raw
+    // Remove lone surrogates / broken emoji (cause Prisma JSON errors)
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    // Remove common emoji blocks that add noise to product titles
+    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}]/gu, '')
     // Collapse excessive whitespace
     .replace(/\s{2,}/g, ' ')
     .trim()

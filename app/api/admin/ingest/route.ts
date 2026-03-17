@@ -8,6 +8,19 @@ import { SEED_PRODUCTS } from '@/lib/seed-products'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
+/** Remove lone surrogates and noisy emoji from text (prevents Prisma JSON errors + URI malformed) */
+function sanitizeText(raw: string): string {
+  return raw
+    // Remove lone surrogates (broken emoji from WhatsApp copy-paste)
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
+    // Remove common emoji blocks that add noise
+    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}]/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 /** Extract pipeline stats to include in API response for admin UI */
 function pipelineStats(r: ImportPipelineResult) {
   return {
@@ -262,7 +275,7 @@ export async function PUT(request: NextRequest) {
   const resolveErrors: string[] = []
 
   for (let i = 0; i < rawItems.length; i++) {
-    const item = rawItems[i]
+    const item = { ...rawItems[i], title: sanitizeText(rawItems[i].title || '') }
     let effectiveUrl = item.url
 
     // === Step 1: Resolve tracker URLs server-side ===
@@ -328,6 +341,12 @@ export async function PUT(request: NextRequest) {
     }
 
     // === Step 5: Build import item ===
+    // Skip items with no marketplace URL — they'll fail in the pipeline anyway
+    if (!cleanUrl && !externalId) {
+      resolveErrors.push(`"${item.title.slice(0, 40)}": sem URL de marketplace resolvida`)
+      continue
+    }
+
     if (!externalId) externalId = `MANUAL_${Date.now()}_${i}`
 
     items.push({
