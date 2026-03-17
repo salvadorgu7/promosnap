@@ -4,23 +4,39 @@ import { getFlag } from '@/lib/config/feature-flags'
 import { processPromosAppBatch } from '@/lib/promosapp'
 import type { PromosAppRawEvent } from '@/lib/promosapp'
 import { logger } from '@/lib/logger'
-import { timingSafeEqual } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
 const WEBHOOK_SECRET = process.env.PROMOSAPP_WEBHOOK_SECRET
 
-function verifySignature(req: NextRequest): boolean {
-  if (!WEBHOOK_SECRET) return false
-
-  const signature = req.headers.get('x-promosapp-signature') ||
-                    req.headers.get('x-webhook-secret')
-  if (!signature) return false
+/**
+ * Verify webhook signature using HMAC-SHA256 of the request body.
+ * Supports two modes:
+ *   1. HMAC body-based: x-promosapp-signature = sha256=<hex> (industry standard)
+ *   2. Static secret fallback: x-webhook-secret = <secret> (simple mode)
+ */
+function verifySignature(signatureHeader: string | null, rawBody: string): boolean {
+  if (!WEBHOOK_SECRET || !signatureHeader) return false
 
   try {
+    // Mode 1: HMAC body-based (preferred, industry standard like GitHub/Stripe webhooks)
+    if (signatureHeader.startsWith('sha256=')) {
+      const receivedHex = signatureHeader.slice(7)
+      const expectedHex = createHmac('sha256', WEBHOOK_SECRET)
+        .update(rawBody, 'utf-8')
+        .digest('hex')
+
+      const expected = Buffer.from(expectedHex, 'hex')
+      const received = Buffer.from(receivedHex, 'hex')
+
+      if (expected.length !== received.length) return false
+      return timingSafeEqual(expected, received)
+    }
+
+    // Mode 2: Static secret comparison (fallback for simple integrations)
     const expected = Buffer.from(WEBHOOK_SECRET, 'utf-8')
-    const received = Buffer.from(signature, 'utf-8')
-    // Pad both to same length for constant-time comparison regardless of input length
+    const received = Buffer.from(signatureHeader, 'utf-8')
     const maxLen = Math.max(expected.length, received.length)
     const a = Buffer.alloc(maxLen)
     const b = Buffer.alloc(maxLen)
@@ -49,13 +65,19 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  if (!verifySignature(req)) {
+  // Read raw body for HMAC verification, then parse as JSON
+  const rawBody = await req.text()
+
+  const signatureHeader = req.headers.get('x-promosapp-signature') ||
+                          req.headers.get('x-webhook-secret')
+
+  if (!verifySignature(signatureHeader, rawBody)) {
     logger.warn('promosapp.webhook.unauthorized')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
   try {
-    const body = await req.json()
+    const body = JSON.parse(rawBody)
     const events: PromosAppRawEvent[] = Array.isArray(body)
       ? body
       : Array.isArray(body.events)

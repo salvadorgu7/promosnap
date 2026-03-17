@@ -710,8 +710,12 @@ export default function PromosAppPage() {
                 Endpoint: <code className="bg-surface-100 px-1.5 py-0.5 rounded text-xs">/api/webhooks/promosapp</code>
               </p>
               <p className="text-text-muted text-xs">
-                Configure PROMOSAPP_WEBHOOK_SECRET para ativar. Envie header x-promosapp-signature com o secret.
+                Configure PROMOSAPP_WEBHOOK_SECRET para ativar. Dois modos suportados:
               </p>
+              <ul className="text-text-muted text-xs list-disc list-inside mt-1 space-y-0.5">
+                <li><strong>HMAC (recomendado):</strong> x-promosapp-signature: sha256=HMAC_HEX_DO_BODY</li>
+                <li><strong>Secret estático:</strong> x-webhook-secret: SEU_SECRET</li>
+              </ul>
             </div>
           </div>
 

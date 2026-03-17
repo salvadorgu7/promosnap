@@ -8,6 +8,35 @@ import type { PromosAppNormalizedItem } from './types'
 
 const log = logger.child({ module: 'promosapp-enricher' })
 
+// ── Per-adapter rate limits ─────────────────────────────────────────────────
+// Different APIs have different rate limits. This configuration controls
+// both concurrency (parallel requests) and delay (ms between batches) per adapter.
+
+interface AdapterRateConfig {
+  concurrency: number   // Max parallel requests
+  delayMs: number       // Delay between batches (0 = no delay)
+}
+
+const ADAPTER_RATE_LIMITS: Record<string, AdapterRateConfig> = {
+  'amazon-br':     { concurrency: 1, delayMs: 1000 },  // PA-API: 1 req/s
+  'mercadolivre':  { concurrency: 5, delayMs: 200 },   // ML API: generous limits
+  'shopee':        { concurrency: 2, delayMs: 500 },    // Shopee: moderate
+  'shein':         { concurrency: 2, delayMs: 500 },    // Shein: moderate
+  'magalu':        { concurrency: 3, delayMs: 300 },    // Magalu: moderate
+  'kabum':         { concurrency: 2, delayMs: 500 },    // KaBuM: moderate
+  'aliexpress':    { concurrency: 2, delayMs: 500 },    // AliExpress: moderate
+}
+
+const DEFAULT_RATE: AdapterRateConfig = { concurrency: 3, delayMs: 0 }
+
+function getRateConfig(slug: string): AdapterRateConfig {
+  return ADAPTER_RATE_LIMITS[slug] || DEFAULT_RATE
+}
+
+function sleep(ms: number): Promise<void> {
+  return ms > 0 ? new Promise(r => setTimeout(r, ms)) : Promise.resolve()
+}
+
 /**
  * Enrichment result — original item with additional data from adapter lookup.
  */
@@ -144,26 +173,42 @@ export async function enrichBatch(
     return { items, enriched: 0, failed: 0, skipped: items.length }
   }
 
-  const CONCURRENCY = 3
   let enrichedCount = 0
   let failedCount = 0
   let skippedCount = 0
   const results: PromosAppNormalizedItem[] = []
 
-  for (let i = 0; i < items.length; i += CONCURRENCY) {
-    const batch = items.slice(i, i + CONCURRENCY)
-    const enrichResults = await Promise.allSettled(batch.map(enrichSingle))
+  // Group items by adapter for per-adapter rate limiting
+  const byAdapter = new Map<string, PromosAppNormalizedItem[]>()
+  for (const item of items) {
+    const slug = item.sourceSlug
+    if (!byAdapter.has(slug)) byAdapter.set(slug, [])
+    byAdapter.get(slug)!.push(item)
+  }
 
-    for (const result of enrichResults) {
-      if (result.status === 'fulfilled') {
-        const merged = mergeEnrichment(result.value)
-        results.push(merged)
-        if (result.value.enriched) enrichedCount++
-        else if (result.value.enrichmentError) failedCount++
-        else skippedCount++
-      } else {
-        // Promise rejected — should never happen since enrichSingle catches
-        failedCount++
+  // Process each adapter group with its own rate config
+  for (const [slug, adapterItems] of byAdapter) {
+    const rate = getRateConfig(slug)
+
+    for (let i = 0; i < adapterItems.length; i += rate.concurrency) {
+      const batch = adapterItems.slice(i, i + rate.concurrency)
+      const enrichResults = await Promise.allSettled(batch.map(enrichSingle))
+
+      for (const result of enrichResults) {
+        if (result.status === 'fulfilled') {
+          const merged = mergeEnrichment(result.value)
+          results.push(merged)
+          if (result.value.enriched) enrichedCount++
+          else if (result.value.enrichmentError) failedCount++
+          else skippedCount++
+        } else {
+          failedCount++
+        }
+      }
+
+      // Rate-limit delay between batches for this adapter
+      if (i + rate.concurrency < adapterItems.length) {
+        await sleep(rate.delayMs)
       }
     }
   }
@@ -173,6 +218,7 @@ export async function enrichBatch(
     enriched: enrichedCount,
     failed: failedCount,
     skipped: skippedCount,
+    adapterGroups: byAdapter.size,
   })
 
   return { items: results, enriched: enrichedCount, failed: failedCount, skipped: skippedCount }
