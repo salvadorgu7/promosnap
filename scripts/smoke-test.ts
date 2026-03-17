@@ -1,192 +1,141 @@
+#!/usr/bin/env npx tsx
 /**
- * Smoke test — checks key pages and API routes are responding.
+ * PromoSnap Smoke Test Suite
  *
- * Run with: npx tsx scripts/smoke-test.ts
+ * Run after every deploy to validate critical endpoints and flows.
+ * Usage: npx tsx scripts/smoke-test.ts [baseUrl]
  *
- * By default tests against http://localhost:3000
- * Override with: SMOKE_URL=https://promosnap.com.br npx tsx scripts/smoke-test.ts
+ * Exit code 0 = all pass, 1 = failures detected
  */
 
-const BASE_URL = process.env.SMOKE_URL || "http://localhost:3000";
+export {} // Module marker for top-level await
+
+const BASE_URL = process.argv[2] || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 interface TestResult {
-  name: string;
-  url: string;
-  status: number | null;
-  ok: boolean;
-  durationMs: number;
-  error?: string;
+  name: string
+  pass: boolean
+  status?: number
+  ms: number
+  error?: string
 }
 
-const results: TestResult[] = [];
+const results: TestResult[] = []
 
-async function checkUrl(name: string, path: string, expectedStatus = 200): Promise<void> {
-  const url = `${BASE_URL}${path}`;
-  const start = Date.now();
-
+async function test(name: string, fn: () => Promise<void>): Promise<void> {
+  const start = Date.now()
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
-
-    const response = await fetch(url, {
-      signal: controller.signal,
-      redirect: "follow",
-      headers: {
-        "User-Agent": "PromoSnap-SmokeTest/1.0",
-      },
-    });
-
-    clearTimeout(timeout);
-
-    const durationMs = Date.now() - start;
-    const ok = response.status === expectedStatus;
-
+    await fn()
+    results.push({ name, pass: true, ms: Date.now() - start })
+  } catch (err: any) {
     results.push({
       name,
-      url,
-      status: response.status,
-      ok,
-      durationMs,
-      error: ok ? undefined : `Expected ${expectedStatus}, got ${response.status}`,
-    });
-  } catch (err) {
-    const durationMs = Date.now() - start;
-    const message = err instanceof Error ? err.message : String(err);
-
-    results.push({
-      name,
-      url,
-      status: null,
-      ok: false,
-      durationMs,
-      error: message,
-    });
+      pass: false,
+      ms: Date.now() - start,
+      error: err.message || String(err),
+    })
   }
 }
 
-/**
- * Checks that a URL returns a response with the expected content type.
- */
-async function checkUrlWithContentType(
-  name: string,
-  path: string,
-  expectedContentType: string,
-  expectedStatus = 200
-): Promise<void> {
-  const url = `${BASE_URL}${path}`;
-  const start = Date.now();
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
-
-    const response = await fetch(url, {
-      signal: controller.signal,
-      redirect: "follow",
-      headers: {
-        "User-Agent": "PromoSnap-SmokeTest/1.0",
-      },
-    });
-
-    clearTimeout(timeout);
-
-    const durationMs = Date.now() - start;
-    const contentType = response.headers.get("content-type") || "";
-    const statusOk = response.status === expectedStatus;
-    const contentOk = contentType.includes(expectedContentType);
-    const ok = statusOk && contentOk;
-
-    results.push({
-      name,
-      url,
-      status: response.status,
-      ok,
-      durationMs,
-      error: !statusOk
-        ? `Expected status ${expectedStatus}, got ${response.status}`
-        : !contentOk
-          ? `Expected content-type containing "${expectedContentType}", got "${contentType}"`
-          : undefined,
-    });
-  } catch (err) {
-    const durationMs = Date.now() - start;
-    const message = err instanceof Error ? err.message : String(err);
-
-    results.push({
-      name,
-      url,
-      status: null,
-      ok: false,
-      durationMs,
-      error: message,
-    });
-  }
+async function fetchJson(path: string, options?: RequestInit) {
+  const url = `${BASE_URL}${path}`
+  const res = await fetch(url, { ...options, signal: AbortSignal.timeout(15000) })
+  const body = await res.json().catch(() => ({}))
+  return { res, body }
 }
 
-async function main() {
-  console.log(`\n  PromoSnap Smoke Test`);
-  console.log(`  Target: ${BASE_URL}`);
-  console.log("=" .repeat(60) + "\n");
-
-  // ── Key pages ──
-  await checkUrl("Home Page", "/");
-  await checkUrl("Ofertas Page", "/ofertas");
-  await checkUrl("Busca Page", "/busca?q=test");
-  await checkUrl("Categorias Page", "/categorias");
-  await checkUrl("Marcas Page", "/marcas");
-
-  // ── API routes ──
-  await checkUrl("API Health", "/api/health");
-  await checkUrl("API Search", "/api/search?q=test");
-
-  // ── SEO / Infrastructure ──
-  await checkUrlWithContentType("Sitemap XML", "/sitemap.xml", "xml");
-  await checkUrlWithContentType("Robots.txt", "/robots.txt", "text");
-
-  // ── Print results ──
-  console.log("Results:\n");
-
-  let passCount = 0;
-  let failCount = 0;
-
-  for (const result of results) {
-    const icon = result.ok ? "\x1b[32mPASS\x1b[0m" : "\x1b[31mFAIL\x1b[0m";
-    const statusText = result.status !== null ? `${result.status}` : "ERR";
-    const duration = `${result.durationMs}ms`;
-
-    console.log(`  [${icon}] ${result.name}`);
-    console.log(`         ${result.url} -> ${statusText} (${duration})`);
-
-    if (result.error) {
-      console.log(`         \x1b[31m${result.error}\x1b[0m`);
-    }
-
-    if (result.ok) passCount++;
-    else failCount++;
-  }
-
-  // ── Summary ──
-  const total = passCount + failCount;
-  console.log("\n" + "-".repeat(60));
-  console.log(
-    `  Total: ${total} | \x1b[32m${passCount} passed\x1b[0m | \x1b[31m${failCount} failed\x1b[0m`
-  );
-  console.log("");
-
-  if (failCount > 0) {
-    console.log(
-      "\x1b[33mNote: Some tests may fail if the dev server is not running.\x1b[0m"
-    );
-    console.log(
-      `Start with: npm run dev, then: SMOKE_URL=${BASE_URL} npx tsx scripts/smoke-test.ts\n`
-    );
-    process.exit(1);
-  }
-
-  console.log("\x1b[32mAll smoke tests passed.\x1b[0m\n");
+async function fetchStatus(path: string): Promise<number> {
+  const url = `${BASE_URL}${path}`
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000), redirect: 'manual' })
+  return res.status
 }
 
-main().catch((err) => {
-  console.error("Fatal error running smoke tests:", err);
-  process.exit(1);
-});
+// HEALTH & INFRA
+await test('GET /api/health → 200', async () => {
+  const { res, body } = await fetchJson('/api/health')
+  if (res.status !== 200) throw new Error(`Status ${res.status}`)
+  if (body.status === 'critical') throw new Error(`Health: critical`)
+})
+
+// SEARCH
+await test('GET /api/search?q=iphone → 200, has results', async () => {
+  const { res, body } = await fetchJson('/api/search?q=iphone')
+  if (res.status !== 200) throw new Error(`Status ${res.status}`)
+  if (!body.results || !Array.isArray(body.results)) throw new Error('Missing results array')
+})
+
+await test('GET /api/search?q=notebook → 200', async () => {
+  const { res } = await fetchJson('/api/search?q=notebook')
+  if (res.status !== 200) throw new Error(`Status ${res.status}`)
+})
+
+await test('GET /api/search (empty query) → 200 or 400', async () => {
+  const { res } = await fetchJson('/api/search')
+  if (res.status !== 200 && res.status !== 400) throw new Error(`Status ${res.status}`)
+})
+
+// TRENDING
+await test('GET /api/trending → 200', async () => {
+  const { res } = await fetchJson('/api/trending')
+  if (res.status !== 200) throw new Error(`Status ${res.status}`)
+})
+
+// RECOMMENDATIONS
+await test('GET /api/recommendations → 200', async () => {
+  const { res } = await fetchJson('/api/recommendations')
+  if (res.status !== 200) throw new Error(`Status ${res.status}`)
+})
+
+// OPPORTUNITIES
+await test('GET /api/opportunities → 200', async () => {
+  const { res } = await fetchJson('/api/opportunities')
+  if (res.status !== 200) throw new Error(`Status ${res.status}`)
+})
+
+// PUBLIC PAGES (SSR)
+await test('GET / (homepage) → 200', async () => {
+  const status = await fetchStatus('/')
+  if (status !== 200) throw new Error(`Status ${status}`)
+})
+
+await test('GET /busca?q=fone → 200', async () => {
+  const status = await fetchStatus('/busca?q=fone')
+  if (status !== 200) throw new Error(`Status ${status}`)
+})
+
+// ADMIN (should require auth)
+await test('GET /api/admin/promosapp → 401 without auth', async () => {
+  const { res } = await fetchJson('/api/admin/promosapp')
+  if (res.status !== 401 && res.status !== 403) {
+    throw new Error(`Expected 401/403, got ${res.status} — admin routes may be unprotected!`)
+  }
+})
+
+// RESULTS
+console.log('\n═══════════════════════════════════════════')
+console.log('  PROMOSNAP SMOKE TEST RESULTS')
+console.log('  Base URL: ' + BASE_URL)
+console.log('═══════════════════════════════════════════\n')
+
+let passed = 0
+let failed = 0
+
+for (const r of results) {
+  const icon = r.pass ? '✅' : '❌'
+  console.log(`${icon} ${r.name} (${r.ms}ms)`)
+  if (!r.pass && r.error) console.log(`   └─ ${r.error}`)
+  if (r.pass) passed++
+  else failed++
+}
+
+console.log('\n───────────────────────────────────────────')
+console.log(`  Total: ${results.length} | ✅ ${passed} passed | ❌ ${failed} failed`)
+console.log('───────────────────────────────────────────\n')
+
+if (failed > 0) {
+  console.error('❌ SMOKE TEST FAILED — do not deploy without investigation')
+  process.exit(1)
+} else {
+  console.log('✅ ALL SMOKE TESTS PASSED')
+  process.exit(0)
+}

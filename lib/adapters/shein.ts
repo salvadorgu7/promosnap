@@ -72,10 +72,13 @@ export class SheinSourceAdapter implements SourceAdapter {
   // ---------------------------------------------------------------------------
 
   healthCheck(): AdapterHealthCheckResult {
-    if (this.isConfigured()) {
-      return { healthy: true, message: 'Shein Affiliate API key presente' }
+    // Shein API integration is NOT implemented — always report honestly
+    return {
+      healthy: false,
+      message: this.isConfigured()
+        ? 'SHEIN_API_KEY presente mas integracao real NAO implementada — retorna mock'
+        : 'SHEIN_API_KEY ausente — usando dados mock',
     }
-    return { healthy: false, message: 'SHEIN_API_KEY ausente — usando dados mock' }
   }
 
   readinessCheck(): AdapterReadinessResult {

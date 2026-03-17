@@ -301,6 +301,20 @@ model Clickout {
   originType   String? // "seed" | "imported" | "manual" | "curated"
   railSource   String? // "hot_offers" | "best_sellers" | "recently_imported" | "best_value" | "lowest_prices" | "deal_of_day" | "category" | "search" | "product"
 
+  // Block-level tracking (commercial decision intelligence)
+  blockId            String? // UI block: "price-comparison", "decision-summary", "recommendation", "hero", etc.
+  positionInBlock    Int?    // 0-indexed position within the block
+  recommendationType String? // "best-price" | "best-value" | "best-trust" | "best-shipping" | "best-rated" | "best-overall"
+  ctaLabel           String? // Label shown to user on the CTA button
+
+  // Attribution fields (persisted, no longer in-memory)
+  pageType     String? // "home" | "search" | "product" | "category" | "brand" | "offer" | "guide" | "comparison" | "email" | "channel"
+  channelOrigin String? // "direct" | "telegram" | "whatsapp" | "email" | "slack" | "discord" | "referral"
+  campaignId   String?
+  bannerId     String?
+  productId    String? // product that was being viewed when clickout happened
+  referralCode String?
+
   offer Offer @relation(fields: [offerId], references: [id])
 
   @@index([offerId])
@@ -308,6 +322,9 @@ model Clickout {
   @@index([sourceSlug])
   @@index([sourceSlug, clickedAt])
   @@index([offerId, clickedAt])
+  @@index([pageType, clickedAt])
+  @@index([channelOrigin, clickedAt])
+  @@index([campaignId])
   @@map("clickouts")
 }
 

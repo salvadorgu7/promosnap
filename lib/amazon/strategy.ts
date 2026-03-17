@@ -66,10 +66,12 @@ export interface AmazonApiStatus {
  * Does NOT validate credentials — only checks presence.
  */
 export function detectAmazonApiPath(): AmazonApiStatus {
-  const hasCreatorsToken = !!process.env.AMAZON_CREATORS_TOKEN
-  const hasCreatorsSecret = !!process.env.AMAZON_CREATORS_SECRET
+  // Creators API v2+ uses Credential ID + Secret (from Associates Central → Creators API)
+  const hasCreatorsToken = !!(process.env.AMAZON_CREDENTIAL_ID || process.env.AMAZON_CREATORS_TOKEN)
+  const hasCreatorsSecret = !!(process.env.AMAZON_CREDENTIAL_SECRET || process.env.AMAZON_CREATORS_SECRET)
   const creatorsConfigured = hasCreatorsToken && hasCreatorsSecret
 
+  // PA-API 5.0 (legacy, deprecated May 2026) uses AWS Access/Secret keys
   const hasAccessKey = !!process.env.AMAZON_ACCESS_KEY
   const hasSecretKey = !!process.env.AMAZON_SECRET_KEY
   const paApiConfigured = hasAccessKey && hasSecretKey
@@ -183,6 +185,49 @@ export function buildAmazonProductUrl(asin: string, tag = AMAZON_TRACKING_TAG): 
   return `${AMAZON_BASE_URL}/dp/${asin}?tag=${tag}`
 }
 
+/**
+ * Extracts ASIN from an Amazon URL.
+ * Supports: /dp/ASIN, /gp/product/ASIN, /gp/aw/d/ASIN, /ASIN paths.
+ * Returns null if no ASIN found.
+ */
+export function extractAsinFromUrl(url: string): string | null {
+  // Direct ASIN pattern (10 alphanumeric starting with B0 or numeric)
+  const asinRegex = /(?:\/dp\/|\/gp\/product\/|\/gp\/aw\/d\/|\/product\/)([A-Z0-9]{10})/i
+  const match = url.match(asinRegex)
+  if (match) return match[1].toUpperCase()
+
+  // Fallback: any 10-char alphanumeric segment that looks like an ASIN
+  const fallback = url.match(/\/(B[A-Z0-9]{9})\b/i)
+  if (fallback) return fallback[1].toUpperCase()
+
+  return null
+}
+
+/**
+ * Extracts title hint from Amazon URL path segments.
+ * e.g. /Samsung-Galaxy-S24-Ultra-256GB/dp/B0CZ... → "Samsung Galaxy S24 Ultra 256GB"
+ */
+export function extractTitleFromUrl(url: string): string | null {
+  try {
+    const pathname = new URL(url).pathname
+    // Pattern: /Title-Slug/dp/ASIN
+    const titleMatch = pathname.match(/^\/([^/]+)\/(?:dp|gp)\//)
+    if (titleMatch) {
+      return titleMatch[1].replace(/-/g, ' ').trim()
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Validates if a string is a valid ASIN format (10 alphanumeric chars).
+ */
+export function isValidAsin(asin: string): boolean {
+  return /^[A-Z0-9]{10}$/i.test(asin)
+}
+
 export function isAmazonUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
@@ -238,7 +283,7 @@ export function checkAmazonReadiness(): AmazonReadiness {
   // Capabilities
   const capabilities: string[] = []
   if (tagOk) {
-    capabilities.push("clickout-tracking", "affiliate-links", "manual-campaigns")
+    capabilities.push("clickout-tracking", "affiliate-links", "manual-campaigns", "manual-import")
   }
   if (paApiConfigured) {
     capabilities.push("product-search", "price-lookup")
@@ -255,7 +300,7 @@ export function checkAmazonReadiness(): AmazonReadiness {
   if (!tagOk) {
     nextStep = "Configurar AMAZON_AFFILIATE_TAG no .env com o valor 'promosnap-20'"
   } else if (!creatorsConfigured && !paApiConfigured) {
-    nextStep = "Verificar acesso à Creators API (recomendado) ou PA-API 5.0 no Amazon Associates"
+    nextStep = "Usar import manual (Ingestão → Amazon) enquanto PA-API está bloqueada e Creators precisa de 3 vendas"
   } else if (creatorsConfigured && !feedSync) {
     nextStep = "Implementar feed sync com Creators API"
   } else if (paApiConfigured && !feedSync) {

@@ -83,14 +83,42 @@ export function getSourceReadiness(): SourceReadiness[] {
       }
     }
 
-    // API integration status
-    checklist.push({
-      label: 'Integracao API',
-      status: adapterStatus.configured ? 'partial' : 'missing',
-      detail: adapterStatus.configured
-        ? 'Credenciais presentes — integracao real pendente (stub)'
-        : 'Sem credenciais — usando dados mock',
-    })
+    // API integration status — use real capability truth instead of assuming stub
+    const capTruth = adapter.getCapabilityTruth?.()
+    const capStatus = capTruth?.status
+    if (capStatus === 'sync-ready' || capStatus === 'feed-ready') {
+      checklist.push({
+        label: 'Integracao API',
+        status: 'ok',
+        detail: `Integracao real ativa (${capStatus})`,
+      })
+    } else if (capStatus === 'partial') {
+      checklist.push({
+        label: 'Integracao API',
+        status: 'partial',
+        detail: 'Integracao parcial — funcionalidade limitada',
+      })
+    } else if (capStatus === 'mock') {
+      checklist.push({
+        label: 'Integracao API',
+        status: 'missing',
+        detail: 'Usando dados mock — integracao real nao implementada',
+      })
+    } else if (capStatus === 'provider-needed') {
+      checklist.push({
+        label: 'Integracao API',
+        status: 'missing',
+        detail: 'Aguardando aprovacao do provider / API key',
+      })
+    } else {
+      checklist.push({
+        label: 'Integracao API',
+        status: adapterStatus.configured ? 'partial' : 'missing',
+        detail: adapterStatus.configured
+          ? 'Credenciais presentes — verificar status da integracao'
+          : 'Sem credenciais configuradas',
+      })
+    }
 
     // Capabilities check
     if (capabilities.length > 0) {

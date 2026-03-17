@@ -4,6 +4,7 @@
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 import { getMLToken, getMLAppToken } from '@/lib/ml-auth'
 import { logger } from '@/lib/logger'
+import { runImportPipeline, type ImportItem } from '@/lib/import/pipeline'
 
 const log = logger.child({ adapter: 'mercadolivre' })
 
@@ -573,7 +574,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       }
     }
 
-    // Search trending categories and import
+    // Search trending categories, convert results, and run through import pipeline
     const categories = ['celular', 'notebook', 'fone bluetooth', 'smartwatch', 'tablet']
     let totalSynced = 0
     let totalFailed = 0
@@ -582,10 +583,43 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     for (const cat of categories) {
       try {
         const results = await this.search(cat, { limit: 10 })
-        totalSynced += results.length
+        if (results.length === 0) continue
+
+        // Convert AdapterResult → ImportItem and run through real import pipeline
+        const importItems: ImportItem[] = results
+          .filter((r) => r.currentPrice > 0)
+          .map((r) => ({
+            externalId: r.externalId,
+            title: r.title,
+            currentPrice: r.currentPrice,
+            originalPrice: r.originalPrice,
+            productUrl: r.productUrl,
+            imageUrl: r.imageUrl,
+            isFreeShipping: r.isFreeShipping,
+            availability: (r.availability === 'in_stock' || r.availability === 'out_of_stock') ? r.availability : 'unknown' as const,
+            brand: r.brand,
+            categorySlug: r.category,
+            sourceSlug: 'mercadolivre',
+            discoverySource: 'ml_sync_feed',
+          }))
+
+        if (importItems.length > 0) {
+          const result = await runImportPipeline(importItems)
+          totalSynced += result.created + result.updated
+          totalFailed += result.failed
+          if (result.failed > 0) {
+            errors.push(`"${cat}": ${result.failed} falhas no import`)
+          }
+          log.info('syncFeed.category', {
+            category: cat,
+            searched: results.length,
+            imported: result.created + result.updated,
+            failed: result.failed,
+          })
+        }
       } catch (err) {
         totalFailed++
-        errors.push(`Falha ao buscar "${cat}": ${err}`)
+        errors.push(`Falha ao buscar/importar "${cat}": ${err}`)
       }
     }
 
@@ -593,12 +627,42 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
   }
 
   async importBatch(items: AdapterResult[]): Promise<SyncResult> {
-    log.info('importBatch', { count: items.length })
+    const importItems: ImportItem[] = items
+      .filter((r) => r.currentPrice > 0)
+      .map((r) => ({
+        externalId: r.externalId,
+        title: r.title,
+        currentPrice: r.currentPrice,
+        originalPrice: r.originalPrice,
+        productUrl: r.productUrl,
+        imageUrl: r.imageUrl,
+        isFreeShipping: r.isFreeShipping,
+        availability: (r.availability === 'in_stock' || r.availability === 'out_of_stock') ? r.availability : 'unknown' as const,
+        brand: r.brand,
+        categorySlug: r.category,
+        sourceSlug: 'mercadolivre',
+        discoverySource: 'ml_import_batch',
+      }))
+
+    if (importItems.length === 0) {
+      return { synced: 0, failed: 0, stale: 0, errors: [] }
+    }
+
+    const result = await runImportPipeline(importItems)
+    log.info('importBatch', {
+      input: items.length,
+      created: result.created,
+      updated: result.updated,
+      failed: result.failed,
+    })
+
     return {
-      synced: items.length,
-      failed: 0,
+      synced: result.created + result.updated,
+      failed: result.failed,
       stale: 0,
-      errors: [],
+      errors: result.items
+        .filter((i) => i.action === 'failed')
+        .map((i) => `${i.externalId}: ${i.reason}`),
     }
   }
 

@@ -12,6 +12,7 @@ import { BEST_PAGES, BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
 import type { ProductCard } from "@/types";
 import prisma from "@/lib/db/prisma";
 import { formatPrice } from "@/lib/utils";
+import { buildClickoutUrl } from "@/lib/clickout/build-url";
 
 export const dynamic = "force-dynamic";
 
@@ -157,9 +158,11 @@ function FAQAccordion({ faqs }: { faqs: Array<{ q: string; a: string }> }) {
 function ProductSideCard({
   label,
   products,
+  slug,
 }: {
   label: string;
   products: ProductCard[];
+  slug: string;
 }) {
   const best = products[0];
   if (!best) {
@@ -210,7 +213,14 @@ function ProductSideCard({
         )}
       </div>
       <a
-        href={best.bestOffer.affiliateUrl}
+        href={buildClickoutUrl({
+          offerId: best.bestOffer.offerId,
+          page: "compare",
+          block: "quick-compare",
+          recommendation: "best-price",
+          product: slug,
+          label: "Ver melhor oferta",
+        })}
         target="_blank"
         rel="noopener noreferrer nofollow"
         className="flex items-center justify-center gap-2 w-full h-12 rounded-lg
@@ -366,7 +376,14 @@ export default async function CompararPage({
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
             <a
-              href={bestA.bestOffer.price <= bestB.bestOffer.price ? bestA.bestOffer.affiliateUrl : bestB.bestOffer.affiliateUrl}
+              href={buildClickoutUrl({
+                offerId: bestA.bestOffer.price <= bestB.bestOffer.price ? bestA.bestOffer.offerId : bestB.bestOffer.offerId,
+                page: "compare",
+                block: "hero",
+                recommendation: "best-price",
+                product: slug,
+                label: "Conclusao Rapida",
+              })}
               target="_blank"
               rel="noopener noreferrer nofollow"
               className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg
@@ -387,7 +404,7 @@ export default async function CompararPage({
               <Trophy className="w-3 h-3" /> Melhor Preço
             </div>
           )}
-          <ProductSideCard label={def.productA.name} products={productsA} />
+          <ProductSideCard label={def.productA.name} products={productsA} slug={slug} />
         </div>
         <div className="flex items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-surface-100 flex items-center justify-center text-text-muted font-bold text-sm">
@@ -400,7 +417,7 @@ export default async function CompararPage({
               <Trophy className="w-3 h-3" /> Melhor Preço
             </div>
           )}
-          <ProductSideCard label={def.productB.name} products={productsB} />
+          <ProductSideCard label={def.productB.name} products={productsB} slug={slug} />
         </div>
       </div>
 
@@ -485,7 +502,14 @@ export default async function CompararPage({
         <div className="flex flex-col sm:flex-row gap-3 mt-6">
           {bestA && (
             <a
-              href={bestA.bestOffer.affiliateUrl}
+              href={buildClickoutUrl({
+                offerId: bestA.bestOffer.offerId,
+                page: "compare",
+                block: "recommendation",
+                recommendation: "best-overall",
+                product: slug,
+                label: "Veredito A",
+              })}
               target="_blank"
               rel="noopener noreferrer nofollow"
               className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg
@@ -498,7 +522,14 @@ export default async function CompararPage({
           )}
           {bestB && (
             <a
-              href={bestB.bestOffer.affiliateUrl}
+              href={buildClickoutUrl({
+                offerId: bestB.bestOffer.offerId,
+                page: "compare",
+                block: "recommendation",
+                recommendation: "best-overall",
+                product: slug,
+                label: "Veredito B",
+              })}
               target="_blank"
               rel="noopener noreferrer nofollow"
               className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg

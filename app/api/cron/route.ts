@@ -107,6 +107,15 @@ export async function GET(req: NextRequest) {
     logInfo('cron', `Cron cycle completed successfully in ${totalDuration}ms`)
   }
 
+  // Health check & alerting after all jobs complete
+  let healthReport: any = null
+  try {
+    const { checkAndAlert } = await import('@/lib/jobs/health')
+    healthReport = await checkAndAlert()
+  } catch (err) {
+    logWarn('cron', `Health check failed: ${String(err)}`)
+  }
+
   // Build recommendations based on job results
   const recommendations: string[] = []
   const discoverResult = results['discover-import']
@@ -132,5 +141,6 @@ export async function GET(req: NextRequest) {
     failedCount,
     results,
     ...(recommendations.length > 0 ? { recommendations } : {}),
+    ...(healthReport ? { health: { healthy: healthReport.healthy, summary: healthReport.summary, criticalIssues: healthReport.criticalIssues, warningIssues: healthReport.warningIssues } } : {}),
   })
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X, Sparkles, ClipboardPaste, MessageCircle } from "lucide-react";
+import { Upload, Search, Loader2, CheckCircle, XCircle, AlertTriangle, Trash2, Info, TrendingUp, PenLine, Plus, X, Sparkles, ClipboardPaste, MessageCircle, ShoppingBag } from "lucide-react";
 
 interface ImportedItem {
   externalId: string;
@@ -281,7 +281,7 @@ const emptyManualItem = (): ManualItem => ({
 });
 
 export default function AdminIngestãoPage() {
-  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed" | "json" | "whatsapp">("seed");
+  const [mode, setMode] = useState<"search" | "ids" | "trends" | "manual" | "seed" | "json" | "whatsapp" | "amazon">("seed");
 
   // ID mode state
   const [rawInput, setRawInput] = useState("");
@@ -308,6 +308,11 @@ export default function AdminIngestãoPage() {
   const [whatsappInput, setWhatsappInput] = useState("");
   const [whatsappProducts, setWhatsappProducts] = useState<ParsedWhatsAppProduct[]>([]);
   const [whatsappSelected, setWhatsappSelected] = useState<Set<number>>(new Set());
+
+  // Amazon mode state
+  interface AmazonItem { url: string; title: string; price: string; originalPrice: string; imageUrl: string; category: string }
+  const emptyAmazonItem = (): AmazonItem => ({ url: "", title: "", price: "", originalPrice: "", imageUrl: "", category: "" });
+  const [amazonItems, setAmazonItems] = useState<AmazonItem[]>([emptyAmazonItem()]);
 
   // Shared state
   const [isRunning, setIsRunning] = useState(false);
@@ -541,6 +546,60 @@ export default function AdminIngestãoPage() {
     }
   }
 
+  // ── Amazon handlers ────────────────────────────────────────────────────────
+
+  function updateAmazonItem(index: number, field: keyof AmazonItem, value: string) {
+    setAmazonItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  }
+
+  function addAmazonItem() {
+    setAmazonItems((prev) => [...prev, emptyAmazonItem()]);
+  }
+
+  function removeAmazonItem(index: number) {
+    setAmazonItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  const validAmazonCount = amazonItems.filter(
+    (i) => i.url.trim() && i.title.trim() && i.price.trim()
+  ).length;
+
+  async function handleIngestAmazon() {
+    const validItems = amazonItems.filter(
+      (i) => i.url.trim() && i.title.trim() && i.price.trim()
+    );
+    if (validItems.length === 0) return;
+
+    setIsRunning(true); setResult(null); setError(null);
+
+    try {
+      const res = await fetch("/api/admin/ingest-amazon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          products: validItems.map((i) => ({
+            url: i.url.trim(),
+            title: i.title.trim(),
+            price: parseFloat(i.price.replace(",", ".")),
+            originalPrice: i.originalPrice ? parseFloat(i.originalPrice.replace(",", ".")) : undefined,
+            imageUrl: i.imageUrl.trim() || undefined,
+            category: i.category.trim() || undefined,
+          })),
+        }),
+      });
+      const data = await res.json();
+      res.ok ? setResult(data) : setError(data);
+    } catch (err: any) {
+      setError({ error: err.message || "Erro de rede" });
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
   function handleClear() {
     setRawInput(""); setSearchQuery("");
     setParsedIds([]); setInvalidLines([]);
@@ -548,6 +607,7 @@ export default function AdminIngestãoPage() {
     setManualItems([emptyManualItem()]);
     setJsonInput(""); setJsonParsedCount(null); setJsonParseError(null);
     setWhatsappInput(""); setWhatsappProducts([]); setWhatsappSelected(new Set());
+    setAmazonItems([emptyAmazonItem()]);
   }
 
   function updateManualItem(index: number, field: keyof ManualItem, value: string) {
@@ -581,6 +641,7 @@ export default function AdminIngestãoPage() {
       <div className="flex gap-1 bg-surface-100 rounded-lg p-1 w-fit flex-wrap">
         {([
           { key: "seed", icon: Sparkles, label: "Seed \u2728" },
+          { key: "amazon", icon: ShoppingBag, label: "Amazon" },
           { key: "whatsapp", icon: MessageCircle, label: "WhatsApp" },
           { key: "json", icon: ClipboardPaste, label: "Cola JSON" },
           { key: "manual", icon: PenLine, label: "Manual" },
@@ -1153,6 +1214,116 @@ export default function AdminIngestãoPage() {
                 <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</>
               ) : (
                 <><Upload className="h-4 w-4" /> Importar {validManualCount} {validManualCount === 1 ? "produto" : "produtos"}</>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* AMAZON MODE */}
+      {mode === "amazon" && (
+        <div className="card p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              <ShoppingBag className="inline h-4 w-4 mr-1.5 -mt-0.5 text-[#FF9900]" />
+              Import Amazon Manual
+            </label>
+            <p className="text-xs text-text-muted">
+              Cole URLs de produtos Amazon com título e preço. O ASIN é extraído automaticamente e o link de afiliado (tag=promosnap-20) é gerado.
+            </p>
+          </div>
+
+          <div className="p-3 bg-orange-50 rounded-lg flex items-start gap-2">
+            <Info className="h-4 w-4 text-[#FF9900] mt-0.5 flex-shrink-0" />
+            <div className="text-xs text-orange-800">
+              <p className="font-medium mb-1">Como usar:</p>
+              <ol className="list-decimal ml-4 space-y-0.5">
+                <li>Abra o produto na Amazon Brasil</li>
+                <li>Copie a URL (ex: amazon.com.br/dp/B0CZ...)</li>
+                <li>Cole abaixo com título e preço</li>
+                <li>Produtos equivalentes ao ML são mesclados automaticamente no produto canónico</li>
+              </ol>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {amazonItems.map((item, i) => (
+              <div key={i} className="p-4 bg-surface-50 rounded-lg space-y-3 relative border-l-4 border-[#FF9900]/40">
+                {amazonItems.length > 1 && (
+                  <button
+                    onClick={() => removeAmazonItem(i)}
+                    className="absolute top-2 right-2 text-text-muted hover:text-red-500 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                <p className="text-xs font-semibold text-text-muted">Produto Amazon {i + 1}</p>
+                <input
+                  type="url"
+                  value={item.url}
+                  onChange={(e) => updateAmazonItem(i, "url", e.target.value)}
+                  placeholder="URL Amazon (ex: https://amazon.com.br/dp/B0CZ...) *"
+                  className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#FF9900]/30"
+                />
+                <input
+                  type="text"
+                  value={item.title}
+                  onChange={(e) => updateAmazonItem(i, "title", e.target.value)}
+                  placeholder="Título do produto *"
+                  className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#FF9900]/30"
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={item.price}
+                    onChange={(e) => updateAmazonItem(i, "price", e.target.value)}
+                    placeholder="Preço atual (R$) *"
+                    className="px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#FF9900]/30"
+                  />
+                  <input
+                    type="text"
+                    value={item.originalPrice}
+                    onChange={(e) => updateAmazonItem(i, "originalPrice", e.target.value)}
+                    placeholder="Preço original (opcional)"
+                    className="px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#FF9900]/30"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="url"
+                    value={item.imageUrl}
+                    onChange={(e) => updateAmazonItem(i, "imageUrl", e.target.value)}
+                    placeholder="URL da imagem (opcional)"
+                    className="px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#FF9900]/30"
+                  />
+                  <input
+                    type="text"
+                    value={item.category}
+                    onChange={(e) => updateAmazonItem(i, "category", e.target.value)}
+                    placeholder="Categoria (ex: celulares)"
+                    className="px-3 py-2 text-sm border border-surface-200 rounded-lg bg-white text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#FF9900]/30"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={addAmazonItem}
+              className="btn-secondary text-sm px-4 py-2 inline-flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" /> Adicionar produto
+            </button>
+            <button
+              onClick={handleIngestAmazon}
+              disabled={validAmazonCount === 0 || isRunning}
+              className="text-sm px-5 py-2.5 inline-flex items-center gap-2 disabled:opacity-50 rounded-lg font-medium text-white bg-[#FF9900] hover:bg-[#E88B00] transition-colors"
+            >
+              {isRunning ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</>
+              ) : (
+                <><ShoppingBag className="h-4 w-4" /> Importar {validAmazonCount} {validAmazonCount === 1 ? "produto Amazon" : "produtos Amazon"}</>
               )}
             </button>
           </div>

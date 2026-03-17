@@ -122,6 +122,13 @@ export async function GET(
     const originTypeParam = request.nextUrl.searchParams.get("origin") || null;
     const railSourceParam = request.nextUrl.searchParams.get("rail") || null;
 
+    // Block-level tracking params (commercial decision intelligence)
+    const blockParam = request.nextUrl.searchParams.get("block") || null;
+    const posParam = request.nextUrl.searchParams.get("pos");
+    const positionInBlock = posParam !== null ? parseInt(posParam, 10) : null;
+    const recParam = request.nextUrl.searchParams.get("rec") || null;
+    const labelParam = request.nextUrl.searchParams.get("label") || null;
+
     // Fire-and-forget: don't await so redirect is instant
     prisma.clickout
       .create({
@@ -135,6 +142,10 @@ export async function GET(
           categorySlug,
           originType: originTypeParam,
           railSource: railSourceParam,
+          blockId: blockParam,
+          positionInBlock: positionInBlock !== null && !isNaN(positionInBlock) ? positionInBlock : null,
+          recommendationType: recParam,
+          ctaLabel: labelParam,
         },
       })
       .then((clickout) => {

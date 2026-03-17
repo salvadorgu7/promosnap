@@ -46,7 +46,10 @@ import CanonicalView from "@/components/product/CanonicalView";
 import MiniCluster from "@/components/product/MiniCluster";
 import DecisionTracker from "@/components/product/DecisionTracker";
 import SourceComparison from "@/components/product/SourceComparison";
+import PriceComparison from "@/components/product/PriceComparison";
+import DecisionBlocks from "@/components/product/DecisionBlocks";
 import { analyzeCrossSource, buildCrossSourceOffer } from "@/lib/source/cross-source";
+import { getCanonicalComparison, getBestChoice } from "@/lib/catalog/smart-comparison";
 import { buildMetadata, productSchema, breadcrumbSchema } from "@/lib/seo/metadata";
 import { findComparisonsForProduct } from "@/lib/seo/comparisons";
 import { formatPrice } from "@/lib/utils";
@@ -218,6 +221,10 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     })
   );
   const crossSourceAnalysis = analyzeCrossSource(crossSourceOffers);
+
+  // Smart comparison — decision blocks with reasoning
+  const smartComparison = await getCanonicalComparison(product.id);
+  const bestChoiceResult = smartComparison ? getBestChoice(smartComparison.matrix) : null;
 
   // Installment calculation
   const installmentCount = 12;
@@ -678,12 +685,42 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
+          {/* Decision blocks — smart comparison with reasoning */}
+          {smartComparison && smartComparison.matrix.length > 0 && (
+            <DecisionBlocks
+              comparison={smartComparison}
+              bestChoice={bestChoiceResult}
+              productSlug={slug}
+            />
+          )}
+
           {/* Cross-source comparison */}
           {crossSourceOffers.length > 1 && (
             <SourceComparison
               analysis={crossSourceAnalysis}
               offers={crossSourceOffers}
               productSlug={slug}
+            />
+          )}
+
+          {/* Cross-store price comparison — rich comparator with badges */}
+          {allOffers.length > 1 && (
+            <PriceComparison
+              productName={product.name}
+              offers={allOffers.map((o) => ({
+                id: o.id,
+                sourceName: o.sourceName,
+                sourceSlug: o.sourceSlug,
+                price: o.price,
+                originalPrice: o.originalPrice,
+                isFreeShipping: o.isFreeShipping,
+                couponText: o.couponText,
+                rating: o.rating,
+                reviewsCount: o.reviewsCount,
+                affiliateUrl: o.affiliateUrl,
+                offerScore: o.offerScore,
+                shippingPrice: null,
+              }))}
             />
           )}
 

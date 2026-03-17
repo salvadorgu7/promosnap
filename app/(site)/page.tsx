@@ -315,9 +315,9 @@ export default async function HomePage() {
       {hotOffers.length > 0 && (
         <div id="hot-offers" className="section-alt py-4">
           <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
-            {hotOffers.map((p) => (
+            {hotOffers.map((p, i) => (
               <div key={p.id} className="rail-card">
-                <OfferCard product={p} page="home" railSource="hot-offers" />
+                <OfferCard product={p} page="home" railSource="hot-offers" position={i} />
               </div>
             ))}
           </RailSection>
@@ -328,9 +328,9 @@ export default async function HomePage() {
       {recentlyImported.length > 0 && (
         <div id="recently-imported" className="py-4">
           <RailSection title="Adicionados Recentemente" subtitle="Novidades dos últimos dias" href="/ofertas" icon={Sparkles} iconColor="text-accent-green">
-            {recentlyImported.map((p) => (
+            {recentlyImported.map((p, i) => (
               <div key={p.id} className="rail-card">
-                <OfferCard product={p} page="home" railSource="recently-imported" />
+                <OfferCard product={p} page="home" railSource="recently-imported" position={i} />
               </div>
             ))}
           </RailSection>
@@ -349,9 +349,9 @@ export default async function HomePage() {
       {lowestPrices.length > 0 && (
         <div id="lowest-prices" className="py-4">
           <RailSection title="Menor Preço Histórico" subtitle="Nunca estiveram tão baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
-            {lowestPrices.map((p) => (
+            {lowestPrices.map((p, i) => (
               <div key={p.id} className="rail-card">
-                <OfferCard product={p} page="home" railSource="lowest-prices" />
+                <OfferCard product={p} page="home" railSource="lowest-prices" position={i} />
               </div>
             ))}
           </RailSection>
@@ -362,9 +362,9 @@ export default async function HomePage() {
       {bestSellers.length > 0 && (
         <div id="best-sellers" className="section-alt py-4">
           <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
-            {bestSellers.map((p) => (
+            {bestSellers.map((p, i) => (
               <div key={p.id} className="rail-card">
-                <OfferCard product={p} page="home" railSource="best-sellers" />
+                <OfferCard product={p} page="home" railSource="best-sellers" position={i} />
               </div>
             ))}
           </RailSection>
@@ -375,9 +375,9 @@ export default async function HomePage() {
       {bestValue.length > 0 && (
         <div id="best-value" className="py-4">
           <RailSection title="Melhor Custo-Benefício" subtitle="Maior desconto com frete grátis" href="/ofertas" icon={Percent} iconColor="text-accent-purple">
-            {bestValue.map((p) => (
+            {bestValue.map((p, i) => (
               <div key={p.id} className="rail-card">
-                <OfferCard product={p} page="home" railSource="best-value" />
+                <OfferCard product={p} page="home" railSource="best-value" position={i} />
               </div>
             ))}
           </RailSection>
@@ -388,9 +388,9 @@ export default async function HomePage() {
       {readyForCampaign.length > 0 && (
         <div id="ready-for-campaign" className="section-alt py-4">
           <RailSection title="Prontos para Comprar" subtitle="Com desconto e link direto para a loja" href="/ofertas" icon={Star} iconColor="text-accent-blue">
-            {readyForCampaign.map((p) => (
+            {readyForCampaign.map((p, i) => (
               <div key={p.id} className="rail-card">
-                <OfferCard product={p} page="home" railSource="ready-for-campaign" />
+                <OfferCard product={p} page="home" railSource="ready-for-campaign" position={i} />
               </div>
             ))}
           </RailSection>

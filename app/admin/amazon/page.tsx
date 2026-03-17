@@ -1,5 +1,7 @@
-import { ShoppingBag, Check, X, ArrowRight, Zap, Link2, Search, ExternalLink } from "lucide-react"
+import { ShoppingBag, Check, X, ArrowRight, Zap, Link2, Search, ExternalLink, RefreshCw, Database } from "lucide-react"
 import { checkAmazonReadiness, getActiveCampaigns, detectAmazonApiPath } from "@/lib/amazon/strategy"
+import { adapterRegistry } from "@/lib/adapters/registry"
+import prisma from "@/lib/db/prisma"
 
 export const dynamic = "force-dynamic"
 
@@ -18,6 +20,27 @@ export default async function AmazonAdminPage() {
   const readiness = checkAmazonReadiness()
   const apiStatus = detectAmazonApiPath()
   const campaigns = getActiveCampaigns()
+
+  // Live DB metrics for Amazon
+  const amazonAdapter = adapterRegistry.get('amazon-br')
+  const adapterStatus = amazonAdapter?.getStatus()
+  const capTruth = amazonAdapter?.getCapabilityTruth?.()
+  const healthCheck = amazonAdapter?.healthCheck?.()
+
+  const [amazonListings, amazonOffers, amazonProducts] = await Promise.all([
+    prisma.listing.count({
+      where: { source: { slug: 'amazon-br' }, status: 'ACTIVE' },
+    }).catch(() => 0),
+    prisma.offer.count({
+      where: { listing: { source: { slug: 'amazon-br' } }, isActive: true },
+    }).catch(() => 0),
+    prisma.$queryRaw<Array<{ cnt: bigint }>>`
+      SELECT COUNT(DISTINCT l."productId") AS cnt
+      FROM "listings" l
+      JOIN "sources" s ON l."sourceId" = s."id"
+      WHERE s."slug" = 'amazon-br' AND l."status" = 'ACTIVE' AND l."productId" IS NOT NULL
+    `.then(r => Number(r[0]?.cnt ?? 0)).catch(() => 0),
+  ])
 
   const levelLabels: Record<string, { text: string; color: string }> = {
     "not-configured": { text: "Não Configurado", color: "bg-red-50 text-red-700 border-red-200" },
@@ -133,6 +156,67 @@ export default async function AmazonAdminPage() {
         </div>
       </div>
 
+      {/* Live Metrics */}
+      <div className="bg-white rounded-xl border border-surface-200 p-6 mb-6">
+        <h2 className="text-lg font-bold font-display text-text-primary mb-1 flex items-center gap-2">
+          <Database className="w-4 h-4 text-[#FF9900]" />
+          Métricas Live Amazon
+        </h2>
+        <p className="text-xs text-text-muted mb-4">Dados reais do banco de dados</p>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="p-4 rounded-lg bg-surface-50 text-center">
+            <p className="text-2xl font-bold text-text-primary">{amazonProducts}</p>
+            <p className="text-xs text-text-muted mt-1">Produtos Canônicos</p>
+          </div>
+          <div className="p-4 rounded-lg bg-surface-50 text-center">
+            <p className="text-2xl font-bold text-text-primary">{amazonListings}</p>
+            <p className="text-xs text-text-muted mt-1">Listings Activos</p>
+          </div>
+          <div className="p-4 rounded-lg bg-surface-50 text-center">
+            <p className="text-2xl font-bold text-text-primary">{amazonOffers}</p>
+            <p className="text-xs text-text-muted mt-1">Ofertas Activas</p>
+          </div>
+        </div>
+        {adapterStatus && (
+          <div className="mt-4 flex items-center gap-3 p-3 rounded-lg border border-surface-100">
+            <span className={`inline-block w-2 h-2 rounded-full ${adapterStatus.health === 'READY' ? 'bg-green-500' : adapterStatus.health === 'MOCK' ? 'bg-amber-500' : 'bg-red-500'}`} />
+            <span className="text-sm text-text-secondary flex-1">{adapterStatus.message}</span>
+            <span className="text-xs font-mono text-text-muted">{capTruth?.status ?? 'unknown'}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Import Methods */}
+      <div className="bg-white rounded-xl border border-surface-200 p-6 mb-6">
+        <h2 className="text-base font-bold font-display text-text-primary mb-1 flex items-center gap-2">
+          <RefreshCw className="w-4 h-4 text-accent-blue" />
+          Importar Produtos Amazon
+        </h2>
+        <p className="text-xs text-text-muted mb-4">
+          PA-API indisponível para cadastro / Creators API requer 3 vendas — usar import manual
+        </p>
+        <div className="space-y-3">
+          <a
+            href="/admin/ingestao"
+            className="block p-4 rounded-lg bg-[#FF9900]/5 border border-[#FF9900]/20 hover:bg-[#FF9900]/10 transition-colors"
+          >
+            <p className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-[#FF9900]" />
+              Ingestão Manual → Aba Amazon
+            </p>
+            <p className="text-xs text-text-muted mt-1">
+              Cole URLs Amazon + título + preço. ASIN é extraído automaticamente. Merge canónico com ML.
+            </p>
+          </a>
+          <div className="p-4 rounded-lg bg-surface-50 border border-surface-100">
+            <p className="text-sm text-text-secondary mb-2">Ou via API:</p>
+            <code className="block text-xs font-mono bg-surface-100 p-3 rounded-lg text-text-primary overflow-x-auto">
+              POST /api/admin/ingest-amazon {`{ "products": [{ "url": "...", "title": "...", "price": 1999 }] }`}
+            </code>
+          </div>
+        </div>
+      </div>
+
       {/* What Works NOW */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-xl border border-surface-200 p-6">
@@ -144,9 +228,11 @@ export default async function AmazonAdminPage() {
             {[
               "Clickout com tag de afiliado (tag=promosnap-20)",
               "Attribution no pipeline de clickout",
-              "Banner na homepage com link de afiliado",
-              "Bloco 'Veja na Amazon' nas páginas de produto",
-              "Import manual de produtos Amazon via pipeline",
+              "Import automático via syncFeed() + runImportPipeline()",
+              "Merge canónico Amazon↔ML (mesmo produto, múltiplas ofertas)",
+              "Refresh de preços via update-prices cron job",
+              "Discovery automática via discover-import cron job",
+              "Comparação multi-fonte nas páginas de produto",
               "Source routing reconhece amazon-br (quality 0.95, revenue 4%)",
             ].map((item) => (
               <div key={item} className="flex items-start gap-2">
@@ -164,12 +250,9 @@ export default async function AmazonAdminPage() {
           </h2>
           <div className="space-y-2">
             {[
-              "Busca automática de produtos Amazon",
-              "Sincronização de preços em tempo real",
-              "Feed sync periódico (cron)",
-              "Comparação automática Amazon vs ML",
-              "Ingestão automatizada de catálogo",
-              "Refresh de ofertas Amazon",
+              "Migração para Creators API (PA-API deprecated May 2026)",
+              "OAuth flow completo para Creators API",
+              "Webhook de price drop Amazon → alerta",
             ].map((item) => (
               <div key={item} className="flex items-start gap-2">
                 <X className="w-3.5 h-3.5 text-surface-300 flex-shrink-0 mt-0.5" />
@@ -238,11 +321,12 @@ export default async function AmazonAdminPage() {
           <div className="space-y-1.5">
             {[
               { done: readiness.affiliateTag.ok, text: "Configurar tag de afiliado (AMAZON_AFFILIATE_TAG)" },
-              { done: false, text: "Verificar acesso a Creators API no Amazon Associates" },
-              { done: readiness.creatorsApi.ok, text: "Configurar credenciais Creators API (se disponível)" },
-              { done: readiness.paApi.ok, text: "Ou configurar credenciais PA-API 5.0 (alternativa)" },
-              { done: false, text: "Implementar feed sync com API escolhida" },
-              { done: readiness.feedSync, text: "Ativar sync periódico via cron" },
+              { done: readiness.paApi.ok, text: "Configurar credenciais PA-API 5.0" },
+              { done: true, text: "Implementar syncFeed() com import pipeline real" },
+              { done: true, text: "Implementar importBatch() com import pipeline real" },
+              { done: true, text: "Integrar Amazon no discover-import cron job" },
+              { done: true, text: "Merge canónico cross-source (Amazon↔ML)" },
+              { done: false, text: "Migrar para Creators API (PA-API deprecated May 2026)" },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-2">
                 {item.done ? (

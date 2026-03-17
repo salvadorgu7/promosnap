@@ -58,7 +58,7 @@ function MiniStars({ rating }: { rating: number }) {
   );
 }
 
-export default function OfferCard({ product, railSource, page }: { product: ProductCard; railSource?: string; page?: string }) {
+export default function OfferCard({ product, railSource, page, position }: { product: ProductCard; railSource?: string; page?: string; position?: number }) {
   const { bestOffer, badges } = product;
   const discount = bestOffer.discount;
 
@@ -70,7 +70,9 @@ export default function OfferCard({ product, railSource, page }: { product: Prod
     const params = new URLSearchParams();
     if (product.originType) params.set('origin', product.originType);
     if (railSource) params.set('rail', railSource);
+    if (railSource) params.set('block', railSource);
     if (page) params.set('page', page);
+    if (position !== undefined) params.set('pos', String(position));
     const paramStr = params.toString();
     return `/api/clickout/${bestOffer.offerId}${paramStr ? `?${paramStr}` : ''}`;
   };

@@ -6,6 +6,7 @@ import { runJob, type JobResult } from '@/lib/jobs/runner'
 import { runDiscovery } from '@/lib/ml-discovery'
 import { runImportPipeline, type ImportItem } from '@/lib/import'
 import { getAllCategories, resolveMLCategorySlug } from '@/lib/ml-discovery/categories'
+import { adapterRegistry } from '@/lib/adapters/registry'
 
 // ── Mode configuration ──────────────────────────────────────────────────────
 
@@ -188,12 +189,30 @@ export async function discoverAndImport(options?: DiscoverImportOptions): Promis
 
     await ctx.updateProgress(importResult.created + importResult.updated, importResult.total)
 
+    // Stage 3: Amazon discovery via syncFeed (if configured)
+    let amazonStats = { synced: 0, failed: 0, errors: [] as string[] }
+    try {
+      const amazonAdapter = adapterRegistry.get('amazon-br')
+      if (amazonAdapter?.isConfigured() && amazonAdapter.syncFeed) {
+        ctx.log('Running Amazon discovery via syncFeed...')
+        const amazonResult = await amazonAdapter.syncFeed()
+        amazonStats = { synced: amazonResult.synced, failed: amazonResult.failed, errors: amazonResult.errors }
+        ctx.log(`Amazon discovery: ${amazonResult.synced} synced, ${amazonResult.failed} failed`)
+      } else {
+        ctx.log('Amazon adapter not configured — skipping Amazon discovery')
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      ctx.warn(`Amazon discovery failed (non-fatal): ${msg}`)
+      amazonStats.errors.push(msg)
+    }
+
     const pipelineMs = Date.now() - pipelineStart
     ctx.log(`Pipeline complete in ${pipelineMs}ms (discovery: ${discoveryResult.meta.timing.totalMs}ms, import: ${importResult.durationMs}ms)`)
 
     return {
-      itemsTotal: importResult.total,
-      itemsDone: importResult.created + importResult.updated,
+      itemsTotal: importResult.total + amazonStats.synced,
+      itemsDone: importResult.created + importResult.updated + amazonStats.synced,
       metadata: {
         mode,
         discoveryMs: discoveryResult.meta.timing.totalMs,
@@ -209,6 +228,9 @@ export async function discoverAndImport(options?: DiscoverImportOptions): Promis
         categoryStats: importResult.categoryStats,
         priceStats: importResult.priceStats,
         categoryFetchStats: discoveryResult.meta.stats.categoryFetchStats,
+        amazon: amazonStats.synced > 0 || amazonStats.errors.length > 0
+          ? { synced: amazonStats.synced, failed: amazonStats.failed, errors: amazonStats.errors }
+          : undefined,
       },
     }
   })

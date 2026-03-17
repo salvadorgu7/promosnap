@@ -1,9 +1,14 @@
 import prisma from '@/lib/db/prisma';
 import { runJob, type JobResult } from '@/lib/jobs/runner';
+import { adapterRegistry } from '@/lib/adapters/registry';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ module: 'update-prices' });
 
 const BATCH_SIZE = 50;
 const STALE_HOURS = 6;
 const DEACTIVATE_DAYS = 3;
+const REFRESH_BATCH_SIZE = 20; // Max items to refresh via adapters per run
 
 export async function updatePrices(): Promise<JobResult> {
   return runJob('update-prices', async (ctx) => {
@@ -27,6 +32,8 @@ export async function updatePrices(): Promise<JobResult> {
         listingId: true,
         listing: {
           select: {
+            externalId: true,
+            source: { select: { slug: true } },
             product: {
               select: { originType: true },
             },
@@ -49,6 +56,10 @@ export async function updatePrices(): Promise<JobResult> {
     let needsUpdate = 0;
     let snapshotsCreated = 0;
     let processed = 0;
+    let refreshed = 0;
+    let refreshFailed = 0;
+
+    // ── Phase 1: Deactivate very stale offers ──────────────────────────────
 
     for (let i = 0; i < staleOffers.length; i += BATCH_SIZE) {
       const batch = staleOffers.slice(i, i + BATCH_SIZE);
@@ -80,7 +91,102 @@ export async function updatePrices(): Promise<JobResult> {
       await ctx.updateProgress(processed, staleOffers.length);
     }
 
-    // Create price snapshots ONLY when price changed since last snapshot
+    // ── Phase 2: Multi-source price refresh via adapters ───────────────────
+    // Refresh prices for stale but still active offers using marketplace APIs.
+    // Key multi-source improvement: calls adapters to get fresh prices from
+    // Amazon, Shopee, ML etc. instead of just deactivating stale offers.
+
+    ctx.log('Refreshing prices via marketplace adapters...');
+
+    const toRefresh = staleOffers
+      .filter((o) => o.lastSeenAt >= deactivateThreshold)
+      .slice(0, REFRESH_BATCH_SIZE);
+
+    // Group by source for per-adapter rate limiting
+    const bySource = new Map<string, typeof toRefresh>();
+    for (const offer of toRefresh) {
+      const slug = offer.listing?.source?.slug || 'unknown';
+      if (!bySource.has(slug)) bySource.set(slug, []);
+      bySource.get(slug)!.push(offer);
+    }
+
+    for (const [sourceSlug, offers] of bySource) {
+      const adapter = adapterRegistry.get(sourceSlug);
+      if (!adapter || !adapter.isConfigured()) {
+        ctx.log(`Skipping ${sourceSlug}: adapter not configured`);
+        continue;
+      }
+
+      if (!adapter.refreshOffer && !adapter.getProduct) {
+        ctx.log(`Skipping ${sourceSlug}: no refresh capability`);
+        continue;
+      }
+
+      for (const offer of offers) {
+        const externalId = offer.listing?.externalId;
+        if (!externalId) continue;
+
+        try {
+          const fresh = adapter.refreshOffer
+            ? await adapter.refreshOffer(externalId)
+            : await adapter.getProduct(externalId);
+
+          if (fresh && fresh.currentPrice > 0) {
+            // Update offer with fresh data
+            await prisma.offer.update({
+              where: { id: offer.id },
+              data: {
+                currentPrice: fresh.currentPrice,
+                originalPrice: fresh.originalPrice || offer.originalPrice,
+                isFreeShipping: fresh.isFreeShipping ?? undefined,
+                lastSeenAt: new Date(),
+              },
+            });
+
+            // Update listing data if available
+            if (fresh.availability && fresh.availability !== 'unknown') {
+              await prisma.listing.update({
+                where: { id: offer.listingId },
+                data: {
+                  availability: fresh.availability === 'in_stock' ? 'IN_STOCK' : 'OUT_OF_STOCK',
+                  lastSeenAt: new Date(),
+                  rating: fresh.rating || undefined,
+                  reviewsCount: fresh.reviewsCount || undefined,
+                  salesCountEstimate: fresh.salesCount || undefined,
+                },
+              });
+            }
+
+            refreshed++;
+            log.info('price-refresh.success', {
+              source: sourceSlug,
+              externalId,
+              oldPrice: offer.currentPrice,
+              newPrice: fresh.currentPrice,
+              changed: offer.currentPrice !== fresh.currentPrice,
+            });
+          } else {
+            refreshFailed++;
+          }
+        } catch (err) {
+          refreshFailed++;
+          log.warn('price-refresh.error', {
+            source: sourceSlug,
+            externalId,
+            error: String(err),
+          });
+        }
+
+        // Rate limit: 1.1s for Amazon (PA-API limit), 500ms for others
+        const delay = sourceSlug === 'amazon-br' ? 1100 : 500;
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+
+    ctx.log(`Adapter refresh: ${refreshed} updated, ${refreshFailed} failed`);
+
+    // ── Phase 3: Create price snapshots for all active offers ──────────────
+
     ctx.log('Creating price snapshots for active offers with price changes...');
 
     const activeOffers = await prisma.offer.findMany({
@@ -147,13 +253,21 @@ export async function updatePrices(): Promise<JobResult> {
     }
 
     ctx.log(
-      `Done: ${deactivated} deactivated, ${needsUpdate} need update, ${snapshotsCreated} snapshots created, ${skipped} unchanged skipped`
+      `Done: ${deactivated} deactivated, ${needsUpdate} stale, ${refreshed} refreshed via adapters, ${snapshotsCreated} snapshots, ${skipped} unchanged`
     );
 
     return {
       itemsTotal: staleOffers.length + activeOffers.length,
-      itemsDone: processed + snapshotsCreated,
-      metadata: { deactivated, needsUpdate, snapshotsCreated, skipped },
+      itemsDone: processed + snapshotsCreated + refreshed,
+      metadata: {
+        deactivated,
+        needsUpdate,
+        refreshed,
+        refreshFailed,
+        snapshotsCreated,
+        skipped,
+        adapterGroups: bySource.size,
+      },
     };
   });
 }

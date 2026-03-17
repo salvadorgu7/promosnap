@@ -87,6 +87,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Monetização",
     items: [
+      { href: "/admin/comercial", label: "Comercial", icon: BarChart3 },
       { href: "/admin/monetizacao", label: "Monetização", icon: DollarSign },
       { href: "/admin/analytics", label: "Analytics", icon: Activity },
       { href: "/admin/attribution", label: "Attribution", icon: Target },
