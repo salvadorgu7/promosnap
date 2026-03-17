@@ -41,7 +41,7 @@ const MARKETPLACES: MarketplaceConfig[] = [
     param: 'af_id',
   },
   {
-    domains: ['shein.com', 'shein.com.br'],
+    domains: ['shein.com', 'shein.com.br', 'sheingsp.com', 'shein.top'],
     envVar: 'SHEIN_AFFILIATE_ID',
     param: 'aff_id',
   },

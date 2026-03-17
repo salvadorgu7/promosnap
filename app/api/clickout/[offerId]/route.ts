@@ -53,6 +53,17 @@ function appendAffiliateParams(url: string, sourceSlug: string): string {
       }
     }
 
+    // Shein
+    if (
+      sourceSlug === "shein" ||
+      parsed.hostname.includes("shein.com")
+    ) {
+      const affId = process.env.SHEIN_AFFILIATE_ID;
+      if (affId && !parsed.searchParams.has("aff_id")) {
+        parsed.searchParams.set("aff_id", affId);
+      }
+    }
+
     // Magazine Luiza
     if (
       sourceSlug === "magalu" || sourceSlug === "magazine-luiza" ||
@@ -62,6 +73,17 @@ function appendAffiliateParams(url: string, sourceSlug: string): string {
       const partnerId = process.env.MAGALU_PARTNER_ID;
       if (partnerId && !parsed.searchParams.has("partner_id")) {
         parsed.searchParams.set("partner_id", partnerId);
+      }
+    }
+
+    // KaBuM
+    if (
+      sourceSlug === "kabum" ||
+      parsed.hostname.includes("kabum.com.br")
+    ) {
+      const tag = process.env.KABUM_AFFILIATE_ID;
+      if (tag && !parsed.searchParams.has("tag")) {
+        parsed.searchParams.set("tag", tag);
       }
     }
 

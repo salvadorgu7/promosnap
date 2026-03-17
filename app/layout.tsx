@@ -18,26 +18,26 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "PromoSnap — Ofertas reais, preco de verdade",
+    default: "PromoSnap — Ofertas reais, preço de verdade",
     template: "%s | PromoSnap",
   },
   description:
-    "Encontre as melhores ofertas, compare precos e economize de verdade. Historico real de precos, cupons e os produtos mais vendidos.",
+    "Encontre as melhores ofertas, compare preços e economize de verdade. Histórico real de preços, cupons e os produtos mais vendidos.",
   metadataBase: new URL(getBaseUrl()),
   openGraph: {
     type: "website",
     locale: "pt_BR",
     siteName: "PromoSnap",
-    title: "PromoSnap — Ofertas reais, preco de verdade",
+    title: "PromoSnap — Ofertas reais, preço de verdade",
     description:
-      "Encontre as melhores ofertas, compare precos e economize de verdade.",
+      "Encontre as melhores ofertas, compare preços e economize de verdade.",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "PromoSnap" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "PromoSnap",
     description:
-      "Ofertas reais, preco de verdade. Compare precos e economize.",
+      "Ofertas reais, preço de verdade. Compare preços e economize.",
     images: ["/og-image.png"],
   },
   icons: {

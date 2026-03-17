@@ -63,7 +63,7 @@ const MARKETPLACE_PATTERNS: MarketplacePattern[] = [
   {
     slug: 'shein',
     name: 'Shein',
-    patterns: [/shein\.com/i, /sheingsp\.com/i],
+    patterns: [/shein\.com/i, /sheingsp\.com/i, /shein\.top/i, /dl\.shein\.com/i],
     idExtractor: (url) => {
       const match = url.pathname.match(/-p-(\d+)/)
       return match ? match[1] : null

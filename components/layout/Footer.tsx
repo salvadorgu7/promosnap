@@ -5,24 +5,24 @@ import Logo from "@/components/ui/Logo";
 import Newsletter from "@/components/home/Newsletter";
 
 const LINKS = {
-  Navegacao: [
+  "Navegação": [
     { href: "/ofertas", label: "Ofertas Quentes" },
-    { href: "/menor-preco", label: "Menor Preco Historico" },
+    { href: "/menor-preco", label: "Menor Preço Histórico" },
     { href: "/mais-vendidos", label: "Mais Vendidos" },
     { href: "/cupons", label: "Cupons" },
     { href: "/categorias", label: "Categorias" },
     { href: "/marcas", label: "Marcas" },
     { href: "/guias", label: "Guias de Compra" },
-    { href: "/trending", label: "Tendencias" },
+    { href: "/trending", label: "Tendências" },
   ],
   Legal: [
-    { href: "/politica-privacidade", label: "Politica de Privacidade" },
+    { href: "/politica-privacidade", label: "Política de Privacidade" },
     { href: "/termos", label: "Termos de Uso" },
-    { href: "/transparencia", label: "Transparencia" },
+    { href: "/transparencia", label: "Transparência" },
   ],
   Sobre: [
     { href: "/sobre", label: "Sobre o PromoSnap" },
-    { href: "/indicar", label: "Programa de Indicacao" },
+    { href: "/indicar", label: "Programa de Indicação" },
     { href: "/minha-conta", label: "Minha Conta" },
     { href: "/favoritos", label: "Meus Favoritos" },
   ],
@@ -57,7 +57,7 @@ export default function Footer() {
               <Logo size="md" />
             </Link>
             <p className="text-sm text-text-muted leading-relaxed mb-3">
-              Ofertas reais, preco de verdade. Compare precos, acompanhe historico e encontre os melhores descontos do Brasil.
+              Ofertas reais, preço de verdade. Compare preços, acompanhe histórico e encontre os melhores descontos do Brasil.
             </p>
             <p className="text-xs text-surface-400 font-medium tracking-wide">promosnap.com.br</p>
           </div>
@@ -87,9 +87,9 @@ export default function Footer() {
         {/* Affiliate disclaimer */}
         <div className="mt-8 pt-6" style={{ borderTop: "1px solid rgba(108,99,255,0.10)" }}>
           <p className="text-xs text-surface-400 leading-relaxed max-w-3xl mb-4">
-            O PromoSnap pode receber comissoes por compras realizadas atraves de links de afiliado.
-            Isso nao afeta o preco que voce paga e nos ajuda a manter o servico gratuito.
-            Todos os precos exibidos sao obtidos automaticamente e podem variar sem aviso previo.
+            O PromoSnap pode receber comissões por compras realizadas através de links de afiliado.
+            Isso não afeta o preço que você paga e nos ajuda a manter o serviço gratuito.
+            Todos os preços exibidos são obtidos automaticamente e podem variar sem aviso prévio.
             Verifique sempre o valor final na loja antes de concluir sua compra.
           </p>
         </div>
@@ -101,7 +101,7 @@ export default function Footer() {
               href="/politica-privacidade"
               className="hover:text-brand-600 transition-colors duration-200"
             >
-              Politica de Privacidade
+              Política de Privacidade
             </Link>
             <Link
               href="/termos"
@@ -113,11 +113,11 @@ export default function Footer() {
               href="/transparencia"
               className="hover:text-brand-600 transition-colors duration-200"
             >
-              Transparencia
+              Transparência
             </Link>
           </div>
           <p className="text-xs text-surface-400 text-center">
-            &copy; {new Date().getFullYear()} PromoSnap. Precos e disponibilidade podem variar.
+            &copy; {new Date().getFullYear()} PromoSnap. Preços e disponibilidade podem variar.
           </p>
         </div>
       </div>

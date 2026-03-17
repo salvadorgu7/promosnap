@@ -14,7 +14,7 @@ const SHORT_LINK_HOSTS = [
   'amzn.to', 'a.co',
   's.shopee.com.br', 'shopee.com.br/universal-link',
   'mercadolivre.com/sec', 'meli.la',
-  'shein.com/universal-link',
+  'shein.com/universal-link', 'shein.top', 'dl.shein.com',
   's.aliexpress.com', 'a.aliexpress.com',
   'cutt.ly', 'rebrand.ly', 'ow.ly',
 ]

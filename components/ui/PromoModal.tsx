@@ -15,16 +15,9 @@ interface PromoModalConfig {
 }
 
 // Static config — can be replaced with API/config endpoint later
-const ACTIVE_MODAL: PromoModalConfig | null = {
-  id: "alerts-v15",
-  title: "Ative alertas de preco",
-  description:
-    "Receba notificacoes quando o produto que voce quer atingir o preco ideal. Defina alertas e economize sem esforco.",
-  ctaText: "Explorar ofertas",
-  ctaUrl: "/ofertas",
-  secondaryText: "Saiba mais",
-  secondaryUrl: "/sobre",
-};
+// Disabled: modal was blocking homepage content and hurting UX.
+// Re-enable by setting a config object here when ready.
+const ACTIVE_MODAL: PromoModalConfig | null = null;
 
 const SESSION_KEY = "promosnap_modal_dismissed";
 
