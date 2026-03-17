@@ -5,6 +5,9 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Note: Neon free tier with PgBouncer does NOT support prisma migrate (advisory locks).
+  // Schema changes are applied via prisma db execute + SQL files in prisma/sql/
+  // Then run: npx prisma generate (to update the client)
 }
 
 // ============================================
