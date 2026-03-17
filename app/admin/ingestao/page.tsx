@@ -18,6 +18,10 @@ interface IngestResult {
   invalidIds?: string[];
   errors?: string[];
   categories?: string[];
+  brandStats?: { detected: number; unknown: number };
+  categoryStats?: { resolved: number; unresolved: number };
+  priceStats?: { min: number; max: number; avg: number };
+  noAffiliateUrl?: number;
 }
 
 interface IngestError {
@@ -1328,6 +1332,36 @@ export default function AdminIngestãoPage() {
               <p className="text-xs text-text-muted">Falharam</p>
             </div>
           </div>
+
+          {/* Pipeline stats: categories, brands, prices */}
+          {(result.categoryStats || result.brandStats || result.priceStats) && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+              {result.categoryStats && (
+                <div className="p-2 bg-surface-50 rounded">
+                  <p className="text-text-muted">Categorias</p>
+                  <p className="font-medium text-text-primary">{result.categoryStats.resolved} resolvidas{result.categoryStats.unresolved > 0 && `, ${result.categoryStats.unresolved} sem categoria`}</p>
+                </div>
+              )}
+              {result.brandStats && (
+                <div className="p-2 bg-surface-50 rounded">
+                  <p className="text-text-muted">Marcas</p>
+                  <p className="font-medium text-text-primary">{result.brandStats.detected} detectadas{result.brandStats.unknown > 0 && `, ${result.brandStats.unknown} desconhecidas`}</p>
+                </div>
+              )}
+              {result.priceStats && result.priceStats.avg > 0 && (
+                <div className="p-2 bg-surface-50 rounded">
+                  <p className="text-text-muted">Preços</p>
+                  <p className="font-medium text-text-primary">R$ {result.priceStats.min.toFixed(0)} – R$ {result.priceStats.max.toFixed(0)} (média R$ {result.priceStats.avg.toFixed(0)})</p>
+                </div>
+              )}
+              {typeof result.noAffiliateUrl === 'number' && result.noAffiliateUrl > 0 && (
+                <div className="p-2 bg-amber-50 rounded">
+                  <p className="text-text-muted">Sem link afiliado</p>
+                  <p className="font-medium text-amber-600">{result.noAffiliateUrl} produtos</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {(result.fetchErrors || result.searchErrors) && (
             <div>

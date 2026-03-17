@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdmin } from '@/lib/auth/admin'
 import { MercadoLivreSourceAdapter } from '@/lib/adapters/mercadolivre'
-import { runImportPipeline, type ImportItem } from '@/lib/import'
+import { runImportPipeline, type ImportItem, type ImportPipelineResult } from '@/lib/import'
 import { rateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
 import { getMLAppToken } from '@/lib/ml-auth'
 import { SEED_PRODUCTS } from '@/lib/seed-products'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
+
+/** Extract pipeline stats to include in API response for admin UI */
+function pipelineStats(r: ImportPipelineResult) {
+  return {
+    brandStats: r.brandStats,
+    categoryStats: r.categoryStats,
+    priceStats: r.priceStats,
+    noAffiliateUrl: r.noAffiliateUrl,
+  }
+}
 
 function adapterResultToImportItem(
   r: { externalId: string; title: string; currentPrice: number; originalPrice?: number; productUrl: string; affiliateUrl?: string; imageUrl?: string; isFreeShipping?: boolean; availability?: string }
@@ -69,6 +79,7 @@ export async function GET(request: NextRequest) {
       skipped: result.skipped,
       failed: result.failed,
       durationMs: result.durationMs,
+      ...pipelineStats(result),
     })
   } catch (err) {
     return NextResponse.json({ error: 'Erro interno ao processar ingestao' }, { status: 500 })
@@ -152,6 +163,7 @@ export async function POST(request: NextRequest) {
       skipped: result.skipped,
       failed: result.failed,
       durationMs: result.durationMs,
+      ...pipelineStats(result),
       ...(errors.length > 0 && { fetchErrors: errors }),
     })
   } catch (err) {
@@ -232,6 +244,7 @@ export async function PUT(request: NextRequest) {
       skipped: result.skipped,
       failed: result.failed,
       durationMs: result.durationMs,
+      ...pipelineStats(result),
     })
   } catch (err) {
     return NextResponse.json({ error: 'Erro interno ao processar ingestao manual' }, { status: 500 })
@@ -318,6 +331,7 @@ export async function PATCH(request: NextRequest) {
       skipped: result.skipped,
       failed: result.failed,
       durationMs: result.durationMs,
+      ...pipelineStats(result),
       ...(errors.length > 0 && { searchErrors: errors }),
     })
   } catch (err) {
@@ -366,6 +380,7 @@ export async function DELETE(request: NextRequest) {
       skipped: result.skipped,
       failed: result.failed,
       durationMs: result.durationMs,
+      ...pipelineStats(result),
       categories: [...new Set(selected.map(p => p.category))],
     })
   } catch (err) {

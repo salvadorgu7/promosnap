@@ -5,6 +5,9 @@
 import prisma from '@/lib/db/prisma'
 import { canonicalMatch } from '@/lib/catalog/canonical-match'
 import { KNOWN_BRANDS as SHARED_BRANDS, BRAND_CASING as SHARED_BRAND_CASING, detectBrand as sharedDetectBrand } from '@/lib/brands'
+import { logger } from '@/lib/logger'
+
+const log = logger.child({ module: 'import-pipeline' })
 
 /** Maximum number of items allowed per batch import to prevent memory/timeout issues */
 export const MAX_BATCH_SIZE = 500
@@ -158,7 +161,7 @@ function validateItem(item: ImportItem): string | null {
   if (!item.title || item.title.trim().length < 3) return 'Title too short or missing'
   if (item.title.length > 500) {
     item.title = item.title.slice(0, 500)
-    console.warn(`[import-pipeline] title truncated for ${item.externalId}`)
+    log.warn('validation.title-truncated', { externalId: item.externalId })
   }
   if (!item.currentPrice || item.currentPrice <= 0) return 'Invalid price'
   if (item.currentPrice > 500_000) return 'Price suspiciously high (>R$500k)'
@@ -208,7 +211,7 @@ export async function runImportPipeline(
   if (items.length > MAX_BATCH_SIZE) {
     const originalLength = items.length
     items = items.slice(0, MAX_BATCH_SIZE)
-    console.warn(`[import-pipeline] Batch truncated to ${MAX_BATCH_SIZE} items (received ${originalLength})`)
+    log.warn('batch.truncated', { max: MAX_BATCH_SIZE, received: originalLength })
   }
 
   const start = Date.now()
@@ -245,7 +248,7 @@ export async function runImportPipeline(
       // Validate
       const validationError = validateItem(item)
       if (validationError) {
-        console.warn(`[import-pipeline] validation failed: ${item.externalId || 'unknown'} — ${validationError}`)
+        log.warn('validation.failed', { externalId: item.externalId || 'unknown', reason: validationError })
         results.push({ externalId: item.externalId || 'unknown', action: 'skipped', reason: validationError })
         skipped++
         continue
@@ -437,14 +440,12 @@ export async function runImportPipeline(
             if (dbProduct) {
               matchConfidence = match.score
               canonicalMatches++
-              console.log(
-                `[import-pipeline] canonical match: "${cleanTitle}" → "${match.productName}" (score=${match.score.toFixed(2)}, ${match.confidence}, via=${match.matchedOn.join(',')})`
-              )
+              log.info('canonical.match', { title: cleanTitle, matchedTo: match.productName, score: match.score.toFixed(2), confidence: match.confidence, via: match.matchedOn.join(',') })
             }
           }
         } catch (err) {
           // Canonical match is optional — log and continue without it
-          console.warn(`[import-pipeline] canonical match skipped for "${item.externalId}":`, err instanceof Error ? err.message : err)
+          log.warn('canonical.skipped', { externalId: item.externalId, error: err instanceof Error ? err.message : err })
         }
       }
 
@@ -542,7 +543,7 @@ export async function runImportPipeline(
       }
       const hasValidAffiliateUrl = !!affiliateUrl && affiliateUrl !== '#' && affiliateUrl.startsWith('http')
       if (!hasValidAffiliateUrl) {
-        console.warn(`[import-pipeline] product "${cleanTitle}" has no valid affiliate URL`)
+        log.warn('no-affiliate-url', { title: cleanTitle })
         noAffiliateUrl++
       }
       const offerScore = computeOfferScore(item)
@@ -584,20 +585,19 @@ export async function runImportPipeline(
     ? { min: Math.min(...prices), max: Math.max(...prices), avg: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) }
     : emptyPriceStats
 
-  // Dedup stats
+  // Batch summary log
   const existingCount = results.filter(r => r.action === 'updated' || (r.action === 'skipped' && r.reason === 'price unchanged')).length
   const newCount = results.filter(r => r.action === 'created').length
-  console.log(`[import-pipeline] dedup: ${existingCount} existing, ${newCount} new, ${canonicalMatches} canonical-matched`)
-  console.log(`[import-pipeline] brands: ${brandsDetected} detected, ${brandsUnknown} unknown`)
-  console.log(`[import-pipeline] categories: ${catsResolved} resolved, ${catsUnresolved} unresolved`)
-  if (prices.length > 0) {
-    console.log(`[import-pipeline] prices: R$${priceStats.min.toFixed(0)}-R$${priceStats.max.toFixed(0)} avg=R$${priceStats.avg.toFixed(0)}`)
-  }
-
-  // Batch summary
   const topBrands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k}:${v}`).join(', ')
   const topCats = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k}:${v}`).join(', ')
-  console.log(`[import-pipeline] batch complete: source=${sourceSlug} created=${created} updated=${updated} skipped=${skipped} failed=${failed} noAffiliateUrl=${noAffiliateUrl} canonicalMatches=${canonicalMatches} brands=[${topBrands}] categories=[${topCats}] priceRange=R$${priceStats.min.toFixed(0)}-R$${priceStats.max.toFixed(0)}`)
+
+  log.info('batch.complete', {
+    source: sourceSlug, created, updated, skipped, failed,
+    existing: existingCount, new: newCount, canonicalMatches,
+    noAffiliateUrl, brands: topBrands, categories: topCats,
+    priceRange: prices.length > 0 ? `R$${priceStats.min.toFixed(0)}-R$${priceStats.max.toFixed(0)}` : 'n/a',
+    durationMs,
+  })
 
   return { created, updated, skipped, failed, total: items.length, items: results, durationMs, sourceSlug, noAffiliateUrl, brandStats, categoryStats, priceStats }
 }

@@ -3,6 +3,9 @@
 
 import type { SourceAdapter, AdapterSearchOptions, AdapterResult, AdapterStatus, AdapterHealthCheckResult, AdapterReadinessResult, AdapterCapability, SyncResult, SourceCapabilityTruth } from './types'
 import { getMLToken, getMLAppToken } from '@/lib/ml-auth'
+import { logger } from '@/lib/logger'
+
+const log = logger.child({ adapter: 'mercadolivre' })
 
 // Accept both naming conventions for ML env vars
 function getMLEnv(key: string): string | undefined {
@@ -92,7 +95,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
     const token = await getMLToken()
     return { Authorization: `Bearer ${token}` }
   } catch (err) {
-    console.warn('[ML] getAuthHeaders failed, will try unauthenticated:', err instanceof Error ? err.message : err)
+    log.warn('auth.headers.failed', { error: err instanceof Error ? err.message : err })
     return {}
   }
 }
@@ -182,7 +185,7 @@ interface MLJsonLdProduct {
 
 async function scrapeMLSearch(query: string, limit: number): Promise<AdapterResult[]> {
   const searchUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(query.replace(/\s+/g, '-'))}`
-  console.log(`[ML] scrape fallback: ${searchUrl}`)
+  log.debug('scrape.search', { url: searchUrl })
 
   const res = await fetch(searchUrl, {
     headers: {
@@ -201,7 +204,7 @@ async function scrapeMLSearch(query: string, limit: number): Promise<AdapterResu
   // Extract JSON-LD structured data
   const ldMatch = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/)
   if (!ldMatch) {
-    console.warn('[ML] scrape: no JSON-LD found')
+    log.warn('scrape.no-jsonld', { query })
     return []
   }
 
@@ -212,7 +215,7 @@ async function scrapeMLSearch(query: string, limit: number): Promise<AdapterResu
     const graph: MLJsonLdProduct[] = ld['@graph'] || (Array.isArray(ld) ? ld : [ld])
 
     const products = graph.filter((item) => item['@type'] === 'Product')
-    console.log(`[ML] scrape: found ${products.length} products in JSON-LD`)
+    log.debug('scrape.found', { count: products.length })
 
     return products.slice(0, limit).map((p): AdapterResult => {
       // Extract MLB ID from URL like .../p/MLB62112970
@@ -240,13 +243,13 @@ async function scrapeMLSearch(query: string, limit: number): Promise<AdapterResu
       }
     })
   } catch (err) {
-    console.error('[ML] scrape JSON-LD parse error:', err)
+    log.error('scrape.parse-error', { error: err })
     return []
   }
 }
 
 async function scrapeMLProduct(url: string): Promise<AdapterResult | null> {
-  console.log(`[ML] scrape product: ${url}`)
+  log.debug('scrape.product', { url })
 
   const res = await fetch(url, {
     headers: {
@@ -257,7 +260,7 @@ async function scrapeMLProduct(url: string): Promise<AdapterResult | null> {
     redirect: 'follow',
   })
 
-  console.log(`[ML] scrape product response: ${res.status} ${res.url}`)
+  log.debug('scrape.product.response', { status: res.status, url: res.url })
   if (!res.ok) return null
 
   const html = await res.text()
@@ -346,7 +349,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       if (options?.sortBy === 'price_asc') url.searchParams.set('sort', 'price_asc')
       if (options?.sortBy === 'price_desc') url.searchParams.set('sort', 'price_desc')
 
-      console.log(`[ML] search("${query}") limit=${limit} offset=${offset}`)
+      log.info('search.start', { query, limit, offset })
 
       // Strategy: try with auth token → try app token directly → try without auth
       let res: Response | null = null
@@ -356,7 +359,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       res = await fetch(url.toString(), { headers: { ...ML_BASE_HEADERS } })
       if (!res.ok) {
         lastErr = `noAuth(${res.status})`
-        console.warn(`[ML] search without auth failed: ${res.status}`)
+        log.warn('search.noauth.failed', { status: res.status })
         res = null
       }
 
@@ -368,7 +371,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
           if (res.ok) { /* success */ }
           else {
             lastErr = `auth(${res.status})`
-            console.warn(`[ML] search with auth failed: ${res.status}`)
+            log.warn('search.auth.failed', { status: res.status })
             res = null
           }
         }
@@ -382,31 +385,31 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
           if (res.ok) { /* success */ }
           else {
             lastErr = `app_token(${res.status})`
-            console.warn(`[ML] search with app token failed: ${res.status}`)
+            log.warn('search.apptoken.failed', { status: res.status })
             res = null
           }
         } catch (e) {
-          console.warn(`[ML] app token fetch failed:`, e instanceof Error ? e.message : e)
+          log.warn('search.apptoken.error', { error: e instanceof Error ? e.message : e })
         }
       }
 
       // All API attempts failed — try web scraping fallback
       if (!res) {
-        console.warn(`[ML] all API attempts failed (${lastErr}), trying web scrape fallback...`)
+        log.warn('search.api.exhausted', { lastErr, query })
         const scraped = await scrapeMLSearch(query, limit)
         if (scraped.length > 0) {
-          console.log(`[ML] search("${query}") → ${scraped.length} results via scrape`)
+          log.info('search.scrape.ok', { query, count: scraped.length })
           return scraped
         }
         throw new Error(`ML API e scrape falharam. Último erro API: ${lastErr}`)
       }
 
       const data: MLSearchResponse = await res.json()
-      console.log(`[ML] search("${query}") → ${data.results.length} results (total: ${data.paging.total})`)
+      log.info('search.ok', { query, results: data.results.length, total: data.paging.total })
 
       return data.results.map(mlToAdapterResult)
     } catch (error) {
-      console.error(`[ML] search error:`, error)
+      log.error('search.error', { query, error })
       throw error
     }
   }
@@ -425,7 +428,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     res = await fetch(itemUrl, { headers: { ...ML_BASE_HEADERS } })
     if (!res.ok) {
       lastErr = `noAuth(${res.status})`
-      console.warn(`[ML] getProduct(${externalId}) no auth failed: ${res.status}`)
+      log.warn('getProduct.noauth.failed', { externalId, status: res.status })
       res = null
     }
 
@@ -436,7 +439,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
         res = await fetch(itemUrl, { headers: { ...ML_BASE_HEADERS, ...headers } })
         if (!res.ok) {
           lastErr = `auth(${res.status})`
-          console.warn(`[ML] getProduct(${externalId}) auth failed: ${res.status}`)
+          log.warn('getProduct.auth.failed', { externalId, status: res.status })
           res = null
         }
       }
@@ -449,11 +452,11 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
         res = await fetch(itemUrl, { headers: { ...ML_BASE_HEADERS, Authorization: `Bearer ${appToken}` } })
         if (!res.ok) {
           lastErr = `appToken(${res.status})`
-          console.warn(`[ML] getProduct(${externalId}) app token failed: ${res.status}`)
+          log.warn('getProduct.apptoken.failed', { externalId, status: res.status })
           res = null
         }
       } catch (e) {
-        console.warn(`[ML] app token fetch failed:`, e instanceof Error ? e.message : e)
+        log.warn('getProduct.apptoken.error', { externalId, error: e instanceof Error ? e.message : e })
       }
     }
 
@@ -472,7 +475,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
           lastErr = `multiGet(${multiRes.status})`
         }
       } catch (e) {
-        console.warn(`[ML] multi-get fallback failed:`, e instanceof Error ? e.message : e)
+        log.warn('getProduct.multiget.failed', { externalId, error: e instanceof Error ? e.message : e })
       }
     }
 
@@ -488,12 +491,12 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
         try {
           const scraped = await scrapeMLProduct(pUrl)
           if (scraped) {
-            console.log(`[ML] getProduct(${externalId}) resolved via scrape: ${pUrl}`)
+            log.info('getProduct.scrape.ok', { externalId, url: pUrl })
             return scraped
           }
         } catch (e) {
           lastErr = `scrape(${pUrl}: ${e instanceof Error ? e.message : e})`
-          console.warn(`[ML] scrape fallback failed for ${pUrl}:`, e instanceof Error ? e.message : e)
+          log.warn('getProduct.scrape.failed', { externalId, url: pUrl, error: e instanceof Error ? e.message : e })
         }
       }
     }
@@ -502,17 +505,16 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     if (!res) {
       try {
         const scraped = await scrapeMLSearch(externalId, 5)
-        console.log(`[ML] getProduct(${externalId}) search scrape returned ${scraped.length} results`)
+        log.debug('getProduct.searchscrape', { externalId, results: scraped.length })
         if (scraped.length > 0) {
-          // Try exact match first, then return first result
           const match = scraped.find(s => s.externalId === externalId) || scraped[0]
-          console.log(`[ML] getProduct(${externalId}) resolved via search scrape → ${match.externalId}`)
+          log.info('getProduct.searchscrape.ok', { externalId, matchedId: match.externalId })
           return match
         }
         lastErr = `searchScrape(0 results)`
       } catch (e) {
         lastErr = `searchScrape(${e instanceof Error ? e.message : e})`
-        console.warn(`[ML] search scrape fallback failed:`, e instanceof Error ? e.message : e)
+        log.warn('getProduct.searchscrape.failed', { externalId, error: e instanceof Error ? e.message : e })
       }
     }
 
@@ -523,7 +525,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     if (!res.ok) {
       const errText = await res.text().catch(() => '')
       const msg = `[ML] getProduct(${externalId}) failed: ${res.status} — ${errText.slice(0, 200)}`
-      console.error(msg)
+      log.error('getProduct.failed', { externalId, status: res.status })
       throw new Error(msg)
     }
 
@@ -591,7 +593,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
   }
 
   async importBatch(items: AdapterResult[]): Promise<SyncResult> {
-    console.log(`[ML] importBatch(${items.length} items)`)
+    log.info('importBatch', { count: items.length })
     return {
       synced: items.length,
       failed: 0,

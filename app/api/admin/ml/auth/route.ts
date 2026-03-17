@@ -29,9 +29,9 @@ export async function GET(req: NextRequest) {
 
   if (!redirectUri) {
     // Auto-detect redirect URI
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+      || 'https://www.promosnap.com.br'
 
     return NextResponse.json({
       error: 'ML_REDIRECT_URI not configured',
