@@ -7,49 +7,67 @@ import { logger } from "@/lib/logger";
 import type { PageType, ChannelOrigin } from "@/lib/attribution/engine";
 
 /**
- * Append affiliate tracking params to redirect URL if missing.
- * Handles Mercado Livre (matt_tool + matt_word) and can be extended for other sources.
+ * Known Mercado Livre short-link / redirect domains.
+ * These need ML affiliate param injection even though hostname ≠ mercadolivre.com
+ */
+const ML_SHORT_DOMAINS = [
+  "meli.la",
+  "mercadolivre.com",
+  "mercadolibre.com",
+];
+
+function isMercadoLivreDomain(hostname: string): boolean {
+  return ML_SHORT_DOMAINS.some((d) => hostname.includes(d));
+}
+
+/**
+ * Append/replace affiliate tracking params on redirect URL.
+ * ALWAYS replaces third-party affiliate params with PromoSnap's own IDs
+ * to ensure correct attribution and monetisation.
  */
 function appendAffiliateParams(url: string, sourceSlug: string): string {
   try {
     const parsed = new URL(url);
 
-    // Mercado Livre / Mercado Libre
+    // Mercado Livre / Mercado Libre (includes meli.la short links)
     if (
       sourceSlug === "mercadolivre" ||
-      parsed.hostname.includes("mercadolivre.com") ||
-      parsed.hostname.includes("mercadolibre.com")
+      isMercadoLivreDomain(parsed.hostname)
     ) {
       const affiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID;
-      if (affiliateId && !parsed.searchParams.has("matt_tool")) {
+      if (affiliateId) {
+        // ALWAYS replace — third-party matt_tool from WhatsApp senders must be overwritten
         parsed.searchParams.set("matt_tool", affiliateId);
         const word = process.env.MERCADOLIVRE_AFFILIATE_WORD;
         if (word) parsed.searchParams.set("matt_word", word);
       }
+      // Strip tracking params that leak from WhatsApp messages
+      parsed.searchParams.delete("forceInApp");
+      parsed.searchParams.delete("ref");
     }
 
-    // Amazon BR
+    // Amazon BR (includes amzn.to, a.co short links)
     if (
       sourceSlug === "amazon" || sourceSlug === "amazon-br" ||
-      parsed.hostname.includes("amazon.com.br")
+      parsed.hostname.includes("amazon.com.br") ||
+      parsed.hostname === "amzn.to" ||
+      parsed.hostname === "a.co"
     ) {
       const tag = process.env.AMAZON_AFFILIATE_TAG || process.env.AMAZON_PARTNER_TAG || "promosnap-20";
-      if (tag && !parsed.searchParams.has("tag")) {
-        parsed.searchParams.set("tag", tag);
-        if (!parsed.searchParams.has("linkCode")) {
-          parsed.searchParams.set("linkCode", "ll1");
-        }
+      if (tag) {
+        parsed.searchParams.set("tag", tag); // Always replace
+        parsed.searchParams.set("linkCode", "ll1");
       }
     }
 
-    // Shopee
+    // Shopee (includes s.shopee.com.br short links)
     if (
       sourceSlug === "shopee" ||
       parsed.hostname.includes("shopee.com.br")
     ) {
       const afId = process.env.SHOPEE_AFFILIATE_ID;
-      if (afId && !parsed.searchParams.has("af_id")) {
-        parsed.searchParams.set("af_id", afId);
+      if (afId) {
+        parsed.searchParams.set("af_id", afId); // Always replace
       }
     }
 
@@ -59,8 +77,8 @@ function appendAffiliateParams(url: string, sourceSlug: string): string {
       parsed.hostname.includes("shein.com")
     ) {
       const affId = process.env.SHEIN_AFFILIATE_ID;
-      if (affId && !parsed.searchParams.has("aff_id")) {
-        parsed.searchParams.set("aff_id", affId);
+      if (affId) {
+        parsed.searchParams.set("aff_id", affId); // Always replace
       }
     }
 

@@ -213,24 +213,66 @@ export async function canonicalizeItems(
   const results: PromosAppNormalizedItem[] = []
 
   // Batch expand short links (with concurrency limit)
+  // Supports chain expansion: meli.la → /social/ → actual product URL
   const CONCURRENCY = 5
-  const needsExpansion = items.filter(item =>
-    isShortLink(item.productUrl) || needsPathExpansion(item.productUrl)
+  const needsExpansionSet = new Set(
+    items
+      .filter(item => isShortLink(item.productUrl) || needsPathExpansion(item.productUrl))
+      .map(item => item.productUrl)
   )
   const expandedUrls = new Map<string, string>()
 
-  for (let i = 0; i < needsExpansion.length; i += CONCURRENCY) {
-    const batch = needsExpansion.slice(i, i + CONCURRENCY)
+  // First pass: expand all short links
+  const urlsToExpand = [...needsExpansionSet]
+  for (let i = 0; i < urlsToExpand.length; i += CONCURRENCY) {
+    const batch = urlsToExpand.slice(i, i + CONCURRENCY)
     const expanded = await Promise.allSettled(
-      batch.map(async (item) => {
-        const expanded = await expandUrl(item.productUrl, timeoutMs)
-        return { original: item.productUrl, expanded }
+      batch.map(async (url) => {
+        const expanded = await expandUrl(url, timeoutMs)
+        return { original: url, expanded }
       })
     )
 
     for (const result of expanded) {
       if (result.status === 'fulfilled') {
         expandedUrls.set(result.value.original, result.value.expanded)
+      }
+    }
+  }
+
+  // Second pass: chain expansion — if expanded URL also needs expansion
+  // (e.g., meli.la → mercadolivre.com.br/social/xxx → actual product)
+  const chainExpansions: string[] = []
+  for (const [original, expanded] of expandedUrls) {
+    if (expanded !== original && (isShortLink(expanded) || needsPathExpansion(expanded))) {
+      chainExpansions.push(expanded)
+    }
+  }
+
+  if (chainExpansions.length > 0) {
+    log.debug('promosapp.chain-expansion', { count: chainExpansions.length })
+    for (let i = 0; i < chainExpansions.length; i += CONCURRENCY) {
+      const batch = chainExpansions.slice(i, i + CONCURRENCY)
+      const expanded = await Promise.allSettled(
+        batch.map(async (url) => {
+          const final = await expandUrl(url, timeoutMs)
+          return { intermediate: url, final }
+        })
+      )
+      for (const result of expanded) {
+        if (result.status === 'fulfilled' && result.value.final !== result.value.intermediate) {
+          // Update the mapping: original → final (skip intermediate)
+          for (const [original, intermediate] of expandedUrls) {
+            if (intermediate === result.value.intermediate) {
+              expandedUrls.set(original, result.value.final)
+              log.debug('promosapp.chain-expanded', {
+                from: original.slice(0, 50),
+                via: result.value.intermediate.slice(0, 50),
+                to: result.value.final.slice(0, 50),
+              })
+            }
+          }
+        }
       }
     }
   }

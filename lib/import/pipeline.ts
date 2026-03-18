@@ -578,7 +578,26 @@ export async function runImportPipeline(
 
       // Create offer + snapshot
       // Build affiliate URL using adapter when available, fallback to raw product URL
+      // Strip third-party affiliate params that leak from WhatsApp messages
       let affiliateUrl = item.productUrl || null
+      if (affiliateUrl && affiliateUrl.startsWith('http')) {
+        try {
+          const urlObj = new URL(affiliateUrl)
+          // Remove third-party tracking/affiliate params before building our own
+          const THIRD_PARTY_PARAMS = [
+            'matt_tool', 'matt_word', 'matt_source', 'matt_campaign',
+            'forceInApp', 'deal_print_id', 'promotion_id',
+            'ref', 'fbclid', 'gclid',
+            'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+          ]
+          for (const param of THIRD_PARTY_PARAMS) {
+            urlObj.searchParams.delete(param)
+          }
+          affiliateUrl = urlObj.toString()
+        } catch {
+          // URL parsing failed — continue with raw URL
+        }
+      }
       if (affiliateUrl && affiliateUrl.startsWith('http')) {
         try {
           const adapterMap: Record<string, () => Promise<{ buildAffiliateUrl: (url: string) => string }>> = {

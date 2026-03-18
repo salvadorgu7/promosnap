@@ -38,14 +38,20 @@ async function isDuplicateInDb(dedupeKey: string): Promise<boolean> {
   return !!existing
 }
 
-/** Convert a scored PromosApp item to ImportItem for the existing pipeline */
+/** Convert a scored PromosApp item to ImportItem for the existing pipeline.
+ *  Uses canonicalUrl (expanded, cleaned) when available, falls back to productUrl.
+ */
 function toImportItem(item: PromosAppNormalizedItem): ImportItem {
+  // Prefer canonical URL (expanded short links, cleaned tracking params)
+  // over raw productUrl which may be a meli.la/bit.ly short link
+  const cleanUrl = item.canonicalUrl || item.productUrl
+
   return {
     externalId: item.externalId,
     title: item.title,
     currentPrice: item.currentPrice,
     originalPrice: item.originalPrice,
-    productUrl: item.productUrl,
+    productUrl: cleanUrl,
     imageUrl: item.imageUrl,
     isFreeShipping: item.isFreeShipping,
     sourceSlug: item.sourceSlug,
@@ -69,7 +75,7 @@ async function persistCandidate(
       imageUrl: item.imageUrl,
       price: item.currentPrice || undefined,
       originalPrice: item.originalPrice,
-      affiliateUrl: item.affiliateUrl,
+      affiliateUrl: item.canonicalUrl || item.affiliateUrl,
       sourceSlug: 'promosapp',
       externalId: item.dedupeKey,
       status: decision === 'auto_approve' ? 'APPROVED' :
