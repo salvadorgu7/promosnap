@@ -6,6 +6,7 @@ import PromoBanner from "@/components/ui/PromoBanner";
 import PromoModal from "@/components/ui/PromoModal";
 import ReturnHook from "@/components/engagement/ReturnHook";
 import StickyAlertBar from "@/components/engagement/StickyAlertBar";
+import { organizationSchema, websiteSchema } from "@/lib/seo/metadata";
 
 export default function SiteLayout({
   children,
@@ -14,6 +15,15 @@ export default function SiteLayout({
 }) {
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Sitewide structured data — Organization + WebSite (SearchAction) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema()) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema()) }}
+      />
       <StickyAlertBar />
       <PromoBanner />
       <Header />

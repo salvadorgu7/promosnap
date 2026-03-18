@@ -2,6 +2,7 @@ import prisma from './prisma'
 import type { ProductCard, Badge } from '@/types'
 import { calculateCommercialScore, type CommercialSignals } from '@/lib/ranking/commercial'
 import { memoryCache } from '@/lib/cache/memory'
+import { logger } from '@/lib/logger'
 
 const HOMEPAGE_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
@@ -227,8 +228,9 @@ export async function getRecentlyImported(limit = 16): Promise<ProductCard[]> {
     const result = products.map(buildProductCard).filter(Boolean) as ProductCard[]
     memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
     return result
-  } catch {
+  } catch (err) {
     // Defensive: importedAt/originType column may not exist yet
+    logger.warn('queries.getRecentlyImported.failed', { error: err })
     return []
   }
 }
@@ -275,7 +277,8 @@ export async function getBestValue(limit = 16): Promise<ProductCard[]> {
       .slice(0, limit) as ProductCard[]
     memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
     return result
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getBestValue.failed', { error: err })
     return []
   }
 }
@@ -311,7 +314,8 @@ export async function getNewsletterProducts(limit = 10): Promise<ProductCard[]> 
       .filter((p) => p!.bestOffer.discount && p!.bestOffer.discount > 15 && p!.bestOffer.isFreeShipping)
       .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
       .slice(0, limit) as ProductCard[]
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getNewsletterProducts.failed', { error: err })
     // Defensive: originType column may not exist yet
     return []
   }
@@ -356,7 +360,8 @@ export async function getReadyForCampaign(limit = 20): Promise<ProductCard[]> {
       )
       .sort((a, b) => (b!.bestOffer.offerScore || 0) - (a!.bestOffer.offerScore || 0))
       .slice(0, limit) as ProductCard[]
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getReadyForCampaign.failed', { error: err })
     return []
   }
 }
@@ -638,7 +643,8 @@ export async function getSearchSuggestions(query: string, limit = 8): Promise<Se
         suggestions.push({ text: t.keyword, type: 'trending' })
       }
     }
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getSearchSuggestions.2.failed', { error: err })
     // non-critical
   }
 
@@ -667,7 +673,8 @@ export async function getSearchSuggestions(query: string, limit = 8): Promise<Se
         suggestions.push({ text: s.normalizedQuery, type: 'recent' })
       }
     }
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getSearchSuggestions.failed', { error: err })
     // non-critical — SearchLog may not have data yet
   }
 
@@ -1013,7 +1020,8 @@ export async function getMostSearched(limit = 10): Promise<{ term: string; count
       LIMIT ${limit}
     `
     return results as { term: string; count: number }[]
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getMostSearched.failed', { error: err })
     return []
   }
 }
@@ -1056,7 +1064,8 @@ export async function getHighlightedImports(limit = 16): Promise<ProductCard[]> 
       .slice(0, limit) as ProductCard[]
     memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
     return result
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getHighlightedImports.failed', { error: err })
     return []
   }
 }
@@ -1079,7 +1088,8 @@ export async function getRelatedSearches(context: string, limit = 8): Promise<st
       LIMIT ${limit}
     `
     return (results as { term: string }[]).map(r => r.term)
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getRelatedSearches.failed', { error: err })
     return []
   }
 }
@@ -1117,7 +1127,8 @@ export async function getCategoryBrands(categorySlug: string): Promise<{ name: s
       orderBy: { name: 'asc' },
     })
     return brands.map(b => ({ name: b.name, slug: b.slug, count: b._count.products }))
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getCategoryBrands.failed', { error: err })
     return []
   }
 }
@@ -1142,7 +1153,8 @@ export async function getCategoryRecentImports(categorySlug: string, limit = 8):
       take: limit,
     })
     return products.map(buildProductCard).filter(Boolean) as ProductCard[]
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getCategoryRecentImports.failed', { error: err })
     return []
   }
 }
@@ -1172,7 +1184,8 @@ export async function getCategoryTrendingKeywords(categorySlug: string, limit = 
       LIMIT ${limit}
     `
     return (results as { term: string }[]).map(r => r.term)
-  } catch {
+  } catch (err) {
+    logger.warn('queries.getCategoryTrendingKeywords.failed', { error: err })
     return []
   }
 }

@@ -7,7 +7,10 @@ import RelatedSearches from "@/components/ui/RelatedSearches";
 import ZeroResultActions from "@/components/search/ZeroResultActions";
 import SpellSuggestion from "@/components/search/SpellSuggestion";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { getBaseUrl } from "@/lib/seo/url";
 import { searchListings } from "@/lib/db/queries";
+
+const APP_URL = getBaseUrl();
 import { formatPrice } from "@/lib/utils";
 import { BEST_PAGES } from "@/lib/seo/best-pages";
 import { COMPARISON_LIST } from "@/lib/seo/comparisons";
@@ -207,7 +210,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
               itemListElement: products.slice(0, 10).map((p: any, i: number) => ({
                 "@type": "ListItem",
                 position: i + 1,
-                url: `https://www.promosnap.com.br/produto/${p.slug}`,
+                url: `${APP_URL}/produto/${p.slug}`,
                 name: p.name || p.title,
               })),
             }),

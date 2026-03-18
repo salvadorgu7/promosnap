@@ -67,6 +67,18 @@ export function websiteSchema() {
   }
 }
 
+export function organizationSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: APP_NAME,
+    url: APP_URL,
+    logo: `${APP_URL}/logo.png`,
+    description: 'Comparador de preços brasileiro com histórico de 90 dias, alertas de queda de preço e cupons de desconto.',
+    sameAs: [],
+  }
+}
+
 // ============================================
 // SEO META GENERATORS
 // ============================================
