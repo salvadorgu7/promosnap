@@ -918,7 +918,10 @@ export async function getAdminJobRuns(limit = 50) {
 
 export async function getCategories() {
   return prisma.category.findMany({
-    select: { id: true, name: true, slug: true, icon: true, position: true, _count: { select: { products: true } } },
+    select: {
+      id: true, name: true, slug: true, icon: true, position: true,
+      _count: { select: { products: { where: { status: 'ACTIVE' } } } },
+    },
     orderBy: { position: 'asc' },
   })
 }
