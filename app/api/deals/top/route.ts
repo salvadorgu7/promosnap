@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { buildProductCard, PRODUCT_INCLUDE } from "@/lib/db/queries";
 import { memoryCache } from "@/lib/cache/memory";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 const CACHE_KEY = "api:deals:top";
 const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes — short so banner rotates fresh
@@ -13,6 +14,9 @@ const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes — short so banner rotates fre
  * Used by the DealOfTheDay banner for dynamic, real-time rotation.
  */
 export async function GET(request: NextRequest) {
+  const rl = rateLimit(request, "public");
+  if (!rl.success) return rateLimitResponse(rl);
+
   const limitParam = request.nextUrl.searchParams.get("limit");
   const limit = Math.min(Math.max(parseInt(limitParam || "6", 10), 1), 12);
 
