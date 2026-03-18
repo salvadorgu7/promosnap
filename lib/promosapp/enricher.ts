@@ -201,17 +201,19 @@ function extractMetaTag(html: string, name: string): string | null {
  * Most marketplaces (Shopee, ML, Amazon, Magalu, etc.) set these correctly.
  * Returns partial data on partial success — never throws.
  */
-async function fetchOgMeta(url: string, timeoutMs = 8000): Promise<OgMeta | null> {
+async function fetchOgMeta(url: string, timeoutMs = 12000): Promise<OgMeta | null> {
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
 
+    // Use Googlebot-compatible UA for better SSR from SPAs like Shopee
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
       },
       redirect: 'follow',
     })

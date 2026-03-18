@@ -1,5 +1,6 @@
 import prisma from '@/lib/db/prisma';
 import { runJob, type JobResult } from '@/lib/jobs/runner';
+import { getFlag } from '@/lib/config/feature-flags';
 
 const BATCH_SIZE = 100;
 
@@ -99,6 +100,48 @@ export async function computeScores(): Promise<JobResult> {
 
     ctx.log(`Found ${offers.length} active offers to score`);
 
+    // Pre-fetch 30-day price min per product for priceHistoryBonus (if enabled)
+    const enhancedScoring = getFlag('enhancedScoring');
+    let priceMinByProduct = new Map<string, number>();
+
+    if (enhancedScoring) {
+      try {
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const offerIds = offers.map(o => o.id);
+
+        // PriceSnapshot only has offerId — fetch recent snapshots for all active offers
+        const snapshots = await prisma.priceSnapshot.findMany({
+          where: {
+            offerId: { in: offerIds },
+            capturedAt: { gte: thirtyDaysAgo },
+          },
+          select: { offerId: true, price: true },
+        });
+
+        // Map offerId → productId from our already-loaded offers
+        const offerToProduct = new Map<string, string>();
+        for (const o of offers) {
+          if (o.listing.productId) offerToProduct.set(o.id, o.listing.productId);
+        }
+
+        // Aggregate min price per product
+        for (const s of snapshots) {
+          const pid = offerToProduct.get(s.offerId);
+          if (pid) {
+            const current = priceMinByProduct.get(pid);
+            if (current === undefined || s.price < current) {
+              priceMinByProduct.set(pid, s.price);
+            }
+          }
+        }
+
+        ctx.log(`Loaded 30-day price min for ${priceMinByProduct.size} products (from ${snapshots.length} snapshots)`);
+      } catch {
+        // non-critical — price history bonus is supplementary
+        ctx.log('Warning: failed to load price history for enhanced scoring');
+      }
+    }
+
     let scored = 0;
     const productBestScores: Map<string, number> = new Map();
 
@@ -113,6 +156,22 @@ export async function computeScores(): Promise<JobResult> {
         if (clicks > 0) {
           const clickBoost = Math.min(clicks / 10, 1) * 5;
           score = Math.round((score + clickBoost) * 100) / 100;
+        }
+
+        // Price history bonus: +3-5 points if current price is within 5% of 30-day minimum
+        if (enhancedScoring && offer.listing.productId) {
+          const min30d = priceMinByProduct.get(offer.listing.productId);
+          if (min30d && min30d > 0) {
+            const ratio = offer.currentPrice / min30d;
+            if (ratio <= 1.0) {
+              // At or below the 30-day minimum → max bonus (+5)
+              score = Math.round((score + 5) * 100) / 100;
+            } else if (ratio <= 1.05) {
+              // Within 5% of minimum → scaled bonus (+3 to +5)
+              const bonus = 5 - ((ratio - 1.0) / 0.05) * 2;
+              score = Math.round((score + bonus) * 100) / 100;
+            }
+          }
         }
 
         try {

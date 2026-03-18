@@ -165,12 +165,51 @@ function computeOfferScore(item: ImportItem): number {
   return Math.min(100, Math.round(score))
 }
 
+/** Reject titles that are pure marketing copy / not real product names */
+const SPAM_TITLE_PATTERNS = [
+  // Generic promo phrases (Portuguese)
+  /^(?:veja|confira|aproveite|olha|descubra)\s+(?:nossas?|as|os|essas?|esses?)\s+(?:promo[çc][õo]es|ofertas|descontos|produtos)/i,
+  /^(?:nossas?|melhores?)\s+(?:promo[çc][õo]es|ofertas|descontos)/i,
+  /^(?:promo[çc][õo]es?\s+(?:do\s+dia|da\s+semana|imperd[íi]veis?))/i,
+  /^(?:link\s+na\s+bio|compre\s+(?:aqui|agora|j[áa])|clique\s+aqui)/i,
+  /^(?:grupo?\s+(?:de\s+)?(?:promo[çc][õo]es|ofertas|descontos))/i,
+  /^(?:entre\s+no\s+grupo|participe\s+do\s+grupo)/i,
+  /^(?:siga\s+(?:nosso|o)\s+(?:canal|grupo|perfil))/i,
+  // Too short after normalization — likely leftover marketing fragments
+  /^(?:oferta|promo|baixou|corre|confira|aproveite|imperd[íi]vel|rel[âa]mpago)$/i,
+]
+
+function isSpamTitle(title: string): boolean {
+  const normalized = title
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  // Title with fewer than 2 real words (non-stopword) is likely spam
+  const STOPWORDS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'com', 'para', 'por', 'a', 'o', 'no', 'na', 'as', 'os', 'um', 'uma', 'se', 'ou', 'ao', 'nos', 'nas', 'que', 'la'])
+  const words = normalized.toLowerCase().split(/\s+/).filter(w => w.length > 1 && !STOPWORDS.has(w))
+  if (words.length < 2) return true
+
+  // Match against known spam patterns
+  for (const pattern of SPAM_TITLE_PATTERNS) {
+    if (pattern.test(normalized)) return true
+  }
+
+  return false
+}
+
 function validateItem(item: ImportItem): string | null {
   if (!item.externalId) return 'Missing externalId'
   if (!item.title || item.title.trim().length < 3) return 'Title too short or missing'
   if (item.title.length > 500) {
     item.title = item.title.slice(0, 500)
     log.warn('validation.title-truncated', { externalId: item.externalId })
+  }
+  // Reject titles that are pure marketing copy
+  if (isSpamTitle(item.title)) {
+    log.warn('validation.spam-title', { externalId: item.externalId, title: item.title })
+    return 'Title is promotional/marketing copy, not a product name'
   }
   if (!item.currentPrice || item.currentPrice <= 0) return 'Invalid price'
   if (item.currentPrice > 500_000) return 'Price suspiciously high (>R$500k)'
