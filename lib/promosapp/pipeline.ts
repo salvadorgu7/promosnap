@@ -17,6 +17,7 @@ import type {
   PromosAppPipelineResult,
   PromosAppPipelineConfig,
   PromosAppItemResult,
+  PromosAppDecision,
   DEFAULT_PIPELINE_CONFIG,
 } from './types'
 
@@ -212,18 +213,29 @@ export async function processPromosAppBatch(
     // ── Stage 7: Route decisions ──
     const toImport: PromosAppNormalizedItem[] = []
 
+    const TRUSTED_SOURCES = ['amazon-br', 'mercadolivre', 'shopee', 'magalu', 'magazine-luiza', 'kabum', 'shein']
+
     for (const { item, score } of scored) {
       const rawDecision = decideAction(score, config)
-      // Gate: sourceSlug='unknown' (marketplace not detected) → always pending_review
-      //       These are too risky to auto-publish — require human review
-      // Known marketplaces (amazon-br, mercadolivre, shopee, etc.) pass through
-      // even without images — the product data from WhatsApp parsing is sufficient
-      const TRUSTED_SOURCES = ['amazon-br', 'mercadolivre', 'shopee', 'magalu', 'magazine-luiza', 'kabum', 'shein']
       const isTrustedSource = TRUSTED_SOURCES.includes(item.sourceSlug)
-      const decision = (
-        (rawDecision === 'auto_approve' && item.sourceSlug === 'unknown')
-      ) ? 'pending_review' as const
-        : rawDecision
+
+      // Gate for unknown marketplace:
+      //   - Trusted sources (amazon-br, mercadolivre, etc.) → pass through as-is
+      //   - Unknown source with high score (>=50) + real title (>20 chars) + valid price (>R$5)
+      //     → allow auto_approve (likely a real product from a short-link we couldn't expand)
+      //   - Unknown source that doesn't meet quality bar → downgrade to pending_review
+      let decision: PromosAppDecision = rawDecision
+      if (rawDecision === 'auto_approve' && item.sourceSlug === 'unknown' && !isTrustedSource) {
+        const hasSubstantiveTitle = item.title.length > 20 && !/^[A-ZÀÁÂÃÉÊÍÓÔÕÚÇ\s!.,]+$/.test(item.title)
+        const hasValidPrice = item.currentPrice >= 5
+        const hasHighScore = score.total >= 50
+        if (hasSubstantiveTitle && hasValidPrice && hasHighScore) {
+          // Good enough data — let it through
+          decision = 'auto_approve'
+        } else {
+          decision = 'pending_review'
+        }
+      }
 
       let candidateId: string | undefined
       let importedProductId: string | undefined
