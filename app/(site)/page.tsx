@@ -112,10 +112,11 @@ export default async function HomePage() {
   // Best deal of the day
   const dealOfTheDay = hotOffers.length > 0 ? hotOffers[0] : null;
 
-  // Sort categories so priority ones come first
+  // Sort categories so priority ones come first; hide empty ones
+  const nonEmptyCategories = categories.filter((c: any) => (c._count?.products ?? 0) > 0)
   const sortedCategories = [
-    ...categories.filter((c: any) => PRIORITY_SLUGS.includes(c.slug)),
-    ...categories.filter((c: any) => !PRIORITY_SLUGS.includes(c.slug)),
+    ...nonEmptyCategories.filter((c: any) => PRIORITY_SLUGS.includes(c.slug)),
+    ...nonEmptyCategories.filter((c: any) => !PRIORITY_SLUGS.includes(c.slug)),
   ];
 
   // Category rails (top 3 categories with products)
