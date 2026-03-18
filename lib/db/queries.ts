@@ -26,6 +26,12 @@ export function buildProductCard(p: any): ProductCard | null {
     ? Math.round(((best.originalPrice - best.currentPrice) / best.originalPrice) * 100)
     : undefined
 
+  // ── Price sanity gate ─────────────────────────────────────────────────────
+  // Discounts ≥ MAX_SANE_DISCOUNT % are almost certainly import errors
+  // (e.g. Amazon returning a used/warehouse price as the current price).
+  // Return null here so the product is silently excluded from every listing.
+  if (discount !== undefined && discount >= MAX_SANE_DISCOUNT) return null
+
   const badges: Badge[] = []
   if (best.offerScore >= 80) badges.push({ type: 'hot_deal', label: 'Oferta Quente', color: 'red' })
   if (discount && discount >= 40) badges.push({ type: 'price_drop', label: `${discount}% OFF`, color: 'green' })
@@ -62,14 +68,31 @@ export function buildProductCard(p: any): ProductCard | null {
 // Lean source select — only fields used by buildProductCard
 const SOURCE_SELECT = { select: { slug: true, name: true } } as const
 
+/**
+ * Maximum sane discount (%).
+ * Offers with discount >= this are almost certainly data errors
+ * (e.g. Amazon returning a warehouse/used price as sale price).
+ * Applied centrally in buildProductCard so ALL queries benefit.
+ */
+const MAX_SANE_DISCOUNT = 90
+
 export const PRODUCT_INCLUDE = {
   brand: { select: { name: true, slug: true } },
   category: { select: { name: true, slug: true } },
   listings: {
-    where: { status: 'ACTIVE' as const },
+    // Exclude listings where we *know* the rating is ≤ 2 (very low quality).
+    // Listings without a rating (null) are kept — missing data ≠ bad product.
+    where: {
+      status: 'ACTIVE' as const,
+      OR: [
+        { rating: null },
+        { rating: { gt: 2 } },
+      ],
+    } as any,
     select: {
       imageUrl: true,
       salesCountEstimate: true,
+      rating: true,
       source: SOURCE_SELECT,
       offers: {
         where: { isActive: true },
