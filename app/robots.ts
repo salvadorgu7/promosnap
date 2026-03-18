@@ -10,11 +10,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/admin",
           "/admin-login",
-          "/api/admin",
-          "/api/cron",
-          "/api/clickout",
-          "/api/system",
-          "/api/webhooks",
+          "/api/",
           "/minha-conta",
           "/favoritos",
         ],

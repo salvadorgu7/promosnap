@@ -80,12 +80,20 @@ interface SearchParams {
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { q } = await searchParams;
+  // Search result pages (?q=) are noindexed — parameterized pages waste crawl budget
+  // The /busca root stays indexable as the search entry point
+  if (q) {
+    return buildMetadata({
+      title: `${q} – Busca de Ofertas`,
+      description: `Resultados para "${q}": compare preços em Amazon, Mercado Livre, Shopee e mais.`,
+      path: `/busca?q=${encodeURIComponent(q)}`,
+      noIndex: true,
+    });
+  }
   return buildMetadata({
-    title: q ? `${q} - Busca` : "Buscar Ofertas",
-    description: q
-      ? `Compare preços de "${q}" nas melhores lojas do Brasil. Encontre o menor preço.`
-      : "Busque e compare preços de milhares de produtos nas melhores lojas.",
-    path: `/busca${q ? `?q=${encodeURIComponent(q)}` : ""}`,
+    title: "Buscar Ofertas e Comparar Preços",
+    description: "Busque e compare preços de milhares de produtos nas melhores lojas do Brasil. Histórico de 90 dias, cupons e alertas de queda.",
+    path: `/busca`,
   });
 }
 

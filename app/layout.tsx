@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s | PromoSnap",
   },
   description:
-    "Encontre as melhores ofertas, compare preços e economize de verdade. Histórico real de preços, cupons e os produtos mais vendidos.",
+    "Compare preços na Amazon, Mercado Livre, Shopee e Magalu. Histórico de 90 dias, alertas de queda e cupons. Economize de verdade com dados reais.",
   metadataBase: new URL(getBaseUrl()),
   openGraph: {
     type: "website",

@@ -51,7 +51,7 @@ import PriceComparison from "@/components/product/PriceComparison";
 import DecisionBlocks from "@/components/product/DecisionBlocks";
 import { analyzeCrossSource, buildCrossSourceOffer } from "@/lib/source/cross-source";
 import { getCanonicalComparison, getBestChoice } from "@/lib/catalog/smart-comparison";
-import { buildMetadata, productSchema, breadcrumbSchema } from "@/lib/seo/metadata";
+import { buildMetadata, productSchema, breadcrumbSchema, generateProductMeta } from "@/lib/seo/metadata";
 import { findComparisonsForProduct } from "@/lib/seo/comparisons";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -77,16 +77,23 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 
   const allOffers = product.listings.flatMap((l) => l.offers);
-  const bestPrice = allOffers.length > 0 ? Math.min(...allOffers.map((o) => o.currentPrice)) : null;
+  const bestOffer = allOffers.length > 0
+    ? allOffers.reduce((a, b) => a.currentPrice <= b.currentPrice ? a : b)
+    : null;
+  const discount = bestOffer?.originalPrice && bestOffer.originalPrice > bestOffer.currentPrice
+    ? Math.round((1 - bestOffer.currentPrice / bestOffer.originalPrice) * 100)
+    : null;
 
-  return buildMetadata({
-    title: `${product.name}${product.brand ? ` - ${product.brand.name}` : ""}${bestPrice ? ` por ${formatPrice(bestPrice)}` : ""} - Melhor Preco`,
-    description: product.description
-      ? product.description.slice(0, 155)
-      : `Compare precos de ${product.name} nas melhores lojas. Encontre o melhor preco.`,
-    path: `/produto/${slug}`,
-    ogImage: product.imageUrl || undefined,
-  });
+  return generateProductMeta(
+    {
+      name: product.name,
+      brand: product.brand?.name,
+      description: product.description,
+      slug,
+      imageUrl: product.imageUrl,
+    },
+    bestOffer ? { price: bestOffer.currentPrice, originalPrice: bestOffer.originalPrice, discount } : null
+  );
 }
 
 export default async function ProdutoPage({ params }: { params: Promise<{ slug: string }> }) {
