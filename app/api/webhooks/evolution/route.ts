@@ -75,8 +75,8 @@ function extractEvolutionMessage(
   const remoteJid = data.key?.remoteJid
   if (allowedJids && remoteJid && !allowedJids.has(remoteJid)) return null
 
-  // Skip messages sent by us (echoed messages)
-  if (data.key?.fromMe) return null
+  // Note: fromMe filter removed — the connected WhatsApp number may forward/send
+  // promo messages in the group, and this webhook is receive-only (no echo risk)
 
   // Extract text content from any message format (text, link preview, image with caption)
   const msg = data.message
