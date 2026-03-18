@@ -26,6 +26,10 @@ export function buildProductCard(p: any): ProductCard | null {
     ? Math.round(((best.originalPrice - best.currentPrice) / best.originalPrice) * 100)
     : undefined
 
+  // Sanity gate: price floor — anything below R$5 is almost certainly a parse error
+  // (e.g. "1,10m" dimension read as R$1.10, or corrupt Amazon data).
+  if (best.currentPrice < 5) return null
+
   // Sanity gate: discounts ≥ 85% are almost always data errors (e.g. Amazon 3rd-party/used
   // prices returned as the main price). Filter them out of all site listings.
   // Mirrors the same cap in lib/distribution/engine.ts (DIST_MAX_DISCOUNT).
