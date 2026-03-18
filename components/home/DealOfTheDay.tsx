@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { Award, Truck, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { Award, Truck, ExternalLink, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
+import { analytics } from "@/lib/analytics/events";
 
 interface DealProduct {
   id: string;
@@ -21,17 +22,61 @@ interface DealProduct {
 }
 
 interface Props {
-  product: DealProduct;
+  /** Server-rendered initial deals (SSR fallback) */
+  product?: DealProduct;
   extraDeals?: DealProduct[];
 }
 
-const ROTATE_INTERVAL = 6000;
+const ROTATE_INTERVAL = 6000; // Rotate deal every 6s
+const REFRESH_INTERVAL = 2 * 60 * 1000; // Fetch fresh deals every 2 min
 
 export default function DealOfTheDay({ product, extraDeals = [] }: Props) {
-  const allDeals = [product, ...extraDeals];
-  const total = allDeals.length;
+  // Start with server-provided data (if any), then replace with API data
+  const serverDeals = product ? [product, ...extraDeals] : [];
+  const [deals, setDeals] = useState<DealProduct[]>(serverDeals);
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [fadeClass, setFadeClass] = useState("opacity-100");
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval>>(undefined);
+
+  // Fetch top deals from API
+  const fetchDeals = useCallback(async (isInitial = false) => {
+    try {
+      if (!isInitial) setIsRefreshing(true);
+      const res = await fetch("/api/deals/top?limit=6", { next: { revalidate: 60 } });
+      if (!res.ok) return;
+      const data: DealProduct[] = await res.json();
+      if (data.length > 0) {
+        // Smooth transition: fade out → swap → fade in
+        setFadeClass("opacity-0");
+        await new Promise((r) => setTimeout(r, 300));
+        setDeals(data);
+        setCurrent(0);
+        setFadeClass("opacity-100");
+      }
+    } catch {
+      // Silently fail — keep showing current deals
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  // Initial fetch on mount (replaces server data with fresh API data)
+  useEffect(() => {
+    fetchDeals(true);
+  }, [fetchDeals]);
+
+  // Periodic refresh — always show freshest top-scoring deals
+  useEffect(() => {
+    refreshTimerRef.current = setInterval(() => fetchDeals(false), REFRESH_INTERVAL);
+    return () => {
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+    };
+  }, [fetchDeals]);
+
+  // Auto-rotate through deals
+  const total = deals.length;
 
   const next = useCallback(() => {
     setCurrent((c) => (c + 1) % total);
@@ -47,7 +92,10 @@ export default function DealOfTheDay({ product, extraDeals = [] }: Props) {
     return () => clearInterval(timer);
   }, [paused, next, total]);
 
-  const deal = allDeals[current];
+  // Nothing to show
+  if (deals.length === 0) return null;
+
+  const deal = deals[current] || deals[0];
 
   const scoreClass =
     deal.offerScore >= 75
@@ -73,12 +121,17 @@ export default function DealOfTheDay({ product, extraDeals = [] }: Props) {
               <h2 className="font-display font-bold text-base md:text-lg text-white">
                 Oferta do Dia
               </h2>
-              <p className="text-[10px] md:text-xs text-white/60">Selecionada pelo nosso algoritmo</p>
+              <p className="text-[10px] md:text-xs text-white/60">
+                Atualizado em tempo real • Maiores scores
+                {isRefreshing && (
+                  <RefreshCw className="inline w-2.5 h-2.5 ml-1 animate-spin" />
+                )}
+              </p>
             </div>
           </div>
           {total > 1 && (
             <div className="flex items-center gap-1.5">
-              {allDeals.map((_, i) => (
+              {deals.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrent(i)}
@@ -94,7 +147,7 @@ export default function DealOfTheDay({ product, extraDeals = [] }: Props) {
           )}
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-center">
+        <div className={`flex flex-col md:flex-row gap-4 md:gap-8 items-center transition-opacity duration-300 ${fadeClass}`}>
           {/* Image */}
           <Link
             href={`/produto/${deal.slug}`}
@@ -167,6 +220,12 @@ export default function DealOfTheDay({ product, extraDeals = [] }: Props) {
                   href={`/api/clickout/${deal.offerId}?page=home&origin=deal-of-day`}
                   target="_blank"
                   rel="noopener noreferrer nofollow sponsored"
+                  onClick={() => analytics.offerClick({
+                    offerId: deal.offerId || "",
+                    productId: deal.id,
+                    store: deal.sourceName,
+                    price: deal.price,
+                  })}
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent-yellow text-surface-900 font-display font-bold text-sm hover:bg-yellow-300 transition-colors shadow-lg"
                 >
                   Ver Oferta

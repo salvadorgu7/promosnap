@@ -282,24 +282,33 @@ export async function canonicalizeItems(
     const expandedUrl = expandedUrls.get(item.productUrl) || item.productUrl
     const canonicalUrl = buildCanonicalUrl(expandedUrl)
 
-    // Re-detect marketplace if URL was expanded and source is unknown
+    // Re-detect marketplace from expanded URL
     let updatedItem = { ...item }
     if (expandedUrl !== item.productUrl) {
       updatedItem.productUrl = expandedUrl
 
-      // Re-detect marketplace from expanded URL (e.g., bit.ly → shopee.com.br)
-      if (item.sourceSlug === 'unknown') {
-        const mp = detectMarketplace(expandedUrl)
-        if (mp) {
+      const mp = detectMarketplace(expandedUrl)
+      if (mp) {
+        // Always update sourceSlug if it was unknown
+        if (item.sourceSlug === 'unknown') {
           updatedItem.sourceSlug = mp.slug
           updatedItem.marketplace = mp.name
-          if (mp.externalId) {
-            updatedItem.externalId = mp.externalId
-            updatedItem.dedupeKey = `${mp.slug}:${mp.externalId}`
-          }
           log.info('promosapp.source-redetected', {
             from: 'unknown',
             to: mp.slug,
+            url: expandedUrl.slice(0, 80),
+          })
+        }
+
+        // Always update externalId/dedupeKey if we got a better ID
+        // This is critical for short links like amzn.to → amazon.com.br/dp/B0xxx
+        // where the parser detected amazon-br but couldn't extract the ASIN
+        if (mp.externalId && item.dedupeKey.startsWith('hash:')) {
+          updatedItem.externalId = mp.externalId
+          updatedItem.dedupeKey = `${mp.slug}:${mp.externalId}`
+          log.info('promosapp.id-extracted-from-expansion', {
+            source: updatedItem.sourceSlug,
+            externalId: mp.externalId,
             url: expandedUrl.slice(0, 80),
           })
         }
@@ -307,15 +316,6 @@ export async function canonicalizeItems(
     }
 
     updatedItem.canonicalUrl = canonicalUrl
-
-    // Update dedupe key if we got a better external ID from expanded URL
-    if (item.dedupeKey.startsWith('hash:') && expandedUrl !== item.productUrl) {
-      const mp = detectMarketplace(expandedUrl)
-      if (mp?.externalId) {
-        updatedItem.externalId = mp.externalId
-        updatedItem.dedupeKey = `${mp.slug}:${mp.externalId}`
-      }
-    }
 
     results.push(updatedItem)
   }

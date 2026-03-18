@@ -233,41 +233,39 @@ export default async function HomePage() {
       {/* ===== 2c. RETURN USER GREETING ===== */}
       <ReturnUserGreeting />
 
-      {/* ===== 3. OFERTA DO DIA — auto-rotates top 6 deals ===== */}
-      {hotOffers.length > 0 && (
-        <section id="deal-of-the-day" className="py-4">
-          <div className="max-w-7xl mx-auto px-4">
-            <DealOfTheDay
-              product={{
-                id: hotOffers[0].id,
-                name: hotOffers[0].name,
-                slug: hotOffers[0].slug,
-                imageUrl: hotOffers[0].imageUrl,
-                price: hotOffers[0].bestOffer.price,
-                originalPrice: hotOffers[0].bestOffer.originalPrice,
-                discount: hotOffers[0].bestOffer.discount,
-                sourceName: hotOffers[0].bestOffer.sourceName,
-                offerScore: hotOffers[0].bestOffer.offerScore,
-                isFreeShipping: hotOffers[0].bestOffer.isFreeShipping,
-                offerId: hotOffers[0].bestOffer.offerId,
-              }}
-              extraDeals={hotOffers.slice(1, 6).map(p => ({
-                id: p.id,
-                name: p.name,
-                slug: p.slug,
-                imageUrl: p.imageUrl,
-                price: p.bestOffer.price,
-                originalPrice: p.bestOffer.originalPrice,
-                discount: p.bestOffer.discount,
-                sourceName: p.bestOffer.sourceName,
-                offerScore: p.bestOffer.offerScore,
-                isFreeShipping: p.bestOffer.isFreeShipping,
-                offerId: p.bestOffer.offerId,
-              }))}
-            />
-          </div>
-        </section>
-      )}
+      {/* ===== 3. OFERTA DO DIA — dynamic, fetches top scores from API ===== */}
+      <section id="deal-of-the-day" className="py-4">
+        <div className="max-w-7xl mx-auto px-4">
+          <DealOfTheDay
+            product={hotOffers.length > 0 ? {
+              id: hotOffers[0].id,
+              name: hotOffers[0].name,
+              slug: hotOffers[0].slug,
+              imageUrl: hotOffers[0].imageUrl,
+              price: hotOffers[0].bestOffer.price,
+              originalPrice: hotOffers[0].bestOffer.originalPrice,
+              discount: hotOffers[0].bestOffer.discount,
+              sourceName: hotOffers[0].bestOffer.sourceName,
+              offerScore: hotOffers[0].bestOffer.offerScore,
+              isFreeShipping: hotOffers[0].bestOffer.isFreeShipping,
+              offerId: hotOffers[0].bestOffer.offerId,
+            } : undefined}
+            extraDeals={hotOffers.slice(1, 6).map(p => ({
+              id: p.id,
+              name: p.name,
+              slug: p.slug,
+              imageUrl: p.imageUrl,
+              price: p.bestOffer.price,
+              originalPrice: p.bestOffer.originalPrice,
+              discount: p.bestOffer.discount,
+              sourceName: p.bestOffer.sourceName,
+              offerScore: p.bestOffer.offerScore,
+              isFreeShipping: p.bestOffer.isFreeShipping,
+              offerId: p.bestOffer.offerId,
+            }))}
+          />
+        </div>
+      </section>
 
       {/* ===== Empty state if no offers at all ===== */}
       {hotOffers.length === 0 && bestSellers.length === 0 && lowestPrices.length === 0 && (

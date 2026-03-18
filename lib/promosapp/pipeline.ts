@@ -214,11 +214,13 @@ export async function processPromosAppBatch(
 
     for (const { item, score } of scored) {
       const rawDecision = decideAction(score, config)
-      // Gate 1: items without image → downgrade to pending_review
-      // Gate 2: sourceSlug='unknown' (marketplace not detected) → always pending_review
-      //         These are too risky to auto-publish — require human review
+      // Gate: sourceSlug='unknown' (marketplace not detected) → always pending_review
+      //       These are too risky to auto-publish — require human review
+      // Known marketplaces (amazon-br, mercadolivre, shopee, etc.) pass through
+      // even without images — the product data from WhatsApp parsing is sufficient
+      const TRUSTED_SOURCES = ['amazon-br', 'mercadolivre', 'shopee', 'magalu', 'magazine-luiza', 'kabum', 'shein']
+      const isTrustedSource = TRUSTED_SOURCES.includes(item.sourceSlug)
       const decision = (
-        (rawDecision === 'auto_approve' && !item.imageUrl) ||
         (rawDecision === 'auto_approve' && item.sourceSlug === 'unknown')
       ) ? 'pending_review' as const
         : rawDecision

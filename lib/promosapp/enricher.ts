@@ -95,13 +95,26 @@ async function enrichSingle(item: PromosAppNormalizedItem): Promise<EnrichmentRe
     }
 
     // Validate enrichment is useful (has real data, not just a stub)
-    const hasUsefulData = (product.imageUrl || (product.currentPrice && product.currentPrice > 0) || product.title !== `Amazon Product ${item.externalId}`)
+    const isStubTitle = product.title === `Amazon Product ${item.externalId}`
+    const hasUsefulData = (product.imageUrl || (product.currentPrice && product.currentPrice > 0) || !isStubTitle)
 
     if (!hasUsefulData) {
       log.debug('promosapp.enrich-stub', {
         externalId: item.externalId,
         source: item.sourceSlug,
       })
+      // Even stubs provide useful affiliate URLs — return partial enrichment
+      // The item still has title/price from WhatsApp message parsing
+      if (product.affiliateUrl) {
+        return {
+          item,
+          enriched: false, // Not fully enriched, but affiliate URL is valid
+          adapterData: {
+            // Only keep the affiliate URL — rest is stub
+          },
+          enrichmentError: 'Adapter returned stub data (affiliate URL preserved)',
+        }
+      }
       return { item, enriched: false, enrichmentError: 'Adapter returned stub data' }
     }
 
