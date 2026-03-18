@@ -79,6 +79,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/ofertas", label: "Ofertas", icon: Tag },
       { href: "/admin/fontes", label: "Fontes", icon: Store },
       { href: "/admin/ingestao", label: "Ingestão", icon: Upload },
+      { href: "/admin/shopee", label: "Shopee CSV", icon: ShoppingBag },
       { href: "/admin/promosapp", label: "PromosApp", icon: Zap },
       { href: "/admin/catalog-review", label: "Revisao", icon: ListChecks },
       { href: "/admin/banners", label: "Banners", icon: Image },
