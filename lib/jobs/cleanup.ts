@@ -63,11 +63,52 @@ async function deactivateBadPriceOffers(): Promise<number> {
     rule2Count = result.count;
   }
 
-  const total = rule1.count + rule2Count;
+  // Rule 3: High-value product keywords priced below minimum plausible price.
+  // Catches cases where BOTH prices are wrong (Amazon 3rd-party sellers, parse errors).
+  // e.g. iPhone 17 at R$138 with "original" R$496 — ratio looks ok but price is absurd.
+  const HIGH_VALUE_PATTERNS = [
+    /iphone/i,
+    /macbook/i,
+    /\bipad\b/i,
+    /galaxy\s+[sz]\d/i,
+    /\bps5\b/i,
+    /playstation\s*5/i,
+    /xbox\s+series/i,
+    /airpods\s+pro/i,
+  ];
+  const HIGH_VALUE_MIN_PRICE = 500; // R$ — below this for these products = certainly wrong
+
+  const highValueCandidates = await prisma.offer.findMany({
+    where: {
+      isActive: true,
+      currentPrice: { gt: 0, lt: HIGH_VALUE_MIN_PRICE },
+    },
+    select: {
+      id: true,
+      currentPrice: true,
+      listing: { select: { rawTitle: true } },
+    },
+  });
+
+  const rule3Ids = highValueCandidates
+    .filter(o => HIGH_VALUE_PATTERNS.some(p => p.test(o.listing?.rawTitle || '')))
+    .map(o => o.id);
+
+  let rule3Count = 0;
+  if (rule3Ids.length > 0) {
+    const result = await prisma.offer.updateMany({
+      where: { id: { in: rule3Ids } },
+      data: { isActive: false },
+    });
+    rule3Count = result.count;
+  }
+
+  const total = rule1.count + rule2Count + rule3Count;
   if (total > 0) {
     log.warn('cleanup.bad-prices-deactivated', {
       rule1: rule1.count,
       rule2: rule2Count,
+      rule3: rule3Count,
       total,
     });
   }
