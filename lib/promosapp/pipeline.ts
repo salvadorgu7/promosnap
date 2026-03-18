@@ -208,10 +208,13 @@ export async function processPromosAppBatch(
 
     for (const { item, score } of scored) {
       const rawDecision = decideAction(score, config)
-      // Gate: items without image → downgrade to pending_review (don't auto-publish without image,
-      // but don't reject either — admin can review and image may be fetched later)
-      const decision = (!item.imageUrl && rawDecision === 'auto_approve')
-        ? 'pending_review' as const
+      // Gate 1: items without image → downgrade to pending_review
+      // Gate 2: sourceSlug='unknown' (marketplace not detected) → always pending_review
+      //         These are too risky to auto-publish — require human review
+      const decision = (
+        (rawDecision === 'auto_approve' && !item.imageUrl) ||
+        (rawDecision === 'auto_approve' && item.sourceSlug === 'unknown')
+      ) ? 'pending_review' as const
         : rawDecision
 
       let candidateId: string | undefined

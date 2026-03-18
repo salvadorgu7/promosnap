@@ -168,7 +168,7 @@ function computeOfferScore(item: ImportItem): number {
 /** Reject titles that are pure marketing copy / not real product names */
 const SPAM_TITLE_PATTERNS = [
   // Generic promo phrases (Portuguese)
-  /^(?:veja|confira|aproveite|olha|descubra)\s+(?:nossas?|as|os|essas?|esses?)\s+(?:promo[çc][õo]es|ofertas|descontos|produtos)/i,
+  /^(?:vejas?|confira|aproveite|olha|descubra)\s+(?:nossas?|as|os|essas?|esses?)\s+(?:promo[çc][õo]es|ofertas|descontos|produtos)/i,
   /^(?:nossas?|melhores?)\s+(?:promo[çc][õo]es|ofertas|descontos)/i,
   /^(?:promo[çc][õo]es?\s+(?:do\s+dia|da\s+semana|imperd[íi]veis?))/i,
   /^(?:link\s+na\s+bio|compre\s+(?:aqui|agora|j[áa])|clique\s+aqui)/i,
