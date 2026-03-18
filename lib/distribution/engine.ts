@@ -141,6 +141,61 @@ export function getChannelStatus(): ChannelConfig[] {
 }
 
 // ============================================
+// Distribution quality gates
+// — applied to EVERY channel (WhatsApp, Telegram, Email, Homepage)
+// ============================================
+
+/**
+ * Maximum sane discount for distribution.
+ * Anything above this is almost certainly a data error
+ * (e.g. Amazon returning a warehouse price as current price).
+ */
+const DIST_MAX_DISCOUNT = 85
+
+/**
+ * Minimum offer price for distribution.
+ * R$5 floor eliminates near-zero parse errors.
+ */
+const DIST_MIN_PRICE = 5
+
+/**
+ * Minimum listing rating to distribute.
+ * Listings without a rating (null) are kept — missing data ≠ bad product.
+ */
+const DIST_MIN_RATING = 2
+
+/**
+ * Apply distribution quality gates to a raw offer row.
+ * Returns true if the offer should be EXCLUDED (filtered out).
+ */
+function failsQualityGate(o: {
+  currentPrice: any;
+  originalPrice: any;
+  listing: { rating: any; product: any; source: any };
+}): boolean {
+  const current = Number(o.currentPrice)
+  const original = o.originalPrice ? Number(o.originalPrice) : null
+
+  // Price floor
+  if (current < DIST_MIN_PRICE) return true
+
+  // Discount sanity — skip if original price exists and discount is absurd
+  if (original && original > current) {
+    const discount = Math.round(((original - current) / original) * 100)
+    if (discount >= DIST_MAX_DISCOUNT) return true
+  }
+
+  // Rating gate — skip if we know the rating is bad (≤ DIST_MIN_RATING)
+  const rating = o.listing.rating
+  if (rating !== null && rating !== undefined && Number(rating) <= DIST_MIN_RATING) return true
+
+  // Must have image for WhatsApp/Telegram (visual channels)
+  if (!o.listing.product?.imageUrl) return true
+
+  return false
+}
+
+// ============================================
 // Ready offers — top offers for distribution
 // ============================================
 
@@ -150,20 +205,28 @@ export async function getReadyOffers(
   const APP_URL =
     process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br";
 
+  // Fetch extra to account for quality gate filtering
   const offers = await prisma.offer.findMany({
     where: {
       isActive: true,
-      offerScore: { gte: 30 },
+      offerScore: { gte: 40 },         // raised from 30 — low score = low quality
+      currentPrice: { gte: DIST_MIN_PRICE },
       listing: {
         status: "ACTIVE",
+        // Exclude known bad ratings at the DB level (fast path)
+        OR: [
+          { rating: null },
+          { rating: { gt: DIST_MIN_RATING } },
+        ],
         product: {
           status: "ACTIVE",
           hidden: false,
+          imageUrl: { not: null },       // require image
         },
       },
     },
     orderBy: [{ offerScore: "desc" }, { currentPrice: "asc" }],
-    take: limit,
+    take: limit * 3,  // fetch 3× so quality gate has room to filter
     include: {
       listing: {
         include: {
@@ -176,6 +239,8 @@ export async function getReadyOffers(
 
   return offers
     .filter((o) => o.listing.product !== null && o.listing.source !== null)
+    .filter((o) => !failsQualityGate(o))
+    .slice(0, limit)
     .map((o) => {
       const product = o.listing.product!;
       const source = o.listing.source;
@@ -300,12 +365,18 @@ export async function getReadyOffersBySegment(
   // Build where clause
   const where: any = {
     isActive: true,
-    offerScore: { gte: segment === "ofertas-quentes" ? 70 : 30 },
+    offerScore: { gte: segment === "ofertas-quentes" ? 70 : 40 },
+    currentPrice: { gte: DIST_MIN_PRICE },
     listing: {
       status: "ACTIVE",
+      OR: [
+        { rating: null },
+        { rating: { gt: DIST_MIN_RATING } },
+      ],
       product: {
         status: "ACTIVE",
         hidden: false,
+        imageUrl: { not: null },
         ...(categorySlugs.length > 0
           ? { category: { slug: { in: categorySlugs } } }
           : {}),
@@ -321,7 +392,7 @@ export async function getReadyOffersBySegment(
   const offers = await prisma.offer.findMany({
     where,
     orderBy: [{ offerScore: "desc" }, { currentPrice: "asc" }],
-    take: limit,
+    take: limit * 3,
     include: {
       listing: {
         include: {
@@ -334,6 +405,8 @@ export async function getReadyOffersBySegment(
 
   return offers
     .filter((o) => o.listing.product !== null && o.listing.source !== null)
+    .filter((o) => !failsQualityGate(o))
+    .slice(0, limit)
     .map((o) => {
       const product = o.listing.product!;
       const source = o.listing.source;
