@@ -36,7 +36,7 @@ export function buildProductCard(p: any): ProductCard | null {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    imageUrl: p.imageUrl || p.listings?.[0]?.imageUrl,
+    imageUrl: p.imageUrl || p.listings?.find((l: any) => l.imageUrl)?.imageUrl || null,
     brand: p.brand?.name,
     category: p.category?.name,
     categorySlug: p.category?.slug,

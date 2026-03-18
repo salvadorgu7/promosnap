@@ -580,6 +580,15 @@ export async function runImportPipeline(
         },
       })
 
+      // Backfill product image from listing if product still has no image
+      if (!dbProduct.imageUrl && item.imageUrl) {
+        await prisma.product.update({
+          where: { id: dbProduct.id },
+          data: { imageUrl: item.imageUrl },
+        })
+        dbProduct = { ...dbProduct, imageUrl: item.imageUrl }
+      }
+
       // Create offer + snapshot
       // Build affiliate URL using adapter when available, fallback to raw product URL
       // Strip third-party affiliate params that leak from WhatsApp messages
