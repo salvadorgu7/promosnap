@@ -109,16 +109,32 @@ export default function AdminShopeePage() {
       const form = new FormData();
       form.append("file", file);
 
-      const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET;
-      const headers: Record<string, string> = {};
-      if (adminSecret) headers["X-Admin-Secret"] = adminSecret;
-
+      // Auth via admin-auth cookie (set by the admin login session).
+      // The browser sends the cookie automatically — no manual header needed.
       const url = `/api/admin/import/shopee-csv?dryRun=${dryRun}&limit=${limit}`;
-      const res = await fetch(url, { method: "POST", headers, body: form });
-      const data = await res.json();
+      const res = await fetch(url, { method: "POST", body: form, credentials: "same-origin" });
+
+      // Always read body as text first — avoids JSON parse explosion when
+      // the server returns a plain-text error (e.g. 413 from Vercel, 401, etc.)
+      const raw = await res.text();
+      let data: ImportResult | { error?: string } = {};
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        // Non-JSON response (platform error like 413 Entity Too Large)
+        if (res.status === 413) {
+          setError(
+            `Ficheiro demasiado grande para o servidor (limite Vercel: 4.5 MB). ` +
+            `Reduz o CSV ou usa o script CLI local: scripts/import-shopee-csv.ts`
+          );
+        } else {
+          setError(`Erro ${res.status}: ${raw.slice(0, 200)}`);
+        }
+        return;
+      }
 
       if (!res.ok) {
-        setError(data.error || `Erro ${res.status}`);
+        setError((data as { error?: string }).error || `Erro ${res.status}`);
       } else {
         setResult(data as ImportResult);
       }
@@ -182,8 +198,12 @@ export default function AdminShopeePage() {
             <div className="flex flex-col items-center gap-2">
               <FileText className="h-8 w-8 text-green-600" />
               <p className="text-sm font-semibold text-green-700">{file.name}</p>
-              <p className="text-xs text-green-600">
-                {(file.size / 1024).toFixed(0)} KB — clique para trocar
+              <p className={`text-xs ${file.size > 4 * 1024 * 1024 ? "text-amber-600 font-semibold" : "text-green-600"}`}>
+                {file.size > 1024 * 1024
+                  ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
+                  : `${(file.size / 1024).toFixed(0)} KB`}
+                {file.size > 4 * 1024 * 1024 && " ⚠ pode exceder o limite do Vercel (4.5 MB)"}
+                {file.size <= 4 * 1024 * 1024 && " — clique para trocar"}
               </p>
             </div>
           ) : (
