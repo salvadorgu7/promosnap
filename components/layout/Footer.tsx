@@ -44,7 +44,7 @@ export default function Footer() {
         }}
       />
       <div className="absolute bottom-0 left-0 w-[500px] h-[200px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(ellipse, rgba(108,99,255,0.05), transparent 70%)", filter: "blur(60px)" }}
+        style={{ background: "radial-gradient(ellipse, rgba(124,58,237,0.05), transparent 70%)", filter: "blur(60px)" }}
       />
       <div className="absolute top-0 right-0 w-[300px] h-[150px] rounded-full pointer-events-none"
         style={{ background: "radial-gradient(ellipse, rgba(124,77,255,0.04), transparent 70%)", filter: "blur(50px)" }}
@@ -89,7 +89,7 @@ export default function Footer() {
         </div>
 
         {/* Affiliate disclaimer */}
-        <div className="mt-8 pt-6" style={{ borderTop: "1px solid rgba(108,99,255,0.10)" }}>
+        <div className="mt-8 pt-6" style={{ borderTop: "1px solid rgba(124,58,237,0.10)" }}>
           <p className="text-xs text-surface-400 leading-relaxed max-w-3xl mb-4">
             O PromoSnap pode receber comissões por compras realizadas através de links de afiliado.
             Isso não afeta o preço que você paga e nos ajuda a manter o serviço gratuito.

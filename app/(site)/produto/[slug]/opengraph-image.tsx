@@ -20,7 +20,7 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
             height: "100%",
             alignItems: "center",
             justifyContent: "center",
-            background: "linear-gradient(135deg, #6C63FF 0%, #7C4DFF 50%, #9333EA 100%)",
+            background: "linear-gradient(135deg, #7C3AED 0%, #7C4DFF 50%, #9333EA 100%)",
             color: "white",
             fontSize: 48,
             fontWeight: 700,
@@ -107,7 +107,7 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
               style={{
                 display: "flex",
                 fontSize: 18,
-                color: "#6C63FF",
+                color: "#7C3AED",
                 fontWeight: 600,
                 marginBottom: 8,
                 textTransform: "uppercase",
@@ -185,9 +185,9 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
                 alignItems: "center",
                 gap: 6,
                 fontSize: 16,
-                color: "#6C63FF",
+                color: "#7C3AED",
                 fontWeight: 600,
-                background: "rgba(108,99,255,0.08)",
+                background: "rgba(124,58,237,0.08)",
                 padding: "8px 16px",
                 borderRadius: 10,
               }}
@@ -228,7 +228,7 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
                 display: "flex",
                 fontSize: 20,
                 fontWeight: 800,
-                color: "#6C63FF",
+                color: "#7C3AED",
                 letterSpacing: -0.5,
               }}
             >

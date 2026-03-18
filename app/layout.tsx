@@ -31,20 +31,24 @@ export const metadata: Metadata = {
     title: "PromoSnap — Ofertas reais, preço de verdade",
     description:
       "Encontre as melhores ofertas, compare preços e economize de verdade.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "PromoSnap" }],
+    images: [{ url: "/og-promosnap.png", width: 1200, height: 630, alt: "PromoSnap — Ofertas que realmente fazem diferença" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "PromoSnap",
     description:
       "Ofertas reais, preço de verdade. Compare preços e economize.",
-    images: ["/og-image.png"],
+    images: ["/og-promosnap.png"],
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-48x48.png", type: "image/png", sizes: "48x48" },
+      { url: "/favicon-64x64.png", type: "image/png", sizes: "64x64" },
     ],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
   manifest: "/manifest.json",
   robots: {
@@ -62,7 +66,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#9333EA",
+  themeColor: "#0B1020",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -84,7 +88,7 @@ export default function RootLayout({
               "@type": "Organization",
               name: "PromoSnap",
               url: "https://www.promosnap.com.br",
-              logo: "https://www.promosnap.com.br/icon-512x512.png",
+              logo: "https://www.promosnap.com.br/promosnap-logo-horizontal.png",
               description: "Comparador de precos inteligente do Brasil. Ofertas reais, preco de verdade.",
               sameAs: [],
             }),
