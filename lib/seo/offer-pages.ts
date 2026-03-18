@@ -194,6 +194,90 @@ export const OFFER_PAGES: Record<string, OfferPageDef> = {
       { q: 'Quando produtos de audio ficam mais baratos?', a: 'Black Friday e o melhor periodo. Amazon Prime Day e Dia dos Pais tambem trazem descontos significativos em caixas de som e fones.' },
     ],
   },
+
+  // ── NOVOS ──────────────────────────────────────────────
+  tenis: {
+    title: 'Ofertas Tênis Nike, Adidas e Mais',
+    description: 'As melhores ofertas de tênis de corrida, casual e academia. Nike, Adidas, Puma, New Balance com preços comparados e descontos reais.',
+    intro: 'Encontre ofertas reais de tênis com preço histórico verificado. De corrida a casual, comparamos Nike, Adidas, Puma e New Balance para você comprar no melhor momento.',
+    searchQuery: 'tenis nike adidas puma corrida casual academia',
+    faqs: [
+      { q: 'Quando comprar tênis mais barato?', a: 'Janeiro e fevereiro costumam ter ótimas ofertas de tênis. Black Friday e eventos de esportes (como corridas populares) também movimentam os preços para baixo.' },
+      { q: 'Tênis de corrida em promoção é confiável?', a: 'Sim, desde que o vendedor seja autorizado. Verifique se é loja oficial ou revendedor certificado no marketplace para garantir autenticidade.' },
+      { q: 'Como usar o PromoSnap para comprar tênis?', a: 'Compare o preço atual com o histórico de 90 dias para confirmar se o desconto é real. Use alertas de preço para ser notificado quando seu modelo favorito baixar.' },
+    ],
+  },
+  perfumes: {
+    title: 'Ofertas Perfumes Importados e Nacionais',
+    description: 'As melhores ofertas de perfumes masculinos e femininos. Compare Natura, Boticário, Dior, Chanel e mais com histórico de preços.',
+    intro: 'Perfume é um dos presentes mais vendidos e também um dos que mais tem variação de preço. Comparamos ofertas de perfumes nacionais e importados para você saber exatamente quando e onde comprar.',
+    searchQuery: 'perfume masculino feminino importado nacional',
+    faqs: [
+      { q: 'Quando perfumes ficam mais baratos?', a: 'Datas comemorativas como Dia dos Namorados, Dia dos Pais e Dia das Mães costumam ter promoções. Black Friday traz os maiores descontos do ano em perfumes importados.' },
+      { q: 'Perfume importado no marketplace é original?', a: 'Compre apenas de lojas oficiais ou revendedoras com avaliações altas e garantia de autenticidade. Desconfie de preços muito abaixo do normal — podem ser falsificações.' },
+      { q: 'Vale a pena stockar perfume em promoção?', a: 'Sim, perfumes armazenados corretamente (longe de luz e calor) duram 3-5 anos. Aproveitar promoções de 30-50% off em perfumes que você já usa é uma boa estratégia.' },
+    ],
+  },
+  brinquedos: {
+    title: 'Ofertas Brinquedos LEGO, Barbie, Hot Wheels e Mais',
+    description: 'As melhores ofertas de brinquedos. LEGO, Barbie, Hot Wheels, Playmobil com preços comparados e histórico real de descontos.',
+    intro: 'Brinquedos têm variação de preço enorme — especialmente próximo ao Natal e Dia das Crianças. Compare antes de comprar e aproveite os melhores preços do ano com histórico verificado.',
+    searchQuery: 'brinquedo lego barbie hot wheels boneca carrinho crianca',
+    faqs: [
+      { q: 'Quando LEGO fica mais barato?', a: 'Black Friday e Janeiro são os melhores períodos. LEGO raramente tem desconto em datas comemorativas como Dia das Crianças — os preços sobem.' },
+      { q: 'Brinquedo importado tem garantia?', a: 'Verifique se tem certificação INMETRO — obrigatória para brinquedos vendidos no Brasil. Sem ela, o brinquedo pode ser retido na importação e não ter assistência.' },
+    ],
+  },
+  cadeiras: {
+    title: 'Ofertas Cadeiras Gamer e de Escritório',
+    description: 'As melhores ofertas de cadeiras gamer e escritório. DXRacer, Corsair, Husky, GT Racer e cadeiras ergonômicas com preços comparados.',
+    intro: 'Seja para gaming ou home office, uma boa cadeira é um investimento em saúde e produtividade. Comparamos as melhores ofertas com histórico de preços para você comprar no momento certo.',
+    searchQuery: 'cadeira gamer escritorio ergonomica home office',
+    faqs: [
+      { q: 'Cadeira gamer ou ergonômica para trabalho?', a: 'Para longas horas de trabalho, cadeiras ergonômicas como Herman Miller, Flexform ou Brizza são superiores em apoio lombar. Cadeiras gamer são mais chamativas, mas nem sempre mais ergonômicas.' },
+      { q: 'Quando cadeiras ficam mais baratas?', a: 'Black Friday e volta às aulas são os melhores momentos. Lojas como Kabum e Pichau costumam ter liquidações em cadeiras gamer que reduzem 20-40% do preço.' },
+    ],
+  },
+  cafeteiras: {
+    title: 'Ofertas Cafeteiras e Máquinas de Café',
+    description: 'As melhores ofertas de cafeteiras espresso, Nespresso, Dolce Gusto e filtro. Compare preços com histórico real de descontos.',
+    intro: 'Cafeteiras têm picos de preço e promoções sazonais. Monitore Nespresso, Dolce Gusto, Philips, 3 Corações e Oster para saber exatamente o melhor momento de comprar sua próxima máquina de café.',
+    searchQuery: 'cafeteira espresso nespresso dolce gusto maquina cafe',
+    faqs: [
+      { q: 'Quando comprar cafeteira mais barata?', a: 'Dia das Mães e Dia dos Pais são excelentes períodos para comprar cafeteiras — muitas lojas oferecem promoções nessas datas. Black Friday traz os maiores descontos do ano.' },
+      { q: 'Vale a pena esperar promoção para comprar cafeteira?', a: 'Sim. Cafeteiras de cápsula especialmente têm variação de 15-30% entre preço normal e promoção. Use o histórico do PromoSnap para confirmar se o desconto é real.' },
+    ],
+  },
+  geladeiras: {
+    title: 'Ofertas Geladeiras e Refrigeradores',
+    description: 'As melhores ofertas de geladeiras frost free, inverter e duplex. Brastemp, Consul, LG e Samsung com preços comparados e histórico real.',
+    intro: 'Geladeiras são uma compra de longo prazo — errar no preço dói por anos. Compare preços históricos de Brastemp, Consul, LG e Samsung para garantir que você compra no melhor momento.',
+    searchQuery: 'geladeira refrigerador frost free inverter duplex',
+    faqs: [
+      { q: 'Quando geladeiras ficam mais baratas?', a: 'Renovação de estoque em janeiro e Black Friday são os melhores períodos. Feriados de outubro (Dia das Crianças) também trazem promoções em linha branca.' },
+      { q: 'Comprar geladeira online é seguro?', a: 'Sim, em marketplaces reconhecidos com vendedor oficial. Verifique se o frete inclui instalação e remoção do produto antigo — muitas lojas oferecem esse serviço.' },
+    ],
+  },
+  'celulares-samsung': {
+    title: 'Ofertas Celulares Samsung Galaxy',
+    description: 'As melhores ofertas de celulares Samsung Galaxy S, A e M. Compare preços com histórico real e compre no momento certo.',
+    intro: 'Samsung é a líder em vendas de smartphones no Brasil. Monitoramos preços de toda a linha Galaxy — do básico Galaxy M ao flagship Galaxy S Ultra — para você nunca pagar mais do que precisa.',
+    searchQuery: 'samsung galaxy celular smartphone',
+    faqs: [
+      { q: 'Galaxy S ou Galaxy A: qual escolher?', a: 'Galaxy S para máxima performance e câmera de ponta. Galaxy A para excelente custo-benefício no dia a dia — a maioria dos usuários não nota diferença em tarefas cotidianas.' },
+      { q: 'Quando Samsung Galaxy fica mais barato?', a: 'Após o lançamento do modelo seguinte, o anterior cai 20-30%. Black Friday e Amazon Prime Day também trazem descontos reais em Samsung.' },
+    ],
+  },
+  festas: {
+    title: 'Ofertas para Festas e Eventos',
+    description: 'As melhores ofertas para festas, churrascos e eventos. Caixas de som portáteis, iluminação, artigos de festa com preços comparados.',
+    intro: 'Festa boa começa com os produtos certos pelo preço certo. Comparamos caixas de som portáteis, iluminação LED, churrasqueiras e artigos de festa para você montar o ambiente perfeito sem gastar além do necessário.',
+    searchQuery: 'caixa som festa churrasqueira iluminacao led evento',
+    faqs: [
+      { q: 'Qual caixa de som para festa ao ar livre?', a: 'JBL PartyBox, Sony XB43 e Aiwa têm boa potência para festas. Para externas e churrascos, busque modelos com pelo menos 50W RMS e bateria de 10h+.' },
+      { q: 'Quando comprar artigos de festa mais baratos?', a: 'Janeiro (pós-Natal) e agosto-setembro (pré-festas de fim de ano) são bons momentos. Produtos de festa ficam caros em dezembro — compre antes.' },
+    ],
+  },
 }
 
 export const OFFER_PAGE_SLUGS = Object.keys(OFFER_PAGES)

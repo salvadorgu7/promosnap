@@ -557,6 +557,154 @@ const comparisons: ComparisonDef[] = [
       { q: "Servem para academia?", a: "Sim, ambos funcionam bem para musculação e exercícios gerais. Para treinos com saltos ou movimentos laterais intensos, um tênis de cross-training seria mais indicado." },
     ],
   },
+
+  // ── NOVOS — Cluster smartphones ──────────────────────────────
+  {
+    slug: "samsung-vs-xiaomi",
+    title: "Samsung vs Xiaomi: Qual Smartphone Comprar?",
+    description: "Samsung ou Xiaomi: qual marca de celular vale mais a pena em 2026? Compare câmera, software, atualização e custo-benefício.",
+    intro: "Samsung e Xiaomi dominam o mercado de smartphones intermediários no Brasil. Cada uma tem vantagens distintas — Samsung oferece mais suporte e integração com ecossistema, enquanto Xiaomi entrega hardware premium a preços menores. Qual é a certa para você?",
+    productA: { name: "Samsung Galaxy", query: "Samsung Galaxy" },
+    productB: { name: "Xiaomi Redmi", query: "Xiaomi Redmi" },
+    verdict: "Samsung ganha em software, atualizações e assistência. Xiaomi ganha em hardware/preço. Para quem valoriza suporte e longevidade, Samsung. Para quem quer mais por menos, Xiaomi.",
+    faqs: [
+      { q: "Samsung ou Xiaomi: qual tem melhor câmera?", a: "Depende do modelo. Samsung Galaxy S tem câmeras superiores. Na faixa intermediária, Xiaomi 14 e Redmi Note 13 Pro competem de igual para igual com Galaxy A55." },
+      { q: "Xiaomi tem boa assistência técnica no Brasil?", a: "Sim, a Xiaomi expandiu sua rede de assistência técnica no Brasil. Samsung ainda tem mais centros autorizados, mas Xiaomi melhorou bastante nos últimos anos." },
+      { q: "Samsung ou Xiaomi atualiza mais rápido?", a: "Samsung garante 4 anos de Android e 5 de segurança para linha S e A. Xiaomi garante 3 anos de Android e 5 de segurança para modelos recentes. Samsung leva vantagem em longevidade de software." },
+    ],
+  },
+
+  // ── NOVOS — Cluster áudio ──────────────────────────────
+  {
+    slug: "headphone-vs-earbuds",
+    title: "Headphone vs Earbuds: Qual Vale Mais a Pena?",
+    description: "Headphone over-ear ou earbuds TWS: qual escolher em 2026? Compare som, conforto, ANC e custo-benefício.",
+    intro: "Headphones over-ear e earbuds TWS resolvem necessidades diferentes. Headphones oferecem melhor qualidade sonora e ANC superior. Earbuds ganham em portabilidade e conveniência. A escolha certa depende do seu estilo de vida e como você ouve música.",
+    productA: { name: "Headphone Over-ear", query: "headphone over ear" },
+    productB: { name: "Earbuds TWS", query: "earbuds tws" },
+    verdict: "Para casa/trabalho fixo com foco em som, headphone. Para mobilidade, academia e uso no transporte, earbuds. A maioria das pessoas fica feliz com earbuds de R$300-500 para uso diário.",
+    faqs: [
+      { q: "Headphone ou earbuds para academia?", a: "Earbuds vencem para academia — são mais seguros durante exercícios, resistentes à suor na maioria dos modelos e não soltam com movimentos bruscos." },
+      { q: "Qual tem melhor cancelamento de ruído?", a: "Headphones over-ear têm ANC superior — Sony WH-1000XM5 e Bose QC45 são referência. Para earbuds, AirPods Pro 2 e Sony WF-1000XM5 chegam perto." },
+      { q: "Earbuds cansam o ouvido mais que headphone?", a: "Depende do uso. Earbuds em volume alto por horas podem causar mais fadiga. Headphones com boa almofada são mais confortáveis para sessões longas de trabalho ou estudo." },
+    ],
+  },
+  {
+    slug: "jbl-vs-marshall",
+    title: "JBL vs Marshall: Qual Caixa de Som Comprar?",
+    description: "JBL ou Marshall: qual caixa de som Bluetooth vale mais a pena? Compare som, durabilidade, bateria e custo-benefício.",
+    intro: "JBL e Marshall são as marcas mais desejadas em caixas de som Bluetooth portáteis. JBL oferece mais variedade, melhor relação qualidade/preço e resistência à água. Marshall entrega som com característica vintage e graves mais encorpados. Qual combina mais com você?",
+    productA: { name: "JBL Flip/Charge", query: "JBL caixa som" },
+    productB: { name: "Marshall Emberton/Stanmore", query: "Marshall caixa som" },
+    verdict: "JBL para quem quer versatilidade, resistência e custo-benefício. Marshall para quem prioriza estética, graves marcantes e está disposto a pagar mais pela experiência premium.",
+    faqs: [
+      { q: "JBL Charge 5 ou Marshall Emberton: qual escolher?", a: "JBL Charge 5 tem bateria muito maior (20h vs 30h) e é resistente à imersão (IP67). Marshall Emberton tem som mais quente e design clássico. O JBL leva na praticidade, o Marshall no estilo." },
+      { q: "Marshall tem assistência técnica no Brasil?", a: "Sim, Marshall tem distribuidores oficiais no Brasil com garantia. JBL tem rede de assistência mais ampla como divisão da Samsung." },
+    ],
+  },
+
+  // ── NOVOS — Cluster smart TV ──────────────────────────────
+  {
+    slug: "tv-qled-vs-oled",
+    title: "TV QLED vs OLED: Qual Vale Mais a Pena?",
+    description: "QLED ou OLED: qual tecnologia de TV escolher em 2026? Compare brilho, pretos, preço e qual é melhor para cada uso.",
+    intro: "QLED e OLED são as duas tecnologias premium de TV do mercado. OLED tem os pretos mais profundos do mundo e é o favorito para cinema. QLED é mais brilhante e ideal para ambientes iluminados. Mas qual justifica o investimento para a sua sala?",
+    productA: { name: "TV QLED Samsung", query: "smart tv qled samsung" },
+    productB: { name: "TV OLED LG", query: "smart tv oled lg" },
+    verdict: "Para ambientes claros e esportes com alta velocidade, QLED. Para cinéfilos e ambientes escuros com conteúdo HDR, OLED é superior. O OLED custa mais, mas a experiência de imagem é única.",
+    faqs: [
+      { q: "OLED queima a tela?", a: "OLED pode sofrer burn-in (retenção de imagem) com uso estático prolongado, mas TVs OLED modernas têm mecanismos para prevenir isso. Para uso diversificado normal, não é um problema prático." },
+      { q: "QLED ou OLED para jogos?", a: "OLED tem taxa de atualização mais responsiva e tempo de resposta menor, ideal para jogos. Mas QLED Mini-LED oferece brilho superior para games com muita ação em ambientes iluminados." },
+      { q: "A diferença de preço vale entre QLED e OLED?", a: "Para uma TV de 55\" ou menos, a diferença costuma ser R$2.000-4.000. Se você usa a TV para filmes e séries frequentemente, OLED entrega uma experiência notavelmente superior." },
+    ],
+  },
+
+  // ── NOVOS — Cluster eletrodomésticos ──────────────────────────────
+  {
+    slug: "cafeteira-expresso-vs-nespresso",
+    title: "Cafeteira Expresso vs Nespresso: Qual Comprar?",
+    description: "Máquina de espresso manual ou cafeteira Nespresso: qual vale mais a pena? Compare custo por xícara, praticidade e qualidade.",
+    intro: "Nespresso revolucionou o café em casa com praticidade e consistência. Mas cafeteiras de espresso manuais fazem um café que pode ser superior quando bem preparado. A escolha certa depende do quanto você quer investir em tempo e habilidade.",
+    productA: { name: "Cafeteira Espresso Manual", query: "cafeteira espresso pressão" },
+    productB: { name: "Nespresso Cápsula", query: "nespresso capsula" },
+    verdict: "Nespresso para praticidade máxima e qualidade consistente sem aprendizado. Cafeteira manual para quem quer café de qualidade barista e aceita pagar menos por xícara no longo prazo.",
+    faqs: [
+      { q: "Qual o custo por xícara de cada?", a: "Cápsula Nespresso custa R$3-5 por xícara. Cafeteira manual com café em grão ou pó sai por R$0,50-1,50 por xícara. Com 2 cafés/dia, a diferença é de R$100-200/mês." },
+      { q: "Cafeteira espresso é difícil de usar?", a: "Tem curva de aprendizado inicial. Moagem, temperatura, pressão e tempo de extração afetam o resultado. Para quem não quer se dedicar, Nespresso entrega consistência sem esforço." },
+    ],
+  },
+  {
+    slug: "geladeira-frost-free-vs-inverter",
+    title: "Geladeira Frost Free vs Inverter: Qual a Diferença?",
+    description: "Geladeira frost free ou inverter: qual tecnologia comprar em 2026? Entenda as diferenças em consumo, preço e performance.",
+    intro: "Frost free e inverter são tecnologias complementares, não opostas — você pode ter uma geladeira frost free E inverter. Entender o que cada tecnologia faz ajuda a escolher o modelo que melhor equilibra economia de energia e praticidade.",
+    productA: { name: "Geladeira Frost Free", query: "geladeira frost free" },
+    productB: { name: "Geladeira Inverter", query: "geladeira inverter" },
+    verdict: "Frost free resolve o problema do degelo manual. Inverter reduz o consumo de energia em até 40%. Uma geladeira frost free + inverter é a combinação ideal para quem quer o melhor dos dois mundos.",
+    faqs: [
+      { q: "Frost free e inverter são a mesma coisa?", a: "Não. Frost free se refere ao sistema anti-gelo automático. Inverter é a tecnologia do compressor que varia a velocidade para economizar energia. São recursos independentes." },
+      { q: "Vale a pena pagar mais por geladeira inverter?", a: "Sim, para uso de longo prazo. Uma geladeira inverter economiza R$30-60/mês em energia comparado a modelos convencionais. Em 3-5 anos, a economia supera o custo adicional." },
+    ],
+  },
+
+  // ── NOVOS — Cluster tênis ──────────────────────────────
+  {
+    slug: "adidas-vs-puma",
+    title: "Adidas vs Puma: Qual Tênis Comprar?",
+    description: "Adidas ou Puma: qual marca de tênis vale mais a pena? Compare modelos, qualidade, durabilidade e custo-benefício.",
+    intro: "Fundadas por irmãos rivais na Alemanha, Adidas e Puma competem lado a lado em tênis casuais e esportivos. Cada marca tem pontos fortes diferentes — Adidas domina em running e streetwear, enquanto Puma se destaca em fashion e custo-benefício.",
+    productA: { name: "Adidas", query: "adidas tenis" },
+    productB: { name: "Puma", query: "puma tenis" },
+    verdict: "Adidas tem tecnologia de corrida superior (Boost, Lightstrike) e é mais popular no streetwear. Puma oferece modelos premium por preços menores e colaborações fashion relevantes. Escolha pela linha que mais te atrai.",
+    faqs: [
+      { q: "Adidas ou Puma: qual dura mais?", a: "Ambas têm qualidade comparável em modelos da mesma faixa de preço. Adidas usa tecnologia Boost que mantém responsividade por mais tempo em running." },
+      { q: "Puma é mais barata que Adidas?", a: "Em geral sim. Modelos equivalentes da Puma tendem a custar 15-25% menos que Adidas. Especialmente em lançamentos e edições limitadas, a diferença é significativa." },
+    ],
+  },
+
+  // ── NOVOS — Cluster perfumes ──────────────────────────────
+  {
+    slug: "perfume-nacional-vs-importado",
+    title: "Perfume Nacional vs Importado: Vale a Diferença?",
+    description: "Perfume nacional ou importado: qual vale mais a pena? Compare qualidade, fixação, preço e onde comprar com segurança.",
+    intro: "O Brasil tem uma indústria de perfumaria sofisticada — Natura, O Boticário e Eudora concorrem com marcas internacionais de luxo. A diferença de qualidade existe, mas é menor do que o preço sugere. Quando vale pagar mais por um importado?",
+    productA: { name: "Perfume Nacional", query: "perfume nacional boticario natura" },
+    productB: { name: "Perfume Importado", query: "perfume importado dior chanel" },
+    verdict: "Para uso diário e presente, perfumes nacionais premium oferecem ótima qualidade. Para ocasiões especiais e quando a marca importa, investir em importados faz sentido. Compare fixação e longevidade, não só o nome.",
+    faqs: [
+      { q: "Perfume nacional tem boa fixação?", a: "Sim. Perfumes da O Boticário, Natura e Eudora têm excelente fixação na linha premium. Alguns como Zaad e Kaiak superam importados de preço similar em longevidade." },
+      { q: "Perfume importado vale mais no Mercado Livre?", a: "Muito cuidado — perfumes importados no ML podem ser falsificados. Compre só de lojas oficiais ou revendedoras com boa reputação e garantia de autenticidade." },
+    ],
+  },
+  {
+    slug: "eau-de-parfum-vs-eau-de-toilette",
+    title: "Eau de Parfum vs Eau de Toilette: Qual a Diferença?",
+    description: "EDP ou EDT: qual concentração de perfume comprar? Entenda as diferenças em fixação, preço e quando usar cada um.",
+    intro: "A diferença entre Eau de Parfum (EDP) e Eau de Toilette (EDT) não é só marketing — é química. EDP tem mais óleo perfumado e fixa mais. EDT é mais leve e mais barato. Entender a diferença te ajuda a escolher o que realmente vale para o seu uso.",
+    productA: { name: "Eau de Parfum (EDP)", query: "eau de parfum edp" },
+    productB: { name: "Eau de Toilette (EDT)", query: "eau de toilette edt" },
+    verdict: "Para uso noturno, ocasiões especiais e clima frio, EDP. Para uso diário, trabalho e clima quente, EDT. Se você usa no trabalho ou em ambientes fechados, EDT é mais respeitoso com quem está ao redor.",
+    faqs: [
+      { q: "Qual a concentração de perfume em EDP e EDT?", a: "EDP tem 15-20% de óleo perfumado e fixa 6-10 horas. EDT tem 8-15% e fixa 3-6 horas. Parfum (extrait) tem 20-30% e pode durar mais de 12 horas." },
+      { q: "EDP sempre dura mais que EDT?", a: "Em geral sim, mas a composição da fragrância também importa. Algumas notas base como oud, patchouli e baunilha fixam muito bem mesmo em EDTs." },
+    ],
+  },
+
+  // ── NOVOS — Cluster gaming ──────────────────────────────
+  {
+    slug: "playstation-vs-xbox",
+    title: "PlayStation vs Xbox: Qual Console Comprar em 2026?",
+    description: "PS5 ou Xbox Series X/S: qual console escolher em 2026? Compare exclusivos, preço, Game Pass e ecossistema.",
+    intro: "PS5 e Xbox Series X são as melhores consoles da geração atual. A escolha entre eles depende menos de hardware (são muito semelhantes) e mais de ecossistema: quais exclusivos você quer jogar e se o Game Pass faz sentido para você.",
+    productA: { name: "PlayStation 5", query: "ps5 playstation 5" },
+    productB: { name: "Xbox Series X", query: "xbox series x" },
+    verdict: "PS5 para fãs de exclusivos singleplayer (God of War, Spider-Man, Horizon). Xbox para quem quer melhor custo-benefício com Game Pass e jogar no PC também. Ambos têm hardware excelente — o ecossistema decide.",
+    faqs: [
+      { q: "Game Pass vale a pena no Xbox?", a: "Xbox Game Pass Ultimate por R$44,99/mês dá acesso a centenas de jogos. Se você joga mais de 2 jogos novos por mês, o custo-benefício é excepcional comparado a comprar individualmente." },
+      { q: "PS5 ou Xbox: qual tem os melhores exclusivos?", a: "PS5 lidera em exclusivos singleplayer: God of War, Horizon, Spider-Man, Gran Turismo. Xbox aposta em franquias multiplataforma (Halo, Forza, Starfield) disponíveis também no PC." },
+      { q: "Xbox Series S vale a pena em vez do Series X?", a: "Xbox Series S é mais barato mas tem SSD menor (512GB) e roda jogos em 1080p-1440p. Ideal para quem tem TV Full HD ou usa Game Pass com jogos menores." },
+    ],
+  },
 ];
 
 export const COMPARISONS: Record<string, ComparisonDef> = Object.fromEntries(

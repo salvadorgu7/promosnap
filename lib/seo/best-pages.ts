@@ -321,6 +321,144 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
       { q: 'LEGO original vs compativel?', a: 'LEGO original tem qualidade e encaixe superiores, mas custa mais. Para criancas pequenas, blocos compativeis podem ser uma boa opcao inicial.' },
     ],
   },
+  // ── NOVOS — Cluster smartphones ──────────────────────────────
+  'melhores-celulares-samsung': {
+    title: 'Melhores Celulares Samsung',
+    description: 'Os melhores celulares Samsung com preço comparado. Galaxy S, A e M com histórico real e descontos verificados.',
+    intro: 'A Samsung domina o mercado brasileiro de smartphones com uma linha completa que vai do básico Galaxy M ao flagship Galaxy S. Selecionamos os melhores modelos de cada linha com base em preço real, avaliações e histórico de quedas.',
+    query: { categories: ['celulares'], brands: ['Samsung'], keywords: ['samsung', 'galaxy'] },
+    faqs: [
+      { q: 'Qual a diferença entre Galaxy S, A e M?', a: 'Galaxy S são os flagships premium da Samsung. Galaxy A são os intermediários com ótimo custo-benefício. Galaxy M são os mais acessíveis, focados em bateria e preço.' },
+      { q: 'Galaxy S24 ou Galaxy A55: qual escolher?', a: 'Para máxima performance e câmera, Galaxy S24. Para custo-benefício no dia a dia, Galaxy A55 entrega 80% do S24 por metade do preço.' },
+      { q: 'Celulares Samsung têm atualização longa?', a: 'Sim. Samsung garante 4 anos de atualizações Android e 5 anos de segurança para a linha Galaxy S e A a partir de 2023.' },
+      { q: 'Samsung One UI é boa interface?', a: 'One UI é uma das melhores interfaces Android do mercado, com recursos exclusivos como DeX, Link to Windows e ferramentas de produtividade avançadas.' },
+    ],
+  },
+
+  // ── NOVOS — Cluster notebooks ──────────────────────────────
+  'melhores-notebooks-trabalho': {
+    title: 'Melhores Notebooks para Trabalho',
+    description: 'Os melhores notebooks para trabalho remoto, home office e escritório em 2026. Compare preços com histórico real.',
+    intro: 'Trabalhar de onde quiser exige um notebook confiável, leve e com bateria que dura o dia todo. Selecionamos os melhores laptops para home office e trabalho remoto, equilibrando desempenho, autonomia e custo-benefício.',
+    query: { categories: ['notebooks'], keywords: ['trabalho', 'home office', 'empresarial', 'escritorio'] },
+    faqs: [
+      { q: 'Qual o melhor processador para trabalho em 2026?', a: 'Intel Core Ultra 5/7 ou AMD Ryzen 7 série 8000 são excelentes para trabalho. Para máxima autonomia, processadores ARM como Apple M3 e Snapdragon X Elite lideram.' },
+      { q: 'Quanto de RAM é suficiente para trabalho?', a: 'Para a maioria das tarefas, 16GB RAM e SSD 512GB são o ponto ideal. Se você usa muitas abas ou ferramentas pesadas, 32GB garante mais tranquilidade.' },
+      { q: 'Vale a pena notebook com tela 2K para trabalho?', a: 'Sim, para trabalho com textos e planilhas, uma tela de 14" com resolução 2K (2560×1600) é significativamente mais confortável que Full HD.' },
+    ],
+  },
+
+  // ── NOVOS — Cluster eletrodomésticos ──────────────────────────────
+  'melhores-geladeiras': {
+    title: 'Melhores Geladeiras',
+    description: 'As melhores geladeiras com preços comparados em 2026. Frost free, duplex e inverse com histórico real de preços.',
+    intro: 'Escolher uma geladeira é uma decisão de longo prazo — você vai usá-la por mais de 10 anos. Comparamos os modelos mais vendidos em capacidade, eficiência energética, tecnologia frost free e custo-benefício real.',
+    query: { categories: ['eletrodomesticos'], keywords: ['geladeira', 'refrigerador', 'frost free', 'inverter'] },
+    faqs: [
+      { q: 'Frost free ou ciclo frio?', a: 'Frost free é superior para praticidade — não forma gelo e o resfriamento é mais uniforme. Ciclo frio é mais barato, mas exige degelo manual periódico.' },
+      { q: 'Geladeira inverter vale mais?', a: 'Sim para economizar energia. Geladeiras inverter ajustam o compressor à necessidade, economizando até 40% de energia em relação às convencionais.' },
+      { q: 'Qual capacidade ideal para cada família?', a: 'Para 1-2 pessoas: 300-350L. Para 3-4 pessoas: 400-450L. Para famílias maiores: 500L+. Prefira ter uma margem extra de capacidade.' },
+      { q: 'Qual a melhor marca de geladeira?', a: 'Brastemp e Consul (Whirlpool) lideram em assistência técnica no Brasil. LG e Samsung oferecem mais tecnologia com boa durabilidade.' },
+    ],
+  },
+  'melhores-micro-ondas': {
+    title: 'Melhores Micro-ondas',
+    description: 'Os melhores micro-ondas em 2026. Compare preços de micro-ondas de bancada, com grill e inverter nas melhores lojas.',
+    intro: 'O micro-ondas é um dos eletrodomésticos mais usados da cozinha. Com modelos simples a partir de R$300 até combinados grill por R$1.500+, ajudamos você a encontrar o modelo certo para sua rotina e orçamento.',
+    query: { categories: ['eletrodomesticos'], keywords: ['micro-ondas', 'microondas', 'forno micro-ondas'] },
+    faqs: [
+      { q: 'Micro-ondas com grill vale a pena?', a: 'Se você quer gratinar, dourar e assar além de aquecer, sim. Micro-ondas com grill substitui o forno para preparações rápidas e ocupa menos espaço.' },
+      { q: 'Qual a potência ideal de micro-ondas?', a: 'Para uso básico, 700-900W é suficiente. Para cozinhar de verdade e preparações mais rápidas, busque 1.000-1.200W.' },
+      { q: 'Micro-ondas inverter é melhor?', a: 'Sim para descongelar e cozinhar uniformemente. O inverter regula a potência continuamente, evitando pontos quentes e preservando melhor a textura dos alimentos.' },
+    ],
+  },
+  'melhores-cafeteiras-espresso': {
+    title: 'Melhores Cafeteiras Espresso',
+    description: 'As melhores cafeteiras espresso e de cápsula em 2026. Compare Nespresso, Dolce Gusto, 3 Corações e mais.',
+    intro: 'O café em casa evoluiu muito. De cápsulas rápidas à espresso verdadeiro, cada estilo tem seu equipamento ideal. Comparamos as melhores máquinas de café por categoria: cápsula, pressão e filtro premium, com preços históricos verificados.',
+    query: { categories: ['eletrodomesticos'], keywords: ['cafeteira', 'espresso', 'capsula', 'nespresso'] },
+    faqs: [
+      { q: 'Nespresso ou Dolce Gusto: qual escolher?', a: 'Nespresso usa pressão maior (19 bar) e produz espresso mais cremoso. Dolce Gusto oferece mais variedade de bebidas (choco, cappuccino) e cápsulas mais baratas.' },
+      { q: 'Cafeteira de pressão vs cápsula: qual é melhor?', a: 'Cafeteiras de pressão (como De\'Longhi) fazem espresso de qualidade barista. Cápsulas são mais práticas e rápidas, mas o custo por xícara é mais alto.' },
+      { q: 'Quanto custa o café em cápsula por mês?', a: 'Uma cápsula Nespresso custa em média R$3-5. Tomando 2 cafés/dia, são R$180-300/mês. Cafeteiras de pressão reduzem para R$1-2 por xícara com café em pó.' },
+    ],
+  },
+
+  // ── NOVOS — Cluster audio ──────────────────────────────
+  'melhores-headphones-gamer': {
+    title: 'Melhores Headphones Gamer',
+    description: 'Os melhores headphones e fones para jogos em 2026. Som surround, microfone embutido e conforto para longas sessões.',
+    intro: 'Um bom headphone gamer faz diferença real em jogos online — você ouve passos, tiros e sons ambientes que outros jogadores perdem. Selecionamos os melhores headsets com som surround, microfone claro e conforto para sessões longas.',
+    query: { categories: ['audio'], keywords: ['headphone gamer', 'headset', 'fone gamer', 'surround'] },
+    faqs: [
+      { q: 'Som surround vale a pena em headphone gamer?', a: 'Para FPS competitivo como CS2 e Valorant, som surround virtual faz diferença real na localização de inimigos. Para jogos single-player, é opcional.' },
+      { q: 'Headphone gamer com fio ou sem fio?', a: 'Fio garante zero latência — essencial para competitivo. Sem fio é mais prático para uso casual. Evite sem fio para jogos em que 20ms de delay importa.' },
+      { q: 'Qual a diferença entre headphone gamer e de música?', a: 'Headphones gamer priorizam frequências médias e altas (sons de passos, disparos). Headphones de música têm resposta mais plana ou bass-boost para som mais natural.' },
+    ],
+  },
+
+  // ── NOVOS — Cluster gaming ──────────────────────────────
+  'melhores-monitores-gamer': {
+    title: 'Melhores Monitores Gamer',
+    description: 'Os melhores monitores para jogos em 2026. 144Hz, 240Hz, 1ms e QHD com preços comparados e descontos reais.',
+    intro: 'Um monitor gamer rápido é tão importante quanto a placa de vídeo. Com telas de 144Hz a 360Hz, 1ms de resposta e painel IPS ou VA, selecionamos os melhores monitores para cada configuração e orçamento.',
+    query: { categories: ['monitores'], keywords: ['monitor gamer', 'monitor 144hz', 'monitor 240hz', 'tela gamer'] },
+    faqs: [
+      { q: '144Hz ou 240Hz: qual escolher?', a: 'Para jogos competitivos em alta resolução, 144Hz com QHD é o melhor custo-benefício. 240Hz+ só se justifica com GPU de alto nível e foco em FPS competitivo.' },
+      { q: 'IPS ou VA para jogos?', a: 'IPS tem melhor qualidade de cor e ângulos de visão — ideal para RPGs e jogos coloridos. VA tem contraste superior e pretos mais profundos — ótimo para jogos de terror e filmes.' },
+      { q: '27" ou 32" para jogos?', a: 'Para Full HD, 27" é o máximo recomendado. Para QHD (1440p), 27"-32" é ideal. Para 4K, 32"+ aproveita melhor a resolução.' },
+    ],
+  },
+
+  // ── NOVOS — Cluster wearables ──────────────────────────────
+  'melhores-pulseiras-fitness': {
+    title: 'Melhores Pulseiras Fitness',
+    description: 'As melhores pulseiras fitness e smartbands em 2026. Xiaomi Mi Band, Fitbit, Garmin e mais com preços comparados.',
+    intro: 'Quer monitorar sua saúde sem gastar o mesmo que um smartwatch? Pulseiras fitness oferecem monitor cardíaco, contagem de passos, sono e notificações por uma fração do preço. Comparamos as melhores para você.',
+    query: { categories: ['wearables'], keywords: ['pulseira fitness', 'smartband', 'xiaomi band', 'fitbit'] },
+    faqs: [
+      { q: 'Pulseira fitness ou smartwatch: o que comprar?', a: 'Se você quer só monitoramento de saúde e notificações simples, pulseira fitness é mais barata e mais leve. Se quer apps, pagamento e mais recursos, vá de smartwatch.' },
+      { q: 'Xiaomi Band vale a pena?', a: 'Sim. O Mi Band 8 oferece monitoramento de frequência cardíaca, SpO2, sono e GPS conectado por menos de R$300 — o melhor custo-benefício da categoria.' },
+    ],
+  },
+
+  // ── NOVOS — Cluster tênis ──────────────────────────────
+  'melhores-tenis-academia': {
+    title: 'Melhores Tênis para Academia',
+    description: 'Os melhores tênis para musculação, crossfit e treinos funcionais em 2026. Compare preços com histórico real.',
+    intro: 'Tênis para academia são diferentes de tênis de corrida. Você precisa de estabilidade lateral, amortecimento moderado e solado plano para agachamentos e levantamentos. Selecionamos os melhores para cada tipo de treino.',
+    query: { categories: ['tenis'], keywords: ['tenis academia', 'crossfit', 'musculação', 'treino funcional'] },
+    faqs: [
+      { q: 'Tênis de corrida serve para academia?', a: 'Não é ideal. Tênis de corrida têm amortecimento alto no calcanhar que prejudica estabilidade em agachamentos. Para academia, busque modelos de treino ou cross training.' },
+      { q: 'Qual a diferença entre tênis cross training e musculação?', a: 'Cross training é mais versátil — serve para HIIT, funcional e musculação leve. Para musculação pesada, tênis de levantamento com solado plano e rígido são superiores.' },
+    ],
+  },
+
+  // ── NOVOS — Cluster perfumes ──────────────────────────────
+  'melhores-perfumes-femininos': {
+    title: 'Melhores Perfumes Femininos',
+    description: 'Os melhores perfumes femininos em 2026. Florais, orientais e frescos com preços comparados e histórico real.',
+    intro: 'O mercado de perfumes femininos é vasto, com fragrâncias que vão de florais leves a orientais intensos. Reunimos os perfumes com melhor fixação, avaliação e custo-benefício no mercado brasileiro, das versões nacionais às importadas acessíveis.',
+    query: { categories: ['perfumes'], keywords: ['perfume feminino', 'fragancia feminina', 'colonia feminina', 'eau de parfum'] },
+    faqs: [
+      { q: 'Qual perfume feminino tem mais fixação?', a: 'Perfumes orientais e amaderados têm maior fixação — podem durar 8-12 horas. Frescos e cítricos fixam por 3-5 horas. Concentrações EDP (Eau de Parfum) fixam mais que EDT.' },
+      { q: 'Perfume nacional ou importado para mulher?', a: 'O Brasil tem ótimas opções nacionais como Natura, O Boticário e Eudora. Para perfumes internacionais de luxo, a diferença de qualidade justifica o preço em muitos casos.' },
+      { q: 'Como conservar perfume feminino?', a: 'Guarde longe de luz solar e calor. A melhor opção é na caixa original em local fresco e seco. Evite o banheiro, que tem variação de temperatura e umidade.' },
+    ],
+  },
+
+  // ── NOVOS — Cluster presentes / brinquedos ──────────────────────────────
+  'melhores-presentes-criancas': {
+    title: 'Melhores Presentes para Crianças',
+    description: 'Os melhores presentes para crianças de todas as idades em 2026. Brinquedos educativos, jogos e kits com preços comparados.',
+    intro: 'Escolher o presente certo para uma criança envolve faixa etária, interesse e segurança. Selecionamos brinquedos que equilibram diversão, aprendizado e qualidade, desde opções para bebês até adolescentes, com preços verificados em tempo real.',
+    query: { categories: ['brinquedos'], keywords: ['presente crianca', 'brinquedo educativo', 'lego', 'boneca'] },
+    faqs: [
+      { q: 'Qual brinquedo para criança de 2-4 anos?', a: 'Blocos de montar (LEGO DUPLO), massinha de modelar, brinquedos de encaixe e carrinhos simples são ótimos para desenvolvimento motor e cognitivo nessa faixa.' },
+      { q: 'Brinquedo importado tem garantia no Brasil?', a: 'Verifique se tem certificação INMETRO — obrigatória para brinquedos. Produtos importados sem certificação podem não ter assistência técnica no país.' },
+      { q: 'Qual o budget ideal para presente de criança?', a: 'R$80-150 resolve bem para a maioria das ocasiões. Para presentes especiais, R$200-400 permite brinquedos de maior qualidade. LEGO e jogos de tabuleiro têm ótimo valor duradouro.' },
+    ],
+  },
   // smart-tvs, aspiradores-robo, cafeteiras, notebooks-gamer already defined above
 }
 
