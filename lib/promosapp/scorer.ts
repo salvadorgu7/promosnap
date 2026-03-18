@@ -31,6 +31,10 @@ const SPAM_SIGNALS = [
   /^(?:vejas?|confira)\s+(?:nossas?|as)\s+promo/i,
   // Titles that are ONLY marketing copy (no product info)
   /^Produto\s+(?:unknown|desconhecido)$/i,
+  // Hype-only titles — just exclamation, no product name
+  /^(?:DA\s+SH[OÔ]|GENTE\s+OLHA\s+ISSO+|CAIU\s+DEMAI+S+|CORRE+|ABSURDO+|IMPERD[IÍ]VEL+|OLHA\s+S[OÓ]+|SURREAL+)!*$/i,
+  // All-caps hype under 25 chars with no product info
+  /^[A-ZÀÁÂÃÉÊÍÓÔÕÚÇ\s!.,]{3,25}$/,
 ]
 
 function detectSpam(item: PromosAppNormalizedItem): boolean {
