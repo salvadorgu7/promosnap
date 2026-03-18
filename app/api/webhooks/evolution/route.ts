@@ -172,17 +172,20 @@ export async function POST(req: NextRequest) {
       ? new Set(jidsEnv.split(',').map(j => j.trim()).filter(Boolean))
       : null // null = accept all groups (no filter)
 
+    // TEMPORARY: Log every incoming message's group JID for debugging
+    const incomingJid = payload.data?.key?.remoteJid
+    logger.info('evolution.webhook.incoming', {
+      remoteJid: incomingJid,
+      filterActive: allowedJids !== null,
+      allowedCount: allowedJids?.size ?? 0,
+      configuredJids: jidsEnv ? jidsEnv.substring(0, 80) : '(empty)',
+      event: payload.event,
+      fromMe: payload.data?.key?.fromMe,
+    })
+
     const event = extractEvolutionMessage(payload, allowedJids)
 
     if (!event) {
-      // Log filtered-out groups for debugging
-      const remoteJid = payload.data?.key?.remoteJid
-      if (allowedJids && remoteJid && !allowedJids.has(remoteJid)) {
-        logger.debug('evolution.webhook.group-filtered', {
-          remoteJid,
-          allowedGroups: allowedJids.size,
-        })
-      }
       return NextResponse.json({ ok: true, message: 'Ignored' })
     }
 
