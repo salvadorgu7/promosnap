@@ -40,12 +40,18 @@ const MARKETPLACE_PATTERNS: MarketplacePattern[] = [
       /amzn\.to/i,
       /a\.co/i,
       /divulguei\.app/i,  // amzn.divulguei.app affiliate redirect → Amazon
+      /promos\.app\.br.*marketplace=amazon/i,  // casa.promos.app.br redirect
     ],
     idExtractor: (url) => {
+      // Standard Amazon URLs: /dp/ASIN or /gp/product/ASIN
       const match = url.pathname.match(/\/dp\/([A-Z0-9]{10})/) ||
                     url.pathname.match(/\/gp\/product\/([A-Z0-9]{10})/) ||
                     url.pathname.match(/\/([A-Z0-9]{10})(?:\/|$)/)
-      return match ? match[1] : null
+      if (match) return match[1]
+      // Third-party redirects with ?id=ASIN (casa.promos.app.br, tempromo.app.br)
+      const idParam = url.searchParams.get('id')
+      if (idParam && /^B[A-Z0-9]{9}$/.test(idParam)) return idParam
+      return null
     },
   },
   {

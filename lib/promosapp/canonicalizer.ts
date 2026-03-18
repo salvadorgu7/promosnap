@@ -18,8 +18,10 @@ const SHORT_LINK_HOSTS = [
   'go.ly', 'ouo.io', 'linktr.ee',
   // Affiliate/promo shorteners common in Brazilian WhatsApp groups
   'tidd.ly', 'magalu.lu', 'app.magalu.com',
-  'divulguei.app',    // amzn.divulguei.app → amazon.com.br
-  'tempromo.app.br',  // tempromo.app.br/p/xxx → various marketplaces
+  'divulguei.app',       // amzn.divulguei.app → amazon.com.br
+  'tempromo.app.br',     // tempromo.app.br/p/xxx → various marketplaces
+  'promos.app.br',       // casa.promos.app.br/promocoes?marketplace=amazon&id=ASIN
+  'casa.promos.app.br',  // same — WhatsApp group "casa promo" redirect
   // Amazon
   'amzn.to', 'a.co',
   // Shopee
