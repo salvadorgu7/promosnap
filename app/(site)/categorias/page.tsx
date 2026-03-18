@@ -23,24 +23,32 @@ const CATEGORY_ICONS: Record<string, typeof Smartphone> = {
   smartphones: Smartphone,
   notebooks: Laptop,
   laptops: Laptop,
+  informatica: Laptop,
   fones: Headphones,
   "fones-de-ouvido": Headphones,
   audio: Speaker,
   tvs: Tv,
+  "smart-tvs": Tv,
+  "tv-audio": Tv,
   televisores: Tv,
   cameras: Camera,
   fotografia: Camera,
   games: Gamepad2,
+  gamer: Gamepad2,
   "video-games": Gamepad2,
   casa: Home,
   "casa-e-decoracao": Home,
   moda: ShoppingBag,
   roupas: Shirt,
+  esportes: Dumbbell,
   esporte: Dumbbell,
   fitness: Dumbbell,
+  infantil: Baby,
   bebe: Baby,
   beleza: Sparkles,
+  perfumes: Sparkles,
   monitores: Monitor,
+  eletronicos: Monitor,
   smartwatches: Watch,
   relogios: Watch,
   eletrodomesticos: Refrigerator,
@@ -52,7 +60,9 @@ function getCategoryIcon(slug: string) {
 }
 
 export default async function CategoriasPage() {
-  const categories = await getCategories();
+  const allCategories = await getCategories();
+  // Only show categories that have at least 1 product
+  const categories = allCategories.filter((cat: { _count?: { products: number } }) => (cat._count?.products ?? 0) > 0);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
