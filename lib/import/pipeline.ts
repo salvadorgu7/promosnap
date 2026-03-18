@@ -213,6 +213,10 @@ function validateItem(item: ImportItem): string | null {
   }
   if (!item.currentPrice || item.currentPrice <= 0) return 'Invalid price'
   if (item.currentPrice > 500_000) return 'Price suspiciously high (>R$500k)'
+  // Catch parse errors where a measurement (e.g. "1,10m") is mistaken for price
+  if (item.currentPrice < 2 && item.originalPrice && item.originalPrice > 50) {
+    return `Price R$${item.currentPrice} with original R$${item.originalPrice} — likely parse error (measurement as price)`
+  }
   if (!item.productUrl) return 'Missing productUrl'
   try {
     const url = new URL(item.productUrl)
