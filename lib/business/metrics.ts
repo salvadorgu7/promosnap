@@ -67,7 +67,8 @@ async function clickoutPeriodCounts(): Promise<PeriodCounts> {
       current30d: r.current_30d ?? 0,
       prev30d: r.prev_30d ?? 0,
     };
-  } catch {
+  } catch (err) {
+    logger.warn("metrics.clickout-period-counts", { error: err instanceof Error ? err.message : err })
     return { current7d: 0, prev7d: 0, current30d: 0, prev30d: 0 };
   }
 }
@@ -89,7 +90,8 @@ async function searchPeriodCounts(): Promise<PeriodCounts> {
       current30d: r.current_30d ?? 0,
       prev30d: r.prev_30d ?? 0,
     };
-  } catch {
+  } catch (err) {
+    logger.warn("metrics.search-period-counts", { error: err instanceof Error ? err.message : err })
     return { current7d: 0, prev7d: 0, current30d: 0, prev30d: 0 };
   }
 }
@@ -111,7 +113,8 @@ async function subscriberPeriodCounts(): Promise<PeriodCounts> {
       current30d: r.current_30d ?? 0,
       prev30d: r.prev_30d ?? 0,
     };
-  } catch {
+  } catch (err) {
+    logger.warn("metrics.subscriber-period-counts", { error: err instanceof Error ? err.message : err })
     return { current7d: 0, prev7d: 0, current30d: 0, prev30d: 0 };
   }
 }
@@ -133,7 +136,8 @@ async function priceAlertPeriodCounts(): Promise<PeriodCounts> {
       current30d: r.current_30d ?? 0,
       prev30d: r.prev_30d ?? 0,
     };
-  } catch {
+  } catch (err) {
+    logger.warn("metrics.price-alert-period-counts", { error: err instanceof Error ? err.message : err })
     return { current7d: 0, prev7d: 0, current30d: 0, prev30d: 0 };
   }
 }
@@ -160,7 +164,8 @@ export async function getNorthStarMetric(): Promise<MetricResult> {
     const t7 = trendPercent(r.current_daily ?? 0, r.prev_daily ?? 0);
     const t30 = trendPercent(r.current_30d_daily ?? 0, r.prev_30d_daily ?? 0);
     return metric(value, "Qualified Clickouts/Day", t7, t30, computeStatus(value, 10, 3), "decimal");
-  } catch {
+  } catch (err) {
+    logger.warn("metrics.north-star", { error: err instanceof Error ? err.message : err })
     return metric(0, "Qualified Clickouts/Day", 0, 0, "critical", "decimal");
   }
 }
@@ -346,7 +351,8 @@ export async function getMonetizationMetrics(): Promise<MetricResult[]> {
     );
 
     return results;
-  } catch {
+  } catch (err) {
+    logger.warn("metrics.monetization", { error: err instanceof Error ? err.message : err })
     return [
       metric(0, "Total Clickouts (7d)", 0, 0, "critical", "number"),
       metric(0, "Est. Revenue (7d BRL)", 0, 0, "critical", "currency"),
@@ -407,7 +413,8 @@ export async function getRetentionMetrics(): Promise<MetricResult[]> {
         "number"
       ),
     ];
-  } catch {
+  } catch (err) {
+    logger.warn("metrics.retention", { error: err instanceof Error ? err.message : err })
     return [
       metric(0, "Unique Sessions (7d)", 0, 0, "critical", "number"),
       metric(0, "Active Subscribers", 0, 0, "critical", "number"),
