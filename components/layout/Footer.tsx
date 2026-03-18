@@ -5,26 +5,30 @@ import Logo from "@/components/ui/Logo";
 import Newsletter from "@/components/home/Newsletter";
 
 const LINKS = {
-  "Navegação": [
+  "Ofertas": [
     { href: "/ofertas", label: "Ofertas Quentes" },
-    { href: "/menor-preco", label: "Menor Preço Histórico" },
+    { href: "/menor-preco", label: "Menor Preco Historico" },
     { href: "/mais-vendidos", label: "Mais Vendidos" },
-    { href: "/cupons", label: "Cupons" },
-    { href: "/categorias", label: "Categorias" },
+    { href: "/cupons", label: "Cupons de Desconto" },
+    { href: "/categorias", label: "Todas as Categorias" },
     { href: "/marcas", label: "Marcas" },
-    { href: "/guias", label: "Guias de Compra" },
-    { href: "/trending", label: "Tendências" },
+    { href: "/trending", label: "Tendencias" },
   ],
-  Legal: [
-    { href: "/politica-privacidade", label: "Política de Privacidade" },
-    { href: "/termos", label: "Termos de Uso" },
-    { href: "/transparencia", label: "Transparência" },
+  "Lojas": [
+    { href: "/loja/amazon-br", label: "Amazon Brasil" },
+    { href: "/loja/mercadolivre", label: "Mercado Livre" },
+    { href: "/loja/shopee", label: "Shopee" },
+    { href: "/loja/shein", label: "Shein" },
+    { href: "/como-funciona", label: "Como Comparamos" },
+    { href: "/transparencia", label: "Transparencia" },
   ],
-  Sobre: [
-    { href: "/sobre", label: "Sobre o PromoSnap" },
-    { href: "/indicar", label: "Programa de Indicação" },
+  "Conta": [
     { href: "/minha-conta", label: "Minha Conta" },
     { href: "/favoritos", label: "Meus Favoritos" },
+    { href: "/alertas", label: "Alertas de Preco" },
+    { href: "/sobre", label: "Sobre o PromoSnap" },
+    { href: "/politica-privacidade", label: "Privacidade" },
+    { href: "/termos", label: "Termos de Uso" },
   ],
 };
 
@@ -57,7 +61,7 @@ export default function Footer() {
               <Logo size="md" />
             </Link>
             <p className="text-sm text-text-muted leading-relaxed mb-3">
-              Ofertas reais, preço de verdade. Compare preços, acompanhe histórico e encontre os melhores descontos do Brasil.
+              Compare precos entre Amazon, Mercado Livre, Shopee e Shein. Historico de 90 dias, score de oferta e alertas de queda.
             </p>
             <p className="text-xs text-surface-400 font-medium tracking-wide">promosnap.com.br</p>
           </div>

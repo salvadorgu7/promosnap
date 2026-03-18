@@ -17,6 +17,8 @@ import ReturnUserGreeting from "@/components/home/ReturnUserGreeting";
 import AmazonPromo from "@/components/home/AmazonPromo";
 import FirstSaleBanner from "@/components/home/FirstSaleBanner";
 import EmailCapture from "@/components/engagement/EmailCapture";
+import StoreTrustBar from "@/components/home/StoreTrustBar";
+import WhyPromoSnap from "@/components/home/WhyPromoSnap";
 
 // Lazy-load below-fold client components for faster initial load
 const PersonalizedRails = nextDynamic(() => import("@/components/home/PersonalizedRails"));
@@ -214,6 +216,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ===== 1b. STORE TRUST BAR ===== */}
+      <StoreTrustBar />
 
       {/* ===== 2. TRENDING TAGS ===== */}
       {trendingKeywords.length > 0 && (
@@ -503,17 +508,45 @@ export default async function HomePage() {
         <Newsletter />
       </div>
 
+      {/* ===== 20b. WHY PROMOSNAP ===== */}
+      <WhyPromoSnap />
+
       {/* ===== 21. SEO ===== */}
       <section id="seo" className="py-8 section-alt">
         <div className="max-w-7xl mx-auto px-4 max-w-3xl">
           <h2 className="font-display font-bold text-xl text-text-primary mb-2">
-            PromoSnap — Ofertas reais com histórico de preço
+            PromoSnap — Comparador de precos com historico real
           </h2>
-          <p className="text-sm text-text-muted leading-relaxed">
-            O PromoSnap monitora os maiores marketplaces do Brasil para encontrar ofertas reais.
-            Comparamos preços da Amazon, Mercado Livre, Shopee e Shein, calculamos um score de oferta
-            baseado em dados reais e mostramos os produtos mais vendidos, menor preço histórico e cupons ativos.
-          </p>
+          <div className="space-y-3 text-sm text-text-muted leading-relaxed">
+            <p>
+              O PromoSnap e a central de inteligencia de compra do Brasil. Monitoramos precos de{" "}
+              <Link href="/loja/amazon-br" className="text-brand-500 hover:underline">Amazon</Link>,{" "}
+              <Link href="/loja/mercadolivre" className="text-brand-500 hover:underline">Mercado Livre</Link>,{" "}
+              <Link href="/loja/shopee" className="text-brand-500 hover:underline">Shopee</Link> e{" "}
+              <Link href="/loja/shein" className="text-brand-500 hover:underline">Shein</Link>{" "}
+              com historico de 90 dias para voce saber se o desconto e real antes de comprar.
+            </p>
+            <p>
+              Nosso algoritmo de{" "}
+              <Link href="/como-funciona" className="text-brand-500 hover:underline">score de oferta</Link>{" "}
+              analisa desconto real, reputacao do vendedor, tendencia de preco e frete para recomendar o melhor momento de compra.
+              Encontre o{" "}
+              <Link href="/menor-preco" className="text-brand-500 hover:underline">menor preco historico</Link>,{" "}
+              <Link href="/mais-vendidos" className="text-brand-500 hover:underline">produtos mais vendidos</Link>,{" "}
+              <Link href="/cupons" className="text-brand-500 hover:underline">cupons de desconto</Link> e{" "}
+              <Link href="/ofertas" className="text-brand-500 hover:underline">ofertas quentes</Link> verificadas diariamente.
+            </p>
+            <p>
+              Categorias populares:{" "}
+              {["celulares", "notebooks", "fones", "tvs", "games", "eletrodomesticos"].map((cat, i) => (
+                <span key={cat}>
+                  {i > 0 && ", "}
+                  <Link href={`/categoria/${cat}`} className="text-brand-500 hover:underline">{cat}</Link>
+                </span>
+              ))}
+              {" "}e muito mais. Todos com comparacao entre lojas e alertas de queda de preco.
+            </p>
+          </div>
         </div>
       </section>
     </div>

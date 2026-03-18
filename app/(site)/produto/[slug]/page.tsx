@@ -291,6 +291,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               description: product.description || undefined,
               imageUrl: product.imageUrl || undefined,
               brand: product.brand?.name,
+              sku: product.id,
+              rating: consolidatedRating?.consolidatedRating,
+              reviewCount: consolidatedRating?.totalReviews,
               offers: schemaOffers,
             })
           ),

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getBaseUrl, APP_NAME } from '@/lib/seo/url'
 const APP_URL = getBaseUrl()
-const DEFAULT_DESC = 'Compare preços, encontre as melhores ofertas e economize de verdade. Histórico real de preços, cupons e alertas de queda.'
+const DEFAULT_DESC = 'Compare precos de Amazon, Mercado Livre, Shopee e Shein. Historico de 90 dias, score de oferta, cupons e alertas de queda de preco. Economize de verdade com dados reais.'
 
 export function buildMetadata(opts: { title?: string; description?: string; path?: string; ogImage?: string; noIndex?: boolean }): Metadata {
   const title = opts.title ? `${opts.title} | ${APP_NAME}` : APP_NAME
@@ -17,10 +17,14 @@ export function buildMetadata(opts: { title?: string; description?: string; path
   }
 }
 
-export function productSchema(product: { name: string; description?: string; imageUrl?: string; brand?: string; offers: Array<{ price: number; currency?: string; url: string; seller: string; availability: string }> }) {
+export function productSchema(product: { name: string; description?: string; imageUrl?: string; brand?: string; rating?: number; reviewCount?: number; sku?: string; offers: Array<{ price: number; currency?: string; url: string; seller: string; availability: string }> }) {
   return {
     '@context': 'https://schema.org', '@type': 'Product', name: product.name, description: product.description, image: product.imageUrl,
+    ...(product.sku ? { sku: product.sku } : {}),
     brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+    ...(product.rating && product.reviewCount ? {
+      aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount, bestRating: 5 },
+    } : {}),
     offers: product.offers.length === 1
       ? { '@type': 'Offer', price: product.offers[0].price, priceCurrency: product.offers[0].currency || 'BRL', url: product.offers[0].url, seller: { '@type': 'Organization', name: product.offers[0].seller }, availability: `https://schema.org/${product.offers[0].availability}` }
       : {
