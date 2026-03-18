@@ -10,7 +10,7 @@ export default function ProductError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("[PromoSnap] Product page error:", error)
+    if (error.digest) console.error("[PromoSnap] digest:", error.digest)
   }, [error])
 
   return (

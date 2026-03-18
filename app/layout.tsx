@@ -77,6 +77,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const baseUrl = getBaseUrl()
   return (
     <html lang="pt-BR" className={`${inter.variable} ${plusJakarta.variable}`}>
       <head>
@@ -87,8 +88,8 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "PromoSnap",
-              url: "https://www.promosnap.com.br",
-              logo: "https://www.promosnap.com.br/promosnap-logo-horizontal.png",
+              url: baseUrl,
+              logo: `${baseUrl}/promosnap-logo-horizontal.png`,
               description: "Comparador de precos inteligente do Brasil. Ofertas reais, preco de verdade.",
               sameAs: [],
             }),
@@ -101,12 +102,12 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               name: "PromoSnap",
-              url: "https://www.promosnap.com.br",
+              url: baseUrl,
               potentialAction: {
                 "@type": "SearchAction",
                 target: {
                   "@type": "EntryPoint",
-                  urlTemplate: "https://www.promosnap.com.br/busca?q={search_term_string}",
+                  urlTemplate: `${baseUrl}/busca?q={search_term_string}`,
                 },
                 "query-input": "required name=search_term_string",
               },

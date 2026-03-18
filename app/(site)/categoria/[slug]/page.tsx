@@ -168,7 +168,7 @@ export default async function CategoriaPage({
                 "@type": "ListItem",
                 position: i + 1,
                 name: p.name,
-                url: `https://www.promosnap.com.br/produto/${p.slug}`,
+                url: `${process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br"}/produto/${p.slug}`,
               })),
             }),
           }}

@@ -115,7 +115,7 @@ export default async function GuiaPage({
             publisher: {
               "@type": "Organization",
               name: "PromoSnap",
-              url: "https://www.promosnap.com.br",
+              url: process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br",
             },
           }),
         }}

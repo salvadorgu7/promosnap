@@ -172,7 +172,6 @@ export async function POST(req: NextRequest) {
       ? new Set(jidsEnv.split(',').map(j => j.trim()).filter(Boolean))
       : null // null = accept all groups (no filter)
 
-    // TEMPORARY: Log every incoming message's group JID for debugging
     const incomingJid = payload.data?.key?.remoteJid
     logger.info('evolution.webhook.incoming', {
       remoteJid: incomingJid,

@@ -10,7 +10,7 @@ export default function CategoryError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("[PromoSnap] Category page error:", error)
+    if (error.digest) console.error("[PromoSnap] digest:", error.digest)
   }, [error])
 
   return (
