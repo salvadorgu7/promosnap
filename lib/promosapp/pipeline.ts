@@ -69,10 +69,14 @@ function toImportItem(item: PromosAppNormalizedItem): ImportItem {
     currentPrice: item.currentPrice,
     originalPrice: item.originalPrice,
     productUrl: cleanUrl,
+    // Pass affiliate URL from PromosApp (e.g. already converted by PromosApp affiliate program).
+    // Import pipeline will validate it has our tag; rebuilds if not.
+    affiliateUrl: item.affiliateUrl || undefined,
     imageUrl: item.imageUrl,
     isFreeShipping: item.isFreeShipping,
     sourceSlug: item.sourceSlug,
     discoverySource: 'promosapp',
+    ingestionSource: 'promosapp',   // Separate from commercial sourceSlug
     brand: item.brand || undefined,
     categorySlug,
   }
@@ -94,21 +98,29 @@ async function persistCandidate(
       imageUrl: item.imageUrl,
       price: item.currentPrice || undefined,
       originalPrice: item.originalPrice,
-      affiliateUrl: item.canonicalUrl || item.affiliateUrl,
+      // Prefer real affiliate URL (from PromosApp conversion) over canonical (clean but no affiliate)
+      affiliateUrl: item.affiliateUrl || item.canonicalUrl,
       sourceSlug: 'promosapp',
       externalId: item.dedupeKey,
       status: decision === 'auto_approve' ? 'APPROVED' :
               decision === 'rejected' ? 'REJECTED' : 'PENDING',
       enrichedData: {
         score,
+        // Ingestion origin (how it arrived) vs commercial source (which marketplace)
+        ingestionSource: 'promosapp',
         sourceChannel: item.rawEvent.sourceChannel,
+        // Commercial source attribution
         marketplace: item.marketplace,
+        commercialSource: item.sourceSlug,   // e.g. "shopee", "amazon-br", "mercadolivre"
         discount: item.discount,
         couponCode: item.couponCode,
         isFreeShipping: item.isFreeShipping,
         sellerName: item.sellerName,
+        // URL chain for traceability
+        rawUrl: item.rawEvent.rawUrl,
         productUrl: item.productUrl,
         canonicalUrl: item.canonicalUrl,
+        affiliateUrl: item.affiliateUrl,
         rawTitle: item.rawEvent.rawTitle,
         parseErrors: item.parseErrors,
         capturedAt: item.rawEvent.capturedAt,

@@ -7,6 +7,7 @@ import type { Source } from '@prisma/client'
 import { canonicalMatch } from '@/lib/catalog/canonical-match'
 import { KNOWN_BRANDS as SHARED_BRANDS, BRAND_CASING as SHARED_BRAND_CASING, detectBrand as sharedDetectBrand } from '@/lib/brands'
 import { logger } from '@/lib/logger'
+import { buildAffiliateUrl, hasAffiliateTag } from '@/lib/affiliate'
 
 const log = logger.child({ module: 'import-pipeline' })
 
@@ -21,6 +22,8 @@ export interface ImportItem {
   currentPrice: number
   originalPrice?: number
   productUrl: string
+  /** Pre-built affiliate URL from upstream (e.g. PromosApp). Pipeline builds own if absent. */
+  affiliateUrl?: string
   imageUrl?: string
   isFreeShipping?: boolean
   availability?: 'in_stock' | 'out_of_stock' | 'unknown'
@@ -30,6 +33,8 @@ export interface ImportItem {
   categorySlug?: string    // Resolved category slug
   sourceSlug: string       // e.g. 'mercadolivre', 'amazon'
   discoverySource?: string // "ml_discovery" | "ml_highlights" | "manual_import" | "csv_upload" | "admin"
+  /** Ingestion origin (e.g. "promosapp", "whatsapp") — separate from commercial sourceSlug */
+  ingestionSource?: string
 }
 
 export interface ImportItemResult {
@@ -435,6 +440,11 @@ export async function runImportPipeline(
             productUpdate.importedAt = new Date()
           }
 
+          // Compute fresh affiliateUrl for this offer (env tags may have changed)
+          const freshAffiliateUrl = item.affiliateUrl && hasAffiliateTag(item.affiliateUrl)
+            ? item.affiliateUrl
+            : buildAffiliateUrl(item.productUrl)
+
           if (lastOffer && lastOffer.currentPrice !== item.currentPrice) {
             await prisma.offer.update({
               where: { id: lastOffer.id },
@@ -443,6 +453,7 @@ export async function runImportPipeline(
                 originalPrice: item.originalPrice ?? null,
                 isFreeShipping: item.isFreeShipping ?? false,
                 offerScore: newOfferScore,
+                affiliateUrl: freshAffiliateUrl || undefined,
                 lastSeenAt: new Date(),
               },
             })
@@ -461,11 +472,14 @@ export async function runImportPipeline(
             results.push({ externalId: item.externalId, action: 'updated', productId: existing.productId, category: item.categorySlug, title: item.title })
             updated++
           } else {
-            // Same price — just touch lastSeenAt, but still backfill category/brand
+            // Same price — touch lastSeenAt and refresh affiliateUrl (env tags may have changed)
             if (lastOffer) {
               await prisma.offer.update({
                 where: { id: lastOffer.id },
-                data: { lastSeenAt: new Date() },
+                data: {
+                  lastSeenAt: new Date(),
+                  affiliateUrl: freshAffiliateUrl || undefined,
+                },
               })
             }
             if (Object.keys(productUpdate).length > 0) {
@@ -695,50 +709,25 @@ export async function runImportPipeline(
       }
 
       // Create offer + snapshot
-      // Build affiliate URL using adapter when available, fallback to raw product URL
-      // Strip third-party affiliate params that leak from WhatsApp messages
-      let affiliateUrl = item.productUrl || null
-      if (affiliateUrl && affiliateUrl.startsWith('http')) {
-        try {
-          const urlObj = new URL(affiliateUrl)
-          // Remove third-party tracking/affiliate params before building our own
-          const THIRD_PARTY_PARAMS = [
-            'matt_tool', 'matt_word', 'matt_source', 'matt_campaign',
-            'forceInApp', 'deal_print_id', 'promotion_id',
-            'ref', 'fbclid', 'gclid',
-            'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
-          ]
-          for (const param of THIRD_PARTY_PARAMS) {
-            urlObj.searchParams.delete(param)
-          }
-          affiliateUrl = urlObj.toString()
-        } catch {
-          // URL parsing failed — continue with raw URL
-        }
-      }
-      if (affiliateUrl && affiliateUrl.startsWith('http')) {
-        try {
-          const adapterMap: Record<string, () => Promise<{ buildAffiliateUrl: (url: string) => string }>> = {
-            'mercadolivre': async () => {
-              const { MercadoLivreAdapter } = await import('@/adapters/mercadolivre')
-              return new MercadoLivreAdapter()
-            },
-            'amazon-br': async () => {
-              const { AmazonAdapter } = await import('@/adapters/amazon')
-              return new AmazonAdapter()
-            },
-            'shopee': async () => {
-              const { ShopeeAdapter } = await import('@/adapters/shopee')
-              return new ShopeeAdapter()
-            },
-          }
-          const getAdapter = adapterMap[item.sourceSlug]
-          if (getAdapter) {
-            const adapter = await getAdapter()
-            affiliateUrl = adapter.buildAffiliateUrl(affiliateUrl)
-          }
-        } catch {
-          // Adapter unavailable or misconfigured — use raw URL
+      // Affiliate URL governance:
+      // 1. If item carries a pre-built affiliateUrl (from PromosApp/WhatsApp), validate it has OUR tag.
+      //    If yes → use as-is. If not → rebuild from productUrl with our tags.
+      // 2. Otherwise build from productUrl using the unified affiliate module.
+      // This replaces the old per-adapter dynamic-import approach (adapter.buildAffiliateUrl didn't exist).
+      let affiliateUrl: string | null = null
+
+      const baseUrl = item.productUrl?.startsWith('http') ? item.productUrl : null
+
+      if (item.affiliateUrl && item.affiliateUrl.startsWith('http') && hasAffiliateTag(item.affiliateUrl)) {
+        // Upstream (e.g. PromosApp) already set our affiliate tag — trust it
+        affiliateUrl = item.affiliateUrl
+        log.debug('affiliate.used-upstream', { sourceSlug: item.sourceSlug, url: affiliateUrl })
+      } else if (baseUrl) {
+        // Build/rebuild affiliate URL from canonical product URL using our env-configured tags
+        affiliateUrl = buildAffiliateUrl(baseUrl)
+        if (affiliateUrl === baseUrl) {
+          // buildAffiliateUrl returns original URL when env tag not configured — log it
+          log.debug('affiliate.tag-not-configured', { sourceSlug: item.sourceSlug })
         }
       }
       const hasValidAffiliateUrl = !!affiliateUrl && affiliateUrl !== '#' && affiliateUrl.startsWith('http')
