@@ -69,12 +69,9 @@ export interface EnrichmentResult {
 async function enrichSingle(item: PromosAppNormalizedItem): Promise<EnrichmentResult> {
   const adapter = adapterRegistry.get(item.sourceSlug)
 
+  // No adapter at all → skip (og:meta will handle it later)
   if (!adapter) {
     return { item, enriched: false, enrichmentError: `No adapter for ${item.sourceSlug}` }
-  }
-
-  if (!adapter.isConfigured()) {
-    return { item, enriched: false, enrichmentError: `Adapter ${item.sourceSlug} not configured` }
   }
 
   // Only try enrichment if we have a real external ID
@@ -82,11 +79,30 @@ async function enrichSingle(item: PromosAppNormalizedItem): Promise<EnrichmentRe
     return { item, enriched: false, enrichmentError: 'No external ID to look up' }
   }
 
+  // Let the adapter try — even "unconfigured" adapters may have fallback paths
+  // (e.g., Shopee public API works without credentials, Amazon affiliate-only
+  //  returns a stub that og:meta can complement)
   try {
     const product = await adapter.getProduct(item.externalId)
 
     if (!product) {
+      log.debug('promosapp.enrich-no-result', {
+        externalId: item.externalId,
+        source: item.sourceSlug,
+        configured: adapter.isConfigured(),
+      })
       return { item, enriched: false, enrichmentError: `Product ${item.externalId} not found via adapter` }
+    }
+
+    // Validate enrichment is useful (has real data, not just a stub)
+    const hasUsefulData = (product.imageUrl || (product.currentPrice && product.currentPrice > 0) || product.title !== `Amazon Product ${item.externalId}`)
+
+    if (!hasUsefulData) {
+      log.debug('promosapp.enrich-stub', {
+        externalId: item.externalId,
+        source: item.sourceSlug,
+      })
+      return { item, enriched: false, enrichmentError: 'Adapter returned stub data' }
     }
 
     return {

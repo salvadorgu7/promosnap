@@ -45,7 +45,8 @@ function isShortLink(url: string): boolean {
  * Expand a short URL by following redirects.
  * Returns the final URL or the original on failure.
  */
-async function expandUrl(url: string, timeoutMs: number = 5000): Promise<string> {
+async function expandUrl(url: string, timeoutMs: number = 8000): Promise<string> {
+  // Strategy 1: HEAD with redirect follow (fast, works for most shorteners)
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -55,22 +56,72 @@ async function expandUrl(url: string, timeoutMs: number = 5000): Promise<string>
       redirect: 'follow',
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; PromoSnap/1.0)',
+        // Use a real browser UA — some shorteners (amzn.to, s.shopee) block bot UAs
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*',
       },
     })
 
     clearTimeout(timer)
 
-    // Use the final URL after redirects
     if (res.url && res.url !== url) {
       log.debug('promosapp.url-expanded', { from: url.slice(0, 60), to: res.url.slice(0, 60) })
       return res.url
     }
 
     return url
+  } catch {
+    // Strategy 1 failed — try Strategy 2: GET with manual redirect (catches JS redirects in Location header)
+  }
+
+  // Strategy 2: GET with redirect: 'manual' to read Location header
+  // Some shorteners (especially amzn.to) return 301/302 with Location
+  try {
+    const controller2 = new AbortController()
+    const timer2 = setTimeout(() => controller2.abort(), timeoutMs)
+
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'manual',
+      signal: controller2.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html',
+      },
+    })
+
+    clearTimeout(timer2)
+
+    const location = res.headers.get('location')
+    if (location) {
+      // Location might be relative — resolve against original URL
+      const resolved = location.startsWith('http') ? location : new URL(location, url).toString()
+      log.debug('promosapp.url-expanded-manual', { from: url.slice(0, 60), to: resolved.slice(0, 60) })
+      return resolved
+    }
+
+    // Strategy 3: Check HTML body for meta refresh or JS redirect
+    if (res.ok || res.status === 200) {
+      const html = await res.text().catch(() => '')
+      // Meta refresh: <meta http-equiv="refresh" content="0;url=...">
+      const metaRefresh = html.match(/<meta[^>]+http-equiv=["']refresh["'][^>]+content=["']\d+;\s*url=([^"']+)/i)
+      if (metaRefresh?.[1]) {
+        const refreshUrl = metaRefresh[1].startsWith('http') ? metaRefresh[1] : new URL(metaRefresh[1], url).toString()
+        log.debug('promosapp.url-expanded-meta-refresh', { from: url.slice(0, 60), to: refreshUrl.slice(0, 60) })
+        return refreshUrl
+      }
+      // JS redirect: window.location = "..." or window.location.href = "..."
+      const jsRedirect = html.match(/window\.location(?:\.href)?\s*=\s*["']([^"']+)["']/i)
+      if (jsRedirect?.[1] && jsRedirect[1].startsWith('http')) {
+        log.debug('promosapp.url-expanded-js', { from: url.slice(0, 60), to: jsRedirect[1].slice(0, 60) })
+        return jsRedirect[1]
+      }
+    }
+
+    return url
   } catch (err) {
     log.debug('promosapp.url-expand-failed', { url: url.slice(0, 60), error: String(err) })
-    return url // Return original on failure
+    return url
   }
 }
 
