@@ -11,9 +11,9 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: "Ofertas Quentes",
+    title: "Ofertas Quentes: Melhores Descontos de Agora",
     description:
-      "As melhores ofertas verificadas do momento. Descontos reais com histórico de preços.",
+      "Ofertas verificadas com desconto real — Amazon, Mercado Livre, Shopee e Magalu. Score de oferta calculado com histórico de 90 dias. Atualizado em tempo real.",
     path: "/ofertas",
   });
 }

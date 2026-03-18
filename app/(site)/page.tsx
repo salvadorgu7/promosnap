@@ -548,6 +548,79 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ===== SEO DISCOVERY — links para páginas programáticas de alta intenção ===== */}
+      <section className="py-6 border-t border-surface-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-base font-semibold text-text-primary mb-4">Guias e Comparativos</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Melhores */}
+            <div>
+              <p className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Melhores de 2026</p>
+              <ul className="space-y-1">
+                {[
+                  { slug: "melhores-celulares",       label: "Melhores Celulares" },
+                  { slug: "melhores-notebooks",       label: "Melhores Notebooks" },
+                  { slug: "melhores-fones-bluetooth", label: "Melhores Fones Bluetooth" },
+                  { slug: "melhores-smart-tvs",       label: "Melhores Smart TVs" },
+                  { slug: "melhores-air-fryers",      label: "Melhores Air Fryers" },
+                ].map((p) => (
+                  <li key={p.slug}>
+                    <Link href={`/melhores/${p.slug}`} className="text-sm text-text-secondary hover:text-brand-500 transition-colors">
+                      {p.label}
+                    </Link>
+                  </li>
+                ))}
+                <li>
+                  <Link href="/melhores/melhores-cadeiras-gamer" className="text-sm text-text-secondary hover:text-brand-500">Melhores Cadeiras Gamer</Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Comparativos */}
+            <div>
+              <p className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Comparar Produtos</p>
+              <ul className="space-y-1">
+                {[
+                  { slug: "iphone-vs-samsung",        label: "iPhone vs Samsung" },
+                  { slug: "airfryer-philips-vs-arno", label: "Philips vs Arno Air Fryer" },
+                  { slug: "kindle-vs-kobo",           label: "Kindle vs Kobo" },
+                  { slug: "playstation-vs-xbox",      label: "PlayStation vs Xbox" },
+                  { slug: "earbuds-vs-headphone",     label: "Earbuds vs Headphone" },
+                ].map((c) => (
+                  <li key={c.slug}>
+                    <Link href={`/comparar/${c.slug}`} className="text-sm text-text-secondary hover:text-brand-500 transition-colors">
+                      {c.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Vale a pena + categorias-destaque */}
+            <div>
+              <p className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Vale a Pena Comprar?</p>
+              <ul className="space-y-1">
+                {[
+                  { slug: "airfryer-vale-a-pena",   label: "Air Fryer vale a pena?" },
+                  { slug: "kindle-vale-a-pena",      label: "Kindle vale a pena?" },
+                  { slug: "ipad-vale-a-pena",        label: "iPad vale a pena?" },
+                  { slug: "smartwatch-vale-a-pena",  label: "Smartwatch vale a pena?" },
+                ].map((v) => (
+                  <li key={v.slug}>
+                    <Link href={`/vale-a-pena/${v.slug}`} className="text-sm text-text-secondary hover:text-brand-500 transition-colors">
+                      {v.label}
+                    </Link>
+                  </li>
+                ))}
+                <li className="pt-1">
+                  <Link href="/guias" className="text-sm font-medium text-brand-500 hover:underline">→ Ver todos os guias</Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -7,11 +7,13 @@ import prisma from "@/lib/db/prisma";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata() {
+  // Thin page — trending keywords list without commercial depth, noindex to avoid
+  // competing with product/category pages that cover the same queries
   return buildMetadata({
-    title: "Tendencias",
-    description:
-      "Veja os produtos e termos mais buscados agora no Brasil. Tendencias de busca atualizadas em tempo real.",
+    title: "Tendências de Busca",
+    description: "Termos e produtos mais buscados agora no PromoSnap.",
     path: "/trending",
+    noIndex: true,
   });
 }
 

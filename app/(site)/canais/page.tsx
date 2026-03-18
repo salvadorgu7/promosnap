@@ -24,11 +24,13 @@ import Breadcrumb from "@/components/ui/Breadcrumb";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 
 export function generateMetadata() {
+  // Canais: página de CTA para Telegram/WhatsApp, sem intenção de busca comercial clara
+  // noindex evita competição com páginas de categoria e produto
   return buildMetadata({
-    title: "Canais da Comunidade — PromoSnap",
-    description:
-      "Entre nos canais do PromoSnap e receba ofertas verificadas direto no Telegram, WhatsApp ou e-mail. Canais por categoria: eletrônicos, moda, casa, games e mais.",
+    title: "Canais de Ofertas — Telegram e WhatsApp",
+    description: "Receba ofertas verificadas no Telegram, WhatsApp e e-mail.",
     path: "/canais",
+    noIndex: true,
   });
 }
 

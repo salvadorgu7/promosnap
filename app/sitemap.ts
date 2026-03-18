@@ -1,3 +1,21 @@
+/**
+ * app/sitemap.ts
+ *
+ * Sitemap Index — divide o sitemap em 5 grupos focados.
+ * Next.js gera automaticamente /sitemap.xml como index apontando para:
+ *   /sitemap/0.xml  →  páginas estáticas/institucionais
+ *   /sitemap/1.xml  →  produtos (maior prioridade de crawl)
+ *   /sitemap/2.xml  →  categorias + marcas
+ *   /sitemap/3.xml  →  editorial (artigos, guias, guia-compra)
+ *   /sitemap/4.xml  →  programático (melhores, comparar, vale-a-pena, faixa-preco, ofertas-keyword)
+ *
+ * Benefícios vs. sitemap único:
+ * - Google pode re-crawl cada grupo em frequências diferentes
+ * - Facilita debugging e monitoramento no Search Console
+ * - Separa o que é importante do que é secundário
+ * - Exclui páginas fracas/thin de concorrer com páginas fortes
+ */
+
 import { MetadataRoute } from "next";
 import prisma from "@/lib/db/prisma";
 import { BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
@@ -6,163 +24,189 @@ import { COMPARISON_SLUGS } from "@/lib/seo/comparisons";
 import { VALE_A_PENA_SLUGS } from "@/lib/seo/vale-a-pena";
 import { PRICE_RANGE_SLUGS } from "@/lib/seo/price-range-pages";
 import { BUYING_GUIDE_SLUGS } from "@/lib/seo/buying-guides";
-
-export const dynamic = "force-dynamic";
-
 import { getBaseUrl } from "@/lib/seo/url";
 
 const APP_URL = getBaseUrl();
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+// ─── Sitemap IDs ─────────────────────────────────────────────────────────────
+// 0 = static/institutional
+// 1 = products
+// 2 = categories + brands
+// 3 = editorial
+// 4 = programmatic
+
+export async function generateSitemaps() {
+  return [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function sitemap({ id }: { id: number }): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  // Static pages
-  const staticPages: MetadataRoute.Sitemap = [
-    { url: APP_URL, lastModified: now, changeFrequency: "daily", priority: 1.0 },
-    { url: `${APP_URL}/busca`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${APP_URL}/ofertas`, lastModified: now, changeFrequency: "hourly", priority: 0.9 },
-    { url: `${APP_URL}/menor-preco`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${APP_URL}/mais-vendidos`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${APP_URL}/cupons`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${APP_URL}/sobre`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
-    { url: `${APP_URL}/guias`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${APP_URL}/categorias`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${APP_URL}/marcas`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${APP_URL}/indicar`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
-    { url: `${APP_URL}/politica-privacidade`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
-    { url: `${APP_URL}/termos`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
-    { url: `${APP_URL}/transparencia`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${APP_URL}/lojas`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${APP_URL}/trending`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${APP_URL}/preco-hoje`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${APP_URL}/canais`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
-    { url: `${APP_URL}/radar`, lastModified: now, changeFrequency: "daily", priority: 0.6 },
-  ];
+  switch (id) {
+    // ─── 0: STATIC / INSTITUTIONAL ──────────────────────────────────────────
+    case 0:
+      return [
+        { url: APP_URL, lastModified: now, changeFrequency: "daily", priority: 1.0 },
+        { url: `${APP_URL}/ofertas`, lastModified: now, changeFrequency: "hourly", priority: 0.95 },
+        { url: `${APP_URL}/menor-preco`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+        { url: `${APP_URL}/mais-vendidos`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
+        { url: `${APP_URL}/cupons`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
+        { url: `${APP_URL}/preco-hoje`, lastModified: now, changeFrequency: "daily", priority: 0.80 },
+        { url: `${APP_URL}/categorias`, lastModified: now, changeFrequency: "weekly", priority: 0.75 },
+        { url: `${APP_URL}/marcas`, lastModified: now, changeFrequency: "weekly", priority: 0.65 },
+        { url: `${APP_URL}/busca`, lastModified: now, changeFrequency: "daily", priority: 0.70 },
+        { url: `${APP_URL}/guias`, lastModified: now, changeFrequency: "weekly", priority: 0.65 },
+        { url: `${APP_URL}/lojas`, lastModified: now, changeFrequency: "weekly", priority: 0.50 },
+        { url: `${APP_URL}/sobre`, lastModified: now, changeFrequency: "monthly", priority: 0.30 },
+        { url: `${APP_URL}/politica-privacidade`, lastModified: now, changeFrequency: "yearly", priority: 0.20 },
+        { url: `${APP_URL}/termos`, lastModified: now, changeFrequency: "yearly", priority: 0.20 },
+        { url: `${APP_URL}/transparencia`, lastModified: now, changeFrequency: "yearly", priority: 0.25 },
+        // NOTE: /trending, /canais, /indicar, /radar, /favoritos, /minha-conta → noindex, excluídos do sitemap
+      ];
 
-  // Dynamic pages from DB (graceful fallback if DB unavailable)
-  let categoryPages: MetadataRoute.Sitemap = [];
-  let brandPages: MetadataRoute.Sitemap = [];
-  let productPages: MetadataRoute.Sitemap = [];
-  let articlePages: MetadataRoute.Sitemap = [];
+    // ─── 1: PRODUCTS ────────────────────────────────────────────────────────
+    case 1: {
+      let productPages: MetadataRoute.Sitemap = [];
+      try {
+        const products = await prisma.product.findMany({
+          where: { status: "ACTIVE", imageUrl: { not: null } },
+          select: { slug: true, updatedAt: true, originType: true, popularityScore: true },
+          orderBy: { popularityScore: "desc" },
+        });
+        productPages = products.flatMap((p) => {
+          // Products with higher popularity get higher priority
+          const priority = p.popularityScore && p.popularityScore > 50 ? 0.9 : 0.8;
+          return [
+            {
+              url: `${APP_URL}/produto/${p.slug}`,
+              lastModified: p.updatedAt,
+              changeFrequency: "daily" as const,
+              priority,
+            },
+            {
+              // /preco/[slug] — price history page — lower priority than product page
+              url: `${APP_URL}/preco/${p.slug}`,
+              lastModified: p.updatedAt,
+              changeFrequency: "daily" as const,
+              priority: 0.60,
+            },
+          ];
+        });
+      } catch {
+        // DB unavailable at build time — return empty
+      }
+      return productPages;
+    }
 
-  try {
-    const [categories, brands, products, articles] = await Promise.all([
-      // Only categories with at least 1 active product
-      prisma.category.findMany({
-        where: { products: { some: { status: "ACTIVE" } } },
-        select: { slug: true, updatedAt: true },
-      }),
-      // Only brands with at least 1 active product
-      prisma.brand.findMany({
-        where: { products: { some: { status: "ACTIVE" } } },
-        select: { slug: true, updatedAt: true },
-      }),
-      // Only active products WITH an image (higher quality crawl signal)
-      prisma.product.findMany({
-        where: { status: "ACTIVE", imageUrl: { not: null } },
-        select: { slug: true, updatedAt: true, originType: true },
-      }),
-      prisma.article.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, updatedAt: true } }),
-    ]);
+    // ─── 2: CATEGORIES + BRANDS ─────────────────────────────────────────────
+    case 2: {
+      let pages: MetadataRoute.Sitemap = [];
+      try {
+        const [categories, brands] = await Promise.all([
+          prisma.category.findMany({
+            where: { products: { some: { status: "ACTIVE" } } },
+            select: { slug: true, updatedAt: true, _count: { select: { products: { where: { status: "ACTIVE" } } } } },
+          }),
+          prisma.brand.findMany({
+            where: { products: { some: { status: "ACTIVE" } } },
+            select: { slug: true, updatedAt: true, _count: { select: { products: { where: { status: "ACTIVE" } } } } },
+          }),
+        ]);
 
-    categoryPages = categories.map((c) => ({
-      url: `${APP_URL}/categoria/${c.slug}`,
-      lastModified: c.updatedAt,
-      changeFrequency: "daily" as const,
-      priority: 0.7,
-    }));
+        const categoryPages = categories.map((c) => ({
+          url: `${APP_URL}/categoria/${c.slug}`,
+          lastModified: c.updatedAt,
+          changeFrequency: "daily" as const,
+          // More products = higher priority (cap at 0.85)
+          priority: Math.min(0.85, 0.60 + (c._count.products / 100) * 0.25) as number,
+        }));
 
-    brandPages = brands.map((b) => ({
-      url: `${APP_URL}/marca/${b.slug}`,
-      lastModified: b.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    }));
+        const brandPages = brands.map((b) => ({
+          url: `${APP_URL}/marca/${b.slug}`,
+          lastModified: b.updatedAt,
+          changeFrequency: "weekly" as const,
+          priority: Math.min(0.75, 0.50 + (b._count.products / 100) * 0.25) as number,
+        }));
 
-    productPages = products.flatMap((p) => [
-      {
-        url: `${APP_URL}/produto/${p.slug}`,
-        lastModified: p.updatedAt,
+        pages = [...categoryPages, ...brandPages];
+      } catch {
+        // DB unavailable
+      }
+      return pages;
+    }
+
+    // ─── 3: EDITORIAL ───────────────────────────────────────────────────────
+    case 3: {
+      let pages: MetadataRoute.Sitemap = [];
+      try {
+        const articles = await prisma.article.findMany({
+          where: { status: "PUBLISHED" },
+          select: { slug: true, updatedAt: true },
+        });
+        const articlePages = articles.map((a) => ({
+          url: `${APP_URL}/guias/${a.slug}`,
+          lastModified: a.updatedAt,
+          changeFrequency: "weekly" as const,
+          priority: 0.70,
+        }));
+        const buyingGuidePages = BUYING_GUIDE_SLUGS.map((slug) => ({
+          url: `${APP_URL}/guia-compra/${slug}`,
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.70,
+        }));
+        pages = [...articlePages, ...buyingGuidePages];
+      } catch {
+        // DB unavailable
+      }
+      return pages;
+    }
+
+    // ─── 4: PROGRAMMATIC SEO PAGES ──────────────────────────────────────────
+    case 4: {
+      const melhoresPages = BEST_PAGE_SLUGS.map((slug) => ({
+        url: `${APP_URL}/melhores/${slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.80, // High — commercial intent "melhores X 2026"
+      }));
+      const compararPages = COMPARISON_SLUGS.map((slug) => ({
+        url: `${APP_URL}/comparar/${slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.75, // High — commercial intent "A vs B"
+      }));
+      const valeAPenaPages = VALE_A_PENA_SLUGS.map((slug) => ({
+        url: `${APP_URL}/vale-a-pena/${slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.70,
+      }));
+      const faixaPrecoPages = PRICE_RANGE_SLUGS.map((slug) => ({
+        url: `${APP_URL}/faixa-preco/${slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.65,
+      }));
+      const ofertasKeywordPages = OFFER_PAGE_SLUGS.map((slug) => ({
+        url: `${APP_URL}/ofertas/${slug}`,
+        lastModified: now,
         changeFrequency: "daily" as const,
-        priority: p.originType === "imported" ? 0.9 : 0.8,
-      },
-      {
-        url: `${APP_URL}/preco/${p.slug}`,
-        lastModified: p.updatedAt,
-        changeFrequency: "daily" as const,
-        priority: 0.6,
-      },
-    ]);
+        priority: 0.75,
+      }));
 
-    articlePages = articles.map((a) => ({
-      url: `${APP_URL}/guias/${a.slug}`,
-      lastModified: a.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
-  } catch {
-    // DB unavailable at build time — return static pages only
+      return [
+        ...melhoresPages,
+        ...compararPages,
+        ...valeAPenaPages,
+        ...faixaPrecoPages,
+        ...ofertasKeywordPages,
+      ];
+    }
+
+    default:
+      return [];
   }
-
-  // "Melhores" curated pages
-  const melhoresPages: MetadataRoute.Sitemap = BEST_PAGE_SLUGS.map((slug) => ({
-    url: `${APP_URL}/melhores/${slug}`,
-    lastModified: now,
-    changeFrequency: "weekly" as const,
-    priority: 0.7,
-  }));
-
-  // "Ofertas" keyword pages
-  const ofertasPages: MetadataRoute.Sitemap = OFFER_PAGE_SLUGS.map((slug) => ({
-    url: `${APP_URL}/ofertas/${slug}`,
-    lastModified: now,
-    changeFrequency: "daily" as const,
-    priority: 0.7,
-  }));
-
-  // "Comparar" pages
-  const compararPages: MetadataRoute.Sitemap = COMPARISON_SLUGS.map((slug) => ({
-    url: `${APP_URL}/comparar/${slug}`,
-    lastModified: now,
-    changeFrequency: "weekly" as const,
-    priority: 0.7,
-  }));
-
-  // "Vale a Pena" pages
-  const valeAPenaPages: MetadataRoute.Sitemap = VALE_A_PENA_SLUGS.map((slug) => ({
-    url: `${APP_URL}/vale-a-pena/${slug}`,
-    lastModified: now,
-    changeFrequency: "weekly" as const,
-    priority: 0.7,
-  }));
-
-  // "Faixa de Preco" pages
-  const faixaPrecoPages: MetadataRoute.Sitemap = PRICE_RANGE_SLUGS.map((slug) => ({
-    url: `${APP_URL}/faixa-preco/${slug}`,
-    lastModified: now,
-    changeFrequency: "weekly" as const,
-    priority: 0.7,
-  }));
-
-  // "Guia de Compra" pages
-  const guiaCompraPages: MetadataRoute.Sitemap = BUYING_GUIDE_SLUGS.map((slug) => ({
-    url: `${APP_URL}/guia-compra/${slug}`,
-    lastModified: now,
-    changeFrequency: "weekly" as const,
-    priority: 0.7,
-  }));
-
-  return [
-    ...staticPages,
-    ...categoryPages,
-    ...brandPages,
-    ...productPages,
-    ...melhoresPages,
-    ...ofertasPages,
-    ...compararPages,
-    ...articlePages,
-    ...valeAPenaPages,
-    ...faixaPrecoPages,
-    ...guiaCompraPages,
-  ];
 }

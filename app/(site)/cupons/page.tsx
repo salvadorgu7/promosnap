@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 
 export function generateMetadata() {
   return buildMetadata({
-    title: "Cupons de Desconto",
+    title: "Cupons de Desconto Válidos Agora",
     description:
-      "Cupons de desconto válidos para Amazon, Mercado Livre, Shopee e mais. Copie e economize nas suas compras.",
+      "Cupons ativos para Amazon, Mercado Livre, Shopee, Magalu e mais. Copie o código e economize — atualizados diariamente.",
     path: "/cupons",
   });
 }

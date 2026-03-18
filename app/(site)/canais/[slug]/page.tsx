@@ -183,6 +183,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${channel.name} — Canais PromoSnap`,
     description: channel.description,
     path: `/canais/${channel.slug}`,
+    noIndex: true, // Canal individual — CTA page, sem intenção de busca orgânica
   });
 }
 
