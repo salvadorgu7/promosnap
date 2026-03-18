@@ -1,5 +1,8 @@
 import prisma from '@/lib/db/prisma';
 import { runJob, type JobResult } from '@/lib/jobs/runner';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ module: 'cleanup' });
 
 const SNAPSHOT_RETENTION_DAYS = 180;
 const SEARCH_LOG_RETENTION_DAYS = 30;
@@ -7,6 +10,70 @@ const OFFER_STALE_DAYS = 7;
 /** Imported products are refreshed via CSV — deactivate after 30 days without a price update */
 const OFFER_STALE_IMPORTED_DAYS = 30;
 const TRENDING_KEYWORD_RETENTION_DAYS = 30;
+
+/**
+ * Retroactive price-sanity cleanup.
+ *
+ * Deactivates offers whose stored prices are clearly wrong (parse errors,
+ * Amazon 3rd-party sellers, WhatsApp message misparse, etc.).
+ *
+ * Criteria (either rule triggers deactivation):
+ *   1. currentPrice < R$5  AND  originalPrice > R$50
+ *      → 90%+ implied discount — virtually always a parse error
+ *        (e.g. frete R$6.98 confused for product price)
+ *   2. currentPrice > 0  AND  originalPrice > currentPrice * 10.87
+ *      → implied discount > 90.8% — suspiciously high for any real deal
+ *        (e.g. Samsung at R$278 when true price is R$2500+)
+ *
+ * Safe: only looks at active offers with BOTH prices set.
+ */
+async function deactivateBadPriceOffers(): Promise<number> {
+  // Rule 1: absolute floor — price under R$5 with a high original price
+  const rule1 = await prisma.offer.updateMany({
+    where: {
+      isActive: true,
+      currentPrice: { gt: 0, lt: 5 },
+      originalPrice: { gt: 50 },
+    },
+    data: { isActive: false },
+  });
+
+  // Rule 2: >90% implied discount (load in batches, filter in JS since
+  // Prisma can't express column-to-column comparisons in updateMany).
+  // Pre-filter: currentPrice < 50 with originalPrice > 200 to limit rows loaded.
+  const candidates = await prisma.offer.findMany({
+    where: {
+      isActive: true,
+      currentPrice: { gt: 0, lt: 50 },
+      originalPrice: { gt: 200 },
+    },
+    select: { id: true, currentPrice: true, originalPrice: true },
+  });
+
+  const rule2Ids = candidates
+    .filter(o => o.originalPrice !== null && o.originalPrice > o.currentPrice * 10.87) // > 90.8% off
+    .map(o => o.id);
+
+  let rule2Count = 0;
+  if (rule2Ids.length > 0) {
+    const result = await prisma.offer.updateMany({
+      where: { id: { in: rule2Ids } },
+      data: { isActive: false },
+    });
+    rule2Count = result.count;
+  }
+
+  const total = rule1.count + rule2Count;
+  if (total > 0) {
+    log.warn('cleanup.bad-prices-deactivated', {
+      rule1: rule1.count,
+      rule2: rule2Count,
+      total,
+    });
+  }
+
+  return total;
+}
 
 export async function cleanupData(): Promise<JobResult> {
   return runJob('cleanup', async (ctx) => {
@@ -64,6 +131,11 @@ export async function cleanupData(): Promise<JobResult> {
     });
     ctx.log(`Deactivated ${deactivatedImportedOffers.count} stale imported offers (>30 days old)`);
 
+    // Deactivate offers with impossible/parse-error prices (retroactive + ongoing hygiene)
+    ctx.log('Deactivating offers with bad prices (< R$5 or > 90% implied discount)...');
+    const deactivatedBadPrices = await deactivateBadPriceOffers();
+    ctx.log(`Deactivated ${deactivatedBadPrices} bad-price offers`);
+
     // Clean stale trending keywords (older than 30 days)
     let deletedTrends = { count: 0 };
     try {
@@ -77,7 +149,7 @@ export async function cleanupData(): Promise<JobResult> {
       ctx.log(`Warning: failed to clean trending keywords: ${error}`);
     }
 
-    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count + deactivatedImportedOffers.count + deletedTrends.count;
+    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count + deactivatedImportedOffers.count + deactivatedBadPrices + deletedTrends.count;
 
     ctx.log(`Cleanup complete: ${totalActions} total actions`);
 
@@ -89,6 +161,7 @@ export async function cleanupData(): Promise<JobResult> {
         deletedSearchLogs: deletedSearchLogs.count,
         deactivatedOffers: deactivatedOffers.count,
         deactivatedImportedOffers: deactivatedImportedOffers.count,
+        deactivatedBadPrices,
         deletedTrendingKeywords: deletedTrends.count,
       },
     };
