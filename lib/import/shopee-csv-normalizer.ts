@@ -233,24 +233,48 @@ interface ColIndex {
   productShortLink: number
 }
 
-/** Resolve column indices from the CSV header row, allowing for column reordering */
+/** Resolve column indices from the CSV header row, allowing for column reordering.
+ *
+ * Supports two Shopee affiliate CSV formats:
+ *  - Standard product feed:   image_link, itemid, price, global_category1, ...
+ *  - BatchProductLinks export: Item Id, Item Name, Price, Sales, Shop Name,
+ *                              Commission Rate, Commission, Product Link, Offer Link
+ */
 function resolveColumns(headers: string[]): ColIndex {
   const clean = (s: string) => s.toLowerCase().trim().replace(/[\s]+/g, '_')
-  const idx = (name: string) => headers.findIndex(h => clean(h) === name)
+  const idx = (...names: string[]) => {
+    for (const name of names) {
+      const i = headers.findIndex(h => clean(h) === name)
+      if (i >= 0) return i
+    }
+    return -1
+  }
   const idxContains = (substr: string) => headers.findIndex(h => h.toLowerCase().trim().includes(substr))
 
+  const itemidCol        = idx('itemid', 'item_id')
+  const titleCol         = idx('title', 'item_name', 'description')
+  const priceCol         = idx('price', 'sale_price')  // BatchProductLinks uses "Price" as current price
+  const salePriceCol     = idx('sale_price')            // Standard feed only; -1 in BatchProductLinks
+  const cat1Col          = idx('global_category1')
+  const cat2Col          = idx('global_category2')
+  const ratingCol        = idx('item_rating')
+  const discountCol      = idx('discount_percentage')
+  const productLinkCol   = idx('product_link')
+  // "Offer Link" (BatchProductLinks) or column containing "short" (standard feed)
+  const shortLinkCol     = idx('offer_link') >= 0 ? idx('offer_link') : idxContains('short')
+
   return {
-    imageLink:        idx('image_link')        >= 0 ? idx('image_link')        : 0,
-    itemid:           idx('itemid')            >= 0 ? idx('itemid')            : 1,
-    price:            idx('price')             >= 0 ? idx('price')             : 2,
-    globalCategory1:  idx('global_category1')  >= 0 ? idx('global_category1')  : 3,
-    globalCategory2:  idx('global_category2')  >= 0 ? idx('global_category2')  : 5,
-    itemRating:       idx('item_rating')       >= 0 ? idx('item_rating')       : 7,
-    salePrice:        idx('sale_price')        >= 0 ? idx('sale_price')        : 8,
-    discountPct:      idx('discount_percentage') >= 0 ? idx('discount_percentage') : 10,
-    title:            idx('title')             >= 0 ? idx('title')             : 12,
-    productLink:      idx('product_link')      >= 0 ? idx('product_link')      : 14,
-    productShortLink: idxContains('short')     >= 0 ? idxContains('short')     : 15,
+    imageLink:        idx('image_link')  >= 0 ? idx('image_link')  : -1,
+    itemid:           itemidCol          >= 0 ? itemidCol           : 1,
+    price:            priceCol           >= 0 ? priceCol            : 2,
+    globalCategory1:  cat1Col            >= 0 ? cat1Col             : -1,
+    globalCategory2:  cat2Col            >= 0 ? cat2Col             : -1,
+    itemRating:       ratingCol          >= 0 ? ratingCol           : -1,
+    salePrice:        salePriceCol       >= 0 ? salePriceCol        : -1,
+    discountPct:      discountCol        >= 0 ? discountCol         : -1,
+    title:            titleCol           >= 0 ? titleCol            : 12,
+    productLink:      productLinkCol     >= 0 ? productLinkCol      : 14,
+    productShortLink: shortLinkCol       >= 0 ? shortLinkCol        : -1,
   }
 }
 
@@ -307,14 +331,15 @@ export function normalizeShopeeCSV(
     // Skip completely empty rows
     if (!row || row.every(f => !f?.trim())) continue
 
-    const itemid       = row[col.itemid]?.trim()
-    const rawTitle     = row[col.title]?.trim()
-    const rawPrice     = row[col.price]?.trim()
-    const rawSalePrice = row[col.salePrice]?.trim()
-    const imageLink    = row[col.imageLink]?.trim()
-    const productLink  = row[col.productLink]?.trim()
-    const cat1         = row[col.globalCategory1]?.trim() || ''
-    const cat2         = row[col.globalCategory2]?.trim() || ''
+    const itemid        = row[col.itemid]?.trim()
+    const rawTitle      = row[col.title]?.trim()
+    const rawPrice      = row[col.price]?.trim()
+    const rawSalePrice  = col.salePrice  >= 0 ? row[col.salePrice]?.trim()  : undefined
+    const imageLink     = col.imageLink  >= 0 ? row[col.imageLink]?.trim()  : undefined
+    const productLink   = col.productLink >= 0 ? row[col.productLink]?.trim() : undefined
+    const offerLink     = col.productShortLink >= 0 ? row[col.productShortLink]?.trim() : undefined
+    const cat1          = col.globalCategory1 >= 0 ? (row[col.globalCategory1]?.trim() || '') : ''
+    const cat2          = col.globalCategory2 >= 0 ? (row[col.globalCategory2]?.trim() || '') : ''
 
     // Required fields
     if (!itemid) {
@@ -327,9 +352,14 @@ export function normalizeShopeeCSV(
       reasons.push(`Row ${r} (${itemid}): título ausente ou muito curto`)
       continue
     }
-    if (!productLink || !productLink.startsWith('http')) {
+
+    // Prefer affiliate (offer) link, fallback to product link
+    const finalProductUrl = (offerLink?.startsWith('http') ? offerLink : null)
+      ?? (productLink?.startsWith('http') ? productLink : null)
+
+    if (!finalProductUrl) {
       skipped++
-      reasons.push(`Row ${r} (${itemid}): product_link inválido`)
+      reasons.push(`Row ${r} (${itemid}): product_link e offer_link ausentes ou inválidos`)
       continue
     }
 
@@ -354,7 +384,7 @@ export function normalizeShopeeCSV(
       title:           rawTitle,
       currentPrice,
       originalPrice,
-      productUrl:      productLink,
+      productUrl:      finalProductUrl,
       imageUrl:        imageLink || undefined,
       isFreeShipping:  false,   // Shopee CSV doesn't expose free shipping flag
       availability:    'in_stock',
