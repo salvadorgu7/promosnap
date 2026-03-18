@@ -9,6 +9,8 @@ import { runJob } from './runner'
 import { isValidImageUrl } from '@/lib/images'
 
 const BATCH_SIZE = 50
+// og:image scraping is slow — limit per run to stay within Vercel's 60s timeout
+const MAX_OG_SCRAPES_PER_RUN = 8
 
 /**
  * Scrapes the og:image meta tag from a product URL.
@@ -18,7 +20,7 @@ const BATCH_SIZE = 50
 async function scrapeOgImage(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
-      signal: AbortSignal.timeout(7000),
+      signal: AbortSignal.timeout(4000),
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -86,6 +88,8 @@ export async function backfillImages() {
     let ogScraped = 0
 
     for (const product of products) {
+      // Stop og scraping once we hit the per-run limit (prevent Vercel timeout)
+      const ogBudgetExhausted = ogScraped >= MAX_OG_SCRAPES_PER_RUN
       // Strategy 1: Check listing images
       const listingImage = product.listings.find(l => l.imageUrl && isValidImageUrl(l.imageUrl))
       if (listingImage?.imageUrl) {
@@ -135,8 +139,9 @@ export async function backfillImages() {
       }
 
       // Strategy 3: Scrape og:image from product URL (Amazon, Shopee, Shein, etc.)
+      // Limited to MAX_OG_SCRAPES_PER_RUN to prevent Vercel timeout
       const listingWithUrl = product.listings.find(l => l.productUrl)
-      if (listingWithUrl?.productUrl) {
+      if (!ogBudgetExhausted && listingWithUrl?.productUrl) {
         const imageUrl = await scrapeOgImage(listingWithUrl.productUrl)
         if (imageUrl) {
           await prisma.product.update({
