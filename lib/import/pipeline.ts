@@ -114,6 +114,42 @@ function normalizeTitle(raw: string): string {
 // Use shared brand detection (handles aliases + word boundaries)
 const detectBrand = sharedDetectBrand
 
+/**
+ * Resolve the best brand for an import item.
+ *
+ * Problem: marketplace adapters (especially Shopee) trust the seller-provided
+ * brand field, which is often wrong — a flooring-panel seller can list their
+ * product under "Apple" for SEO purposes.
+ *
+ * Strategy:
+ *   1. If adapter brand appears in the title (e.g. "Samsung Galaxy S24") → trust it.
+ *   2. If adapter brand is confirmed by title-based detectBrand → trust it.
+ *   3. Otherwise → ignore adapter brand, fall back to title-based detection.
+ *   4. No adapter brand → straight title-based detection.
+ */
+function resolveBrand(adapterBrand: string | undefined, title: string): string | null {
+  const fromTitle = detectBrand(title)
+
+  if (!adapterBrand) return fromTitle
+
+  const lowerTitle  = title.toLowerCase()
+  const lowerBrand  = adapterBrand.toLowerCase()
+
+  // Accept if the brand name appears verbatim in the title
+  if (lowerTitle.includes(lowerBrand)) return adapterBrand
+
+  // Accept if title-based detection agrees with the adapter
+  if (fromTitle && fromTitle.toLowerCase() === lowerBrand) return adapterBrand
+
+  // Adapter brand can't be verified from the title — discard it
+  log.debug('brand.adapter-discarded', {
+    adapterBrand,
+    titleBrand: fromTitle,
+    reason: 'not found in title',
+  })
+  return fromTitle
+}
+
 function generateSlug(title: string, suffix: string): string {
   const base = title
     .toLowerCase()
@@ -370,7 +406,7 @@ export async function runImportPipeline(
 
             // Backfill brandId if product has none
             if (existingProduct && !existingProduct.brandId) {
-              const brandName = item.brand || detectBrand(item.title)
+              const brandName = resolveBrand(item.brand, item.title)
               if (brandName) {
                 const brandSlug = brandName.toLowerCase().replace(/\s+/g, '-')
                 const normalizedBrand = brandName.charAt(0).toUpperCase() + brandName.slice(1)
@@ -454,8 +490,8 @@ export async function runImportPipeline(
       // Normalize title before saving
       const cleanTitle = normalizeTitle(item.title)
 
-      // New item — detect brand
-      const brandName = item.brand || detectBrand(cleanTitle)
+      // New item — detect brand (cross-validate adapter brand against title to avoid Shopee SEO spam)
+      const brandName = resolveBrand(item.brand, cleanTitle)
       let brandId: string | null = null
       if (brandName) {
         brandsDetected++
