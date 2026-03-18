@@ -62,7 +62,7 @@ interface EvolutionPayload {
  */
 function extractEvolutionMessage(
   payload: EvolutionPayload,
-  groupJid: string | undefined
+  allowedJids: Set<string> | null
 ): PromosAppRawEvent | null {
   // Only process message upsert events
   if (payload.event !== 'messages.upsert') return null
@@ -70,9 +70,10 @@ function extractEvolutionMessage(
   const data = payload.data
   if (!data) return null
 
-  // Filter by group JID (only process messages from the configured group)
+  // Filter by group JID — only process messages from allowed groups
+  // If allowedJids is null (not configured), accept all groups
   const remoteJid = data.key?.remoteJid
-  if (groupJid && remoteJid !== groupJid) return null
+  if (allowedJids && remoteJid && !allowedJids.has(remoteJid)) return null
 
   // Skip messages sent by us (echoed messages)
   if (data.key?.fromMe) return null
@@ -163,12 +164,25 @@ export async function POST(req: NextRequest) {
 
   try {
     const payload: EvolutionPayload = JSON.parse(rawBody)
-    const groupJid = process.env.WHATSAPP_GROUP_JID || undefined
 
-    const event = extractEvolutionMessage(payload, groupJid)
+    // Support multiple group JIDs (comma-separated) via WHATSAPP_GROUP_JIDS
+    // Falls back to legacy WHATSAPP_GROUP_JID (singular) for backward compat
+    const jidsEnv = process.env.WHATSAPP_GROUP_JIDS || process.env.WHATSAPP_GROUP_JID || ''
+    const allowedJids = jidsEnv.trim()
+      ? new Set(jidsEnv.split(',').map(j => j.trim()).filter(Boolean))
+      : null // null = accept all groups (no filter)
+
+    const event = extractEvolutionMessage(payload, allowedJids)
 
     if (!event) {
-      // Silently acknowledge — non-text, wrong group, or irrelevant event
+      // Log filtered-out groups for debugging
+      const remoteJid = payload.data?.key?.remoteJid
+      if (allowedJids && remoteJid && !allowedJids.has(remoteJid)) {
+        logger.debug('evolution.webhook.group-filtered', {
+          remoteJid,
+          allowedGroups: allowedJids.size,
+        })
+      }
       return NextResponse.json({ ok: true, message: 'Ignored' })
     }
 
