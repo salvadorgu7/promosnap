@@ -11,9 +11,16 @@ const nextConfig = {
       { protocol: "https", hostname: "**.mlstatic.com" },
       { protocol: "http", hostname: "**.mlstatic.com" },
       { protocol: "https", hostname: "**.shopee.com.br" },
+      { protocol: "https", hostname: "**.shopee.com" },
       { protocol: "https", hostname: "**.shein.com" },
       { protocol: "https", hostname: "images-na.ssl-images-amazon.com" },
       { protocol: "https", hostname: "m.media-amazon.com" },
+      // WhatsApp CDN — imagens enviadas via grupos WhatsApp (Evolution API)
+      { protocol: "https", hostname: "**.whatsapp.net" },
+      { protocol: "https", hostname: "**.fbcdn.net" },
+      // Shopee CDN alternativo
+      { protocol: "https", hostname: "**.alicdn.com" },
+      { protocol: "https", hostname: "**.akamaized.net" },
     ],
   },
   async headers() {
