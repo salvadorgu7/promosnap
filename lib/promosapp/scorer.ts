@@ -169,6 +169,30 @@ function scoreAvailable(item: PromosAppNormalizedItem): number {
   return 0
 }
 
+function scorePriceSanity(item: PromosAppNormalizedItem): number {
+  // 0 pts = suspicious price, -30 pts penalty for absurd prices
+  // Catches cases where parser confuses shipping/installment with product price
+  // e.g. "Rack TV R$ 3.555 → frete R$ 6" → parser grabs R$ 6 as price
+
+  if (item.currentPrice <= 0) return 0
+
+  // Absurd discount: price < R$10 but original > R$200 = likely parse error
+  if (item.originalPrice && item.originalPrice > 200 && item.currentPrice < 10) {
+    const ratio = item.currentPrice / item.originalPrice
+    if (ratio < 0.02) return -30 // 98%+ "discount" = almost certainly wrong
+  }
+
+  // Suspiciously low price for expensive-sounding products
+  if (item.currentPrice < 5 && item.originalPrice && item.originalPrice > 100) {
+    return -20
+  }
+
+  // Price < R$1 is almost never real
+  if (item.currentPrice < 1) return -30
+
+  return 0
+}
+
 // ── Main Scoring ───────────────────────────────────────────────────────────
 
 /**
@@ -192,9 +216,10 @@ export async function scoreItem(
     hasImage: scoreHasImage(item),
     couponConfirmed: scoreCouponConfirmed(item),
     available: scoreAvailable(item),
+    priceSanity: scorePriceSanity(item),
   }
 
-  const total = Math.min(
+  const total = Math.max(0, Math.min(
     100,
     factors.linkValid +
     factors.catalogMatch +
@@ -206,8 +231,9 @@ export async function scoreItem(
     factors.noSpamSignals +
     factors.hasImage +
     factors.couponConfirmed +
-    factors.available
-  )
+    factors.available +
+    factors.priceSanity
+  ))
 
   const tier = total >= 70 ? 'high' : total >= 40 ? 'medium' : 'low'
 

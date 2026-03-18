@@ -108,6 +108,8 @@ export interface PromosAppScoreFactors {
   couponConfirmed: number
   /** Product in stock */
   available: number
+  /** Price sanity check — penalty for absurd prices (parse errors) */
+  priceSanity: number
 }
 
 /** Score result with total and breakdown */
