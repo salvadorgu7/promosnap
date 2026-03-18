@@ -362,10 +362,10 @@ export const CLUSTERS: Record<string, ClusterDef> = {
   perfumes: {
     id: 'perfumes',
     name: 'Perfumes & Beleza',
-    hub: '/categoria/perfumes',
-    hubLabel: 'Todos os Perfumes',
-    keywords: ['perfume', 'colônia', 'eau de parfum', 'desodorante', 'beleza', 'cosméticos'],
-    categorySlugs: ['perfumes', 'beleza', 'cosmeticos'],
+    hub: '/categoria/beleza',
+    hubLabel: 'Todos os Produtos de Beleza',
+    keywords: ['perfume', 'colônia', 'eau de parfum', 'desodorante', 'beleza', 'cosméticos', 'skincare', 'cabelo', 'maquiagem'],
+    categorySlugs: ['beleza', 'cosmeticos'],
     priority: 3,
     melhores: [
       { href: '/melhores/melhores-perfumes', label: 'Melhores Perfumes', exists: true },

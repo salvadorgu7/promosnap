@@ -38,7 +38,7 @@ const CATEGORY_REGISTRY: (MLCategory & { keywords: string[] })[] = [
   { id: 'MLB1581',   name: 'Lavadoras de Roupa',       priority: 3, keywords: ['maquina lavar', 'lavadora', 'lava e seca'] },
 
   // Fashion & Beauty
-  { id: 'MLB1246',   name: 'Perfumes',                 priority: 3, keywords: ['perfume', 'colonia', 'fragancia'] },
+  { id: 'MLB1246',   name: 'Beleza e Cuidado Pessoal', priority: 3, keywords: ['perfume', 'colonia', 'fragancia', 'maquiagem', 'creme', 'hidratante', 'shampoo', 'escova', 'secador', 'barbeador', 'depilador', 'chapinha', 'skincare'] },
   { id: 'MLB99614',  name: 'Tenis',                    priority: 3, keywords: ['tenis', 'sneaker', 'nike', 'adidas'] },
   { id: 'MLB16117',  name: 'Mochilas',                 priority: 3, keywords: ['mochila', 'bolsa', 'mala'] },
 
@@ -116,8 +116,8 @@ const ML_TO_PROMOSNAP_SLUG: Record<string, string> = {
   'MLB110447': 'casa',            // Cafeteiras
   'MLB1581':   'casa',            // Lavadoras
 
-  // Beleza
-  'MLB1246':   'perfumes',        // Perfumes
+  // Beleza e Cuidado Pessoal
+  'MLB1246':   'beleza',          // Beleza e Cuidado Pessoal (perfumes, skincare, cabelo, etc.)
 
   // Moda
   'MLB99614':  'tenis',           // Tenis
