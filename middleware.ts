@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Middleware to protect /admin routes with cookie-based auth.
- * Unauthenticated users are redirected to /admin-login (outside /admin layout).
- * API routes under /api/admin are protected separately via x-admin-secret header.
+ * Middleware to:
+ * 1. Protect /admin routes with cookie-based auth.
+ *    Unauthenticated users are redirected to /admin-login (outside /admin layout).
+ *    API routes under /api/admin are protected separately via x-admin-secret header.
+ * 2. Add X-Robots-Tag: noindex, nofollow to all /api/ responses so bots that
+ *    somehow crawl API endpoints get an explicit signal to ignore them.
  */
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Block crawlers from API routes via X-Robots-Tag header
+  if (pathname.startsWith("/api/")) {
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return res;
+  }
+
   // Check for admin auth cookie
   const cookie = req.cookies.get("admin-auth")?.value;
   const secret = process.env.ADMIN_SECRET;
@@ -27,7 +39,6 @@ export async function middleware(req: NextRequest) {
   }
 
   // Not authenticated — redirect to login page
-  const { pathname } = req.nextUrl;
   const loginUrl = req.nextUrl.clone();
   loginUrl.pathname = "/admin-login";
   loginUrl.searchParams.set("from", pathname);
@@ -35,5 +46,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/:path*"],
 };
