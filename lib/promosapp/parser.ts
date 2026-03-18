@@ -55,9 +55,14 @@ const MARKETPLACE_PATTERNS: MarketplacePattern[] = [
       /s\.shopee/i,
     ],
     idExtractor: (url) => {
-      // Shopee URLs: /product/shopId/itemId or -i.shopId.itemId
-      const match = url.pathname.match(/\.(\d+)\.(\d+)/) ||
-                    url.pathname.match(/\/product\/(\d+)\/(\d+)/)
+      // Shopee URL formats:
+      // 1. /username/shopId/itemId  — most common in WhatsApp affiliate links
+      // 2. /product/shopId/itemId   — canonical product page
+      // 3. -i.shopId.itemId         — old dot-separated format
+      // IDs are large numbers (≥5 digits) to avoid false matches
+      const match = url.pathname.match(/\/[^\/]+\/(\d{5,})\/(\d{5,})/) ||
+                    url.pathname.match(/\/product\/(\d+)\/(\d+)/) ||
+                    url.pathname.match(/\.(\d+)\.(\d+)/)
       return match ? `${match[1]}.${match[2]}` : null
     },
   },

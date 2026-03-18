@@ -137,6 +137,8 @@ const TRACKING_PARAMS = new Set([
   'pd_rd_r', 'pd_rd_w', 'pd_rd_wg', 'pf_rd_p', 'pf_rd_r',
   'linkId', 'smid', 'psc', 'camp', 'creative', 'creativeASIN',
   'ascsubtag', 'geniuslink',
+  // Shopee affiliate tracking params
+  'gads_t_sig', 'mmp_pid', 'uls_trackid', 'exp_group', '__mobile__',
 ])
 
 function cleanTrackingParams(url: URL): URL {
