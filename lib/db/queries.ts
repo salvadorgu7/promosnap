@@ -26,6 +26,11 @@ export function buildProductCard(p: any): ProductCard | null {
     ? Math.round(((best.originalPrice - best.currentPrice) / best.originalPrice) * 100)
     : undefined
 
+  // Sanity gate: discounts ≥ 85% are almost always data errors (e.g. Amazon 3rd-party/used
+  // prices returned as the main price). Filter them out of all site listings.
+  // Mirrors the same cap in lib/distribution/engine.ts (DIST_MAX_DISCOUNT).
+  if (discount && discount >= 85) return null
+
   const badges: Badge[] = []
   if (best.offerScore >= 80) badges.push({ type: 'hot_deal', label: 'Oferta Quente', color: 'red' })
   if (discount && discount >= 40) badges.push({ type: 'price_drop', label: `${discount}% OFF`, color: 'green' })
