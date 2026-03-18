@@ -387,10 +387,10 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                   <Link
                     key={opt.value}
                     href={buildSearchUrl(params, { sort: opt.value, page: "1" })}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                       sort === opt.value
-                        ? "bg-brand-50 text-brand-600"
-                        : "text-text-muted hover:bg-surface-200"
+                        ? "bg-accent-blue text-white"
+                        : "bg-surface-100 text-text-secondary hover:bg-surface-200"
                     }`}
                   >
                     {opt.label}
@@ -443,7 +443,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
           {/* Product grid */}
           {products.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {products.map((p) => (
                   <OfferCard key={p.id} product={p} railSource="search" page="search" />
                 ))}

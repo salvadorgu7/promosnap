@@ -513,7 +513,7 @@ export default async function HomePage() {
 
       {/* ===== 21. SEO ===== */}
       <section id="seo" className="py-8 section-alt">
-        <div className="max-w-7xl mx-auto px-4 max-w-3xl">
+        <div className="max-w-3xl mx-auto px-4">
           <h2 className="font-display font-bold text-xl text-text-primary mb-2">
             PromoSnap — Comparador de precos com historico real
           </h2>

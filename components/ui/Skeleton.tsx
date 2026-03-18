@@ -6,19 +6,25 @@ export function Skeleton({ className = "" }: { className?: string }) {
 
 export function OfferCardSkeleton() {
   return (
-    <div className="card flex flex-col w-full overflow-hidden">
-      <div className="px-3 pt-3">
-        <Skeleton className="aspect-square rounded-lg" />
+    <div className="card flex flex-col w-full h-full overflow-hidden">
+      {/* Matches OfferCard badges area */}
+      <div className="flex items-center gap-1 px-1.5 pt-1.5">
+        <Skeleton className="h-5 w-16 rounded-md" />
       </div>
-      <div className="px-3 pt-3 pb-3 space-y-2.5">
+      {/* Matches OfferCard image: px-1.5 pt-1.5 + aspect-[5/4] */}
+      <div className="px-1.5 pt-1.5">
+        <Skeleton className="aspect-[5/4] rounded-lg" />
+      </div>
+      {/* Matches OfferCard content: px-1.5 pt-1.5 pb-2 */}
+      <div className="flex-1 flex flex-col px-1.5 pt-1.5 pb-2 space-y-2">
         <Skeleton className="h-3 w-20 rounded-md" />
         <Skeleton className="h-4 w-full rounded-md" />
         <Skeleton className="h-4 w-3/4 rounded-md" />
-        <div className="pt-3 space-y-1.5">
+        <div className="mt-auto pt-2 space-y-1.5">
           <Skeleton className="h-3 w-16 rounded-md" />
           <Skeleton className="h-7 w-28 rounded-md" />
         </div>
-        <Skeleton className="h-10 w-full rounded-lg mt-3" />
+        <Skeleton className="h-9 w-full rounded-lg mt-2" />
       </div>
     </div>
   );
