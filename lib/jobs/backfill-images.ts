@@ -56,6 +56,10 @@ export async function backfillImages() {
         OR: [
           { imageUrl: null },
           { imageUrl: '' },
+          // WhatsApp CDN URLs expire in ~14 days — treat them as missing
+          { imageUrl: { contains: 'whatsapp.net' } },
+          { imageUrl: { contains: 'mmg.' } },
+          { imageUrl: { contains: 'fbcdn.net' } },
         ],
         status: 'ACTIVE',
       },
@@ -81,7 +85,7 @@ export async function backfillImages() {
       return { itemsTotal: 0, itemsDone: 0, metadata: { healed: 0 } }
     }
 
-    ctx.log(`Found ${products.length} products without images`)
+    ctx.log(`Found ${products.length} products without valid images (null, empty, or expired WhatsApp URLs)`)
 
     let healed = 0
     let mlFetched = 0
