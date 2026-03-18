@@ -565,6 +565,58 @@ export async function runImportPipeline(
         }
       }
 
+      // Last-resort for Amazon ASINs: scrape og:image from the product page
+      if (dbProduct && !dbProduct.imageUrl && item.externalId?.match(/^B[A-Z0-9]{9}$/)) {
+        try {
+          const amazonUrl = item.productUrl || `https://www.amazon.com.br/dp/${item.externalId}`
+          const amzRes = await fetch(amazonUrl, {
+            signal: AbortSignal.timeout(8000),
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+            },
+            redirect: 'follow',
+          })
+          if (amzRes.ok) {
+            // Read only first 80KB (og:image is always in <head>)
+            const reader = amzRes.body?.getReader()
+            if (reader) {
+              let html = ''
+              const decoder = new TextDecoder()
+              while (html.length < 80_000) {
+                const { done, value } = await reader.read()
+                if (done) break
+                html += decoder.decode(value, { stream: true })
+                if (html.includes('</head>')) break
+              }
+              reader.cancel().catch(() => {})
+
+              // Try og:image first
+              const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+                ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+              // Fallback: data-old-hires attribute (Amazon high-res image)
+              const hiResMatch = html.match(/data-old-hires=["']([^"']+)["']/)
+              // Fallback: landingImage src
+              const landingMatch = html.match(/id=["']landingImage["'][^>]+src=["']([^"']+)["']/)
+
+              const fetchedImage = ogMatch?.[1] || hiResMatch?.[1] || landingMatch?.[1]
+              if (fetchedImage && fetchedImage.startsWith('http') && fetchedImage.length > 10) {
+                await prisma.product.update({
+                  where: { id: dbProduct.id },
+                  data: { imageUrl: fetchedImage },
+                })
+                item.imageUrl = fetchedImage
+                dbProduct = { ...dbProduct, imageUrl: fetchedImage }
+                log.info('pipeline.amazon-image-fetched', { asin: item.externalId, imageUrl: fetchedImage })
+              }
+            }
+          }
+        } catch {
+          // Non-blocking — image fetch is best-effort
+        }
+      }
+
       // Create listing
       const listing = await prisma.listing.create({
         data: {

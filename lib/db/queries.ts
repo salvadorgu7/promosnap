@@ -133,7 +133,11 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
   if (cached) return cached
 
   const products = await prisma.product.findMany({
-    where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true, currentPrice: { gt: 10 } } } } } },
+    where: {
+      status: 'ACTIVE',
+      imageUrl: { not: null }, // Oferta do Dia / carousels must have an image
+      listings: { some: { offers: { some: { isActive: true, currentPrice: { gt: 10 } } } } },
+    },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     orderBy: { popularityScore: 'desc' },
     take: limit * 2,
