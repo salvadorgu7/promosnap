@@ -10,8 +10,6 @@ import type {
   PromosAppScore,
   PromosAppScoreFactors,
   PromosAppDecision,
-  PromosAppPipelineConfig,
-  DEFAULT_PIPELINE_CONFIG,
 } from './types'
 
 const log = logger.child({ module: 'promosapp-scorer' })
@@ -86,10 +84,24 @@ function scoreSellerTrusted(_item: PromosAppNormalizedItem): number {
   return 0
 }
 
-function scoreVolumeSold(_item: PromosAppNormalizedItem): number {
-  // 5 pts max — requires enrichment data
-  // Placeholder: enrichment result would populate this
-  return 0
+function scoreVolumeSold(item: PromosAppNormalizedItem): number {
+  // 5 pts max — uses enrichment data (salesCount, reviewsCount)
+  let score = 0
+
+  // Sales count signal (up to 3 pts)
+  if (item.salesCount && item.salesCount > 0) {
+    if (item.salesCount >= 1000) score += 3
+    else if (item.salesCount >= 100) score += 2
+    else if (item.salesCount >= 10) score += 1
+  }
+
+  // Reviews as proxy for volume (up to 2 pts)
+  if (item.reviewsCount && item.reviewsCount > 0) {
+    if (item.reviewsCount >= 100) score += 2
+    else if (item.reviewsCount >= 10) score += 1
+  }
+
+  return Math.min(score, 5)
 }
 
 async function scoreMultiSource(item: PromosAppNormalizedItem): Promise<number> {

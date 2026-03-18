@@ -63,6 +63,9 @@ import { getConsolidatedRating } from "@/lib/reviews/consolidated";
 import { getCategoryInsights } from "@/lib/reviews/ranking";
 import { getShippingSignals } from "@/lib/shipping/intelligence";
 import prisma from "@/lib/db/prisma";
+import { computePriceStats } from "@/lib/price/analytics";
+import { generateBuySignal } from "@/lib/decision/buy-signal";
+import { getFlag } from "@/lib/config/feature-flags";
 import type { PriceHistoryPoint, PriceStats } from "@/types";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -83,40 +86,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     path: `/produto/${slug}`,
     ogImage: product.imageUrl || undefined,
   });
-}
-
-function computePriceStats(
-  snapshots: { price: number; originalPrice: number | null; capturedAt: Date }[],
-  currentPrice: number
-): PriceStats {
-  const now = Date.now();
-  const day30 = 30 * 86400000;
-  const day90 = 90 * 86400000;
-
-  const prices = snapshots.map((s) => s.price);
-  const prices30d = snapshots.filter((s) => now - s.capturedAt.getTime() < day30).map((s) => s.price);
-  const prices90d = snapshots.filter((s) => now - s.capturedAt.getTime() < day90).map((s) => s.price);
-
-  const avg = (arr: number[]) => (arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : currentPrice);
-  const min = (arr: number[]) => (arr.length > 0 ? Math.min(...arr) : currentPrice);
-  const max = (arr: number[]) => (arr.length > 0 ? Math.max(...arr) : currentPrice);
-
-  const avg30 = avg(prices30d);
-  let trend: "up" | "down" | "stable" = "stable";
-  if (currentPrice < avg30 * 0.95) trend = "down";
-  else if (currentPrice > avg30 * 1.05) trend = "up";
-
-  return {
-    current: currentPrice,
-    min30d: min(prices30d),
-    max30d: max(prices30d),
-    avg30d: Math.round(avg30 * 100) / 100,
-    min90d: min(prices90d),
-    max90d: max(prices90d),
-    avg90d: Math.round(avg(prices90d) * 100) / 100,
-    allTimeMin: min(prices),
-    trend,
-  };
 }
 
 export default async function ProdutoPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -264,6 +233,15 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
   const isNearAllTimeLow = priceStats?.allTimeMin
     ? bestPrice <= priceStats.allTimeMin * 1.05
     : false;
+
+  // Buy signal (feature-flagged)
+  const buySignal = priceStats && getFlag('buySignals')
+    ? generateBuySignal(bestPrice, priceStats, {
+        offersCount: allOffers.length,
+        isFreeShipping: bestOffer?.isFreeShipping ?? false,
+        discount,
+      })
+    : null;
 
   // Social proof: popularity score
   const showSocialProof = product.popularityScore > 10;
@@ -525,6 +503,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               isFreeShipping={bestOffer.isFreeShipping}
               offerScore={bestOffer.offerScore}
               trend={priceStats?.trend}
+              buySignal={buySignal}
             />
           )}
 
@@ -687,11 +666,30 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
 
           {/* Decision blocks — smart comparison with reasoning */}
           {smartComparison && smartComparison.matrix.length > 0 && (
-            <DecisionBlocks
-              comparison={smartComparison}
-              bestChoice={bestChoiceResult}
-              productSlug={slug}
-            />
+            <>
+              {smartComparison.matrix.length >= 2 && (
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wide text-brand-500">
+                    Comparacao entre {smartComparison.matrix.length} lojas
+                  </span>
+                  <span className="flex-1 h-px bg-surface-200" />
+                </div>
+              )}
+              <DecisionBlocks
+                comparison={smartComparison}
+                bestChoice={bestChoiceResult}
+                productSlug={slug}
+              />
+            </>
+          )}
+          {/* Single source — encourage tracking */}
+          {(!smartComparison || smartComparison.matrix.length <= 1) && allOffers.length <= 1 && bestOffer && (
+            <div className="p-4 rounded-xl bg-surface-50 border border-surface-200">
+              <p className="text-sm text-text-secondary">
+                <span className="font-medium text-text-primary">Disponivel em 1 loja.</span>{" "}
+                Estamos buscando esse produto em mais lojas para comparar precos.
+              </p>
+            </div>
           )}
 
           {/* Cross-source comparison */}

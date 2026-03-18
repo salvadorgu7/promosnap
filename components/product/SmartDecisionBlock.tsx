@@ -1,5 +1,6 @@
-import { Brain, TrendingDown, Scale, ThumbsUp, AlertTriangle } from "lucide-react";
+import { Brain, TrendingDown, Scale, ThumbsUp, AlertTriangle, Sparkles, Clock } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import type { BuySignal } from "@/lib/decision/buy-signal";
 
 interface SmartDecisionBlockProps {
   productName: string;
@@ -11,6 +12,8 @@ interface SmartDecisionBlockProps {
   isFreeShipping: boolean;
   offerScore: number;
   trend?: "up" | "down" | "stable";
+  /** Pre-computed buy signal (from server) */
+  buySignal?: BuySignal | null;
 }
 
 export default function SmartDecisionBlock({
@@ -23,6 +26,7 @@ export default function SmartDecisionBlock({
   isFreeShipping,
   offerScore,
   trend,
+  buySignal,
 }: SmartDecisionBlockProps) {
   // Calculate decision signals
   const signals: { icon: typeof Brain; label: string; detail: string; color: string; positive: boolean }[] = [];
@@ -108,18 +112,45 @@ export default function SmartDecisionBlock({
     });
   }
 
-  if (signals.length === 0) return null;
+  if (signals.length === 0 && !buySignal) return null;
 
   const positiveCount = signals.filter(s => s.positive).length;
   const totalSignals = signals.length;
   const verdict = positiveCount === totalSignals ? "Compra inteligente" : positiveCount >= totalSignals * 0.7 ? "Boa oportunidade" : "Avalie com cuidado";
   const verdictColor = positiveCount === totalSignals ? "text-accent-green" : positiveCount >= totalSignals * 0.7 ? "text-accent-blue" : "text-accent-orange";
 
+  // Buy signal color mapping
+  const buySignalStyles: Record<string, { bg: string; border: string; text: string; icon: typeof Sparkles }> = {
+    green: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", icon: Sparkles },
+    blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: ThumbsUp },
+    orange: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700", icon: Clock },
+    gray: { bg: "bg-surface-50", border: "border-surface-200", text: "text-text-secondary", icon: Brain },
+  };
+
   return (
+    <div className="space-y-3">
+      {/* Buy Signal Banner */}
+      {buySignal && buySignal.level !== 'neutro' && (
+        <div className={`p-3.5 rounded-xl border ${buySignalStyles[buySignal.color]?.border || "border-surface-200"} ${buySignalStyles[buySignal.color]?.bg || "bg-surface-50"}`}>
+          <div className="flex items-center gap-2">
+            {(() => {
+              const BuyIcon = buySignalStyles[buySignal.color]?.icon || Brain;
+              return <BuyIcon className={`h-4 w-4 ${buySignalStyles[buySignal.color]?.text || "text-text-muted"}`} />;
+            })()}
+            <span className={`text-sm font-bold ${buySignalStyles[buySignal.color]?.text || "text-text-primary"}`}>
+              {buySignal.headline}
+            </span>
+          </div>
+          <p className="text-xs text-text-muted mt-1 ml-6">{buySignal.detail}</p>
+        </div>
+      )}
+
+      {/* Smart Analysis Block */}
+      {signals.length > 0 && (
     <div className="card p-4 border-l-4 border-l-brand-500">
       <div className="flex items-center gap-2 mb-3">
         <Brain className="h-4 w-4 text-brand-500" />
-        <h3 className="text-sm font-bold font-display text-text-primary">Análise Inteligente</h3>
+        <h3 className="text-sm font-bold font-display text-text-primary">Analise Inteligente</h3>
         <span className={`ml-auto text-xs font-bold ${verdictColor} bg-current/10 px-2 py-0.5 rounded-full`} style={{ backgroundColor: 'transparent' }}>
           <span className={verdictColor}>{verdict}</span>
         </span>
@@ -140,6 +171,8 @@ export default function SmartDecisionBlock({
           );
         })}
       </div>
+    </div>
+      )}
     </div>
   );
 }

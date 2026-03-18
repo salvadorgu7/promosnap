@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/security/rate-limit";
 import { logger } from "@/lib/logger";
+import { computeExtendedPriceStats } from "@/lib/price/analytics";
 
 export async function GET(
   request: NextRequest,
@@ -37,10 +38,32 @@ export async function GET(
       orderBy: { capturedAt: "asc" },
     });
 
+    // Compute current price from latest snapshot or offer
+    const currentPriceSnap = snapshots.length > 0 ? snapshots[snapshots.length - 1].price : null
+    let currentPrice = currentPriceSnap
+
+    if (!currentPrice) {
+      const bestOffer = await prisma.offer.findFirst({
+        where: { listing: { productId }, isActive: true },
+        orderBy: { currentPrice: 'asc' },
+        select: { currentPrice: true },
+      })
+      currentPrice = bestOffer?.currentPrice ?? 0
+    }
+
+    // Compute extended analytics if we have data
+    const analytics = currentPrice > 0 && snapshots.length > 0
+      ? computeExtendedPriceStats(
+          snapshots.map(s => ({ ...s, capturedAt: new Date(s.capturedAt) })),
+          currentPrice
+        )
+      : null
+
     const response = NextResponse.json({
       productId,
       days,
       snapshots,
+      analytics,
     });
 
     return withRateLimitHeaders(response, rl);

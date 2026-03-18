@@ -70,6 +70,12 @@ export interface PromosAppNormalizedItem {
   isFreeShipping: boolean
   /** Seller name if available */
   sellerName?: string
+  /** Rating from adapter enrichment (0-5) */
+  rating?: number
+  /** Review count from adapter enrichment */
+  reviewsCount?: number
+  /** Estimated sales count from adapter enrichment */
+  salesCount?: number
   /** Original raw event (preserved for traceability) */
   rawEvent: PromosAppRawEvent
   /** Errors during parsing/canonicalization */

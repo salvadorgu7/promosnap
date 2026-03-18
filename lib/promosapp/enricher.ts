@@ -153,6 +153,11 @@ export function mergeEnrichment(result: EnrichmentResult): PromosAppNormalizedIt
   if (data.sellerName && !item.sellerName) item.sellerName = data.sellerName
   if (data.coupon && !item.couponCode) item.couponCode = data.coupon
 
+  // Carry enrichment metrics for scoring
+  if (data.rating != null) item.rating = data.rating
+  if (data.reviewsCount != null) item.reviewsCount = data.reviewsCount
+  if (data.salesCount != null) item.salesCount = data.salesCount
+
   return item
 }
 

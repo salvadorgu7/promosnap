@@ -28,6 +28,12 @@ export interface FeatureFlags {
   promosappAutoPublish: boolean
   /** Enable WhatsApp auto-ingest via Evolution API webhook */
   whatsappAutoIngest: boolean
+  /** Enable enhanced scoring with volume/price-history bonus */
+  enhancedScoring: boolean
+  /** Enable comparison hero on product page */
+  comparisonHero: boolean
+  /** Enable consumer-facing buy signals */
+  buySignals: boolean
 }
 
 function envBool(key: string): boolean {
@@ -50,6 +56,9 @@ export function getAllFlags(): FeatureFlags {
     promosappEnabled: envBool('FF_PROMOSAPP_ENABLED'),
     promosappAutoPublish: envBool('FF_PROMOSAPP_AUTO_PUBLISH'),
     whatsappAutoIngest: envBool('FF_WHATSAPP_AUTO_INGEST'),
+    enhancedScoring: envBool('FF_ENHANCED_SCORING'),
+    comparisonHero: envBool('FF_COMPARISON_HERO'),
+    buySignals: envBool('FF_BUY_SIGNALS'),
   }
 }
 
