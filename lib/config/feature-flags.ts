@@ -34,6 +34,8 @@ export interface FeatureFlags {
   comparisonHero: boolean
   /** Enable consumer-facing buy signals */
   buySignals: boolean
+  /** Enable Shopee CSV-first integration (import via affiliate CSV export) */
+  shopeeEnabled: boolean
 }
 
 function envBool(key: string): boolean {
@@ -59,6 +61,7 @@ export function getAllFlags(): FeatureFlags {
     enhancedScoring: envBool('FF_ENHANCED_SCORING'),
     comparisonHero: envBool('FF_COMPARISON_HERO'),
     buySignals: envBool('FF_BUY_SIGNALS'),
+    shopeeEnabled: envBool('SHOPEE_ENABLED') || !!process.env.SHOPEE_AFFILIATE_ID,
   }
 }
 

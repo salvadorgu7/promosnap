@@ -674,6 +674,10 @@ export async function runImportPipeline(
               const { AmazonAdapter } = await import('@/adapters/amazon')
               return new AmazonAdapter()
             },
+            'shopee': async () => {
+              const { ShopeeAdapter } = await import('@/adapters/shopee')
+              return new ShopeeAdapter()
+            },
           }
           const getAdapter = adapterMap[item.sourceSlug]
           if (getAdapter) {
