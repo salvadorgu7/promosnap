@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
             some: {
               isActive: true,
               offerScore: { gte: 40 }, // Minimum quality threshold
-              currentPrice: { gt: 0 },
+              currentPrice: { gt: 10 }, // Skip parse-error prices (R$6 tigelas, etc.)
               affiliateUrl: { not: null },
             },
           },
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
   const cards = products
     .map(buildProductCard)
     .filter(Boolean)
-    .filter((c) => c!.bestOffer.offerScore >= 40 && c!.bestOffer.affiliateUrl !== "#")
+    .filter((c) => c!.bestOffer.offerScore >= 40 && c!.bestOffer.affiliateUrl !== "#" && (c!.bestOffer.discount ?? 0) < 92)
     // Sort by offerScore (highest first) — this is the key difference from getHotOffers
     .sort((a, b) => b!.bestOffer.offerScore - a!.bestOffer.offerScore)
     .slice(0, limit)

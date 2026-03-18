@@ -469,7 +469,7 @@ export async function getOperationalMetrics(): Promise<MetricResult[]> {
         SELECT COUNT(*)::int AS cnt FROM offers WHERE "isActive" = true
       `;
       activeOffers = offerRows[0]?.cnt ?? 0;
-    } catch (err) { logger.debug("metrics.query-failed", { error: err }) }
+    } catch (err) { logger.warn("metrics.query-failed", { error: err }) }
 
     return [
       metric(activeProducts, "Active Products", 0, 0, computeStatus(activeProducts, 100, 20), "number"),

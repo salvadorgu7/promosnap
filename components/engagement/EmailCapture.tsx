@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Bell, Check, Loader2 } from "lucide-react";
+import { analytics } from "@/lib/analytics/events";
 
 interface EmailCaptureProps {
   context?: string;
@@ -26,6 +27,7 @@ export default function EmailCapture({ context = "general", compact = false }: E
       if (res.ok) {
         setStatus("success");
         localStorage.setItem("ps_subscribed", "true");
+        analytics.newsletterSignup({ source: context });
       } else {
         setStatus("error");
       }

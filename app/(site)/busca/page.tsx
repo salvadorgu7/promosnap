@@ -182,6 +182,27 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* ItemList JSON-LD for search results */}
+      {query && products.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              name: `Resultados para "${query}"`,
+              numberOfItems: total,
+              itemListElement: products.slice(0, 10).map((p: any, i: number) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                url: `https://www.promosnap.com.br/produto/${p.slug}`,
+                name: p.name || p.title,
+              })),
+            }),
+          }}
+        />
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-display text-text-primary mb-1">

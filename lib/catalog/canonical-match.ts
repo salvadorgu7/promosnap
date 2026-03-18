@@ -419,7 +419,7 @@ export async function findCanonicalCandidates(
           matchedOn: ["ean"],
         }));
       }
-    } catch (err) { logger.debug("canonical-match.failed", { error: err }) }
+    } catch (err) { logger.warn("canonical-match.failed", { error: err }) }
   }
 
   // Build search conditions — conservative: require at least brand or category match

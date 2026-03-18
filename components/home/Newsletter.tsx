@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Mail, Send, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { analytics } from "@/lib/analytics/events";
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
@@ -43,6 +44,7 @@ export default function Newsletter({ variant = "hero" }: NewsletterProps) {
     try {
       await subscribeEmail(email);
       setState("success");
+      analytics.newsletterSignup({ source: variant === "compact" ? "compact" : "hero" });
     } catch (err: unknown) {
       setState("error");
       setErrorMsg(

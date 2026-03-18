@@ -230,6 +230,45 @@ export function computeMessageHash(text: string): string {
 
 // ── Marketplace Detection ──────────────────────────────────────────────────
 
+/**
+ * Non-product paths on marketplace sites — these are NOT product pages
+ * and should be rejected to avoid creating bogus entries like "perfil social".
+ */
+const NON_PRODUCT_PATHS: Record<string, RegExp[]> = {
+  mercadolivre: [
+    /^\/perfil\b/i,         // Seller profile pages
+    /^\/usuario\b/i,        // User profile pages
+    /^\/loja\b/i,           // Store/shop pages
+    /^\/vendedor\b/i,       // Seller pages
+    /^\/busca\b/i,          // Search result pages
+    /^\/categorias?\b/i,    // Category pages
+    /^\/sugestoes\b/i,      // Suggestions
+    /^\/ranking\b/i,        // Rankings
+    /^\/conta\b/i,          // Account pages
+    /^\/help\b/i,           // Help/support
+    /^\/gz\//i,             // ML generic zone pages
+    /^\/ofertas\b/i,        // Offers listing (not a product)
+    /^\/cupons?\b/i,        // Coupons listing
+    /^\/navigation\b/i,     // Navigation pages
+  ],
+  'amazon-br': [
+    /^\/stores\b/i,         // Store pages
+    /^\/s\?/i,              // Search pages
+    /^\/hz\/wishlist/i,     // Wishlists
+    /^\/ap\//i,             // Account pages
+  ],
+  shopee: [
+    /^\/shop\//i,           // Shop pages (not product)
+    /^\/search\b/i,         // Search pages
+  ],
+}
+
+function isNonProductUrl(slug: string, pathname: string): boolean {
+  const patterns = NON_PRODUCT_PATHS[slug]
+  if (!patterns) return false
+  return patterns.some(p => p.test(pathname))
+}
+
 export function detectMarketplace(url: string): { slug: string; name: string; externalId: string | null } | null {
   let parsed: URL
   try {
@@ -240,6 +279,11 @@ export function detectMarketplace(url: string): { slug: string; name: string; ex
 
   for (const mp of MARKETPLACE_PATTERNS) {
     if (mp.patterns.some(p => p.test(url))) {
+      // Reject non-product URLs (profiles, search, stores, etc.)
+      if (isNonProductUrl(mp.slug, parsed.pathname)) {
+        log.info('parser.rejected-non-product-url', { url, slug: mp.slug, pathname: parsed.pathname })
+        return null
+      }
       const externalId = mp.idExtractor ? mp.idExtractor(parsed) : null
       return { slug: mp.slug, name: mp.name, externalId }
     }

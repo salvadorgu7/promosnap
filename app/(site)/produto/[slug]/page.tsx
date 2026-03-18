@@ -45,6 +45,7 @@ import WhyHighlighted from "@/components/product/WhyHighlighted";
 import CanonicalView from "@/components/product/CanonicalView";
 import MiniCluster from "@/components/product/MiniCluster";
 import DecisionTracker from "@/components/product/DecisionTracker";
+import PageViewTracker from "@/components/analytics/PageViewTracker";
 import SourceComparison from "@/components/product/SourceComparison";
 import PriceComparison from "@/components/product/PriceComparison";
 import DecisionBlocks from "@/components/product/DecisionBlocks";
@@ -351,7 +352,14 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         }}
       />
 
-      {/* Decision logging */}
+      {/* Analytics & Decision logging */}
+      <PageViewTracker
+        type="product"
+        productId={product.id}
+        slug={slug}
+        category={product.category?.slug}
+        price={bestPrice || undefined}
+      />
       <DecisionTracker productId={product.id} productSlug={slug} productName={product.name} />
 
       {/* Mobile contextual nav */}

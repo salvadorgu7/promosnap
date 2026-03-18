@@ -367,7 +367,7 @@ export async function getRevenueOpportunities(
         });
       }
     }
-  } catch (err) { logger.debug("revenue.query-failed", { error: err }) }
+  } catch (err) { logger.warn("revenue.query-failed", { error: err }) }
 
   return opportunities
     .sort((a, b) => (b.estimatedPotential - a.estimatedPotential))

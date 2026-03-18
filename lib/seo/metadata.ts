@@ -4,7 +4,8 @@ const APP_URL = getBaseUrl()
 const DEFAULT_DESC = 'Compare precos de Amazon, Mercado Livre, Shopee e Shein. Historico de 90 dias, score de oferta, cupons e alertas de queda de preco. Economize de verdade com dados reais.'
 
 export function buildMetadata(opts: { title?: string; description?: string; path?: string; ogImage?: string; noIndex?: boolean }): Metadata {
-  const title = opts.title ? `${opts.title} | ${APP_NAME}` : APP_NAME
+  // Don't append APP_NAME here — layout.tsx template already adds "| PromoSnap"
+  const title = opts.title || APP_NAME
   const description = opts.description || DEFAULT_DESC
   const url = opts.path ? `${APP_URL}${opts.path}` : APP_URL
   return {

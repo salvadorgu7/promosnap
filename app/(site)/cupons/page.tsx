@@ -58,7 +58,7 @@ export default async function CuponsPage() {
         </div>
         <p className="text-sm text-text-muted">
           {serialized.length > 0
-            ? `${serialized.length} cupom${serialized.length !== 1 ? "ns" : ""} ativo${serialized.length !== 1 ? "s" : ""} verificado${serialized.length !== 1 ? "s" : ""}`
+            ? `${serialized.length} ${serialized.length !== 1 ? "cupons ativos verificados" : "cupom ativo verificado"}`
             : "Nenhum cupom ativo no momento"}
         </p>
       </div>

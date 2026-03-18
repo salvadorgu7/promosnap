@@ -133,13 +133,15 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
   if (cached) return cached
 
   const products = await prisma.product.findMany({
-    where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true } } } } },
+    where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true, currentPrice: { gt: 10 } } } } } },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     orderBy: { popularityScore: 'desc' },
     take: limit * 2,
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
-  const result = rankCards(cards, 'deal').slice(0, limit)
+  const result = rankCards(cards, 'deal')
+    .filter(c => (c.bestOffer.discount ?? 0) < 92) // Skip parse-error "98% off" products
+    .slice(0, limit)
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
   return result
 }
@@ -172,7 +174,8 @@ export async function getLowestPrices(limit = 16): Promise<ProductCard[]> {
     take: limit * 2,
   })
   const result = products.map(buildProductCard).filter(Boolean)
-    .filter(p => p!.bestOffer.discount && p!.bestOffer.discount > 10)
+    .filter(p => p!.bestOffer.discount && p!.bestOffer.discount > 10 && p!.bestOffer.discount < 92)
+    .filter(p => p!.bestOffer.price > 10) // Skip parse-error prices
     .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
     .slice(0, limit) as ProductCard[]
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)

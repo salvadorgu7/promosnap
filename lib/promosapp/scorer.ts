@@ -35,6 +35,10 @@ const SPAM_SIGNALS = [
   /^(?:DA\s+SH[OÔ]|GENTE\s+OLHA\s+ISSO+|CAIU\s+DEMAI+S+|CORRE+|ABSURDO+|IMPERD[IÍ]VEL+|OLHA\s+S[OÓ]+|SURREAL+)!*$/i,
   // All-caps hype under 25 chars with no product info
   /^[A-ZÀÁÂÃÉÊÍÓÔÕÚÇ\s!.,]{3,25}$/,
+  // Non-product page titles scraped from marketplace profiles/stores
+  /^perfil\s+(social|do\s+vendedor|da\s+loja)/i,
+  /^(loja|vendedor|seller)\s+/i,
+  /^siga\s+(nosso|o)\s+(canal|grupo|perfil)/i,
 ]
 
 function detectSpam(item: PromosAppNormalizedItem): boolean {
@@ -180,19 +184,20 @@ function scorePriceSanity(item: PromosAppNormalizedItem): number {
 
   if (item.currentPrice <= 0) return 0
 
-  // Absurd discount: price < R$10 but original > R$200 = likely parse error
-  if (item.originalPrice && item.originalPrice > 200 && item.currentPrice < 10) {
+  // Price < R$1 is almost never real
+  if (item.currentPrice < 1) return -30
+
+  // Absurd discount: price < R$20 but original > R$100 with 90%+ "discount"
+  if (item.originalPrice && item.originalPrice > 100 && item.currentPrice < 20) {
     const ratio = item.currentPrice / item.originalPrice
-    if (ratio < 0.02) return -30 // 98%+ "discount" = almost certainly wrong
+    if (ratio < 0.05) return -30 // 95%+ "discount" = almost certainly parse error
+    if (ratio < 0.10) return -20 // 90%+ "discount" = highly suspicious
   }
 
   // Suspiciously low price for expensive-sounding products
-  if (item.currentPrice < 5 && item.originalPrice && item.originalPrice > 100) {
-    return -20
+  if (item.currentPrice < 10 && item.originalPrice && item.originalPrice > 50) {
+    return -15
   }
-
-  // Price < R$1 is almost never real
-  if (item.currentPrice < 1) return -30
 
   return 0
 }

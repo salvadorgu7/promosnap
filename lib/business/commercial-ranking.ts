@@ -280,7 +280,7 @@ export async function getCommercialRanking(): Promise<CommercialRanking> {
         potential: scorePotential(score),
       };
     });
-  } catch (err) { logger.debug("commercial-ranking.query-failed", { error: err }) }
+  } catch (err) { logger.warn("commercial-ranking.query-failed", { error: err }) }
 
   return ranking;
 }

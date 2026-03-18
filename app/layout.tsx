@@ -83,10 +83,29 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "PromoSnap",
-              url: "https://promosnap.com.br",
-              logo: "https://promosnap.com.br/icon-512x512.png",
-              description: "Comparador de precos inteligente do Brasil",
+              url: "https://www.promosnap.com.br",
+              logo: "https://www.promosnap.com.br/icon-512x512.png",
+              description: "Comparador de precos inteligente do Brasil. Ofertas reais, preco de verdade.",
               sameAs: [],
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "PromoSnap",
+              url: "https://www.promosnap.com.br",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: "https://www.promosnap.com.br/busca?q={search_term_string}",
+                },
+                "query-input": "required name=search_term_string",
+              },
             }),
           }}
         />

@@ -12,6 +12,7 @@ import { BEST_PAGES } from "@/lib/seo/best-pages";
 import { COMPARISON_LIST } from "@/lib/seo/comparisons";
 import { OFFER_PAGES } from "@/lib/seo/offer-pages";
 import CategoryHub from "@/components/seo/CategoryHub";
+import PageViewTracker from "@/components/analytics/PageViewTracker";
 import prisma from "@/lib/db/prisma";
 
 export const revalidate = 3600;
@@ -137,6 +138,9 @@ export default async function CategoriaPage({
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Analytics */}
+      <PageViewTracker type="category" categorySlug={slug} productCount={total} />
+
       {/* SEO breadcrumb schema */}
       <script
         type="application/ld+json"

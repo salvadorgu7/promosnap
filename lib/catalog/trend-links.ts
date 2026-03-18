@@ -186,7 +186,7 @@ export async function getTrendCatalogGaps(): Promise<TrendCatalogGaps> {
         }
       }
     }
-  } catch (err) { logger.debug("trend-links.query-failed", { error: err }) }
+  } catch (err) { logger.warn("trend-links.query-failed", { error: err }) }
 
   // Sort each group by priority
   const sortByPriority = (a: TrendCatalogGap, b: TrendCatalogGap) => {

@@ -2,21 +2,32 @@
 
 import { useState } from "react";
 import { Link2, Check, MessageCircle, Send } from "lucide-react";
+import { analytics } from "@/lib/analytics/events";
 
 interface ShareButtonsProps {
   url: string;
   title: string;
   price: string;
   discount?: number;
+  productId?: string;
 }
 
-export default function ShareButtons({ url, title, price, discount }: ShareButtonsProps) {
+export default function ShareButtons({ url, title, price, discount, productId }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
+
+  const trackShare = (method: string) => {
+    analytics.shareClick({
+      contentType: "product",
+      contentId: productId || url,
+      method,
+    });
+  };
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      trackShare("copy_link");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       const input = document.createElement("input");
@@ -26,6 +37,7 @@ export default function ShareButtons({ url, title, price, discount }: ShareButto
       document.execCommand("copy");
       document.body.removeChild(input);
       setCopied(true);
+      trackShare("copy_link");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -59,6 +71,7 @@ export default function ShareButtons({ url, title, price, discount }: ShareButto
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackShare("whatsapp")}
         className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm"
       >
         <MessageCircle className="h-4 w-4" />
@@ -68,6 +81,7 @@ export default function ShareButtons({ url, title, price, discount }: ShareButto
         href={telegramUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackShare("telegram")}
         className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm"
       >
         <Send className="h-4 w-4" />
@@ -77,6 +91,7 @@ export default function ShareButtons({ url, title, price, discount }: ShareButto
         href={twitterUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackShare("twitter")}
         className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm"
       >
         <span className="font-bold text-sm">𝕏</span>
