@@ -132,11 +132,43 @@ export async function updatePrices(): Promise<JobResult> {
             : await adapter.getProduct(externalId);
 
           if (fresh && fresh.currentPrice > 0) {
+            const oldPrice = offer.currentPrice;
+            const newPrice = fresh.currentPrice;
+
+            // ── Price sanity guard ──────────────────────────────────────────
+            // Amazon PA-API / Creators API sometimes returns 3rd-party seller
+            // prices that are wildly different from the known price (e.g. a
+            // product at R$899 showing as R$6 because a seller offers it at
+            // clearance, or R$6000 because a re-seller inflated it).
+            // Rules:
+            //   - New price > 3× old price → SKIP (3rd-party markup / API error)
+            //   - New price < 5% of old price (95%+ drop) → SKIP (parse error)
+            //   - Old price is 0 (first write) → always accept
+            // Legitimate price changes are usually within 50% of the last known price.
+
+            if (oldPrice > 0) {
+              const ratio = newPrice / oldPrice;
+              if (ratio > 3) {
+                log.warn('price-refresh.sanity-skip-high', {
+                  source: sourceSlug, externalId, oldPrice, newPrice, ratio: ratio.toFixed(2),
+                });
+                refreshFailed++;
+                continue;
+              }
+              if (ratio < 0.05) {
+                log.warn('price-refresh.sanity-skip-low', {
+                  source: sourceSlug, externalId, oldPrice, newPrice, ratio: ratio.toFixed(2),
+                });
+                refreshFailed++;
+                continue;
+              }
+            }
+
             // Update offer with fresh data
             await prisma.offer.update({
               where: { id: offer.id },
               data: {
-                currentPrice: fresh.currentPrice,
+                currentPrice: newPrice,
                 originalPrice: fresh.originalPrice || offer.originalPrice,
                 isFreeShipping: fresh.isFreeShipping ?? undefined,
                 lastSeenAt: new Date(),
@@ -161,9 +193,9 @@ export async function updatePrices(): Promise<JobResult> {
             log.info('price-refresh.success', {
               source: sourceSlug,
               externalId,
-              oldPrice: offer.currentPrice,
-              newPrice: fresh.currentPrice,
-              changed: offer.currentPrice !== fresh.currentPrice,
+              oldPrice,
+              newPrice,
+              changed: oldPrice !== newPrice,
             });
           } else {
             refreshFailed++;

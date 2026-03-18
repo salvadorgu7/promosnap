@@ -498,7 +498,11 @@ export function parseRawEvent(event: PromosAppRawEvent): PromosAppNormalizedItem
   const originalPrice = origFromField || pricesFromText.original
 
   // 4. Build title (clean marketing copy from WhatsApp messages)
-  const title = cleanPromoTitle(event.rawTitle || text.slice(0, 200))
+  // IMPORTANT: always prefer the full rawText (multi-line body) over rawTitle.
+  // rawTitle is typically only the first line of the message (the hype headline
+  // like "GENTE OLHA ISSOO 🥵") — cleanPromoTitle's Strategy 1/2 require the
+  // full message so they can find the 🛍 emoji line or the first non-price line.
+  const title = cleanPromoTitle(event.rawText || event.rawTitle || text.slice(0, 500))
 
   if (!title) {
     errors.push('Could not extract title')
@@ -529,6 +533,9 @@ export function parseRawEvent(event: PromosAppRawEvent): PromosAppNormalizedItem
   // 8. Message hash
   const messageHash = event.messageHash || computeMessageHash(text)
 
+  // Use WhatsApp image URL if provided (only real https:// URLs — base64 thumbnails are skipped)
+  const imageUrl = event.rawImageUrl && event.rawImageUrl.startsWith('https://') ? event.rawImageUrl : undefined
+
   return {
     externalId,
     title: title || `Produto ${bestMatch.slug}`,
@@ -536,6 +543,7 @@ export function parseRawEvent(event: PromosAppRawEvent): PromosAppNormalizedItem
     originalPrice,
     productUrl: canonicalUrl,
     affiliateUrl: event.affiliateUrlConverted || undefined,
+    imageUrl,
     sourceSlug: bestMatch.slug,
     marketplace: bestMatch.name,
     canonicalUrl,

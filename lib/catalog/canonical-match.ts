@@ -327,8 +327,10 @@ function calculateMatchScore(
       earnedWeight += storageWeight;
       matchedOn.push("storage");
     } else {
-      // Different storage = penalty (different variant, not same canonical)
-      earnedWeight -= storageWeight * 0.3;
+      // Different storage means different SKU — hard penalty.
+      // e.g. iPhone 128GB vs iPhone 256GB are different products.
+      earnedWeight -= storageWeight;
+      matchedOn.push("storage(mismatch)");
     }
   } else {
     // Storage not relevant or unknown — neutral

@@ -35,6 +35,11 @@ export function buildProductCard(p: any): ProductCard | null {
   // Mirrors the same cap in lib/distribution/engine.ts (DIST_MAX_DISCOUNT).
   if (discount && discount >= 85) return null
 
+  // Affiliate URL sanity: '#' is a sentinel for "no valid affiliate URL stored".
+  // Products without a real affiliate URL should not appear in commercial surfaces
+  // (homepage, deal pages) since they can't be monetized. They may still appear in search.
+  const rawAffiliateUrl = best.affiliateUrl || '#'
+
   const badges: Badge[] = []
   if (best.offerScore >= 80) badges.push({ type: 'hot_deal', label: 'Oferta Quente', color: 'red' })
   if (discount && discount >= 40) badges.push({ type: 'price_drop', label: `${discount}% OFF`, color: 'green' })
@@ -57,7 +62,7 @@ export function buildProductCard(p: any): ProductCard | null {
       discount,
       sourceSlug: best.sourceSlug,
       sourceName: best.sourceName,
-      affiliateUrl: best.affiliateUrl || '#',
+      affiliateUrl: rawAffiliateUrl,
       isFreeShipping: best.isFreeShipping,
       offerScore: best.offerScore,
     },
@@ -155,7 +160,19 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
     where: {
       status: 'ACTIVE',
       imageUrl: { not: null }, // Oferta do Dia / carousels must have an image
-      listings: { some: { offers: { some: { isActive: true, currentPrice: { gt: 10 } } } } },
+      listings: {
+        some: {
+          status: 'ACTIVE',
+          offers: {
+            some: {
+              isActive: true,
+              currentPrice: { gt: 10 },
+              offerScore: { gte: 30 }, // Minimum quality threshold
+              affiliateUrl: { not: null }, // Must have affiliate URL to be featured
+            },
+          },
+        },
+      },
     },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     orderBy: { popularityScore: 'desc' },
@@ -164,6 +181,7 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
   const result = rankCards(cards, 'deal')
     .filter(c => (c.bestOffer.discount ?? 0) < 92) // Skip parse-error "98% off" products
+    .filter(c => c.bestOffer.affiliateUrl !== '#')  // Require valid affiliate URL
     .slice(0, limit)
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
   return result
@@ -175,13 +193,30 @@ export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
   if (cached) return cached
 
   const products = await prisma.product.findMany({
-    where: { status: 'ACTIVE', listings: { some: { offers: { some: { isActive: true } }, salesCountEstimate: { gt: 0 } } } },
+    where: {
+      status: 'ACTIVE',
+      listings: {
+        some: {
+          status: 'ACTIVE',
+          salesCountEstimate: { gt: 0 },
+          offers: {
+            some: {
+              isActive: true,
+              offerScore: { gte: 30 },
+              affiliateUrl: { not: null },
+            },
+          },
+        },
+      },
+    },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
     orderBy: { popularityScore: 'desc' },
     take: limit * 2,
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
-  const result = rankCards(cards, 'trending').slice(0, limit)
+  const result = rankCards(cards, 'trending')
+    .filter(c => c.bestOffer.affiliateUrl !== '#')
+    .slice(0, limit)
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
   return result
 }

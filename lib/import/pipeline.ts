@@ -135,10 +135,13 @@ function generateSlug(title: string, suffix: string): string {
 function computeOfferScore(item: ImportItem): number {
   let score = 0
 
-  // Discount component (up to 35 pts)
+  // Discount component (up to 35 pts) — only for verified discounts < 85%
   if (item.originalPrice && item.originalPrice > item.currentPrice) {
-    const discount = (item.originalPrice - item.currentPrice) / item.originalPrice
-    score += Math.min(discount * 100, 40) * 0.875
+    const discountPct = (item.originalPrice - item.currentPrice) / item.originalPrice
+    // Cap at 84% — anything ≥85% is almost certainly a data error
+    if (discountPct < 0.85) {
+      score += Math.min(discountPct * 100, 40) * 0.875
+    }
   }
 
   // Price attractiveness — lower price = more appealing for impulse buys (up to 15 pts)
@@ -150,17 +153,25 @@ function computeOfferScore(item: ImportItem): number {
   // Free shipping bonus (10 pts)
   if (item.isFreeShipping) score += 10
 
-  // Has image (5 pts)
+  // Has image (5 pts) — required for homepage/distribution surfaces
   if (item.imageUrl) score += 5
 
   // In stock (5 pts)
   if (item.availability === 'in_stock') score += 5
 
-  // Freshness bonus — newly imported (10 pts)
-  score += 10
+  // Freshness bonus — only for new imports, not re-imports with unchanged price (up to 10 pts)
+  // discoverySource 'csv_upload' or 'ml_discovery' or any first-time import = fresh
+  if (item.discoverySource && item.discoverySource !== 'price_refresh') {
+    score += 10
+  }
 
-  // Base score for having valid data (up to 20 pts)
-  score += 20
+  // Has a valid affiliate URL — products without one can't be monetized (5 pts)
+  if (item.productUrl && item.productUrl.startsWith('http') && item.productUrl !== '#') {
+    score += 5
+  }
+
+  // Base score for having a complete, valid record (up to 15 pts)
+  score += 15
 
   return Math.min(100, Math.round(score))
 }
@@ -497,7 +508,13 @@ export async function runImportPipeline(
             rawBrand: brandName ?? null,
             rawCategory: item.categorySlug ?? null,
           })
-          if (match && match.score >= 0.7) {
+          // Tighten threshold for storage-divergent matches:
+          // Different storage variants (128GB vs 256GB) are different products.
+          // Require a higher score when storage mismatch was detected.
+          const hasStorageMismatch = match?.matchedOn?.includes('storage(mismatch)')
+          const requiredScore = hasStorageMismatch ? 0.85 : 0.7
+
+          if (match && match.score >= requiredScore) {
             // Strong enough match — reuse existing product
             dbProduct = await prisma.product.findUnique({ where: { id: match.productId } })
             if (dbProduct) {

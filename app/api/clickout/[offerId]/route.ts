@@ -137,8 +137,8 @@ export async function GET(
       },
     });
 
-    if (!offer || !offer.affiliateUrl) {
-      logWarn("clickout", `Offer not found or missing URL: ${offerId}`);
+    if (!offer || !offer.affiliateUrl || offer.affiliateUrl === '#') {
+      logWarn("clickout", `Offer not found or missing affiliate URL: ${offerId}`);
       return NextResponse.redirect(homeUrl, 302);
     }
 

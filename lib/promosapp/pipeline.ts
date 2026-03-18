@@ -39,6 +39,19 @@ async function isDuplicateInDb(dedupeKey: string): Promise<boolean> {
   return !!existing
 }
 
+/**
+ * Infer a broad category slug from the marketplace when the adapter
+ * didn't provide one. Used as a last-resort so WhatsApp products at least
+ * land in a recognisable section of the site.
+ */
+function inferCategoryFromMarketplace(sourceSlug: string): string | undefined {
+  // Shein is pure fashion — always safe to categorise as 'moda'
+  if (sourceSlug === 'shein') return 'moda'
+  // Shopee has fashion, electronics, home — too broad to guess, leave unset
+  // ML, Amazon, Magalu — too broad, import pipeline will try to detect from title
+  return undefined
+}
+
 /** Convert a scored PromosApp item to ImportItem for the existing pipeline.
  *  Uses canonicalUrl (expanded, cleaned) when available, falls back to productUrl.
  */
@@ -46,6 +59,9 @@ function toImportItem(item: PromosAppNormalizedItem): ImportItem {
   // Prefer canonical URL (expanded short links, cleaned tracking params)
   // over raw productUrl which may be a meli.la/bit.ly short link
   const cleanUrl = item.canonicalUrl || item.productUrl
+
+  // Use adapter-provided category if available, otherwise infer from marketplace
+  const categorySlug = item.category || inferCategoryFromMarketplace(item.sourceSlug)
 
   return {
     externalId: item.externalId,
@@ -57,6 +73,8 @@ function toImportItem(item: PromosAppNormalizedItem): ImportItem {
     isFreeShipping: item.isFreeShipping,
     sourceSlug: item.sourceSlug,
     discoverySource: 'promosapp',
+    brand: item.brand || undefined,
+    categorySlug,
   }
 }
 
@@ -116,8 +134,11 @@ export async function processPromosAppBatch(
 ): Promise<PromosAppPipelineResult> {
   const startTime = Date.now()
   const config: PromosAppPipelineConfig = {
-    autoApproveThreshold: configOverrides?.autoApproveThreshold ?? 30,
-    rejectThreshold: configOverrides?.rejectThreshold ?? 30,
+    // 40: products scoring 40+ auto-approve (link + price + discount + no spam)
+    // 25: products scoring <25 are rejected (no link, no price, spam, parse errors)
+    // 25–39: pending_review (borderline — admin can check before publishing)
+    autoApproveThreshold: configOverrides?.autoApproveThreshold ?? 40,
+    rejectThreshold: configOverrides?.rejectThreshold ?? 25,
     maxBatchSize: configOverrides?.maxBatchSize ?? 200,
     autoPublish: configOverrides?.autoPublish ?? getFlag('promosappAutoPublish'),
     enrichViaAdapters: configOverrides?.enrichViaAdapters ?? true,

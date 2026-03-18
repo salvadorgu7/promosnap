@@ -187,6 +187,10 @@ export function mergeEnrichment(result: EnrichmentResult): PromosAppNormalizedIt
   if (data.reviewsCount != null) item.reviewsCount = data.reviewsCount
   if (data.salesCount != null) item.salesCount = data.salesCount
 
+  // Category and brand from adapter (used downstream in import pipeline)
+  if (data.category && !item.category) item.category = data.category
+  if (data.brand && !item.brand) item.brand = data.brand
+
   return item
 }
 

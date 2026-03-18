@@ -33,6 +33,11 @@ export interface PromosAppRawEvent {
   rawOriginalPrice?: string
   /** Coupon code found in message */
   rawCoupon?: string
+  /**
+   * Image URL extracted from the source channel (e.g. WhatsApp imageMessage.thumbnailUrl).
+   * Only set when the channel delivers an actual URL — base64 thumbnails are ignored.
+   */
+  rawImageUrl?: string
 }
 
 /**
@@ -76,6 +81,10 @@ export interface PromosAppNormalizedItem {
   reviewsCount?: number
   /** Estimated sales count from adapter enrichment */
   salesCount?: number
+  /** Category slug from adapter enrichment (e.g. "smartphones", "moda") */
+  category?: string
+  /** Brand name from adapter enrichment (e.g. "Samsung", "Apple") */
+  brand?: string
   /** Original raw event (preserved for traceability) */
   rawEvent: PromosAppRawEvent
   /** Errors during parsing/canonicalization */

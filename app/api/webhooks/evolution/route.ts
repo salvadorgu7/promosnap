@@ -94,6 +94,18 @@ function extractEvolutionMessage(
     msg?.extendedTextMessage?.canonicalUrl ||
     msg?.extendedTextMessage?.matchedText
 
+  // Extract image URL from imageMessage when sender posted a product photo.
+  // Evolution API can serve thumbnailUrl as a real https:// URL (when media download
+  // is enabled in the instance config). base64 data: thumbnails are intentionally
+  // skipped — they're too large and not usable as product imageUrl in the DB.
+  const rawImageUrl: string | undefined = (() => {
+    const thumb = msg?.imageMessage?.thumbnailUrl
+    const full  = msg?.imageMessage?.url
+    if (thumb && thumb.startsWith('https://')) return thumb
+    if (full  && full.startsWith('https://'))  return full
+    return undefined
+  })()
+
   // Parse timestamp
   const ts = data.messageTimestamp
   const capturedAt = ts
@@ -110,6 +122,7 @@ function extractEvolutionMessage(
     rawText: text,
     rawTitle,
     rawUrl: urlHint || undefined,
+    rawImageUrl,
     rawPayload: data as unknown as Record<string, unknown>,
     // messageHash will be computed by the parser
   }
