@@ -39,6 +39,7 @@ const MARKETPLACE_PATTERNS: MarketplacePattern[] = [
       /amazon\.com\.br/i,
       /amzn\.to/i,
       /a\.co/i,
+      /divulguei\.app/i,  // amzn.divulguei.app affiliate redirect → Amazon
     ],
     idExtractor: (url) => {
       const match = url.pathname.match(/\/dp\/([A-Z0-9]{10})/) ||

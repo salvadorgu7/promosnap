@@ -18,6 +18,8 @@ const SHORT_LINK_HOSTS = [
   'go.ly', 'ouo.io', 'linktr.ee',
   // Affiliate/promo shorteners common in Brazilian WhatsApp groups
   'tidd.ly', 'magalu.lu', 'app.magalu.com',
+  'divulguei.app',    // amzn.divulguei.app → amazon.com.br
+  'tempromo.app.br',  // tempromo.app.br/p/xxx → various marketplaces
   // Amazon
   'amzn.to', 'a.co',
   // Shopee
@@ -29,6 +31,26 @@ const SHORT_LINK_HOSTS = [
   // AliExpress
   's.aliexpress.com', 'a.aliexpress.com', 's.click.aliexpress.com',
 ]
+
+/**
+ * Some marketplace URLs need expansion even though the host is the real marketplace.
+ * Examples: mercadolivre.com.br/social/xxx (social affiliate redirect — no MLB ID in path)
+ */
+const REDIRECT_PATH_PATTERNS = [
+  /^\/social\//i,       // ML social affiliate links
+  /^\/sec\//i,          // ML secure redirect
+  /^\/go\//i,           // Generic redirect paths
+  /^\/redirect/i,       // Generic redirect paths
+]
+
+function needsPathExpansion(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return REDIRECT_PATH_PATTERNS.some(p => p.test(parsed.pathname))
+  } catch {
+    return false
+  }
+}
 
 function isShortLink(url: string): boolean {
   try {
@@ -139,6 +161,9 @@ const TRACKING_PARAMS = new Set([
   'ascsubtag', 'geniuslink',
   // Shopee affiliate tracking params
   'gads_t_sig', 'mmp_pid', 'uls_trackid', 'exp_group', '__mobile__',
+  // Mercado Livre affiliate/social tracking params
+  'matt_word', 'matt_tool', 'matt_source', 'matt_campaign',
+  'forceInApp', 'deal_print_id', 'promotion_id',
 ])
 
 function cleanTrackingParams(url: URL): URL {
@@ -189,7 +214,9 @@ export async function canonicalizeItems(
 
   // Batch expand short links (with concurrency limit)
   const CONCURRENCY = 5
-  const needsExpansion = items.filter(item => isShortLink(item.productUrl))
+  const needsExpansion = items.filter(item =>
+    isShortLink(item.productUrl) || needsPathExpansion(item.productUrl)
+  )
   const expandedUrls = new Map<string, string>()
 
   for (let i = 0; i < needsExpansion.length; i += CONCURRENCY) {

@@ -26,6 +26,11 @@ const SPAM_SIGNALS = [
   /grátis.*grátis.*grátis/i,
   /cadastre.*ganhe.*prêmio/i,
   /R\$\s*0[,.]0{1,2}\b/, // Price = R$ 0,00
+  // Generic promo-blast titles (WhatsApp group spam — no product name)
+  /^(?:vejas?|confira|aproveite|olha|descubra)\s+(?:nossas?|as|os|essas?|esses?)\s+(?:promo[çc][õo]es|ofertas|descontos|produtos)/i,
+  /^(?:vejas?|confira)\s+(?:nossas?|as)\s+promo/i,
+  // Titles that are ONLY marketing copy (no product info)
+  /^Produto\s+(?:unknown|desconhecido)$/i,
 ]
 
 function detectSpam(item: PromosAppNormalizedItem): boolean {
