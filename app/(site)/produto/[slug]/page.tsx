@@ -590,7 +590,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                     rel="noopener noreferrer nofollow sponsored"
                     className="btn-primary flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold w-full"
                   >
-                    <ExternalLink className="h-5 w-5" /> Ver Oferta
+                    <ExternalLink className="h-5 w-5" /> Garantir Desconto na {bestOffer.sourceName}
                   </a>
                   {discount && discount > 20 && (
                     <p className="text-[10px] text-accent-orange font-medium text-center">

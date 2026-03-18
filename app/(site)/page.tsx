@@ -327,19 +327,6 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* ===== 7. PROMOÇÕES FRESQUINHAS ===== */}
-      {recentlyImported.length > 0 && (
-        <div id="recently-imported" className="py-4">
-          <RailSection title="Adicionados Recentemente" subtitle="Novidades dos últimos dias" href="/ofertas" icon={Sparkles} iconColor="text-accent-green">
-            {recentlyImported.map((p, i) => (
-              <div key={p.id} className="rail-card">
-                <OfferCard product={p} page="home" railSource="recently-imported" position={i} />
-              </div>
-            ))}
-          </RailSection>
-        </div>
-      )}
-
       {/* ===== 8. OPORTUNIDADES DO DIA ===== */}
       <DailyOpportunities />
 
@@ -377,7 +364,7 @@ export default async function HomePage() {
       {/* ===== 12. MELHOR CUSTO-BENEFICIO ===== */}
       {bestValue.length > 0 && (
         <div id="best-value" className="py-4">
-          <RailSection title="Melhor Custo-Benefício" subtitle="Maior desconto com frete grátis" href="/ofertas" icon={Percent} iconColor="text-accent-purple">
+          <RailSection title="Desconto + Frete Grátis" subtitle="Melhor custo-benefício com entrega inclusa" href="/ofertas" icon={Percent} iconColor="text-accent-purple">
             {bestValue.map((p, i) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="best-value" position={i} />
@@ -390,10 +377,23 @@ export default async function HomePage() {
       {/* ===== 13. PRONTOS PARA COMPRAR ===== */}
       {readyForCampaign.length > 0 && (
         <div id="ready-for-campaign" className="section-alt py-4">
-          <RailSection title="Prontos para Comprar" subtitle="Com desconto e link direto para a loja" href="/ofertas" icon={Star} iconColor="text-accent-blue">
+          <RailSection title="Desconto Verificado" subtitle="Preço real, link direto para a loja" href="/ofertas" icon={Star} iconColor="text-accent-blue">
             {readyForCampaign.map((p, i) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="ready-for-campaign" position={i} />
+              </div>
+            ))}
+          </RailSection>
+        </div>
+      )}
+
+      {/* ===== 13b. ADICIONADOS RECENTEMENTE — after commercial rails ===== */}
+      {recentlyImported.length > 0 && (
+        <div id="recently-imported" className="py-4">
+          <RailSection title="Chegaram Agora" subtitle="Novidades dos últimos dias" href="/ofertas" icon={Sparkles} iconColor="text-accent-green">
+            {recentlyImported.map((p, i) => (
+              <div key={p.id} className="rail-card">
+                <OfferCard product={p} page="home" railSource="recently-imported" position={i} />
               </div>
             ))}
           </RailSection>

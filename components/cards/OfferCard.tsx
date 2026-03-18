@@ -104,7 +104,7 @@ export default function OfferCard({ product, railSource, page, position }: { pro
           <ImageWithFallback
             src={product.imageUrl}
             alt={product.name}
-            className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500 ease-out drop-shadow-sm"
+            className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform duration-500 ease-out"
             width={300}
             height={300}
           />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Search, SlidersHorizontal, ArrowUpDown, X, Truck, Brain, Sparkles, TrendingDown } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import EmptyState from "@/components/ui/EmptyState";
+import SearchAnalytics from "@/components/analytics/SearchAnalytics";
 import RelatedSearches from "@/components/ui/RelatedSearches";
 import ZeroResultActions from "@/components/search/ZeroResultActions";
 import SpellSuggestion from "@/components/search/SpellSuggestion";
@@ -182,6 +183,9 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Search analytics — fires GA4 search + zero_results events */}
+      {query && <SearchAnalytics query={query} resultCount={total} />}
+
       {/* ItemList JSON-LD for search results */}
       {query && products.length > 0 && (
         <script

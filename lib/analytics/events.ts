@@ -79,6 +79,23 @@ export function searchResultClick(params: {
   trackEvent("search_result_click", params)
 }
 
+export function searchZeroResults(params: {
+  query: string
+}) {
+  trackEvent("search_zero_results", {
+    search_term: params.query,
+    result_count: 0,
+  })
+}
+
+export function railImpression(params: {
+  railId: string
+  position: number
+  productId?: string
+}) {
+  trackEvent("rail_impression", params)
+}
+
 // ── Engagement ──────────────────────────────────────────
 
 export function favoriteToggle(params: {
@@ -148,6 +165,8 @@ export const analytics = {
   priceAlertSet,
   searchPerformed,
   searchResultClick,
+  searchZeroResults,
+  railImpression,
   favoriteToggle,
   shareClick,
   newsletterSignup,
