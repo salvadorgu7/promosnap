@@ -11,6 +11,33 @@ import { parseRawEvents } from './parser'
 import { canonicalizeItems, deduplicateBatch } from './canonicalizer'
 import { enrichBatch } from './enricher'
 import { scoreBatch, decideAction } from './scorer'
+
+// ── Inline og:image scraping for items without image ────────────────────
+async function scrapeOgImageInline(url: string): Promise<string | null> {
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000) // 8s timeout
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PromoSnap/1.0)' },
+      redirect: 'follow',
+    })
+    clearTimeout(timeout)
+    if (!res.ok) return null
+    const html = await res.text()
+    // Extract og:image from HTML
+    const match = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
+      || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i)
+    if (!match?.[1]) return null
+    const imageUrl = match[1]
+    // Validate it's a real image URL
+    if (!imageUrl.startsWith('http')) return null
+    if (imageUrl.includes('whatsapp.net') || imageUrl.includes('fbcdn.net')) return null
+    return imageUrl
+  } catch {
+    return null
+  }
+}
 import type {
   PromosAppRawEvent,
   PromosAppNormalizedItem,
@@ -278,8 +305,26 @@ export async function processPromosAppBatch(
         candidateId = await persistCandidate(item, score.total, decision, importBatch.id)
 
         if (decision === 'auto_approve') {
-          result.autoApproved++
-          toImport.push(item)
+          // ── Image gate: products without image can't appear on site ──
+          // Try og:image scraping inline if enrichment didn't provide an image.
+          if (!item.imageUrl && item.productUrl) {
+            const ogImage = await scrapeOgImageInline(item.canonicalUrl || item.productUrl)
+            if (ogImage) {
+              item.imageUrl = ogImage
+              log.info('promosapp.og-image-inline', { title: item.title.slice(0, 50), imageUrl: ogImage.slice(0, 80) })
+            } else {
+              // No image available → downgrade to pending_review
+              decision = 'pending_review'
+              log.info('promosapp.no-image-downgrade', { title: item.title.slice(0, 50), source: item.sourceSlug })
+            }
+          }
+
+          if (decision === 'auto_approve') {
+            result.autoApproved++
+            toImport.push(item)
+          } else {
+            result.pendingReview++
+          }
         } else if (decision === 'pending_review') {
           result.pendingReview++
         } else {
