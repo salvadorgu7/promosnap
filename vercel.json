@@ -13,8 +13,12 @@
       "schedule": "0 */4 * * *"
     },
     {
-      "path": "/api/cron?jobs=ingest,compute-scores,discover-import",
-      "schedule": "0 8 * * *"
+      "path": "/api/cron?jobs=ingest,discover-import",
+      "schedule": "0 8,14,20 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=compute-scores,process-promosapp",
+      "schedule": "0 */4 * * *"
     },
     {
       "path": "/api/cron/sync-shopee",
