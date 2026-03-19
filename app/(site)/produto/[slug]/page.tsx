@@ -56,6 +56,7 @@ import UseCaseRecommendation from "@/components/product/UseCaseRecommendation";
 import ProductCaveat from "@/components/product/ProductCaveat";
 import ComparisonContext from "@/components/product/ComparisonContext";
 import AskAIBlock from "@/components/product/AskAIBlock";
+import AISummaryBlock from "@/components/product/AISummaryBlock";
 import { analyzeCrossSource, buildCrossSourceOffer } from "@/lib/source/cross-source";
 import { getCanonicalComparison, getBestChoice } from "@/lib/catalog/smart-comparison";
 import { buildMetadata, productSchema, breadcrumbSchema, generateProductMeta } from "@/lib/seo/metadata";
@@ -1030,6 +1031,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               price={bestOffer ? formatPrice(bestPrice) : ""}
             />
           </div>
+
+          {/* AI Summary — on-demand product analysis */}
+          <AISummaryBlock productSlug={slug} />
 
           {/* Ask AI block — link to assistant with product context */}
           <AskAIBlock productName={product.name} productSlug={slug} />
