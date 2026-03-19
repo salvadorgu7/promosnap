@@ -303,6 +303,9 @@ function validateItem(item: ImportItem): string | null {
     [/geladeira|refrigerador/i, 200],
     [/lava.?seca|lavadora.*secadora/i, 300],
     [/smart\s*tv.*(5[05]|6[05]|7[05]|8[05]).*pol/i, 400], // TV grande
+    [/ar.?condicionado|split.*inverter/i, 800],  // AC unit
+    [/fog[aã]o.*boc|cooktop.*boc/i, 300],        // Stove
+    [/m[aá]quina.*lavar/i, 200],                  // Washing machine
   ]
   for (const [pattern, floor] of PRICE_FLOOR_RULES) {
     if (pattern.test(titleLower) && item.currentPrice < floor) {

@@ -76,8 +76,11 @@ async function deactivateBadPriceOffers(): Promise<number> {
     /playstation\s*5/i,
     /xbox\s+series/i,
     /airpods\s+pro/i,
+    /ar.?condicionado|split.*inverter/i,
+    /geladeira|refrigerador/i,
+    /lava.?seca/i,
   ];
-  const HIGH_VALUE_MIN_PRICE = 500; // R$ — below this for these products = certainly wrong
+  const HIGH_VALUE_MIN_PRICE = 800; // R$ — below this for these products = certainly wrong
 
   const highValueCandidates = await prisma.offer.findMany({
     where: {
