@@ -137,9 +137,11 @@ export default function AssistentePage() {
               {msg.products && msg.products.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {msg.products.slice(0, 5).map((p, j) => (
-                    <Link
+                    <a
                       key={j}
-                      href={p.slug ? `/produto/${p.slug}` : p.url}
+                      href={p.affiliateUrl || p.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow sponsored"
                       className="flex items-center gap-3 p-2 rounded-lg bg-surface-50 hover:bg-surface-100 transition-colors"
                     >
                       {p.imageUrl && (
@@ -179,7 +181,7 @@ export default function AssistentePage() {
                         </div>
                       </div>
                       <ExternalLink className="w-3.5 h-3.5 text-surface-400 flex-shrink-0" />
-                    </Link>
+                    </a>
                   ))}
                 </div>
               )}

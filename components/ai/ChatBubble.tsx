@@ -181,9 +181,11 @@ export default function ChatBubble() {
               {msg.products && msg.products.length > 0 && (
                 <div className="mt-2 space-y-1.5">
                   {msg.products.slice(0, 3).map((p, j) => (
-                    <Link
+                    <a
                       key={j}
-                      href={p.slug ? `/produto/${p.slug}` : p.url}
+                      href={p.affiliateUrl || p.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow sponsored"
                       className="flex items-center gap-2 p-1.5 rounded-lg bg-white border border-surface-100 hover:border-brand-500/30 transition-colors"
                     >
                       {p.imageUrl && (
@@ -215,7 +217,7 @@ export default function ChatBubble() {
                         </div>
                       </div>
                       <ExternalLink className="w-3 h-3 text-surface-300 flex-shrink-0" />
-                    </Link>
+                    </a>
                   ))}
                 </div>
               )}
