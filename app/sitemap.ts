@@ -31,6 +31,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${APP_URL}/ofertas`, lastModified: now, changeFrequency: "hourly", priority: 0.95 },
     { url: `${APP_URL}/menor-preco`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${APP_URL}/mais-vendidos`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
+    { url: `${APP_URL}/queda-de-preco`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
+    { url: `${APP_URL}/mais-buscados`, lastModified: now, changeFrequency: "daily", priority: 0.80 },
     { url: `${APP_URL}/cupons`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
     { url: `${APP_URL}/preco-hoje`, lastModified: now, changeFrequency: "daily", priority: 0.80 },
     { url: `${APP_URL}/categorias`, lastModified: now, changeFrequency: "weekly", priority: 0.75 },
@@ -44,10 +46,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${APP_URL}/transparencia`, lastModified: now, changeFrequency: "yearly", priority: 0.25 },
   )
 
-  // ─── PRODUCTS ───────────────────────────────────────────────────────────
+  // ─── PRODUCTS (quality-gated: must have image + active offer) ───────────
   try {
     const products = await prisma.product.findMany({
-      where: { status: "ACTIVE", imageUrl: { not: null } },
+      where: {
+        status: "ACTIVE",
+        imageUrl: { not: null },
+        listings: {
+          some: {
+            status: "ACTIVE",
+            offers: { some: { isActive: true, currentPrice: { gte: 5 } } },
+          },
+        },
+      },
       select: { slug: true, updatedAt: true, popularityScore: true },
       orderBy: { popularityScore: "desc" },
     })

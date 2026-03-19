@@ -70,6 +70,8 @@ export async function GET(request: NextRequest) {
       query: q,
       filters: result.filters,
       suggestions: result.suggestions,
+      // Search log ID for click tracking
+      ...(result.searchLogId ? { searchLogId: result.searchLogId } : {}),
       // Zero-result helpers (always included when applicable)
       ...(result.didYouMean ? { didYouMean: result.didYouMean } : {}),
       ...(result.relatedCategories ? { relatedCategories: result.relatedCategories } : {}),

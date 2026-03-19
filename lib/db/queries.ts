@@ -269,6 +269,113 @@ export async function getLowestPrices(limit = 16): Promise<ProductCard[]> {
 }
 
 // ============================================
+// PRICE DROPS (last 72 hours — biggest discounts)
+// ============================================
+
+export async function getPriceDrops(limit = 16): Promise<ProductCard[]> {
+  const cacheKey = `homepage:priceDrops:${limit}`
+  const cached = memoryCache.get<ProductCard[]>(cacheKey)
+  if (cached) return cached
+
+  const products = await prisma.product.findMany({
+    where: {
+      status: 'ACTIVE',
+      imageUrl: { not: null },
+      listings: {
+        some: {
+          status: 'ACTIVE',
+          offers: {
+            some: {
+              isActive: true,
+              originalPrice: { not: null },
+              currentPrice: { gt: 10 },
+              affiliateUrl: { not: null },
+            },
+          },
+        },
+      },
+    },
+    select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+    orderBy: { updatedAt: 'desc' },
+    take: limit * 3,
+  })
+
+  const result = products.map(buildProductCard).filter(Boolean)
+    .filter(p => p!.imageUrl)
+    .filter(p => p!.bestOffer.discount && p!.bestOffer.discount >= 15 && p!.bestOffer.discount < 85)
+    .filter(p => p!.bestOffer.price > 10)
+    .filter(p => p!.bestOffer.affiliateUrl !== '#')
+    .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
+    .slice(0, limit) as ProductCard[]
+
+  memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
+  return result
+}
+
+// ============================================
+// MOST SEARCHED PRODUCTS (from SearchLog data)
+// ============================================
+
+export async function getMostSearchedProducts(limit = 16): Promise<ProductCard[]> {
+  const cacheKey = `homepage:mostSearched:${limit}`
+  const cached = memoryCache.get<ProductCard[]>(cacheKey)
+  if (cached) return cached
+
+  try {
+    const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+    // Get top searched queries with results
+    const topQueries: { query: string }[] = await prisma.$queryRaw`
+      SELECT "normalizedQuery" as query
+      FROM "search_logs"
+      WHERE "createdAt" > ${since7d} AND "resultsCount" > 0
+      GROUP BY "normalizedQuery"
+      ORDER BY COUNT(*) DESC
+      LIMIT 20
+    `
+
+    if (topQueries.length === 0) {
+      // Fallback: return popular products
+      const fallback = await getBestSellers(limit)
+      memoryCache.set(cacheKey, fallback, HOMEPAGE_CACHE_TTL_MS)
+      return fallback
+    }
+
+    // Search for products matching top queries
+    const queryTerms = topQueries.map(q => q.query).filter(Boolean)
+    const products = await prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        imageUrl: { not: null },
+        OR: queryTerms.slice(0, 10).map(q => ({
+          name: { contains: q, mode: 'insensitive' as const },
+        })),
+        listings: {
+          some: {
+            offers: { some: { isActive: true, affiliateUrl: { not: null } } },
+          },
+        },
+      },
+      select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
+      orderBy: { popularityScore: 'desc' },
+      take: limit * 2,
+    })
+
+    const result = products.map(buildProductCard).filter(Boolean)
+      .filter(p => p!.imageUrl)
+      .filter(p => p!.bestOffer.affiliateUrl !== '#')
+      .slice(0, limit) as ProductCard[]
+
+    memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
+    return result
+  } catch (err) {
+    logger.warn('queries.getMostSearchedProducts.failed', { error: err })
+    // Fallback: return popular products
+    return getBestSellers(limit)
+  }
+}
+
+// ============================================
 // RECENTLY IMPORTED (last 14 days — wider window for sparse catalogs)
 // ============================================
 

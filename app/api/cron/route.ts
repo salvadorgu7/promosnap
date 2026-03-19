@@ -68,6 +68,8 @@ export async function GET(req: NextRequest) {
     ['sitemap', () => import('@/lib/jobs/generate-sitemap').then(m => m.generateSitemap())],
     // process-promosapp: VALUE — processes approved PromosApp candidates into import pipeline (behind feature flag)
     ['process-promosapp', () => import('@/lib/jobs/process-promosapp').then(m => m.processPromosApp())],
+    // seo-audit: SUPPORT — daily SEO health audit with regression detection
+    ['seo-audit', () => import('@/lib/jobs/seo-audit').then(m => m.seoAudit())],
     // category-fill: HYGIENE — auto-categorizes uncategorized products by title keywords
     ['category-fill', async () => {
       const { inferCategory } = await import('@/lib/catalog/normalize')

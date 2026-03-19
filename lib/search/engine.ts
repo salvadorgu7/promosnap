@@ -35,6 +35,7 @@ export interface EnhancedSearchResult extends SearchResult {
   relatedCategories?: string[]
   bestSellersFallback?: string
   debug?: SearchDebugInfo
+  searchLogId?: string
 }
 
 export interface SearchDebugInfo {
@@ -488,13 +489,20 @@ export async function searchProducts(params: SearchParams): Promise<EnhancedSear
 
   // ── Async logging (fire-and-forget) ────────────────────────────────────
   logSearchMetrics(metrics)
-  prisma.searchLog.create({
-    data: {
-      query,
-      normalizedQuery,
-      resultsCount: totalCount,
-    },
-  }).catch(() => {})
+  let searchLogId: string | undefined
+  try {
+    const logEntry = await prisma.searchLog.create({
+      data: {
+        query,
+        normalizedQuery,
+        resultsCount: totalCount,
+      },
+      select: { id: true },
+    })
+    searchLogId = logEntry.id
+  } catch {
+    // Non-critical — don't block search results
+  }
 
   // ── Build debug info (only populated when isAdmin) ──────────────────
   const debugInfo: SearchDebugInfo | undefined = params.isAdmin ? {
@@ -526,6 +534,8 @@ export async function searchProducts(params: SearchParams): Promise<EnhancedSear
     ...(bestSellersFallback ? { bestSellersFallback } : {}),
     // Admin debug
     ...(debugInfo ? { debug: debugInfo } : {}),
+    // Search log ID for click tracking
+    ...(searchLogId ? { searchLogId } : {}),
   }
 
   await cacheSet(cacheKey, result, 180) // 3 min cache (shorter for freshness)

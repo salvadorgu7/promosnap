@@ -47,6 +47,7 @@ import {
   Factory,
   Megaphone,
   Cpu,
+  Rss,
 } from "lucide-react";
 import LogoIcon from "@/components/ui/LogoIcon";
 
@@ -94,6 +95,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/analytics", label: "Analytics", icon: Activity },
       { href: "/admin/attribution", label: "Attribution", icon: Target },
       { href: "/admin/seo", label: "SEO", icon: Globe },
+      { href: "/admin/feed-health", label: "Feed Health", icon: Rss },
       { href: "/admin/amazon", label: "Amazon", icon: ShoppingBag },
     ],
   },
