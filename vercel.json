@@ -5,8 +5,12 @@
       "schedule": "0 */2 * * *"
     },
     {
-      "path": "/api/cron?jobs=cleanup,backfill-images",
+      "path": "/api/cron?jobs=cleanup,backfill-images,category-fill",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=check-alerts",
+      "schedule": "0 */4 * * *"
     },
     {
       "path": "/api/cron?jobs=ingest,compute-scores,discover-import",
