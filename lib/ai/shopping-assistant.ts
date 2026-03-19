@@ -1,0 +1,378 @@
+/**
+ * PromoSnap Shopping Assistant — OpenAI-powered universal commerce search.
+ *
+ * Architecture:
+ *   User query → OpenAI Responses API (with tools) → Local catalog + Web search
+ *   → Normalized results → Decision layer → Affiliate routing → Response
+ *
+ * Tools available to the AI:
+ *   1. searchLocalCatalog — Search verified PromoSnap catalog
+ *   2. compareProducts — Compare products by use case
+ *   3. getBuySignal — "Is now a good time to buy?"
+ *   4. web_search — OpenAI built-in web search for products not in catalog
+ *
+ * The AI NEVER invents products or prices. It reasons over real data.
+ */
+
+import { logger } from '@/lib/logger'
+import { buildAffiliateUrl } from '@/lib/affiliate'
+
+const log = logger.child({ module: 'shopping-assistant' })
+
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.promosnap.com.br'
+
+// ── Types ──────────────────────────────────────────────────────────────────
+
+export interface AssistantMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface AssistantResponse {
+  message: string
+  products?: AssistantProduct[]
+  sources?: string[]
+}
+
+export interface AssistantProduct {
+  name: string
+  price?: number
+  originalPrice?: number
+  discount?: number
+  source: string
+  url: string
+  affiliateUrl: string
+  imageUrl?: string
+  isFromCatalog: boolean
+  buySignal?: string
+  slug?: string
+}
+
+// ── Tool Definitions ───────────────────────────────────────────────────────
+
+const TOOLS = [
+  {
+    type: 'function' as const,
+    name: 'searchLocalCatalog',
+    description: 'Busca produtos no catálogo verificado do PromoSnap com preços reais e comparados. Use SEMPRE que o usuário perguntar sobre um produto específico ou categoria.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Termo de busca (ex: "notebook até 3000", "iPhone 15")' },
+        category: { type: 'string', description: 'Categoria opcional (celulares, notebooks, audio, smart-tvs, casa, games, etc.)' },
+        maxPrice: { type: 'number', description: 'Preço máximo em R$' },
+        limit: { type: 'number', description: 'Número de resultados (default 5)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    type: 'function' as const,
+    name: 'compareByUseCase',
+    description: 'Compara produtos de uma categoria por caso de uso específico (fotografia, gaming, trabalho, estudo, etc.). Retorna ranking explicável.',
+    parameters: {
+      type: 'object',
+      properties: {
+        category: { type: 'string', description: 'Categoria (celulares, notebooks, audio, smart-tvs)' },
+        useCase: { type: 'string', description: 'Caso de uso (fotografia, bateria, gaming, custo-beneficio, trabalho, estudo, portatil, musica, exercicio, escritorio, filmes, gaming-tv, sala-grande)' },
+      },
+      required: ['category', 'useCase'],
+    },
+  },
+  {
+    type: 'web_search_preview' as const,
+  },
+]
+
+const SYSTEM_PROMPT = `Você é o assistente de compras do PromoSnap — o lugar definitivo para pesquisar, comparar e decidir compras no Brasil.
+
+REGRAS FUNDAMENTAIS:
+1. SEMPRE use a ferramenta searchLocalCatalog PRIMEIRO para buscar produtos no catálogo verificado
+2. Se o catálogo local não tiver resultados suficientes, use web_search para complementar
+3. NUNCA invente preços, produtos ou especificações
+4. Quando mostrar produtos, SEMPRE inclua preço real e fonte
+5. Responda em português brasileiro, de forma direta e útil
+6. Priorize produtos com melhor custo-benefício, não só o mais barato
+7. Quando comparar, explique PORQUÊ um é melhor que outro para o caso específico
+8. Se o usuário perguntar "vale a pena?", use dados de preço e histórico para responder
+9. Mantenha respostas concisas mas informativas — máximo 3-4 parágrafos
+10. Sempre sugira explorar mais no PromoSnap quando relevante
+
+FORMATO DE RESPOSTA:
+- Use markdown leve (negrito para nomes de produto, preços em destaque)
+- Liste produtos com preço e fonte
+- Termine com sugestão de próximo passo (comparar, ver histórico, etc.)
+
+CONTEXTO:
+- O PromoSnap compara preços entre Amazon, Mercado Livre, Shopee e Shein
+- Temos histórico de preços de 90 dias
+- Links de afiliado geram comissão sem custo extra ao usuário
+- Foco em produtos reais com preços verificados`
+
+// ── Core Function ──────────────────────────────────────────────────────────
+
+export function isAIConfigured(): boolean {
+  return !!OPENAI_API_KEY
+}
+
+/**
+ * Process a shopping query through the AI assistant.
+ * Uses OpenAI Responses API with function calling + web search.
+ */
+export async function processShoppingQuery(
+  userMessage: string,
+  conversationHistory: AssistantMessage[] = []
+): Promise<AssistantResponse> {
+  if (!OPENAI_API_KEY) {
+    return {
+      message: 'O assistente de compras não está configurado. Configure OPENAI_API_KEY para ativar.',
+    }
+  }
+
+  try {
+    // Build messages array
+    const messages = [
+      { role: 'system' as const, content: SYSTEM_PROMPT },
+      ...conversationHistory.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      { role: 'user' as const, content: userMessage },
+    ]
+
+    // Call OpenAI Responses API
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        input: messages,
+        tools: TOOLS,
+        tool_choice: 'auto',
+        temperature: 0.3,
+        max_output_tokens: 2000,
+      }),
+    })
+
+    if (!response.ok) {
+      const errText = await response.text()
+      log.error('openai.responses.failed', { status: response.status, error: errText.slice(0, 200) })
+
+      // Fallback to Chat Completions API if Responses API not available
+      return await fallbackToChatCompletions(messages)
+    }
+
+    const data = await response.json()
+    return parseOpenAIResponse(data)
+  } catch (err) {
+    log.error('shopping-assistant.failed', { error: err })
+    return {
+      message: 'Desculpe, houve um erro ao processar sua busca. Tente novamente ou use a busca tradicional.',
+    }
+  }
+}
+
+/**
+ * Fallback to Chat Completions API (more widely available).
+ */
+async function fallbackToChatCompletions(
+  messages: { role: string; content: string }[]
+): Promise<AssistantResponse> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages,
+        tools: TOOLS.filter(t => t.type === 'function').map(t => ({
+          type: 'function',
+          function: { name: (t as any).name, description: (t as any).description, parameters: (t as any).parameters },
+        })),
+        tool_choice: 'auto',
+        temperature: 0.3,
+        max_tokens: 2000,
+      }),
+    })
+
+    if (!response.ok) {
+      const errText = await response.text()
+      log.error('openai.chat.failed', { status: response.status, error: errText.slice(0, 200) })
+      return { message: 'Não foi possível conectar ao assistente. Use a busca tradicional em /busca.' }
+    }
+
+    const data = await response.json()
+    const choice = data.choices?.[0]
+
+    if (!choice) {
+      return { message: 'Resposta vazia do assistente. Tente reformular sua pergunta.' }
+    }
+
+    // Handle tool calls
+    if (choice.finish_reason === 'tool_calls' && choice.message?.tool_calls) {
+      return await handleToolCalls(choice.message.tool_calls, messages)
+    }
+
+    return {
+      message: choice.message?.content || 'Sem resposta.',
+    }
+  } catch (err) {
+    log.error('chat-completions.failed', { error: err })
+    return { message: 'Erro ao processar. Tente a busca tradicional em /busca.' }
+  }
+}
+
+/**
+ * Handle tool calls from the AI — execute local functions and return results.
+ */
+async function handleToolCalls(
+  toolCalls: any[],
+  originalMessages: { role: string; content: string }[]
+): Promise<AssistantResponse> {
+  const toolResults: any[] = []
+  const collectedProducts: AssistantProduct[] = []
+
+  for (const call of toolCalls) {
+    const args = JSON.parse(call.function.arguments || '{}')
+
+    if (call.function.name === 'searchLocalCatalog') {
+      const results = await executeLocalSearch(args.query, args.category, args.maxPrice, args.limit)
+      toolResults.push({
+        tool_call_id: call.id,
+        role: 'tool',
+        content: JSON.stringify(results),
+      })
+      collectedProducts.push(...results.map(r => ({
+        ...r,
+        isFromCatalog: true,
+      })))
+    } else if (call.function.name === 'compareByUseCase') {
+      const results = await executeUseCaseComparison(args.category, args.useCase)
+      toolResults.push({
+        tool_call_id: call.id,
+        role: 'tool',
+        content: JSON.stringify(results),
+      })
+    }
+  }
+
+  // Send tool results back to get final response
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          ...originalMessages,
+          { role: 'assistant', content: null, tool_calls: toolCalls },
+          ...toolResults,
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+      }),
+    })
+
+    const data = await response.json()
+    const finalMessage = data.choices?.[0]?.message?.content || 'Sem resposta.'
+
+    return {
+      message: finalMessage,
+      products: collectedProducts.length > 0 ? collectedProducts : undefined,
+    }
+  } catch {
+    return {
+      message: 'Erro ao processar resultados. Tente novamente.',
+      products: collectedProducts.length > 0 ? collectedProducts : undefined,
+    }
+  }
+}
+
+// ── Tool Implementations ───────────────────────────────────────────────────
+
+async function executeLocalSearch(
+  query: string,
+  category?: string,
+  maxPrice?: number,
+  limit: number = 5
+): Promise<AssistantProduct[]> {
+  try {
+    const params = new URLSearchParams({ q: query, limit: String(limit) })
+    if (category) params.set('category', category)
+    if (maxPrice) params.set('maxPrice', String(maxPrice))
+
+    const res = await fetch(`${APP_URL}/api/search?${params}`, {
+      headers: { 'x-internal': 'true' },
+    })
+
+    if (!res.ok) return []
+
+    const data = await res.json()
+    const products = data.products || []
+
+    return products.slice(0, limit).map((p: any) => ({
+      name: p.name,
+      price: p.bestOffer?.price,
+      originalPrice: p.bestOffer?.originalPrice,
+      discount: p.bestOffer?.discount,
+      source: p.bestOffer?.sourceName || 'PromoSnap',
+      url: `${APP_URL}/produto/${p.slug}`,
+      affiliateUrl: p.bestOffer?.affiliateUrl || `${APP_URL}/produto/${p.slug}`,
+      imageUrl: p.imageUrl,
+      isFromCatalog: true,
+      slug: p.slug,
+    }))
+  } catch (err) {
+    log.error('local-search.failed', { query, error: err })
+    return []
+  }
+}
+
+async function executeUseCaseComparison(
+  category: string,
+  useCase: string
+): Promise<any> {
+  try {
+    const res = await fetch(
+      `${APP_URL}/api/compare/use-case?category=${category}&useCase=${useCase}&limit=5`,
+      { headers: { 'x-internal': 'true' } }
+    )
+
+    if (!res.ok) return { error: 'Comparação não disponível para esta categoria' }
+
+    return await res.json()
+  } catch {
+    return { error: 'Falha ao comparar produtos' }
+  }
+}
+
+// ── Response Parsing ───────────────────────────────────────────────────────
+
+function parseOpenAIResponse(data: any): AssistantResponse {
+  // Handle Responses API format
+  const output = data.output || []
+  let message = ''
+  const products: AssistantProduct[] = []
+
+  for (const item of output) {
+    if (item.type === 'message' && item.content) {
+      for (const block of item.content) {
+        if (block.type === 'output_text') {
+          message += block.text
+        }
+      }
+    }
+  }
+
+  return {
+    message: message || 'Processando sua busca...',
+    products: products.length > 0 ? products : undefined,
+  }
+}
