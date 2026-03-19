@@ -366,18 +366,17 @@ async function executeLocalSearch(
   limit: number = 5
 ): Promise<AssistantProduct[]> {
   try {
-    const params = new URLSearchParams({ q: query, limit: String(limit) })
-    if (category) params.set('category', category)
-    if (maxPrice) params.set('maxPrice', String(maxPrice))
-
-    const res = await fetch(`${APP_URL}/api/search?${params}`, {
-      headers: { 'x-internal': 'true' },
+    // Direct DB call instead of self-referencing HTTP (avoids Vercel serverless deadlock)
+    const { searchProducts } = await import('@/lib/search/engine')
+    const result = await searchProducts({
+      query,
+      category: category || undefined,
+      maxPrice: maxPrice || undefined,
+      limit,
+      sortBy: 'relevance',
     })
 
-    if (!res.ok) return []
-
-    const data = await res.json()
-    const products = data.products || []
+    const products = result.products || []
 
     return products.slice(0, limit).map((p: any) => {
       const hasAffiliate = p.bestOffer?.affiliateUrl && p.bestOffer.affiliateUrl !== '#'
@@ -407,14 +406,15 @@ async function executeUseCaseComparison(
   useCase: string
 ): Promise<any> {
   try {
-    const res = await fetch(
-      `${APP_URL}/api/compare/use-case?category=${category}&useCase=${useCase}&limit=5`,
-      { headers: { 'x-internal': 'true' } }
-    )
+    // Direct call instead of self-referencing HTTP
+    const { getCategoryConfig, rankByUseCase } = await import('@/lib/comparison/category-specs')
+    const config = getCategoryConfig(category)
+    if (!config) return { error: `Categoria "${category}" não configurada para comparação` }
 
-    if (!res.ok) return { error: 'Comparação não disponível para esta categoria' }
+    const uc = config.useCases.find(u => u.slug === useCase)
+    if (!uc) return { error: `Caso de uso "${useCase}" não encontrado`, useCases: config.useCases.map(u => u.slug) }
 
-    return await res.json()
+    return { category: config.name, useCase: { slug: useCase, label: uc.label, description: uc.description } }
   } catch {
     return { error: 'Falha ao comparar produtos' }
   }
