@@ -193,7 +193,8 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
   const result = rankCards(cards, 'deal')
-    .filter(c => (c.bestOffer.discount ?? 0) < 92) // Skip parse-error "98% off" products
+    .filter(c => c.imageUrl) // Homepage: must have image
+    .filter(c => (c.bestOffer.discount ?? 0) < 85) // Skip suspicious discounts
     .filter(c => c.bestOffer.affiliateUrl !== '#')  // Require valid affiliate URL
     .slice(0, limit)
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
@@ -228,6 +229,7 @@ export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
   const result = rankCards(cards, 'trending')
+    .filter(c => c.imageUrl) // Homepage: must have image
     .filter(c => c.bestOffer.affiliateUrl !== '#')
     .slice(0, limit)
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
@@ -245,7 +247,8 @@ export async function getLowestPrices(limit = 16): Promise<ProductCard[]> {
     take: limit * 2,
   })
   const result = products.map(buildProductCard).filter(Boolean)
-    .filter(p => p!.bestOffer.discount && p!.bestOffer.discount > 10 && p!.bestOffer.discount < 92)
+    .filter(p => p!.imageUrl) // Homepage: must have image
+    .filter(p => p!.bestOffer.discount && p!.bestOffer.discount > 10 && p!.bestOffer.discount < 85)
     .filter(p => p!.bestOffer.price > 10) // Skip parse-error prices
     .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
     .slice(0, limit) as ProductCard[]
@@ -291,7 +294,8 @@ export async function getRecentlyImported(limit = 16): Promise<ProductCard[]> {
       })
     }
 
-    const result = products.map(buildProductCard).filter(Boolean) as ProductCard[]
+    const result = (products.map(buildProductCard).filter(Boolean) as ProductCard[])
+      .filter(c => c.imageUrl) // Homepage: must have image
     memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
     return result
   } catch (err) {
@@ -338,7 +342,8 @@ export async function getBestValue(limit = 16): Promise<ProductCard[]> {
     const result = products
       .map(buildProductCard)
       .filter(Boolean)
-      .filter((p) => p!.bestOffer.discount && p!.bestOffer.discount > 10 && p!.bestOffer.price > 0)
+      .filter((p) => p!.imageUrl) // Homepage: must have image
+      .filter((p) => p!.bestOffer.discount && p!.bestOffer.discount > 10 && p!.bestOffer.discount < 85 && p!.bestOffer.price > 10)
       .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
       .slice(0, limit) as ProductCard[]
     memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)

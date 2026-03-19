@@ -1,3 +1,4 @@
+import type { ProductCard } from "@/types";
 import { Flame, TrendingDown, Trophy, Sparkles, Tag, Star, Search, ArrowRight, Package, Percent, Zap } from "lucide-react";
 import nextDynamic from "next/dynamic";
 import DailyOpportunities from "@/components/home/DailyOpportunities";
@@ -109,8 +110,30 @@ export default async function HomePage() {
     mostPopular: [],
   }));
 
+  // ── Cross-rail deduplication ──────────────────────────────────────────────
+  // The same product should NOT appear in multiple rails on the same viewport.
+  // Priority order: hotOffers > bestSellers > lowestPrices > bestValue > readyForCampaign > recentlyImported
+  const seenIds = new Set<string>();
+  function dedup(cards: ProductCard[]): ProductCard[] {
+    const result: ProductCard[] = [];
+    for (const c of cards) {
+      if (!seenIds.has(c.id)) {
+        seenIds.add(c.id);
+        result.push(c);
+      }
+    }
+    return result;
+  }
+  // Apply dedup in priority order (mutates seenIds progressively)
+  const dedupedHotOffers = dedup(hotOffers);
+  const dedupedBestSellers = dedup(bestSellers);
+  const dedupedLowestPrices = dedup(lowestPrices);
+  const dedupedBestValue = dedup(bestValue);
+  const dedupedReadyForCampaign = dedup(readyForCampaign);
+  const dedupedRecentlyImported = dedup(recentlyImported);
+
   // Best deal of the day
-  const dealOfTheDay = hotOffers.length > 0 ? hotOffers[0] : null;
+  const dealOfTheDay = dedupedHotOffers.length > 0 ? dedupedHotOffers[0] : null;
 
   // Sort categories so priority ones come first; hide empty ones
   const nonEmptyCategories = categories.filter((c: any) => (c._count?.products ?? 0) > 0)
@@ -238,20 +261,20 @@ export default async function HomePage() {
       <section id="deal-of-the-day" className="py-4">
         <div className="max-w-7xl mx-auto px-4">
           <DealOfTheDay
-            product={hotOffers.length > 0 ? {
-              id: hotOffers[0].id,
-              name: hotOffers[0].name,
-              slug: hotOffers[0].slug,
-              imageUrl: hotOffers[0].imageUrl,
-              price: hotOffers[0].bestOffer.price,
-              originalPrice: hotOffers[0].bestOffer.originalPrice,
-              discount: hotOffers[0].bestOffer.discount,
-              sourceName: hotOffers[0].bestOffer.sourceName,
-              offerScore: hotOffers[0].bestOffer.offerScore,
-              isFreeShipping: hotOffers[0].bestOffer.isFreeShipping,
-              offerId: hotOffers[0].bestOffer.offerId,
+            product={dedupedHotOffers.length > 0 ? {
+              id: dedupedHotOffers[0].id,
+              name: dedupedHotOffers[0].name,
+              slug: dedupedHotOffers[0].slug,
+              imageUrl: dedupedHotOffers[0].imageUrl,
+              price: dedupedHotOffers[0].bestOffer.price,
+              originalPrice: dedupedHotOffers[0].bestOffer.originalPrice,
+              discount: dedupedHotOffers[0].bestOffer.discount,
+              sourceName: dedupedHotOffers[0].bestOffer.sourceName,
+              offerScore: dedupedHotOffers[0].bestOffer.offerScore,
+              isFreeShipping: dedupedHotOffers[0].bestOffer.isFreeShipping,
+              offerId: dedupedHotOffers[0].bestOffer.offerId,
             } : undefined}
-            extraDeals={hotOffers.slice(1, 6).map(p => ({
+            extraDeals={dedupedHotOffers.slice(1, 6).map(p => ({
               id: p.id,
               name: p.name,
               slug: p.slug,
@@ -269,7 +292,7 @@ export default async function HomePage() {
       </section>
 
       {/* ===== Empty state if no offers at all ===== */}
-      {hotOffers.length === 0 && bestSellers.length === 0 && lowestPrices.length === 0 && (
+      {dedupedHotOffers.length === 0 && dedupedBestSellers.length === 0 && dedupedLowestPrices.length === 0 && (
         <section className="py-10">
           <div className="max-w-2xl mx-auto px-4">
             {/* Search prompt */}
@@ -316,10 +339,10 @@ export default async function HomePage() {
       <AmazonPromo />
 
       {/* ===== 6. OFERTAS QUENTES (primary monetization rail) ===== */}
-      {hotOffers.length > 0 && (
+      {dedupedHotOffers.length > 0 && (
         <div id="hot-offers" className="section-alt py-4">
           <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
-            {hotOffers.map((p, i) => (
+            {dedupedHotOffers.map((p, i) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="hot-offers" position={i} />
               </div>
@@ -337,10 +360,10 @@ export default async function HomePage() {
       <SectionSeparator />
 
       {/* ===== 10. MENOR PRECO HISTORICO ===== */}
-      {lowestPrices.length > 0 && (
+      {dedupedLowestPrices.length > 0 && (
         <div id="lowest-prices" className="py-4">
           <RailSection title="Menor Preço Histórico" subtitle="Nunca estiveram tão baratos" href="/menor-preco" icon={TrendingDown} iconColor="text-accent-blue">
-            {lowestPrices.map((p, i) => (
+            {dedupedLowestPrices.map((p, i) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="lowest-prices" position={i} />
               </div>
@@ -350,10 +373,10 @@ export default async function HomePage() {
       )}
 
       {/* ===== 11. MAIS VENDIDOS ===== */}
-      {bestSellers.length > 0 && (
+      {dedupedBestSellers.length > 0 && (
         <div id="best-sellers" className="section-alt py-4">
           <RailSection title="Mais Vendidos" subtitle="Produtos mais populares" href="/mais-vendidos" icon={Trophy} iconColor="text-accent-orange">
-            {bestSellers.map((p, i) => (
+            {dedupedBestSellers.map((p, i) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="best-sellers" position={i} />
               </div>
@@ -363,10 +386,10 @@ export default async function HomePage() {
       )}
 
       {/* ===== 12. MELHOR CUSTO-BENEFICIO ===== */}
-      {bestValue.length > 0 && (
+      {dedupedBestValue.length > 0 && (
         <div id="best-value" className="py-4">
           <RailSection title="Desconto + Frete Grátis" subtitle="Melhor custo-benefício com entrega inclusa" href="/ofertas" icon={Percent} iconColor="text-accent-purple">
-            {bestValue.map((p, i) => (
+            {dedupedBestValue.map((p, i) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="best-value" position={i} />
               </div>
@@ -376,10 +399,10 @@ export default async function HomePage() {
       )}
 
       {/* ===== 13. PRONTOS PARA COMPRAR ===== */}
-      {readyForCampaign.length > 0 && (
+      {dedupedReadyForCampaign.length > 0 && (
         <div id="ready-for-campaign" className="section-alt py-4">
           <RailSection title="Desconto Verificado" subtitle="Preço real, link direto para a loja" href="/ofertas" icon={Star} iconColor="text-accent-blue">
-            {readyForCampaign.map((p, i) => (
+            {dedupedReadyForCampaign.map((p, i) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="ready-for-campaign" position={i} />
               </div>
@@ -389,10 +412,10 @@ export default async function HomePage() {
       )}
 
       {/* ===== 13b. ADICIONADOS RECENTEMENTE — after commercial rails ===== */}
-      {recentlyImported.length > 0 && (
+      {dedupedRecentlyImported.length > 0 && (
         <div id="recently-imported" className="py-4">
           <RailSection title="Chegaram Agora" subtitle="Novidades dos últimos dias" href="/ofertas" icon={Sparkles} iconColor="text-accent-green">
-            {recentlyImported.map((p, i) => (
+            {dedupedRecentlyImported.map((p, i) => (
               <div key={p.id} className="rail-card">
                 <OfferCard product={p} page="home" railSource="recently-imported" position={i} />
               </div>
@@ -436,9 +459,9 @@ export default async function HomePage() {
       )}
 
       {/* ===== 15b. DESTAQUE CAROUSEL (spread away from Oferta do Dia) ===== */}
-      {hotOffers.length > 6 && (
+      {dedupedHotOffers.length > 6 && (
         <div id="carousel" className="section-energy">
-          <OfferCarousel offers={hotOffers.slice(6, 12)} />
+          <OfferCarousel offers={dedupedHotOffers.slice(6, 12)} />
         </div>
       )}
 

@@ -292,7 +292,18 @@ export async function GET(request: NextRequest) {
     const products = await prisma.product.findMany({
       where: {
         status: "ACTIVE",
-        listings: { some: { offers: { some: { isActive: true } } } },
+        imageUrl: { not: null }, // Must have image for homepage display
+        listings: {
+          some: {
+            offers: {
+              some: {
+                isActive: true,
+                currentPrice: { gt: 10 },   // Skip parse-error prices
+                affiliateUrl: { not: null }, // Must have affiliate URL
+              },
+            },
+          },
+        },
       },
       include: PRODUCT_INCLUDE,
       take: 40,
@@ -301,7 +312,7 @@ export async function GET(request: NextRequest) {
 
     const cards = products
       .map(buildProductCard)
-      .filter((c): c is NonNullable<typeof c> => c !== null);
+      .filter((c): c is NonNullable<typeof c> => c !== null && !!c.imageUrl);
 
     // Rank by homepage preset (balanced, demand-heavy)
     const scored = cards.map(card => ({
