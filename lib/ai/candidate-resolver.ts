@@ -305,5 +305,11 @@ export class ConnectorRegistry {
   }
 }
 
-/** Global connector registry — future connectors register here */
+/** Global connector registry */
 export const connectorRegistry = new ConnectorRegistry()
+
+// ── Auto-register available connectors ─────────────────────────────────────
+// Connectors self-check isReady() — no error if env var is missing
+
+import { serpApiShoppingConnector } from './connectors/serpapi-shopping'
+connectorRegistry.register(serpApiShoppingConnector)

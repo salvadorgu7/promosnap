@@ -96,6 +96,20 @@ const TOOLS = [
     },
   },
   {
+    type: 'function' as const,
+    name: 'searchGoogleShopping',
+    description: 'Busca produtos em TODAS as lojas brasileiras via Google Shopping (Amazon, ML, Shopee, Magalu, KaBuM, etc.). Use quando o catálogo local não tiver resultados suficientes ou quando o usuário quiser ver opções de várias lojas.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Termo de busca' },
+        maxPrice: { type: 'number', description: 'Preço máximo em R$' },
+        limit: { type: 'number', description: 'Número de resultados (default 8)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
     type: 'web_search_preview' as const,
   },
 ]
@@ -104,7 +118,8 @@ const SYSTEM_PROMPT = `Você é o assistente de compras do PromoSnap — o lugar
 
 REGRAS FUNDAMENTAIS:
 1. SEMPRE use a ferramenta searchLocalCatalog PRIMEIRO para buscar produtos no catálogo verificado
-2. Se o catálogo local não tiver resultados suficientes, use web_search para complementar
+2. Se o catálogo local não tiver resultados suficientes, use searchGoogleShopping para buscar em TODAS as lojas brasileiras
+3. Use web_search apenas como último recurso para perguntas gerais ou reviews
 3. NUNCA invente preços, produtos ou especificações
 4. Quando mostrar produtos, SEMPRE inclua preço real e fonte
 5. Responda em português brasileiro, de forma direta e útil
@@ -289,6 +304,14 @@ async function handleToolCalls(
         role: 'tool',
         content: JSON.stringify(results),
       })
+    } else if (call.function.name === 'searchGoogleShopping') {
+      const results = await executeGoogleShoppingSearch(args.query, args.maxPrice, args.limit)
+      toolResults.push({
+        tool_call_id: call.id,
+        role: 'tool',
+        content: JSON.stringify(results),
+      })
+      collectedProducts.push(...results)
     }
   }
 
@@ -394,6 +417,40 @@ async function executeUseCaseComparison(
     return await res.json()
   } catch {
     return { error: 'Falha ao comparar produtos' }
+  }
+}
+
+async function executeGoogleShoppingSearch(
+  query: string,
+  maxPrice?: number,
+  limit: number = 8
+): Promise<AssistantProduct[]> {
+  try {
+    const { connectorRegistry, resolveCandidates, candidateToAssistantProduct } = await import('./candidate-resolver')
+
+    const connector = connectorRegistry.get('google-shopping')
+    if (!connector || !connector.isReady()) {
+      log.debug('google-shopping.not-ready')
+      return []
+    }
+
+    const rawResults = await connector.search(query, { maxPrice, limit })
+    if (rawResults.length === 0) return []
+
+    // Resolve candidates (normalize, dedup, monetize)
+    const resolved = resolveCandidates(rawResults)
+
+    log.info('google-shopping.resolved', {
+      query,
+      raw: rawResults.length,
+      resolved: resolved.length,
+      monetizable: resolved.filter(r => r.monetization !== 'none').length,
+    })
+
+    return resolved.slice(0, limit).map(candidateToAssistantProduct)
+  } catch (err) {
+    log.error('google-shopping.failed', { query, error: err })
+    return []
   }
 }
 
