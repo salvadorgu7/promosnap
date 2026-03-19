@@ -20,8 +20,8 @@ interface ModeConfig {
 }
 
 const MODE_CONFIGS: Record<DiscoverImportMode, ModeConfig> = {
-  daily:    { limit: 50, categoryFilter: (c) => c.priority <= 2, label: 'daily (top categories, limit 50)' },
-  extended: { limit: 150, label: 'extended (all categories, limit 150)' },
+  daily:    { limit: 150, label: 'daily (top categories, limit 150)' },
+  extended: { limit: 300, label: 'extended (all categories, limit 300)' },
   massive:  { limit: 500, label: 'massive (all categories, limit 500)' },
   category: { limit: 50, label: 'single category' },
   debug:    { limit: 5, categoryFilter: (c) => c.priority <= 1, label: 'debug (priority 1 only, limit 5)' },

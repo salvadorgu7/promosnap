@@ -88,10 +88,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, message: 'No events in payload' })
     }
 
-    // Process in shadow mode (never auto-publish from webhook by default)
-    const result = await processPromosAppBatch(events, {
-      autoPublish: false, // Webhooks always shadow mode for safety
-    })
+    // Auto-publish controlled by feature flag FF_PROMOSAPP_AUTO_PUBLISH
+    const result = await processPromosAppBatch(events)
 
     logger.info('promosapp.webhook.processed', {
       received: result.received,
