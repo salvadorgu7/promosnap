@@ -189,33 +189,8 @@ export async function processShoppingQuery(
       { role: 'user' as const, content: userMessage },
     ]
 
-    // Call OpenAI Responses API
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        input: messages,
-        tools: TOOLS,
-        tool_choice: 'auto',
-        temperature: 0.3,
-        max_output_tokens: 2000,
-      }),
-    })
-
-    if (!response.ok) {
-      const errText = await response.text()
-      log.error('openai.responses.failed', { status: response.status, error: errText.slice(0, 200) })
-
-      // Fallback to Chat Completions API if Responses API not available
-      return await fallbackToChatCompletions(messages)
-    }
-
-    const data = await response.json()
-    return parseOpenAIResponse(data)
+    // Use Chat Completions API directly (most reliable with tool calling)
+    return await fallbackToChatCompletions(messages)
   } catch (err) {
     log.error('shopping-assistant.failed', { error: err })
     return makeResponse('Desculpe, houve um erro ao processar sua busca. Tente novamente ou use a busca tradicional.', startTime)
