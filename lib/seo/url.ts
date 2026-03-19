@@ -4,7 +4,7 @@
  * to ensure canonical domain consistency.
  */
 
-const CANONICAL_DOMAIN = "https://www.promosnap.com.br";
+const CANONICAL_DOMAIN = "https://promosnap.com.br";
 
 /** Returns the canonical base URL, respecting env override */
 export function getBaseUrl(): string {

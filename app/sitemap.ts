@@ -39,7 +39,8 @@ export async function generateSitemaps() {
   return [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
 }
 
-export const dynamic = "force-dynamic";
+// ISR: regenerate sitemaps hourly (force-dynamic caused empty sitemaps on Vercel cold starts)
+export const revalidate = 3600;
 
 export default async function sitemap({ id }: { id: number }): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -94,8 +95,8 @@ export default async function sitemap({ id }: { id: number }): Promise<MetadataR
             },
           ];
         });
-      } catch {
-        // DB unavailable at build time — return empty
+      } catch (err) {
+        console.error("[sitemap/1] Failed to fetch products:", err)
       }
       return productPages;
     }
@@ -131,8 +132,8 @@ export default async function sitemap({ id }: { id: number }): Promise<MetadataR
         }));
 
         pages = [...categoryPages, ...brandPages];
-      } catch {
-        // DB unavailable
+      } catch (err) {
+        console.error("[sitemap/2] Failed to fetch categories/brands:", err)
       }
       return pages;
     }
@@ -158,8 +159,15 @@ export default async function sitemap({ id }: { id: number }): Promise<MetadataR
           priority: 0.70,
         }));
         pages = [...articlePages, ...buyingGuidePages];
-      } catch {
-        // DB unavailable
+      } catch (err) {
+        console.error("[sitemap/3] Failed to fetch articles:", err)
+        // Fallback: at least include static buying guide pages
+        return BUYING_GUIDE_SLUGS.map((slug) => ({
+          url: `${APP_URL}/guia-compra/${slug}`,
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.70,
+        }));
       }
       return pages;
     }
