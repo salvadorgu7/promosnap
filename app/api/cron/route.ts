@@ -30,8 +30,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
   } else {
-    logWarn('cron', 'CRON_SECRET not configured — running in open mode (dev/preview)')
-    // Rate limit open mode to prevent abuse
+    // In production/preview: block cron without secret (fail-closed)
+    const env = process.env.VERCEL_ENV || process.env.NODE_ENV;
+    if (env === 'production' || env === 'preview') {
+      logWarn('cron', 'CRON_SECRET not configured in production — blocking request')
+      return NextResponse.json({ error: 'CRON_SECRET required in production' }, { status: 503 })
+    }
+    logWarn('cron', 'CRON_SECRET not configured — running in open mode (dev only)')
     const rl = rateLimit(req, 'admin')
     if (!rl.success) return rateLimitResponse(rl)
   }

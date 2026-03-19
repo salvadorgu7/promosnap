@@ -23,7 +23,14 @@ export async function middleware(req: NextRequest) {
   const secret = process.env.ADMIN_SECRET;
 
   if (!secret) {
-    // No secret configured — dev mode, allow access
+    // In production/preview: block admin without secret (fail-closed)
+    const env = process.env.VERCEL_ENV || process.env.NODE_ENV;
+    if (env === 'production' || env === 'preview') {
+      const loginUrl = req.nextUrl.clone();
+      loginUrl.pathname = "/admin-login";
+      return NextResponse.redirect(loginUrl);
+    }
+    // Dev mode: allow access without secret
     return NextResponse.next();
   }
 

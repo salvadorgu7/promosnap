@@ -14,7 +14,7 @@ export default function StoreTrustBar() {
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-secondary">
             <ShieldCheck className="w-3.5 h-3.5 text-accent-green" />
-            Comparamos precos em:
+            Comparamos preços em:
           </span>
           <div className="flex items-center gap-3">
             {STORES.map((store) => (

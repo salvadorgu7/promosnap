@@ -40,7 +40,10 @@ const TRENDING_SEARCHES = [
   "Fone Bluetooth", "Smart TV 55", "Aspirador Robo",
 ];
 
-export const dynamic = "force-dynamic";
+// ISR: rebuild homepage every 60 seconds (not force-dynamic — huge TTFB improvement)
+// Client-side components (DailyOpportunities, PersonalizedRails, SinceLastVisit) still
+// fetch fresh data via API, so user sees live content within static shell.
+export const revalidate = 60;
 
 // ─── Section Header component ────────────────────────────────────────────────
 
@@ -98,7 +101,7 @@ export default async function HomePage() {
     getBestValue(16).catch(() => []),
     getReadyForCampaign(16).catch(() => []),
     getCategories().catch(() => []),
-    getSiteStats().catch(() => ({ listings: 0, activeOffers: 0, sources: 4, clickoutsToday: 0, clickoutsWeek: 0, categories: 0, brands: 0 })),
+    getSiteStats().catch(() => ({ listings: 0, activeOffers: 0, sources: 5, clickoutsToday: 0, clickoutsWeek: 0, categories: 0, brands: 0 })),
     getActiveCoupons().catch(() => []),
     prisma.trendingKeyword.findMany({ orderBy: [{ fetchedAt: "desc" }, { position: "asc" }], take: 15 }).catch(() => []),
   ]);

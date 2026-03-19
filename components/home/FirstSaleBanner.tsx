@@ -34,7 +34,7 @@ export default function FirstSaleBanner({
                   {activeOffers}+ ofertas ativas agora
                 </h3>
                 <p className="text-xs text-text-muted mt-0.5">
-                  Precos verificados de 4 lojas — encontre o menor preco
+                  Preços verificados de 4 lojas — encontre o menor preço
                 </p>
               </div>
             </div>
