@@ -13,7 +13,10 @@ import type { ExternalCandidate, SourceConnector } from '../candidate-resolver'
 
 const log = logger.child({ module: 'serpapi-shopping' })
 
-const SERPAPI_KEY = process.env.SERPAPI_KEY
+// Read at runtime, not module load time (Vercel env vars may not be available at import)
+function getSerpApiKey(): string | undefined {
+  return process.env.SERPAPI_KEY
+}
 
 /**
  * Google Shopping connector via SerpApi.
@@ -23,11 +26,12 @@ export const serpApiShoppingConnector: SourceConnector = {
   slug: 'google-shopping',
 
   isReady(): boolean {
-    return !!SERPAPI_KEY
+    return !!getSerpApiKey()
   },
 
   async search(query: string, options?: { maxPrice?: number; limit?: number }): Promise<ExternalCandidate[]> {
-    if (!SERPAPI_KEY) return []
+    const apiKey = getSerpApiKey()
+    if (!apiKey) return []
 
     const limit = options?.limit || 10
 
@@ -38,7 +42,7 @@ export const serpApiShoppingConnector: SourceConnector = {
         location: 'Brazil',
         gl: 'br',
         hl: 'pt',
-        api_key: SERPAPI_KEY,
+        api_key: apiKey,
         num: String(Math.min(limit * 2, 20)), // Fetch extra to filter
       })
 

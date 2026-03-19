@@ -19,7 +19,8 @@ import { buildAffiliateUrl } from '@/lib/affiliate'
 
 const log = logger.child({ module: 'shopping-assistant' })
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+// Read at runtime, not module load (Vercel edge may not have env at import time)
+function getOpenAIKey(): string | undefined { return process.env.OPENAI_API_KEY }
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.promosnap.com.br'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -156,7 +157,7 @@ function makeResponse(message: string, startTime: number, extra?: Partial<Assist
 // ── Core Function ──────────────────────────────────────────────────────────
 
 export function isAIConfigured(): boolean {
-  return !!OPENAI_API_KEY
+  return !!getOpenAIKey()
 }
 
 /**
@@ -170,6 +171,7 @@ export async function processShoppingQuery(
   const startTime = Date.now()
   const meta = { toolsUsed: [] as string[], catalogHits: 0, webUsed: false, durationMs: 0 }
 
+  const OPENAI_API_KEY = getOpenAIKey()
   if (!OPENAI_API_KEY) {
     return {
       message: 'O assistente de compras não está configurado. Configure OPENAI_API_KEY para ativar.',
