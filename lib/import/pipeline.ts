@@ -489,10 +489,10 @@ export async function runImportPipeline(
             productUpdate.importedAt = new Date()
           }
 
-          // Compute fresh affiliateUrl for this offer (env tags may have changed)
-          const freshAffiliateUrl = item.affiliateUrl && hasAffiliateTag(item.affiliateUrl)
-            ? item.affiliateUrl
-            : buildAffiliateUrl(item.productUrl)
+          // ALWAYS build affiliate URL from the clean product URL using OUR env tags.
+          // Never trust affiliate tags from WhatsApp/third-party sources —
+          // they may contain someone else's affiliate codes.
+          const freshAffiliateUrl = buildAffiliateUrl(item.productUrl)
 
           if (lastOffer && lastOffer.currentPrice !== item.currentPrice) {
             await prisma.offer.update({
@@ -767,11 +767,9 @@ export async function runImportPipeline(
 
       const baseUrl = item.productUrl?.startsWith('http') ? item.productUrl : null
 
-      if (item.affiliateUrl && item.affiliateUrl.startsWith('http') && hasAffiliateTag(item.affiliateUrl)) {
-        // Upstream (e.g. PromosApp) already set our affiliate tag — trust it
-        affiliateUrl = item.affiliateUrl
-        log.debug('affiliate.used-upstream', { sourceSlug: item.sourceSlug, url: affiliateUrl })
-      } else if (baseUrl) {
+      // ALWAYS build affiliate URL from the clean product URL using OUR env tags.
+      // Never trust affiliate tags from WhatsApp/third-party sources.
+      if (baseUrl) {
         // Build/rebuild affiliate URL from canonical product URL using our env-configured tags
         affiliateUrl = buildAffiliateUrl(baseUrl)
         if (affiliateUrl === baseUrl) {

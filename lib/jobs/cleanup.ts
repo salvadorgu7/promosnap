@@ -1,6 +1,7 @@
 import prisma from '@/lib/db/prisma';
 import { runJob, type JobResult } from '@/lib/jobs/runner';
 import { logger } from '@/lib/logger';
+import { buildAffiliateUrl } from '@/lib/affiliate';
 
 const log = logger.child({ module: 'cleanup' });
 
@@ -177,6 +178,41 @@ export async function cleanupData(): Promise<JobResult> {
     const deactivatedBadPrices = await deactivateBadPriceOffers();
     ctx.log(`Deactivated ${deactivatedBadPrices} bad-price offers`);
 
+    // ── Fix affiliate URLs with third-party tags ──────────────────────────
+    // WhatsApp messages may contain URLs with someone else's affiliate codes.
+    // This retroactively rewrites them with our configured env tags.
+    ctx.log('Checking affiliate URLs for third-party tags...');
+    let affiliateFixed = 0;
+    try {
+      const offersToCheck = await prisma.offer.findMany({
+        where: { isActive: true, affiliateUrl: { not: null } },
+        select: {
+          id: true,
+          affiliateUrl: true,
+          listing: { select: { productUrl: true } },
+        },
+        take: 200, // Process in batches to avoid timeout
+      });
+
+      for (const offer of offersToCheck) {
+        if (!offer.affiliateUrl || !offer.listing?.productUrl) continue;
+        const correctUrl = buildAffiliateUrl(offer.listing.productUrl);
+        if (correctUrl !== offer.affiliateUrl) {
+          await prisma.offer.update({
+            where: { id: offer.id },
+            data: { affiliateUrl: correctUrl },
+          });
+          affiliateFixed++;
+        }
+      }
+      if (affiliateFixed > 0) {
+        log.warn('cleanup.affiliate-urls-fixed', { count: affiliateFixed });
+      }
+      ctx.log(`Fixed ${affiliateFixed} affiliate URLs with wrong tags`);
+    } catch (err) {
+      ctx.log(`Warning: affiliate URL fix failed: ${err}`);
+    }
+
     // Clean stale trending keywords (older than 30 days)
     let deletedTrends = { count: 0 };
     try {
@@ -190,7 +226,7 @@ export async function cleanupData(): Promise<JobResult> {
       ctx.log(`Warning: failed to clean trending keywords: ${error}`);
     }
 
-    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count + deactivatedImportedOffers.count + deactivatedBadPrices + deletedTrends.count;
+    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count + deactivatedImportedOffers.count + deactivatedBadPrices + deletedTrends.count + affiliateFixed;
 
     ctx.log(`Cleanup complete: ${totalActions} total actions`);
 
@@ -203,6 +239,7 @@ export async function cleanupData(): Promise<JobResult> {
         deactivatedOffers: deactivatedOffers.count,
         deactivatedImportedOffers: deactivatedImportedOffers.count,
         deactivatedBadPrices,
+        affiliateUrlsFixed: affiliateFixed,
         deletedTrendingKeywords: deletedTrends.count,
       },
     };

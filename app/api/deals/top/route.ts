@@ -65,7 +65,8 @@ export async function GET(request: NextRequest) {
   const cards = products
     .map(buildProductCard)
     .filter(Boolean)
-    .filter((c) => c!.bestOffer.offerScore >= 40 && c!.bestOffer.affiliateUrl !== "#" && (c!.bestOffer.discount ?? 0) < 92)
+    .filter((c) => c!.imageUrl) // Must have image for banner
+    .filter((c) => c!.bestOffer.offerScore >= 40 && c!.bestOffer.affiliateUrl !== "#" && (c!.bestOffer.discount ?? 0) < 80)
     // Sort by offerScore (highest first) — this is the key difference from getHotOffers
     .sort((a, b) => b!.bestOffer.offerScore - a!.bestOffer.offerScore)
     .slice(0, limit)
