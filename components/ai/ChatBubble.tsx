@@ -183,9 +183,9 @@ export default function ChatBubble() {
                   {msg.products.slice(0, 3).map((p, j) => (
                     <a
                       key={j}
-                      href={p.affiliateUrl || p.url}
-                      target="_blank"
-                      rel="noopener noreferrer nofollow sponsored"
+                      href={p.slug ? `/produto/${p.slug}` : (p.affiliateUrl || p.url)}
+                      target={p.slug ? "_self" : "_blank"}
+                      rel={p.slug ? undefined : "noopener noreferrer nofollow sponsored"}
                       className="flex items-center gap-2 p-1.5 rounded-lg bg-white border border-surface-100 hover:border-brand-500/30 transition-colors"
                     >
                       {p.imageUrl && (
