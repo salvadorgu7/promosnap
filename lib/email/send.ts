@@ -5,8 +5,23 @@
 
 import prisma from '@/lib/db/prisma'
 import { logger } from '@/lib/logger'
+import { createHash } from 'crypto'
 
 const FROM_EMAIL = 'PromoSnap <noreply@promosnap.com.br>'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.promosnap.com.br'
+
+/** Generate unsubscribe token for email footer links */
+function generateUnsubscribeToken(email: string): string {
+  const secret = process.env.ADMIN_SECRET || 'promosnap-unsub'
+  return createHash('sha256').update(`${email}:${secret}`).digest('hex').slice(0, 16)
+}
+
+/** Replace {{unsubscribe_url}} placeholder in email HTML */
+function injectUnsubscribeUrl(html: string, email: string): string {
+  const token = generateUnsubscribeToken(email)
+  const url = `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`
+  return html.replace(/\{\{unsubscribe_url\}\}/g, url)
+}
 
 /**
  * Check if email provider is configured. Returns false if RESEND_API_KEY is missing.
@@ -40,7 +55,7 @@ export async function sendEmail(opts: {
         from: FROM_EMAIL,
         to: opts.to,
         subject: opts.subject,
-        html: opts.html,
+        html: injectUnsubscribeUrl(opts.html, opts.to),
       }),
     })
 
