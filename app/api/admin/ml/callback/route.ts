@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       const errText = await res.text()
       logger.error("ml-callback.token-exchange-failed", { status: res.status, detail: errText.slice(0, 500) })
       return NextResponse.json(
-        { error: 'Token exchange failed', status: res.status, detail: errText.slice(0, 500) },
+        { error: 'Token exchange failed — check server logs' },
         { status: 502 }
       )
     }
@@ -77,8 +77,9 @@ export async function GET(req: NextRequest) {
     const tokenData = await res.json()
 
     if (!tokenData.access_token) {
+      logger.error("ml-callback.no-access-token", { keys: Object.keys(tokenData) })
       return NextResponse.json(
-        { error: 'No access_token in response', data: tokenData },
+        { error: 'No access_token in response — check server logs' },
         { status: 502 }
       )
     }
@@ -162,7 +163,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     logger.error("ml-callback.failed", { error: err })
     return NextResponse.json(
-      { error: 'Callback processing failed', detail: err instanceof Error ? err.message : String(err) },
+      { error: 'Callback processing failed — check server logs' },
       { status: 500 }
     )
   }

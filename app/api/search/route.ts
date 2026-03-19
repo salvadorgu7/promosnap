@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, rateLimitResponse, withRateLimitHeaders } from "@/lib/security/rate-limit";
 import { searchProducts } from "@/lib/search/engine";
+import { safeCompare } from "@/lib/auth/admin";
 import { logger } from "@/lib/logger";
 
-/** Check if request has valid admin secret */
+/** Check if request has valid admin secret (timing-safe) */
 function isAdminRequest(request: NextRequest): boolean {
   const secret = process.env.ADMIN_SECRET;
   if (!secret) return false;
-  return request.headers.get("x-admin-secret") === secret;
+  const headerSecret = request.headers.get("x-admin-secret");
+  if (!headerSecret) return false;
+  return safeCompare(headerSecret, secret);
 }
 
 export async function GET(request: NextRequest) {
