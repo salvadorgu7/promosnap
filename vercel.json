@@ -1,8 +1,16 @@
 {
   "crons": [
     {
-      "path": "/api/cron",
-      "schedule": "0 9 * * *"
+      "path": "/api/cron?jobs=update-prices",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=cleanup,backfill-images",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=ingest,compute-scores,discover-import",
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/sync-shopee",
