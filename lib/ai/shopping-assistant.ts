@@ -238,6 +238,15 @@ export async function processShoppingQuery(
       durationMs: Date.now() - startTime,
     })
 
+    // ── Fire-and-forget: auto-import external products into catalog ──────
+    // Products found via Google Shopping that aren't in our catalog get
+    // imported in background. Next time someone searches, they'll be local.
+    if (shoppingResults.length > 0) {
+      autoImportExternalProducts(shoppingResults).catch(err => {
+        log.debug('auto-import.background-failed', { error: String(err) })
+      })
+    }
+
     return {
       message,
       products: allProducts.length > 0 ? allProducts : undefined,
@@ -513,4 +522,86 @@ function parseOpenAIResponse(data: any): AssistantResponse {
     dataSources: ['web'],
     meta: { toolsUsed: ['web_search'], catalogHits: 0, webUsed: true, durationMs: 0 },
   })
+}
+
+// ── Auto-Import External Products ────────────────────────────────────────
+
+/**
+ * Fire-and-forget: import external products found by the AI into the catalog.
+ * Runs after response is sent — does NOT block the user.
+ * Only imports products that have a known marketplace URL (Amazon, ML, Shopee).
+ */
+async function autoImportExternalProducts(products: AssistantProduct[]): Promise<void> {
+  // Only import products that are NOT from catalog and have a real external URL
+  const candidates = products.filter(p =>
+    !p.isFromCatalog &&
+    p.name &&
+    p.price &&
+    p.price > 5 &&
+    p.url &&
+    p.url.startsWith('http')
+  )
+
+  if (candidates.length === 0) return
+
+  try {
+    const { runImportPipeline } = await import('@/lib/import/pipeline')
+    const { buildAffiliateUrl: buildAffiliate } = await import('@/lib/affiliate')
+
+    const items = candidates.slice(0, 5).map(c => {
+      // Try to extract external ID from URL
+      let externalId = ''
+      try {
+        const url = new URL(c.url)
+        // Amazon ASIN
+        const asinMatch = url.pathname.match(/\/dp\/([A-Z0-9]{10})/) || url.pathname.match(/\/([A-Z0-9]{10})(?:\/|$)/)
+        if (asinMatch) externalId = asinMatch[1]
+        // ML MLB ID
+        const mlbMatch = url.pathname.match(/MLB-?(\d+)/) || url.href.match(/MLB-?(\d+)/)
+        if (mlbMatch) externalId = `MLB${mlbMatch[1]}`
+        // Shopee
+        const shopeeMatch = url.pathname.match(/\.(\d+)\.(\d+)/) || url.pathname.match(/\/(\d{5,})\/(\d{5,})/)
+        if (shopeeMatch) externalId = `${shopeeMatch[1]}.${shopeeMatch[2]}`
+      } catch {}
+
+      if (!externalId) {
+        // Generate hash-based ID from URL
+        externalId = `ai-${c.url.replace(/[^a-zA-Z0-9]/g, '').slice(-12)}`
+      }
+
+      // Detect source from URL
+      const urlLower = c.url.toLowerCase()
+      let sourceSlug = 'unknown'
+      if (urlLower.includes('amazon.com.br')) sourceSlug = 'amazon-br'
+      else if (urlLower.includes('mercadolivre.com.br') || urlLower.includes('mercadolibre.com')) sourceSlug = 'mercadolivre'
+      else if (urlLower.includes('shopee.com.br')) sourceSlug = 'shopee'
+      else if (urlLower.includes('shein.com')) sourceSlug = 'shein'
+      else if (urlLower.includes('magalu.com') || urlLower.includes('magazineluiza')) sourceSlug = 'magalu'
+      else if (urlLower.includes('kabum.com.br')) sourceSlug = 'kabum'
+
+      return {
+        externalId,
+        title: c.name,
+        currentPrice: c.price!,
+        originalPrice: c.originalPrice,
+        productUrl: c.url,
+        imageUrl: c.imageUrl,
+        sourceSlug,
+        discoverySource: 'ai-assistant' as const,
+      }
+    })
+
+    if (items.length === 0) return
+
+    const result = await runImportPipeline(items)
+    log.info('auto-import.from-ai', {
+      candidates: candidates.length,
+      imported: items.length,
+      created: result.created,
+      updated: result.updated,
+      failed: result.failed,
+    })
+  } catch (err) {
+    log.debug('auto-import.failed', { error: String(err) })
+  }
 }
