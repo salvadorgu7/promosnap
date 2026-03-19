@@ -49,6 +49,9 @@ import PageViewTracker from "@/components/analytics/PageViewTracker";
 import SourceComparison from "@/components/product/SourceComparison";
 import PriceComparison from "@/components/product/PriceComparison";
 import DecisionBlocks from "@/components/product/DecisionBlocks";
+import HeroVerdict from "@/components/product/HeroVerdict";
+import MobileDecisionCompact from "@/components/product/MobileDecisionCompact";
+import InlineAlertPrompt from "@/components/product/InlineAlertPrompt";
 import { analyzeCrossSource, buildCrossSourceOffer } from "@/lib/source/cross-source";
 import { getCanonicalComparison, getBestChoice } from "@/lib/catalog/smart-comparison";
 import { buildMetadata, productSchema, breadcrumbSchema, generateProductMeta } from "@/lib/seo/metadata";
@@ -442,7 +445,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         </div>
 
         {/* Right column: Info + Offers + Chart */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
           {/* Product header */}
           <div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -475,6 +478,19 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             )}
           </div>
 
+          {/* Hero Verdict — primary decision signal */}
+          {buySignal && bestOffer && (
+            <HeroVerdict
+              buySignal={buySignal}
+              price={bestPrice}
+              sourceName={bestOffer.sourceName}
+              offerId={bestOffer.id}
+              discount={discount}
+              isNearAllTimeLow={isNearAllTimeLow}
+              priceBelowAvg30d={priceBelowAvg30d}
+            />
+          )}
+
           {/* Price drop alert — returning visitor notification */}
           {bestOffer && (
             <PriceDropAlert
@@ -494,59 +510,95 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             <PriceTrend trend={priceStats.trend} currentPrice={priceStats.current} avgPrice={priceStats.avg30d} />
           )}
 
-          {/* Decision Summary */}
-          {allOffers.length > 0 && (
-            <DecisionSummary
-              offers={allOffers}
-              productName={product.name}
-              avgHistorical={priceStats?.avg30d}
-              priceStats={priceStats ? {
-                avg30d: priceStats.avg30d,
-                min30d: priceStats.min30d,
-                allTimeMin: priceStats.allTimeMin,
-                trend: priceStats.trend,
-              } : null}
-            />
-          )}
-
-          {/* Smart Decision Analysis */}
+          {/* Mobile compact decision — replaces 4 blocks on mobile */}
           {bestOffer && (
-            <SmartDecisionBlock
-              productName={product.name}
-              currentPrice={bestPrice}
-              originalPrice={bestOffer.originalPrice ?? undefined}
-              avg30d={priceStats?.avg30d}
-              allTimeMin={priceStats?.allTimeMin}
-              offersCount={allOffers.length}
-              isFreeShipping={bestOffer.isFreeShipping}
-              offerScore={bestOffer.offerScore}
-              trend={priceStats?.trend}
+            <MobileDecisionCompact
               buySignal={buySignal}
-            />
-          )}
-
-          {/* Smart Insight — "Vale a pena agora?" */}
-          {priceStats && bestOffer && (
-            <SmartInsight
-              priceStats={priceStats}
-              productName={product.name}
-              offerScore={bestOffer.offerScore}
-              hasFreShipping={bestOffer.isFreeShipping}
-              discount={discount}
-            />
-          )}
-
-          {/* Opportunity Score assessment */}
-          {priceStats && bestOffer && (
-            <OpportunityScore
-              priceStats={priceStats}
-              offerScore={bestOffer.offerScore}
+              offersCount={allOffers.length}
               discount={discount}
               isFreeShipping={bestOffer.isFreeShipping}
-              offersCount={allOffers.length}
               sourceSlug={bestOffer.sourceSlug}
-            />
+              offerScore={bestOffer.offerScore}
+            >
+              {/* Full analysis blocks — shown inside expandable on mobile */}
+              {allOffers.length > 0 && (
+                <DecisionSummary
+                  offers={allOffers}
+                  productName={product.name}
+                  avgHistorical={priceStats?.avg30d}
+                  priceStats={priceStats ? {
+                    avg30d: priceStats.avg30d,
+                    min30d: priceStats.min30d,
+                    allTimeMin: priceStats.allTimeMin,
+                    trend: priceStats.trend,
+                  } : null}
+                />
+              )}
+              <SmartDecisionBlock
+                productName={product.name}
+                currentPrice={bestPrice}
+                originalPrice={bestOffer.originalPrice ?? undefined}
+                avg30d={priceStats?.avg30d}
+                allTimeMin={priceStats?.allTimeMin}
+                offersCount={allOffers.length}
+                isFreeShipping={bestOffer.isFreeShipping}
+                offerScore={bestOffer.offerScore}
+                trend={priceStats?.trend}
+                buySignal={buySignal}
+              />
+              {priceStats && (
+                <OpportunityScore
+                  priceStats={priceStats}
+                  offerScore={bestOffer.offerScore}
+                  discount={discount}
+                  isFreeShipping={bestOffer.isFreeShipping}
+                  offersCount={allOffers.length}
+                  sourceSlug={bestOffer.sourceSlug}
+                />
+              )}
+            </MobileDecisionCompact>
           )}
+
+          {/* Desktop decision blocks — hidden on mobile */}
+          <div className="hidden lg:block space-y-6">
+            {allOffers.length > 0 && (
+              <DecisionSummary
+                offers={allOffers}
+                productName={product.name}
+                avgHistorical={priceStats?.avg30d}
+                priceStats={priceStats ? {
+                  avg30d: priceStats.avg30d,
+                  min30d: priceStats.min30d,
+                  allTimeMin: priceStats.allTimeMin,
+                  trend: priceStats.trend,
+                } : null}
+              />
+            )}
+            {bestOffer && (
+              <SmartDecisionBlock
+                productName={product.name}
+                currentPrice={bestPrice}
+                originalPrice={bestOffer.originalPrice ?? undefined}
+                avg30d={priceStats?.avg30d}
+                allTimeMin={priceStats?.allTimeMin}
+                offersCount={allOffers.length}
+                isFreeShipping={bestOffer.isFreeShipping}
+                offerScore={bestOffer.offerScore}
+                trend={priceStats?.trend}
+                buySignal={buySignal}
+              />
+            )}
+            {priceStats && bestOffer && (
+              <OpportunityScore
+                priceStats={priceStats}
+                offerScore={bestOffer.offerScore}
+                discount={discount}
+                isFreeShipping={bestOffer.isFreeShipping}
+                offersCount={allOffers.length}
+                sourceSlug={bestOffer.sourceSlug}
+              />
+            )}
+          </div>
 
           {/* Better Alternative Hint */}
           {bestOffer && alternatives.length > 0 && (
@@ -619,6 +671,15 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             </div>
           )}
 
+          {/* Inline alert prompt — "Quer pagar menos?" */}
+          {product.listings[0] && (
+            <InlineAlertPrompt
+              listingId={product.listings[0].id}
+              currentPrice={bestPrice}
+              productName={product.name}
+            />
+          )}
+
           {/* Commercial CTA — enhanced secondary CTA */}
           {bestOffer && (
             <CommercialCTA
@@ -632,6 +693,17 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               installments={showInstallment ? `${installmentCount}x de ${formatPrice(installmentValue)}` : undefined}
               productSlug={slug}
             />
+          )}
+
+          {/* Price Alert — moved up near purchase decision area */}
+          {bestOffer && product.listings[0] && (
+            <div id="price-alert">
+              <PriceAlertForm
+                listingId={product.listings[0].id}
+                currentPrice={bestPrice}
+                productName={product.name}
+              />
+            </div>
           )}
 
           {/* Trust signals strip */}
@@ -904,17 +976,6 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               price={bestOffer ? formatPrice(bestPrice) : ""}
             />
           </div>
-
-          {/* Price Alert */}
-          {bestOffer && product.listings[0] && (
-            <div id="price-alert">
-              <PriceAlertForm
-                listingId={product.listings[0].id}
-                currentPrice={bestPrice}
-                productName={product.name}
-              />
-            </div>
-          )}
 
           {/* Trust disclaimer */}
           <div className="card p-4 flex items-center gap-3">

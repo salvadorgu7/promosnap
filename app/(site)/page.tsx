@@ -31,6 +31,7 @@ import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, get
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
 import prisma from "@/lib/db/prisma";
 import { formatNumber } from "@/lib/utils";
+import Econometro from "@/components/home/Econometro";
 
 // Priority category slugs — controls sort order in the categories grid
 const PRIORITY_SLUGS = ["celulares", "notebooks", "esportes"];
@@ -203,12 +204,7 @@ export default async function HomePage() {
 
           {/* Econômetro + Compact stats — single row */}
           <div className="mt-4 flex flex-wrap justify-center gap-4 md:gap-8 text-center">
-            <div className="px-4 py-2 rounded-xl bg-accent-green/10 border border-accent-green/20">
-              <div className="font-display font-extrabold text-xl md:text-2xl text-accent-green">
-                R$ {formatNumber(Math.round((stats.clickoutsWeek || 3495) * 47.5 + 125000))}
-              </div>
-              <div className="text-[10px] text-accent-green/80 font-medium">Economia gerada</div>
-            </div>
+            <Econometro value={Math.round((stats.clickoutsWeek || 3495) * 47.5 + 125000)} />
             <div>
               <div className="font-display font-bold text-lg text-accent-blue">
                 {stats.activeOffers > 0 ? formatNumber(stats.activeOffers) : "—"}

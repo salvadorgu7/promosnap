@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Bell, BellRing, X, Loader2, TrendingDown } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { analytics } from "@/lib/analytics/events";
@@ -72,6 +72,13 @@ export default function PriceAlertForm({ listingId, currentPrice, productName }:
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
+  // Listen for ps:open-alert custom event (from MobileProductActions bell button)
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("ps:open-alert", handler);
+    return () => window.removeEventListener("ps:open-alert", handler);
+  }, []);
+
   const suggestedTargets = [
     { label: "-5%", value: Math.floor(currentPrice * 0.95) },
     { label: "-10%", value: Math.floor(currentPrice * 0.9) },
@@ -98,6 +105,7 @@ export default function PriceAlertForm({ listingId, currentPrice, productName }:
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao criar alerta");
       analytics.priceAlertSet({ productId: listingId, targetPrice });
+      try { localStorage.setItem(`ps_alert_${listingId}`, "1"); } catch {}
       setSuccess(true);
       setTimeout(() => {
         setOpen(false);
@@ -110,16 +118,56 @@ export default function PriceAlertForm({ listingId, currentPrice, productName }:
     }
   };
 
+  const quickCreate = useCallback(async () => {
+    if (!email || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      try { localStorage.setItem("ps_email", email.trim()); } catch {}
+      const target = Math.floor(currentPrice * 0.9);
+      const res = await fetch("/api/alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId, email: email.trim(), targetPrice: target }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao criar alerta");
+      analytics.priceAlertSet({ productId: listingId, targetPrice: target });
+      try { localStorage.setItem(`ps_alert_${listingId}`, "1"); } catch {}
+      setSuccess(true);
+      setOpen(true);
+      setTimeout(() => { setOpen(false); setSuccess(false); }, 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      setOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [email, loading, currentPrice, listingId]);
+
   if (!open) {
+    const hasSavedEmail = email.length > 3;
     return (
-      <button
-        id="alerta"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-orange/10 text-accent-orange text-sm font-medium hover:bg-accent-orange/20 transition-colors"
-      >
-        <Bell className="w-4 h-4" />
-        Alertar quando baixar
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          id="alerta"
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-orange/10 text-accent-orange text-sm font-medium hover:bg-accent-orange/20 transition-colors"
+        >
+          <Bell className="w-4 h-4" />
+          Alertar quando baixar
+        </button>
+        {hasSavedEmail && (
+          <button
+            onClick={quickCreate}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent-orange text-white text-xs font-semibold hover:bg-accent-orange/90 transition-colors disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bell className="w-3 h-3" />}
+            Alerta -10%
+          </button>
+        )}
+      </div>
     );
   }
 

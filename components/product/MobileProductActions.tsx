@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Heart, Share2, ShieldCheck, Zap } from "lucide-react";
+import { ExternalLink, Heart, Share2, ShieldCheck, Zap, Bell } from "lucide-react";
 import { useState, useEffect } from "react";
 import { logger } from "@/lib/logger"
 
@@ -113,6 +113,19 @@ export default function MobileProductActions({
           className="p-2 rounded-lg border border-surface-200 bg-surface-50 text-text-muted"
         >
           <Share2 className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={() => {
+            const el = document.getElementById("price-alert");
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+              window.dispatchEvent(new CustomEvent("ps:open-alert"));
+            }
+          }}
+          className="p-2 rounded-lg border border-accent-orange/30 bg-accent-orange/10 text-accent-orange"
+        >
+          <Bell className="w-4 h-4" />
         </button>
 
         {/* Buy CTA — larger and more prominent */}
