@@ -174,61 +174,65 @@ export default async function HomePage() {
         activeOffers={stats.activeOffers || 0}
       />
 
-      {/* ===== 1. HERO — Compact, mobile-first ===== */}
+      {/* ===== 1. HERO — Premium, mobile-first ===== */}
       <section id="hero" className="hero-premium relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-brand-500/6 rounded-full blur-[80px] pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-4 pt-6 pb-4 md:pt-10 md:pb-6">
+        <div className="relative max-w-7xl mx-auto px-4 pt-8 pb-6 md:pt-14 md:pb-10">
           <div className="max-w-2xl mx-auto text-center">
             <h1 className="font-display font-extrabold text-2xl md:text-4xl text-surface-900 tracking-tight leading-[1.15]">
               Encontre o <span className="text-gradient">melhor preço</span> com IA
             </h1>
 
-            <p className="mt-1.5 text-surface-500 text-sm md:text-base max-w-md mx-auto">
+            <p className="mt-2 text-surface-500 text-sm md:text-base max-w-md mx-auto">
               Busque qualquer produto. Comparamos preços, analisamos histórico e te ajudamos a decidir.
             </p>
 
-            <div className="mt-4 max-w-xl mx-auto">
+            <div className="mt-5 max-w-xl mx-auto">
               <SearchBar large />
             </div>
 
             <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-              {["iPhone 15", "Air Fryer", "PS5", "Notebook", "Fone Bluetooth"].map((tag) => (
+              {["iPhone 15", "Air Fryer", "PS5", "Notebook", "Fone Bluetooth"].map((tag, i) => (
                 <a key={tag} href={`/busca?q=${encodeURIComponent(tag)}`}
-                  className="px-2.5 py-1 rounded-full bg-white border border-surface-200 text-[11px] text-surface-500 hover:text-brand-600 hover:border-brand-500/30 hover:bg-brand-50 transition-all shadow-sm">
-                  {tag}
+                  className="px-2.5 py-1 rounded-full bg-white border border-surface-200 text-[11px] text-surface-500 hover:text-brand-600 hover:border-brand-500/30 hover:bg-brand-50 transition-all shadow-sm hover:scale-[1.03]">
+                  {i === 0 && <span className="mr-0.5">🔥</span>}{tag}
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Econômetro + Compact stats — single row */}
-          <div className="mt-4 flex flex-wrap justify-center gap-4 md:gap-8 text-center">
-            <Econometro value={Math.round((stats.clickoutsWeek || 3495) * 47.5 + 125000)} />
-            <div>
-              <div className="font-display font-bold text-lg text-accent-blue">
-                {stats.activeOffers > 0 ? formatNumber(stats.activeOffers) : "—"}
-              </div>
-              <div className="text-[10px] text-text-muted">Ofertas</div>
+          {/* Econômetro card — stats integrados */}
+          <div className="mt-6">
+            <Econometro
+              value={Math.round((stats.clickoutsWeek || 3495) * 47.5 + 125000)}
+              offers={stats.activeOffers || undefined}
+              products={stats.listings || undefined}
+              stores={stats.sources || undefined}
+            />
+          </div>
+
+          {/* Trust bar inline */}
+          <div className="mt-4 flex flex-col items-center gap-1.5">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              {[
+                { name: "Amazon", color: "text-[#FF9900]" },
+                { name: "Mercado Livre", color: "text-[#2D3277]" },
+                { name: "Shopee", color: "text-[#EE4D2D]" },
+                { name: "Shein", color: "text-surface-800" },
+              ].map((store) => (
+                <span key={store.name} className="flex items-center gap-1 text-xs font-medium text-text-secondary">
+                  <svg className="w-3 h-3 text-accent-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className={store.color}>{store.name}</span>
+                </span>
+              ))}
             </div>
-            <div>
-              <div className="font-display font-bold text-lg text-accent-orange">
-                {stats.listings > 0 ? formatNumber(stats.listings) : "—"}
-              </div>
-              <div className="text-[10px] text-text-muted">Produtos</div>
-            </div>
-            <div>
-              <div className="font-display font-bold text-lg text-surface-600">
-                {stats.sources}
-              </div>
-              <div className="text-[10px] text-text-muted">Lojas</div>
-            </div>
+            <p className="text-[10px] text-text-muted">+ mais lojas sendo adicionadas</p>
           </div>
         </div>
       </section>
-
-      {/* ===== 1b. STORE TRUST BAR ===== */}
-      <StoreTrustBar />
 
       {/* ===== 2. TRENDING TAGS ===== */}
       {trendingKeywords.length > 0 && (

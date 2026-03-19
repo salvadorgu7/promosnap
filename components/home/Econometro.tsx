@@ -1,17 +1,26 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { TrendingUp, ShoppingBag, Package, Store } from "lucide-react"
 
 interface EconometroProps {
   value: number
+  offers?: number
+  products?: number
+  stores?: number
 }
 
-export default function Econometro({ value }: EconometroProps) {
+function formatStat(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return n.toString()
+}
+
+export default function Econometro({ value, offers, products, stores }: EconometroProps) {
   const [display, setDisplay] = useState(value)
   const animated = useRef(false)
 
   useEffect(() => {
-    // On client mount, animate from current display to value
     if (animated.current || display === value) return
     animated.current = true
 
@@ -32,11 +41,45 @@ export default function Econometro({ value }: EconometroProps) {
   const formatted = display.toLocaleString("pt-BR")
 
   return (
-    <div className="px-4 py-2 rounded-xl bg-accent-green/10 border border-accent-green/20">
-      <div className="font-display font-extrabold text-xl md:text-2xl text-accent-green">
-        R$ {formatted}
+    <div className="max-w-lg mx-auto rounded-2xl bg-gradient-to-br from-accent-green/5 to-accent-green/10 border border-accent-green/15 p-5 md:p-6 shadow-card">
+      {/* Main value */}
+      <div className="flex items-center justify-center gap-3">
+        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-accent-green/15 flex items-center justify-center flex-shrink-0">
+          <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-accent-green" />
+        </div>
+        <div>
+          <div className="font-display font-extrabold text-3xl md:text-4xl text-accent-green tracking-tight">
+            R$ {formatted}
+          </div>
+          <div className="text-xs text-accent-green/70 font-medium">
+            economia gerada para compradores esta semana
+          </div>
+        </div>
       </div>
-      <div className="text-[10px] text-accent-green/80 font-medium">Economia gerada</div>
+
+      {/* Stats chips */}
+      {(offers || products || stores) && (
+        <div className="mt-4 flex items-center justify-center gap-2 md:gap-3 flex-wrap">
+          {offers != null && offers > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-surface-200/60 text-xs font-medium text-text-secondary">
+              <ShoppingBag className="w-3 h-3 text-accent-blue" />
+              <span className="font-bold text-accent-blue">{formatStat(offers)}</span> ofertas
+            </div>
+          )}
+          {products != null && products > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-surface-200/60 text-xs font-medium text-text-secondary">
+              <Package className="w-3 h-3 text-accent-orange" />
+              <span className="font-bold text-accent-orange">{formatStat(products)}</span> produtos
+            </div>
+          )}
+          {stores != null && stores > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-surface-200/60 text-xs font-medium text-text-secondary">
+              <Store className="w-3 h-3 text-surface-600" />
+              <span className="font-bold text-surface-700">{formatStat(stores)}</span> lojas
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
