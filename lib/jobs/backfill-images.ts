@@ -10,7 +10,7 @@ import { isValidImageUrl } from '@/lib/images'
 
 const BATCH_SIZE = 50
 // og:image scraping is slow — limit per run to stay within Vercel's 60s timeout
-const MAX_OG_SCRAPES_PER_RUN = 8
+const MAX_OG_SCRAPES_PER_RUN = 15
 
 /** WhatsApp/Meta CDN URLs expire in ~14 days — never use them as permanent images */
 function isExpirableUrl(url: string): boolean {
@@ -73,11 +73,14 @@ export async function backfillImages() {
           { imageUrl: { contains: 'mmg.' } },
           { imageUrl: { contains: 'fbcdn.net' } },
         ],
-        status: 'ACTIVE',
+        // Include INACTIVE products — they may have been deactivated BECAUSE they had no image.
+        // When we find an image, we reactivate them.
+        status: { in: ['ACTIVE', 'INACTIVE'] },
       },
       select: {
         id: true,
         name: true,
+        status: true,
         listings: {
           select: {
             imageUrl: true,
@@ -111,10 +114,14 @@ export async function backfillImages() {
       if (listingImage?.imageUrl) {
         await prisma.product.update({
           where: { id: product.id },
-          data: { imageUrl: listingImage.imageUrl },
+          data: {
+            imageUrl: listingImage.imageUrl,
+            // Reactivate if was deactivated due to missing image
+            ...(product.status === 'INACTIVE' ? { status: 'ACTIVE' } : {}),
+          },
         })
         healed++
-        ctx.log(`[listing] Healed "${product.name}" from listing image`)
+        ctx.log(`[listing] Healed "${product.name}" from listing image${product.status === 'INACTIVE' ? ' (reactivated)' : ''}`)
         continue
       }
 
@@ -136,7 +143,10 @@ export async function backfillImages() {
             if (imageUrl && isValidImageUrl(imageUrl)) {
               await prisma.product.update({
                 where: { id: product.id },
-                data: { imageUrl },
+                data: {
+                  imageUrl,
+                  ...(product.status === 'INACTIVE' ? { status: 'ACTIVE' } : {}),
+                },
               })
               // Also update the listing
               await prisma.listing.updateMany({
@@ -162,7 +172,10 @@ export async function backfillImages() {
         if (imageUrl) {
           await prisma.product.update({
             where: { id: product.id },
-            data: { imageUrl },
+            data: {
+              imageUrl,
+              ...(product.status === 'INACTIVE' ? { status: 'ACTIVE' } : {}),
+            },
           })
           await prisma.listing.updateMany({
             where: { productId: product.id, imageUrl: null },
