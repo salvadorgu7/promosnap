@@ -23,9 +23,6 @@ export default function ProductCaveat({
   } else if (trend === "up" && buySignal?.level === "neutro") {
     caveat = { text: "Preco em alta recente — compare com alternativas antes de decidir.", severity: "warn" }
   } else if (cheaperAlternative) {
-    const pctCheaper = cheaperAlternative.price > 0
-      ? Math.round(((cheaperAlternative.price) / cheaperAlternative.price) * 100)
-      : null
     caveat = {
       text: `Alternativa mais barata: ${cheaperAlternative.name} por ${formatPrice(cheaperAlternative.price)}.`,
       severity: "info",

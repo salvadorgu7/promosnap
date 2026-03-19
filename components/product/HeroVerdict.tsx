@@ -16,11 +16,10 @@ interface HeroVerdictProps {
 
 function computeVerdict(signal: BuySignal, discount?: number | null): Verdict {
   if (signal.level === "excelente") return "comprar"
-  if (signal.level === "bom" && (discount ?? 0) >= 15) return "comprar"
   if (signal.level === "bom") return "comprar"
   if (signal.level === "aguarde") return "esperar"
-  if (signal.level === "neutro" && signal.color === "gray") return "esperar"
-  return "comprar"
+  if (signal.level === "neutro") return "esperar"
+  return "esperar"
 }
 
 const VERDICT_CONFIG: Record<Verdict, {

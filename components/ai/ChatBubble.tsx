@@ -41,11 +41,7 @@ const QUICK_PROMPTS = [
   "Smart TV custo-benefício",
 ];
 
-interface ChatBubbleProps {
-  productContext?: { name: string; price: number; slug: string }
-}
-
-export default function ChatBubble({ productContext }: ChatBubbleProps = {}) {
+export default function ChatBubble() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");

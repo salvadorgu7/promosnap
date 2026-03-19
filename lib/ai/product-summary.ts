@@ -86,7 +86,13 @@ export async function generateProductSummary(
     const content = data.choices?.[0]?.message?.content
     if (!content) return null
 
-    const parsed = JSON.parse(content) as { summary?: string; goodFor?: string; considerIf?: string }
+    let parsed: { summary?: string; goodFor?: string; considerIf?: string }
+    try {
+      parsed = JSON.parse(content)
+    } catch {
+      log.error("product-summary.json-parse-failed", { content: content.slice(0, 200) })
+      return null
+    }
 
     return {
       summary: parsed.summary || "Resumo indisponivel.",

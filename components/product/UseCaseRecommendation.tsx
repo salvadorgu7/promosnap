@@ -37,9 +37,14 @@ function scoreProductForUseCases(
       if (val == null) continue
 
       const weight = uc.weights[attr.key] ?? attr.baseWeight
-      // Simple normalization: assume extracted value presence = positive signal
-      // Higher weight = more important for this use case
-      const normalized = Math.min(val / (attr.key === 'camera' ? 108 : attr.key === 'battery' ? 6000 : attr.key === 'storage' ? 512 : attr.key === 'ram' ? 16 : attr.key === 'screen' ? 6.7 : 100), 1)
+      // Normalize against typical max values per attribute
+      const MAX_VALUES: Record<string, number> = {
+        camera: 200, battery: 6000, storage: 512, ram: 16,
+        screen: 6.7, ssd: 2048, weight: 3, processor: 100,
+        refresh: 240, resolution: 8, driver: 50, anc: 1,
+      }
+      const maxVal = MAX_VALUES[attr.key] ?? 100
+      const normalized = Math.min(val / maxVal, 1)
       weightedSum += normalized * weight
       totalWeight += weight
     }
