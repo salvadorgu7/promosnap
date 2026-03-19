@@ -325,6 +325,142 @@ const SMART_TVS: CategoryComparisonConfig = {
   conKeywords: ['sem hdr', 'hd apenas', 'painel va', 'sem bluetooth', 'som fraco'],
 }
 
+// ── Informatica (GPUs, CPUs, SSDs) ──────────────────────────────────────────
+
+const INFORMATICA: CategoryComparisonConfig = {
+  slug: 'informatica',
+  name: 'Informática',
+  attributes: [
+    {
+      key: 'vram',
+      label: 'Memória VRAM',
+      extractors: [/(\d+)\s*gb\b/i],
+      unit: 'GB',
+      higherIsBetter: true,
+      baseWeight: 8,
+    },
+    {
+      key: 'cores',
+      label: 'Núcleos',
+      extractors: [/(\d+)\s*(?:cores?|n[uú]cleos?)/i, /(\d+)\s*threads/i],
+      unit: '',
+      higherIsBetter: true,
+      baseWeight: 7,
+    },
+    {
+      key: 'clock',
+      label: 'Frequência',
+      extractors: [/(\d+[.,]\d+)\s*ghz/i],
+      unit: 'GHz',
+      higherIsBetter: true,
+      baseWeight: 6,
+    },
+    {
+      key: 'storage',
+      label: 'Capacidade',
+      extractors: [/(\d+)\s*(?:gb|tb)\b/i],
+      unit: 'GB',
+      higherIsBetter: true,
+      baseWeight: 7,
+    },
+  ],
+  useCases: [
+    { slug: 'gaming', label: 'Gaming', description: 'Desempenho em jogos', weights: { vram: 10, clock: 8, cores: 6, storage: 4 } },
+    { slug: 'trabalho', label: 'Trabalho', description: 'Produtividade e multitarefa', weights: { cores: 10, clock: 7, storage: 8, vram: 4 } },
+    { slug: 'custo-beneficio', label: 'Custo-Benefício', description: 'Melhor relação preço/desempenho', weights: { cores: 7, clock: 7, storage: 7, vram: 7 } },
+  ],
+  proKeywords: ['ddr5', 'pcie 5', 'nvme', 'gen5', 'desbloqueado', 'overclock'],
+  conKeywords: ['ddr4', 'pcie 3', 'sem cooler', 'tdp alto'],
+}
+
+// ── Casa (Air Fryers, Cafeteiras, etc.) ─────────────────────────────────────
+
+const CASA: CategoryComparisonConfig = {
+  slug: 'casa',
+  name: 'Casa e Cozinha',
+  attributes: [
+    {
+      key: 'capacity',
+      label: 'Capacidade',
+      extractors: [/(\d+[.,]?\d*)\s*(?:l|litros?)\b/i, /(\d+[.,]?\d*)\s*(?:ml)\b/i],
+      unit: 'L',
+      higherIsBetter: true,
+      baseWeight: 8,
+    },
+    {
+      key: 'power',
+      label: 'Potência',
+      extractors: [/(\d+)\s*w\b/i],
+      unit: 'W',
+      higherIsBetter: true,
+      baseWeight: 6,
+    },
+    {
+      key: 'voltage',
+      label: 'Voltagem',
+      extractors: [/(110|127|220)\s*v/i],
+      unit: 'V',
+      higherIsBetter: false,
+      baseWeight: 2,
+    },
+  ],
+  useCases: [
+    { slug: 'familia-grande', label: 'Família Grande', description: 'Capacidade para 4+ pessoas', weights: { capacity: 10, power: 7, voltage: 1 } },
+    { slug: 'compacto', label: 'Compacto', description: 'Ideal para espaços pequenos', weights: { capacity: 3, power: 5, voltage: 1 } },
+    { slug: 'custo-beneficio', label: 'Custo-Benefício', description: 'Melhor relação preço/qualidade', weights: { capacity: 6, power: 6, voltage: 1 } },
+  ],
+  proKeywords: ['inox', 'timer', 'digital', 'antiaderente', 'silencioso', 'lavável'],
+  conKeywords: ['plástico', 'barulhento', 'manual', 'sem timer'],
+}
+
+// ── Gamer (Cadeiras, Periféricos) ───────────────────────────────────────────
+
+const GAMER: CategoryComparisonConfig = {
+  slug: 'gamer',
+  name: 'Setup Gamer',
+  attributes: [
+    {
+      key: 'refresh',
+      label: 'Taxa de Atualização',
+      extractors: [/(\d+)\s*hz/i],
+      unit: 'Hz',
+      higherIsBetter: true,
+      baseWeight: 8,
+    },
+    {
+      key: 'resolution',
+      label: 'Resolução',
+      extractors: [/(1080|1440|2160|4k)\b/i],
+      unit: 'p',
+      higherIsBetter: true,
+      baseWeight: 7,
+    },
+    {
+      key: 'response',
+      label: 'Tempo de Resposta',
+      extractors: [/(\d+)\s*ms/i],
+      unit: 'ms',
+      higherIsBetter: false,
+      baseWeight: 6,
+    },
+    {
+      key: 'dpi',
+      label: 'DPI',
+      extractors: [/(\d+)\s*dpi/i],
+      unit: 'DPI',
+      higherIsBetter: true,
+      baseWeight: 5,
+    },
+  ],
+  useCases: [
+    { slug: 'fps-competitivo', label: 'FPS Competitivo', description: 'Máxima resposta e refresh rate', weights: { refresh: 10, response: 10, dpi: 8, resolution: 4 } },
+    { slug: 'imersao', label: 'Imersão', description: 'Visual e conforto', weights: { resolution: 10, refresh: 6, response: 5, dpi: 3 } },
+    { slug: 'custo-beneficio', label: 'Custo-Benefício', description: 'Bom setup sem gastar muito', weights: { refresh: 7, resolution: 7, response: 6, dpi: 5 } },
+  ],
+  proKeywords: ['rgb', 'mecânico', 'ergonômico', 'ips', 'curvo', 'ajustável'],
+  conKeywords: ['membrana', 'sem ajuste', 'painel tn', 'plástico'],
+}
+
 // ── Registry ───────────────────────────────────────────────────────────────
 
 const CATEGORY_CONFIGS: Record<string, CategoryComparisonConfig> = {
@@ -332,6 +468,9 @@ const CATEGORY_CONFIGS: Record<string, CategoryComparisonConfig> = {
   notebooks: NOTEBOOKS,
   audio: FONES,
   'smart-tvs': SMART_TVS,
+  informatica: INFORMATICA,
+  casa: CASA,
+  gamer: GAMER,
 }
 
 export function getCategoryConfig(slug: string): CategoryComparisonConfig | null {
