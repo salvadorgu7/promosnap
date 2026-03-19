@@ -23,6 +23,8 @@ interface Product {
   affiliateUrl: string;
   imageUrl?: string;
   isFromCatalog: boolean;
+  confidence?: "verified" | "resolved" | "raw";
+  monetization?: "verified" | "best_effort" | "none";
   slug?: string;
 }
 
@@ -169,6 +171,11 @@ export default function AssistentePage() {
                           <span className="text-[10px] text-text-muted">
                             {p.source}
                           </span>
+                          {p.confidence === "verified" && (
+                            <span className="text-[9px] px-1 py-0.5 rounded bg-accent-green/10 text-accent-green font-medium">
+                              ✓ Verificado
+                            </span>
+                          )}
                         </div>
                       </div>
                       <ExternalLink className="w-3.5 h-3.5 text-surface-400 flex-shrink-0" />

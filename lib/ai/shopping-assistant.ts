@@ -32,8 +32,18 @@ export interface AssistantMessage {
 export interface AssistantResponse {
   message: string
   products?: AssistantProduct[]
-  sources?: string[]
+  /** Which data sources were used */
+  dataSources: ('catalog' | 'web' | 'comparison')[]
+  /** Tracking metadata */
+  meta: {
+    toolsUsed: string[]
+    catalogHits: number
+    webUsed: boolean
+    durationMs: number
+  }
 }
+
+export type MonetizationStatus = 'verified' | 'best_effort' | 'none'
 
 export interface AssistantProduct {
   name: string
@@ -44,7 +54,12 @@ export interface AssistantProduct {
   url: string
   affiliateUrl: string
   imageUrl?: string
+  /** Whether this product comes from our verified catalog */
   isFromCatalog: boolean
+  /** Confidence in the data: verified (catalog), resolved (matched external), raw (web result) */
+  confidence: 'verified' | 'resolved' | 'raw'
+  /** Can we monetize this clickout? */
+  monetization: MonetizationStatus
   buySignal?: string
   slug?: string
 }
@@ -110,6 +125,22 @@ CONTEXTO:
 - Links de afiliado geram comissão sem custo extra ao usuário
 - Foco em produtos reais com preços verificados`
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function makeResponse(message: string, startTime: number, extra?: Partial<AssistantResponse>): AssistantResponse {
+  return {
+    message,
+    dataSources: extra?.dataSources || [],
+    meta: {
+      toolsUsed: extra?.meta?.toolsUsed || [],
+      catalogHits: extra?.meta?.catalogHits || 0,
+      webUsed: extra?.meta?.webUsed || false,
+      durationMs: Date.now() - startTime,
+    },
+    products: extra?.products,
+  }
+}
+
 // ── Core Function ──────────────────────────────────────────────────────────
 
 export function isAIConfigured(): boolean {
@@ -124,9 +155,14 @@ export async function processShoppingQuery(
   userMessage: string,
   conversationHistory: AssistantMessage[] = []
 ): Promise<AssistantResponse> {
+  const startTime = Date.now()
+  const meta = { toolsUsed: [] as string[], catalogHits: 0, webUsed: false, durationMs: 0 }
+
   if (!OPENAI_API_KEY) {
     return {
       message: 'O assistente de compras não está configurado. Configure OPENAI_API_KEY para ativar.',
+      dataSources: [],
+      meta: { ...meta, durationMs: Date.now() - startTime },
     }
   }
 
@@ -167,9 +203,7 @@ export async function processShoppingQuery(
     return parseOpenAIResponse(data)
   } catch (err) {
     log.error('shopping-assistant.failed', { error: err })
-    return {
-      message: 'Desculpe, houve um erro ao processar sua busca. Tente novamente ou use a busca tradicional.',
-    }
+    return makeResponse('Desculpe, houve um erro ao processar sua busca. Tente novamente ou use a busca tradicional.', startTime)
   }
 }
 
@@ -202,14 +236,14 @@ async function fallbackToChatCompletions(
     if (!response.ok) {
       const errText = await response.text()
       log.error('openai.chat.failed', { status: response.status, error: errText.slice(0, 200) })
-      return { message: 'Não foi possível conectar ao assistente. Use a busca tradicional em /busca.' }
+      return makeResponse('Não foi possível conectar ao assistente. Use a busca tradicional em /busca.', 0)
     }
 
     const data = await response.json()
     const choice = data.choices?.[0]
 
     if (!choice) {
-      return { message: 'Resposta vazia do assistente. Tente reformular sua pergunta.' }
+      return makeResponse('Resposta vazia do assistente. Tente reformular sua pergunta.', 0)
     }
 
     // Handle tool calls
@@ -217,12 +251,10 @@ async function fallbackToChatCompletions(
       return await handleToolCalls(choice.message.tool_calls, messages)
     }
 
-    return {
-      message: choice.message?.content || 'Sem resposta.',
-    }
+    return makeResponse(choice.message?.content || 'Sem resposta.', 0)
   } catch (err) {
     log.error('chat-completions.failed', { error: err })
-    return { message: 'Erro ao processar. Tente a busca tradicional em /busca.' }
+    return makeResponse('Erro ao processar. Tente a busca tradicional em /busca.', 0)
   }
 }
 
@@ -283,14 +315,21 @@ async function handleToolCalls(
     const data = await response.json()
     const finalMessage = data.choices?.[0]?.message?.content || 'Sem resposta.'
 
+    const dataSources: AssistantResponse['dataSources'] = []
+    if (collectedProducts.some(p => p.isFromCatalog)) dataSources.push('catalog')
+
     return {
       message: finalMessage,
       products: collectedProducts.length > 0 ? collectedProducts : undefined,
+      dataSources,
+      meta: { toolsUsed: toolCalls.map((c: any) => c.function.name), catalogHits: collectedProducts.length, webUsed: false, durationMs: 0 },
     }
   } catch {
     return {
       message: 'Erro ao processar resultados. Tente novamente.',
       products: collectedProducts.length > 0 ? collectedProducts : undefined,
+      dataSources: ['catalog'],
+      meta: { toolsUsed: [], catalogHits: 0, webUsed: false, durationMs: 0 },
     }
   }
 }
@@ -317,18 +356,23 @@ async function executeLocalSearch(
     const data = await res.json()
     const products = data.products || []
 
-    return products.slice(0, limit).map((p: any) => ({
-      name: p.name,
-      price: p.bestOffer?.price,
-      originalPrice: p.bestOffer?.originalPrice,
-      discount: p.bestOffer?.discount,
-      source: p.bestOffer?.sourceName || 'PromoSnap',
-      url: `${APP_URL}/produto/${p.slug}`,
-      affiliateUrl: p.bestOffer?.affiliateUrl || `${APP_URL}/produto/${p.slug}`,
-      imageUrl: p.imageUrl,
-      isFromCatalog: true,
-      slug: p.slug,
-    }))
+    return products.slice(0, limit).map((p: any) => {
+      const hasAffiliate = p.bestOffer?.affiliateUrl && p.bestOffer.affiliateUrl !== '#'
+      return {
+        name: p.name,
+        price: p.bestOffer?.price,
+        originalPrice: p.bestOffer?.originalPrice,
+        discount: p.bestOffer?.discount,
+        source: p.bestOffer?.sourceName || 'PromoSnap',
+        url: `${APP_URL}/produto/${p.slug}`,
+        affiliateUrl: hasAffiliate ? p.bestOffer.affiliateUrl : `${APP_URL}/produto/${p.slug}`,
+        imageUrl: p.imageUrl,
+        isFromCatalog: true,
+        confidence: 'verified' as const,
+        monetization: (hasAffiliate ? 'verified' : 'none') as MonetizationStatus,
+        slug: p.slug,
+      }
+    })
   } catch (err) {
     log.error('local-search.failed', { query, error: err })
     return []
@@ -371,8 +415,9 @@ function parseOpenAIResponse(data: any): AssistantResponse {
     }
   }
 
-  return {
-    message: message || 'Processando sua busca...',
+  return makeResponse(message || 'Processando sua busca...', 0, {
     products: products.length > 0 ? products : undefined,
-  }
+    dataSources: ['web'],
+    meta: { toolsUsed: ['web_search'], catalogHits: 0, webUsed: true, durationMs: 0 },
+  })
 }
