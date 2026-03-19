@@ -39,10 +39,18 @@ export default async function OfertaSlugPage({
   const page = OFFER_PAGES[slug];
   if (!page) notFound();
 
-  const { products, total } = await searchListings(page.searchQuery, {
-    limit: 20,
-    sort: "score",
-  });
+  let products: Awaited<ReturnType<typeof searchListings>>["products"] = [];
+  let total = 0;
+  try {
+    const result = await searchListings(page.searchQuery, {
+      limit: 20,
+      sort: "score",
+    });
+    products = result.products;
+    total = result.total;
+  } catch (err) {
+    console.error("[ofertas] DB fetch failed, rendering empty state:", err);
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">

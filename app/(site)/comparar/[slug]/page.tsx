@@ -40,17 +40,22 @@ export async function generateMetadata({
 }
 
 async function searchProducts(query: string, limit = 8): Promise<ProductCard[]> {
-  const products = await prisma.product.findMany({
-    where: {
-      status: "ACTIVE",
-      name: { contains: query, mode: "insensitive" },
-      listings: { some: { offers: { some: { isActive: true } } } },
-    },
-    include: PRODUCT_INCLUDE,
-    take: limit,
-    orderBy: { popularityScore: "desc" },
-  });
-  return products.map(buildProductCard).filter(Boolean) as ProductCard[];
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        status: "ACTIVE",
+        name: { contains: query, mode: "insensitive" },
+        listings: { some: { offers: { some: { isActive: true } } } },
+      },
+      include: PRODUCT_INCLUDE,
+      take: limit,
+      orderBy: { popularityScore: "desc" },
+    });
+    return products.map(buildProductCard).filter(Boolean) as ProductCard[];
+  } catch (err) {
+    console.error("[comparar] DB fetch failed, rendering empty state:", err);
+    return [];
+  }
 }
 
 function faqPageSchema(def: ComparisonDef) {

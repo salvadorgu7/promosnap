@@ -40,33 +40,38 @@ export default async function FaixaPrecoPage({
   if (!page) notFound();
 
   // Fetch products by category
-  const { products: allProducts } = await getProductsByCategory(page.categorySlug, {
-    limit: 16,
-    sort: "score",
-  });
-
-  // For "casa" category, also search by keyword to supplement results
-  let supplementary: typeof allProducts = [];
-  if (page.categorySlug === "casa") {
-    const { products: keywordProducts } = await searchListings("air fryer", {
+  let products: Awaited<ReturnType<typeof getProductsByCategory>>["products"] = [];
+  try {
+    const { products: allProducts } = await getProductsByCategory(page.categorySlug, {
       limit: 16,
       sort: "score",
     });
-    supplementary = keywordProducts;
-  }
 
-  // Merge and deduplicate
-  const merged = [...allProducts];
-  for (const p of supplementary) {
-    if (!merged.some((m) => m.id === p.id)) {
-      merged.push(p);
+    // For "casa" category, also search by keyword to supplement results
+    let supplementary: typeof allProducts = [];
+    if (page.categorySlug === "casa") {
+      const { products: keywordProducts } = await searchListings("air fryer", {
+        limit: 16,
+        sort: "score",
+      });
+      supplementary = keywordProducts;
     }
-  }
 
-  // Filter by max price
-  const products = merged.filter(
-    (p) => p.bestOffer.price <= page.maxPrice
-  );
+    // Merge and deduplicate
+    const merged = [...allProducts];
+    for (const p of supplementary) {
+      if (!merged.some((m) => m.id === p.id)) {
+        merged.push(p);
+      }
+    }
+
+    // Filter by max price
+    products = merged.filter(
+      (p) => p.bestOffer.price <= page.maxPrice
+    );
+  } catch (err) {
+    console.error("[faixa-preco] DB fetch failed, rendering empty state:", err);
+  }
 
   const formattedPrice = page.maxPrice.toLocaleString("pt-BR");
 

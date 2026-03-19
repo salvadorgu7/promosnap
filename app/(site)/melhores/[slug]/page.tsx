@@ -39,22 +39,27 @@ export async function generateMetadata({
 }
 
 async function fetchProducts(query: { categories?: string[]; brands?: string[]; keywords?: string[] }) {
-  // Try category-based query first
-  if (query.categories?.length) {
-    const { products } = await getProductsByCategory(query.categories[0], {
-      limit: 16,
-      sort: "score",
-    });
-    return products;
-  }
+  try {
+    // Try category-based query first
+    if (query.categories?.length) {
+      const { products } = await getProductsByCategory(query.categories[0], {
+        limit: 16,
+        sort: "score",
+      });
+      return products;
+    }
 
-  // Fallback to keyword search
-  if (query.keywords?.length) {
-    const { products } = await searchListings(query.keywords[0], { limit: 16, sort: "score" });
-    return products;
-  }
+    // Fallback to keyword search
+    if (query.keywords?.length) {
+      const { products } = await searchListings(query.keywords[0], { limit: 16, sort: "score" });
+      return products;
+    }
 
-  return [];
+    return [];
+  } catch (err) {
+    console.error("[melhores] DB fetch failed, rendering empty state:", err);
+    return [];
+  }
 }
 
 function getRelatedComparisons(query: { categories?: string[]; brands?: string[]; keywords?: string[] }) {

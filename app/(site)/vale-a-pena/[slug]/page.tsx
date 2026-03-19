@@ -54,23 +54,30 @@ export default async function ValeAPenaPage({
   if (!page) notFound();
 
   // Fetch main products
-  const { products } = await searchListings(page.productQuery, {
-    limit: 6,
-    sort: "score",
-  });
+  let products: Awaited<ReturnType<typeof searchListings>>["products"] = [];
+  let alternativeProducts: typeof products = [];
+  try {
+    const result = await searchListings(page.productQuery, {
+      limit: 6,
+      sort: "score",
+    });
+    products = result.products;
 
-  // Fetch alternative products
-  const alternativeResults = await Promise.all(
-    page.alternativeQueries.map((q) =>
-      searchListings(q, { limit: 4, sort: "score" })
-    )
-  );
-  const alternativeProducts = alternativeResults
-    .flatMap((r) => r.products)
-    .filter(
-      (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
-    )
-    .slice(0, 8);
+    // Fetch alternative products
+    const alternativeResults = await Promise.all(
+      page.alternativeQueries.map((q) =>
+        searchListings(q, { limit: 4, sort: "score" })
+      )
+    );
+    alternativeProducts = alternativeResults
+      .flatMap((r) => r.products)
+      .filter(
+        (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
+      )
+      .slice(0, 8);
+  } catch (err) {
+    console.error("[vale-a-pena] DB fetch failed, rendering empty state:", err);
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
