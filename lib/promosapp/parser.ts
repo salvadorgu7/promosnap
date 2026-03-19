@@ -135,8 +135,9 @@ function parsePrice(raw: string): number {
 function extractPrices(text: string): { current: number; original?: number } {
   // ── Strategy 1: "De X Por Y" pattern (most reliable) ────────────────────
   // Brazilian promo messages follow: "De R$ 699,00 Por R$ 123,75"
-  const dePattern = /(?:de|era|antes)\s*R?\$?\s*([\d.,]+)/gi
-  const porPattern = /(?:por|agora|hoje)\s*R?\$?\s*([\d.,]+)/gi
+  // Patterns allow optional emojis/punctuation between keyword and R$
+  const dePattern = /(?:de|era|antes)\s*:?\s*R?\$?\s*([\d.,]+)/gi
+  const porPattern = /(?:por|agora|hoje)\s*:?\s*R?\$?\s*([\d.,]+)/gi
 
   let dePrice = 0
   let porPrice = 0
@@ -150,12 +151,15 @@ function extractPrices(text: string): { current: number; original?: number } {
     return { current: porPrice, original: dePrice }
   }
 
-  // ── Strategy 2: emoji-labeled prices (💸 Por R$ X / 🏷️ De R$ Y) ───────
-  const emojiPorMatch = text.match(/💸\s*(?:por)?\s*R?\$?\s*([\d.,]+)/i)
-  const emojiDeMatch = text.match(/(?:🏷️|🏷)\s*(?:de)?\s*R?\$?\s*([\d.,]+)/i)
+  // ── Strategy 2: emoji-labeled prices (💸 Por R$ X / De R$ Y) ─────────
+  // Match 💸 emoji with optional "Por:" before the price
+  const emojiPorMatch = text.match(/💸\s*(?:por)?\s*:?\s*R?\$?\s*([\d.,]+)/i)
+  // Match 🏷️ emoji OR plain "De R$" before the 💸 line
+  const emojiDeMatch = text.match(/(?:🏷️|🏷)\s*(?:de)?\s*:?\s*R?\$?\s*([\d.,]+)/i)
   if (emojiPorMatch) {
     const ep = parsePrice(emojiPorMatch[1])
-    const ed = emojiDeMatch ? parsePrice(emojiDeMatch[1]) : 0
+    // Try emoji De first, then fall back to dePrice from Strategy 1
+    const ed = emojiDeMatch ? parsePrice(emojiDeMatch[1]) : dePrice
     if (ep > 0) return { current: ep, original: ed > ep ? ed : undefined }
   }
 
