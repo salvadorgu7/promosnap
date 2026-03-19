@@ -6,6 +6,7 @@ import PromoBanner from "@/components/ui/PromoBanner";
 import PromoModal from "@/components/ui/PromoModal";
 import ReturnHook from "@/components/engagement/ReturnHook";
 import StickyAlertBar from "@/components/engagement/StickyAlertBar";
+import ChatBubble from "@/components/ai/ChatBubble";
 import { organizationSchema, websiteSchema } from "@/lib/seo/metadata";
 
 export default function SiteLayout({
@@ -35,6 +36,7 @@ export default function SiteLayout({
       <Footer />
       <BottomNav />
       <PromoModal />
+      <ChatBubble />
     </div>
   );
 }
