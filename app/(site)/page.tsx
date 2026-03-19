@@ -335,9 +335,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ===== 5. AMAZON PROMO ===== */}
-      <AmazonPromo />
-
       {/* ===== 6. OFERTAS QUENTES (primary monetization rail) ===== */}
       {dedupedHotOffers.length > 0 && (
         <div id="hot-offers" className="section-alt py-4">
@@ -423,6 +420,9 @@ export default async function HomePage() {
           </RailSection>
         </div>
       )}
+
+      {/* ===== AMAZON PROMO — after commercial rails, before discovery ===== */}
+      <AmazonPromo />
 
       <SectionSeparator />
 

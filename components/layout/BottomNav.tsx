@@ -20,7 +20,7 @@ const categoryLinks = [
 const menuLinks = [
   { href: "/categorias", label: "Todas as Categorias", icon: Grid3X3, color: "text-brand-500" },
   { href: "/mais-vendidos", label: "Mais Vendidos", icon: Trophy, color: "text-accent-orange" },
-  { href: "/menor-preco", label: "Menor Preco", icon: TrendingDown, color: "text-accent-blue" },
+  { href: "/menor-preco", label: "Menor Preço", icon: TrendingDown, color: "text-accent-blue" },
   { href: "/cupons", label: "Cupons", icon: Tag, color: "text-accent-orange" },
   { href: "/radar", label: "Meu Radar", icon: Bell, color: "text-accent-purple" },
 ];

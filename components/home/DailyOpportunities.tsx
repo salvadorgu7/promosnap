@@ -64,7 +64,32 @@ export default function DailyOpportunities() {
     fetchOpportunities();
   }, []);
 
-  if (loading || opportunities.length === 0) return null;
+  // Show nothing if no opportunities after loading
+  if (!loading && opportunities.length === 0) return null;
+
+  // Skeleton loading state
+  if (loading) {
+    return (
+      <section className="py-4 md:py-6">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-surface-200 animate-pulse" />
+            <div className="w-40 h-5 bg-surface-200 rounded animate-pulse" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="p-3 rounded-xl border border-surface-200 bg-white">
+                <div className="aspect-square rounded-lg bg-surface-100 animate-pulse mb-2" />
+                <div className="h-4 bg-surface-200 rounded animate-pulse mb-1 w-3/4" />
+                <div className="h-3 bg-surface-100 rounded animate-pulse w-1/2" />
+                <div className="h-6 bg-surface-200 rounded animate-pulse mt-3 w-2/3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-4 md:py-6">
@@ -86,7 +111,7 @@ export default function DailyOpportunities() {
                 </span>
               </div>
               <p className="text-xs text-text-muted">
-                Produtos com maior valor de decisao agora
+                Produtos com maior valor de decisão agora
               </p>
             </div>
           </div>

@@ -7,12 +7,12 @@ import Newsletter from "@/components/home/Newsletter";
 const LINKS = {
   "Ofertas": [
     { href: "/ofertas", label: "Ofertas Quentes" },
-    { href: "/menor-preco", label: "Menor Preco Historico" },
+    { href: "/menor-preco", label: "Menor Preço Histórico" },
     { href: "/mais-vendidos", label: "Mais Vendidos" },
     { href: "/cupons", label: "Cupons de Desconto" },
     { href: "/categorias", label: "Todas as Categorias" },
     { href: "/marcas", label: "Marcas" },
-    { href: "/trending", label: "Tendencias" },
+    { href: "/trending", label: "Tendências" },
   ],
   "Lojas": [
     { href: "/loja/amazon-br", label: "Amazon Brasil" },
@@ -20,12 +20,12 @@ const LINKS = {
     { href: "/loja/shopee", label: "Shopee" },
     { href: "/loja/shein", label: "Shein" },
     { href: "/como-funciona", label: "Como Comparamos" },
-    { href: "/transparencia", label: "Transparencia" },
+    { href: "/transparencia", label: "Transparência" },
   ],
   "Conta": [
     { href: "/minha-conta", label: "Minha Conta" },
     { href: "/favoritos", label: "Meus Favoritos" },
-    { href: "/alertas", label: "Alertas de Preco" },
+    { href: "/alertas", label: "Alertas de Preço" },
     { href: "/sobre", label: "Sobre o PromoSnap" },
     { href: "/politica-privacidade", label: "Privacidade" },
     { href: "/termos", label: "Termos de Uso" },
@@ -61,7 +61,7 @@ export default function Footer() {
               <Logo size="md" />
             </Link>
             <p className="text-sm text-text-muted leading-relaxed mb-3">
-              Compare precos entre Amazon, Mercado Livre, Shopee e Shein. Historico de 90 dias, score de oferta e alertas de queda.
+              Compare preços entre Amazon, Mercado Livre, Shopee e Shein. Histórico de 90 dias, score de oferta e alertas de queda.
             </p>
             <p className="text-xs text-surface-400 font-medium tracking-wide">promosnap.com.br</p>
           </div>
