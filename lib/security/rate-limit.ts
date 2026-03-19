@@ -1,8 +1,14 @@
 import { NextRequest } from "next/server";
 
 // ============================================
-// In-Memory Sliding Window Rate Limiter
-// No external dependencies — production-ready
+// Sliding Window Rate Limiter
+// Current backend: in-memory (adequate for single-instance Vercel)
+// Future backend: Redis (for multi-instance / distributed deployments)
+//
+// To migrate to Redis:
+//   1. Create lib/security/rate-limit-redis.ts implementing same interface
+//   2. Use INCR + EXPIRE on key `rl:{type}:{ip}:{windowId}`
+//   3. Swap the store in getStore() based on REDIS_URL presence
 // ============================================
 
 /** Route type determines the rate limit applied */

@@ -19,6 +19,8 @@
     "test:smoke": "npx tsx scripts/smoke-test.ts",
     "verify": "npx tsx lib/__tests__/run-all.ts && npx tsx scripts/smoke-test.ts && next build",
     "verify:quick": "npx tsx scripts/verify.ts",
+    "verify:ci": "npx tsc --noEmit && next build",
+    "check:env": "npx tsx -e \"const { checkEnvironment } = require('./lib/config/assert-env'); const r = checkEnvironment(); console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1)\"",
     "import:real": "npx tsx scripts/import-real.ts",
     "import:urls": "npx tsx scripts/import-from-urls.ts"
   },

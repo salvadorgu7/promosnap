@@ -2,7 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import { getBaseUrl } from "@/lib/seo/url";
+import { assertCriticalEnvs } from "@/lib/config/assert-env";
 import "@/styles/globals.css";
+
+// Validate environment on server startup (runs once at module load)
+assertCriticalEnvs();
 
 const inter = Inter({
   subsets: ["latin"],
