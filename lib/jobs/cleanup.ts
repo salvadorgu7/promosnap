@@ -208,6 +208,59 @@ export async function cleanupData(): Promise<JobResult> {
     const deactivatedBadPrices = await deactivateBadPriceOffers();
     ctx.log(`Deactivated ${deactivatedBadPrices} bad-price offers`);
 
+    // ── Deactivate zombie products ─────────────────────────────────────────
+    // Products that are ACTIVE but have NO active offers AND no image
+    // are useless pages that hurt credibility. Mark them INACTIVE.
+    ctx.log('Deactivating zombie products (no active offers, no image)...');
+    let zombieProducts = 0;
+    try {
+      // Products with NO active offers at all
+      const zombies = await prisma.product.findMany({
+        where: {
+          status: 'ACTIVE',
+          imageUrl: null,
+          listings: {
+            none: {
+              offers: { some: { isActive: true } },
+            },
+          },
+        },
+        select: { id: true },
+        take: 500,
+      });
+      if (zombies.length > 0) {
+        const result = await prisma.product.updateMany({
+          where: { id: { in: zombies.map(z => z.id) } },
+          data: { status: 'INACTIVE' },
+        });
+        zombieProducts = result.count;
+        log.warn('cleanup.zombie-products-deactivated', { count: zombieProducts });
+      }
+      // Also deactivate products with image but ALL offers inactive
+      const noOfferProducts = await prisma.product.findMany({
+        where: {
+          status: 'ACTIVE',
+          listings: {
+            none: {
+              offers: { some: { isActive: true } },
+            },
+          },
+        },
+        select: { id: true },
+        take: 500,
+      });
+      if (noOfferProducts.length > 0) {
+        const result = await prisma.product.updateMany({
+          where: { id: { in: noOfferProducts.map(z => z.id) } },
+          data: { status: 'INACTIVE' },
+        });
+        zombieProducts += result.count;
+      }
+      ctx.log(`Deactivated ${zombieProducts} zombie products`);
+    } catch (err) {
+      ctx.log(`Warning: zombie product cleanup failed: ${err}`);
+    }
+
     // ── Clear expired WhatsApp/Meta CDN image URLs ────────────────────────
     // WhatsApp image URLs (mmg.whatsapp.net, fbcdn.net) expire in ~14 days.
     // Clear them so backfill-images can find a durable replacement.
@@ -303,7 +356,7 @@ export async function cleanupData(): Promise<JobResult> {
       ctx.log(`Warning: failed to clean trending keywords: ${error}`);
     }
 
-    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count + deactivatedImportedOffers.count + deactivatedBadPrices + deletedTrends.count + affiliateFixed + expiredImagesCleared;
+    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count + deactivatedImportedOffers.count + deactivatedBadPrices + zombieProducts + deletedTrends.count + affiliateFixed + expiredImagesCleared;
 
     ctx.log(`Cleanup complete: ${totalActions} total actions`);
 
@@ -316,6 +369,7 @@ export async function cleanupData(): Promise<JobResult> {
         deactivatedOffers: deactivatedOffers.count,
         deactivatedImportedOffers: deactivatedImportedOffers.count,
         deactivatedBadPrices,
+        zombieProductsDeactivated: zombieProducts,
         affiliateUrlsFixed: affiliateFixed,
         expiredImagesCleared,
         deletedTrendingKeywords: deletedTrends.count,
