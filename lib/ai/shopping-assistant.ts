@@ -179,15 +179,74 @@ export async function processShoppingQuery(
   }
 
   try {
-    // Build messages array
+    // ── Pre-fetch results BEFORE calling AI (saves 1 round trip) ──────────
+    // This avoids the tool_choice→callback pattern which takes 2 API calls
+    // and exceeds Vercel's 30s timeout. Instead, we fetch data first and
+    // give it to the AI in one shot.
+    const [localResults, shoppingResults] = await Promise.all([
+      executeLocalSearch(userMessage, undefined, undefined, 5).catch(() => []),
+      executeGoogleShoppingSearch(userMessage, undefined, 6).catch(() => []),
+    ])
+
+    const allProducts = [...localResults, ...shoppingResults]
+    const productContext = allProducts.length > 0
+      ? `\n\nRESULTADOS ENCONTRADOS (use estes dados REAIS para responder):\n${allProducts.map((p, i) =>
+          `${i + 1}. ${p.name} — R$ ${p.price?.toFixed(2) || '?'} em ${p.source}${p.isFromCatalog ? ' [VERIFICADO]' : ''}${p.discount ? ` (${p.discount}% OFF)` : ''}`
+        ).join('\n')}`
+      : '\n\nNenhum resultado encontrado no catálogo nem no Google Shopping.'
+
     const messages = [
       { role: 'system' as const, content: SYSTEM_PROMPT },
       ...conversationHistory.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-      { role: 'user' as const, content: userMessage },
+      { role: 'user' as const, content: userMessage + productContext },
     ]
 
-    // Use Chat Completions API directly (most reliable with tool calling)
-    return await fallbackToChatCompletions(messages)
+    // Single API call — no tool calling needed (data already fetched)
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages,
+        temperature: 0.3,
+        max_tokens: 1500,
+      }),
+    })
+
+    if (!response.ok) {
+      const errText = await response.text()
+      log.error('openai.chat.failed', { status: response.status, error: errText.slice(0, 200) })
+      return makeResponse('Não foi possível conectar ao assistente.', startTime)
+    }
+
+    const data = await response.json()
+    const message = data.choices?.[0]?.message?.content || 'Sem resposta.'
+
+    const dataSources: AssistantResponse['dataSources'] = []
+    if (localResults.length > 0) dataSources.push('catalog')
+    if (shoppingResults.length > 0) dataSources.push('web')
+
+    log.info('ai.chat.success', {
+      query: userMessage.slice(0, 50),
+      localHits: localResults.length,
+      shoppingHits: shoppingResults.length,
+      durationMs: Date.now() - startTime,
+    })
+
+    return {
+      message,
+      products: allProducts.length > 0 ? allProducts : undefined,
+      dataSources,
+      meta: {
+        toolsUsed: ['searchLocalCatalog', ...(shoppingResults.length > 0 ? ['searchGoogleShopping'] : [])],
+        catalogHits: localResults.length,
+        webUsed: shoppingResults.length > 0,
+        durationMs: Date.now() - startTime,
+      },
+    }
   } catch (err) {
     log.error('shopping-assistant.failed', { error: err })
     return makeResponse('Desculpe, houve um erro ao processar sua busca. Tente novamente ou use a busca tradicional.', startTime)
