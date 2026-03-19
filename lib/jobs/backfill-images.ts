@@ -12,6 +12,18 @@ const BATCH_SIZE = 50
 // og:image scraping is slow — limit per run to stay within Vercel's 60s timeout
 const MAX_OG_SCRAPES_PER_RUN = 8
 
+/** WhatsApp/Meta CDN URLs expire in ~14 days — never use them as permanent images */
+function isExpirableUrl(url: string): boolean {
+  const lower = url.toLowerCase()
+  return lower.includes('whatsapp.net') || lower.includes('mmg.') || lower.includes('fbcdn.net')
+}
+
+/** Check if an image URL is valid AND not from an expiring CDN */
+function isDurableImageUrl(url: string | null | undefined): boolean {
+  if (!url || !isValidImageUrl(url)) return false
+  return !isExpirableUrl(url)
+}
+
 /**
  * Scrapes the og:image meta tag from a product URL.
  * Works for Amazon, Shopee, ML, Shein — no API key needed.
@@ -94,8 +106,8 @@ export async function backfillImages() {
     for (const product of products) {
       // Stop og scraping once we hit the per-run limit (prevent Vercel timeout)
       const ogBudgetExhausted = ogScraped >= MAX_OG_SCRAPES_PER_RUN
-      // Strategy 1: Check listing images
-      const listingImage = product.listings.find(l => l.imageUrl && isValidImageUrl(l.imageUrl))
+      // Strategy 1: Check listing images (skip WhatsApp/Meta CDN — they expire)
+      const listingImage = product.listings.find(l => l.imageUrl && isDurableImageUrl(l.imageUrl))
       if (listingImage?.imageUrl) {
         await prisma.product.update({
           where: { id: product.id },

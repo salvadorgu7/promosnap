@@ -178,26 +178,52 @@ function scoreAvailable(item: PromosAppNormalizedItem): number {
 }
 
 function scorePriceSanity(item: PromosAppNormalizedItem): number {
-  // 0 pts = suspicious price, -30 pts penalty for absurd prices
-  // Catches cases where parser confuses shipping/installment with product price
-  // e.g. "Rack TV R$ 3.555 → frete R$ 6" → parser grabs R$ 6 as price
+  // Catches price parse errors, Amazon 3P seller junk, WhatsApp message misparse.
+  // Returns 0 (neutral), negative (penalty), or small positive (confirmed plausible).
 
   if (item.currentPrice <= 0) return 0
 
   // Price < R$1 is almost never real
   if (item.currentPrice < 1) return -30
 
-  // Absurd discount: price < R$20 but original > R$100 with 90%+ "discount"
-  if (item.originalPrice && item.originalPrice > 100 && item.currentPrice < 20) {
-    const ratio = item.currentPrice / item.originalPrice
-    if (ratio < 0.05) return -30 // 95%+ "discount" = almost certainly parse error
-    if (ratio < 0.10) return -20 // 90%+ "discount" = highly suspicious
+  // ── High-value keyword price floors ──────────────────────────────────────
+  // iPhone at R$138, MacBook at R$200, etc. = parse error no matter what.
+  // Penalty drops the item BELOW auto-approve threshold.
+  const titleLower = item.title.toLowerCase()
+  const PRICE_FLOORS: [RegExp, number][] = [
+    [/iphone/i, 500],
+    [/macbook/i, 800],
+    [/\bipad\b/i, 250],
+    [/galaxy\s+s\d/i, 300],
+    [/galaxy\s+z/i, 500],
+    [/\bps5\b|playstation/i, 1500],
+    [/xbox\s+series/i, 1500],
+  ]
+  for (const [pattern, floor] of PRICE_FLOORS) {
+    if (pattern.test(titleLower) && item.currentPrice < floor) return -40
   }
 
-  // Suspiciously low price for expensive-sounding products
+  // ── Discount ratio checks ───────────────────────────────────────────────
+  if (item.originalPrice && item.originalPrice > item.currentPrice) {
+    const discountPct = (item.originalPrice - item.currentPrice) / item.originalPrice
+
+    // >80% discount AND price under R$100 → almost certainly parse error
+    if (discountPct > 0.80 && item.currentPrice < 100) return -30
+
+    // >90% discount → highly suspicious for any product
+    if (discountPct > 0.90) return -25
+
+    // >70% discount with price under R$50 → suspicious
+    if (discountPct > 0.70 && item.currentPrice < 50) return -15
+  }
+
+  // Absurd original with low current (parse error pattern)
   if (item.currentPrice < 10 && item.originalPrice && item.originalPrice > 50) {
     return -15
   }
+
+  // Price looks reasonable → small bonus
+  if (item.currentPrice >= 20 && item.currentPrice <= 10000) return 5
 
   return 0
 }

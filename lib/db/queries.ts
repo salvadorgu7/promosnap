@@ -26,14 +26,27 @@ export function buildProductCard(p: any): ProductCard | null {
     ? Math.round(((best.originalPrice - best.currentPrice) / best.originalPrice) * 100)
     : undefined
 
-  // Sanity gate: price floor — anything below R$5 is almost certainly a parse error
-  // (e.g. "1,10m" dimension read as R$1.10, or corrupt Amazon data).
+  // ── Price sanity gates — LAST LINE OF DEFENSE before user sees it ──────
+  // Gate 1: absolute floor
   if (best.currentPrice < 5) return null
-
-  // Sanity gate: discounts ≥ 85% are almost always data errors (e.g. Amazon 3rd-party/used
-  // prices returned as the main price). Filter them out of all site listings.
-  // Mirrors the same cap in lib/distribution/engine.ts (DIST_MAX_DISCOUNT).
+  // Gate 2: absurd discount
   if (discount && discount >= 85) return null
+  // Gate 3: high-value products at implausible prices (mirrors cleanup Rule 3)
+  const productName = (p.name || '').toLowerCase()
+  const HIGH_VALUE_DISPLAY_RULES: [RegExp, number][] = [
+    [/iphone/i, 500],
+    [/macbook/i, 800],
+    [/\bipad\b/i, 250],
+    [/galaxy\s+s\d/i, 300],
+    [/galaxy\s+z/i, 500],
+    [/\bps5\b|playstation/i, 1500],
+    [/xbox\s+series/i, 1500],
+  ]
+  for (const [pattern, floor] of HIGH_VALUE_DISPLAY_RULES) {
+    if (pattern.test(productName) && best.currentPrice < floor) return null
+  }
+  // Gate 4: discount > 80% AND price under R$100 → almost certainly parse error
+  if (discount && discount >= 80 && best.currentPrice < 100) return null
 
   // Affiliate URL sanity: '#' is a sentinel for "no valid affiliate URL stored".
   // Products without a real affiliate URL should not appear in commercial surfaces

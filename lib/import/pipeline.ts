@@ -176,11 +176,21 @@ function generateSlug(title: string, suffix: string): string {
 function computeOfferScore(item: ImportItem): number {
   let score = 0
 
-  // Discount component (up to 35 pts) — only for verified discounts < 85%
+  // Discount component — only for verified, plausible discounts
   if (item.originalPrice && item.originalPrice > item.currentPrice) {
     const discountPct = (item.originalPrice - item.currentPrice) / item.originalPrice
-    // Cap at 84% — anything ≥85% is almost certainly a data error
-    if (discountPct < 0.85) {
+    if (discountPct >= 0.85) {
+      // ≥85% off → almost certainly a data error → PENALIZE heavily
+      score -= 20
+    } else if (discountPct >= 0.70) {
+      // 70-84% off → suspicious but possible (clearance, flash sale)
+      // Give modest score but flag as suspicious
+      score += 10
+    } else if (discountPct >= 0.50) {
+      // 50-69% → good deal, but cap the reward
+      score += Math.min(discountPct * 100, 40) * 0.7 // up to 28 pts
+    } else {
+      // <50% → normal, healthy discount → full reward (up to 35 pts)
       score += Math.min(discountPct * 100, 40) * 0.875
     }
   }
@@ -268,6 +278,45 @@ function validateItem(item: ImportItem): string | null {
   // Catch parse errors where a measurement (e.g. "1,10m") is mistaken for price
   if (item.currentPrice < 2 && item.originalPrice && item.originalPrice > 50) {
     return `Price R$${item.currentPrice} with original R$${item.originalPrice} — likely parse error (measurement as price)`
+  }
+
+  // ── Price plausibility gate ──────────────────────────────────────────────
+  // Products with high-value keywords priced below minimum → reject immediately.
+  // This is the PREVENTIVE layer — blocks bad prices BEFORE they reach the site.
+  // Catches cases where both currentPrice AND originalPrice are wrong
+  // (e.g. Amazon 3P seller, parse error from WhatsApp message).
+  const titleLower = item.title.toLowerCase()
+  const PRICE_FLOOR_RULES: [RegExp, number][] = [
+    [/iphone/i, 500],
+    [/macbook/i, 800],
+    [/\bipad\b/i, 250],
+    [/galaxy\s+s\d/i, 300],
+    [/galaxy\s+z\s*(flip|fold)/i, 500],
+    [/\bps5\b|playstation\s*5/i, 1500],
+    [/xbox\s+series\s+[xs]/i, 1500],
+    [/airpods\s+pro/i, 150],
+    [/airpods\s+max/i, 300],
+    [/apple\s+watch\s+(ultra|series)/i, 200],
+    [/rtx\s*[345]\d{3}/i, 300],        // GPU NVIDIA
+    [/ryzen\s*9/i, 200],               // CPU high-end
+    [/core\s+i[79]/i, 150],            // Intel high-end
+    [/geladeira|refrigerador/i, 200],
+    [/lava.?seca|lavadora.*secadora/i, 300],
+    [/smart\s*tv.*(5[05]|6[05]|7[05]|8[05]).*pol/i, 400], // TV grande
+  ]
+  for (const [pattern, floor] of PRICE_FLOOR_RULES) {
+    if (pattern.test(titleLower) && item.currentPrice < floor) {
+      return `Price R$${item.currentPrice} too low for "${item.title.slice(0, 50)}" (min R$${floor})`
+    }
+  }
+
+  // General discount plausibility: reject if discount > 80% AND currentPrice < R$100
+  // (very cheap items with absurd discounts are almost always parse errors)
+  if (item.originalPrice && item.currentPrice < 100) {
+    const discountPct = (item.originalPrice - item.currentPrice) / item.originalPrice
+    if (discountPct > 0.80) {
+      return `Discount ${Math.round(discountPct * 100)}% with price R$${item.currentPrice} — likely data error`
+    }
   }
   if (!item.productUrl) return 'Missing productUrl'
   try {
