@@ -261,11 +261,12 @@ export async function processShoppingQuery(
 async function fallbackToChatCompletions(
   messages: { role: string; content: string }[]
 ): Promise<AssistantResponse> {
+  const apiKey = getOpenAIKey()
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -350,11 +351,12 @@ async function handleToolCalls(
   }
 
   // Send tool results back to get final response
+  const apiKey = getOpenAIKey()
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
