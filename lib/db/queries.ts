@@ -6,6 +6,16 @@ import { logger } from '@/lib/logger'
 
 const HOMEPAGE_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
+/** WhatsApp/Meta CDN URLs expire in ~14 days — never use as product images */
+function isDurableImageUrl(url: string | null | undefined): boolean {
+  if (!url) return false
+  const lower = url.toLowerCase()
+  if (lower.includes('whatsapp.net')) return false
+  if (lower.includes('mmg.')) return false
+  if (lower.includes('fbcdn.net')) return false
+  return true
+}
+
 // ============================================
 // PRODUCT CARD BUILDER
 // ============================================
@@ -64,7 +74,9 @@ export function buildProductCard(p: any): ProductCard | null {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    imageUrl: p.imageUrl || p.listings?.find((l: any) => l.imageUrl)?.imageUrl || null,
+    // Only use durable image URLs — WhatsApp/Meta CDN URLs expire in ~14 days
+    imageUrl: isDurableImageUrl(p.imageUrl) ? p.imageUrl
+      : p.listings?.find((l: any) => isDurableImageUrl(l.imageUrl))?.imageUrl || null,
     brand: p.brand?.name,
     category: p.category?.name,
     categorySlug: p.category?.slug,

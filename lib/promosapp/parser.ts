@@ -583,8 +583,16 @@ export function parseRawEvent(event: PromosAppRawEvent): PromosAppNormalizedItem
   // 8. Message hash
   const messageHash = event.messageHash || computeMessageHash(text)
 
-  // Use WhatsApp image URL if provided (only real https:// URLs — base64 thumbnails are skipped)
-  const imageUrl = event.rawImageUrl && event.rawImageUrl.startsWith('https://') ? event.rawImageUrl : undefined
+  // Use WhatsApp image URL if provided — but ONLY if it's from a durable CDN.
+  // WhatsApp/Meta CDN URLs (mmg.whatsapp.net, fbcdn.net) expire in ~14 days
+  // and should NOT be stored as product images.
+  const imageUrl = (() => {
+    const url = event.rawImageUrl
+    if (!url || !url.startsWith('https://')) return undefined
+    const lower = url.toLowerCase()
+    if (lower.includes('whatsapp.net') || lower.includes('mmg.') || lower.includes('fbcdn.net')) return undefined
+    return url
+  })()
 
   return {
     externalId,

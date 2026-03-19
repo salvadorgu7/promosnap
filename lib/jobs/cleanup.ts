@@ -208,6 +208,53 @@ export async function cleanupData(): Promise<JobResult> {
     const deactivatedBadPrices = await deactivateBadPriceOffers();
     ctx.log(`Deactivated ${deactivatedBadPrices} bad-price offers`);
 
+    // ── Clear expired WhatsApp/Meta CDN image URLs ────────────────────────
+    // WhatsApp image URLs (mmg.whatsapp.net, fbcdn.net) expire in ~14 days.
+    // Clear them so backfill-images can find a durable replacement.
+    ctx.log('Clearing expired WhatsApp/Meta CDN image URLs...');
+    let expiredImagesCleared = 0;
+    try {
+      const waProducts = await prisma.product.updateMany({
+        where: {
+          imageUrl: { not: null, contains: 'whatsapp.net' },
+        },
+        data: { imageUrl: null },
+      });
+      const mmgProducts = await prisma.product.updateMany({
+        where: {
+          imageUrl: { not: null, contains: 'mmg.' },
+        },
+        data: { imageUrl: null },
+      });
+      const fbProducts = await prisma.product.updateMany({
+        where: {
+          imageUrl: { not: null, contains: 'fbcdn.net' },
+        },
+        data: { imageUrl: null },
+      });
+      expiredImagesCleared = waProducts.count + mmgProducts.count + fbProducts.count;
+      // Also clear listing imageUrls
+      const waListings = await prisma.listing.updateMany({
+        where: { imageUrl: { not: null, contains: 'whatsapp.net' } },
+        data: { imageUrl: null },
+      });
+      const mmgListings = await prisma.listing.updateMany({
+        where: { imageUrl: { not: null, contains: 'mmg.' } },
+        data: { imageUrl: null },
+      });
+      const fbListings = await prisma.listing.updateMany({
+        where: { imageUrl: { not: null, contains: 'fbcdn.net' } },
+        data: { imageUrl: null },
+      });
+      expiredImagesCleared += waListings.count + mmgListings.count + fbListings.count;
+      if (expiredImagesCleared > 0) {
+        log.warn('cleanup.expired-images-cleared', { count: expiredImagesCleared });
+      }
+      ctx.log(`Cleared ${expiredImagesCleared} expired WhatsApp/Meta image URLs`);
+    } catch (err) {
+      ctx.log(`Warning: expired image cleanup failed: ${err}`);
+    }
+
     // ── Fix affiliate URLs with third-party tags ──────────────────────────
     // WhatsApp messages may contain URLs with someone else's affiliate codes.
     // This retroactively rewrites them with our configured env tags.
@@ -256,7 +303,7 @@ export async function cleanupData(): Promise<JobResult> {
       ctx.log(`Warning: failed to clean trending keywords: ${error}`);
     }
 
-    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count + deactivatedImportedOffers.count + deactivatedBadPrices + deletedTrends.count + affiliateFixed;
+    const totalActions = deletedSnapshots.count + deletedSearchLogs.count + deactivatedOffers.count + deactivatedImportedOffers.count + deactivatedBadPrices + deletedTrends.count + affiliateFixed + expiredImagesCleared;
 
     ctx.log(`Cleanup complete: ${totalActions} total actions`);
 
@@ -270,6 +317,7 @@ export async function cleanupData(): Promise<JobResult> {
         deactivatedImportedOffers: deactivatedImportedOffers.count,
         deactivatedBadPrices,
         affiliateUrlsFixed: affiliateFixed,
+        expiredImagesCleared,
         deletedTrendingKeywords: deletedTrends.count,
       },
     };
