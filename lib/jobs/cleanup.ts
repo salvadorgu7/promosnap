@@ -209,35 +209,14 @@ export async function cleanupData(): Promise<JobResult> {
     ctx.log(`Deactivated ${deactivatedBadPrices} bad-price offers`);
 
     // ── Deactivate zombie products ─────────────────────────────────────────
-    // Products that are ACTIVE but have NO active offers AND no image
-    // are useless pages that hurt credibility. Mark them INACTIVE.
-    ctx.log('Deactivating zombie products (no active offers, no image)...');
+    // Rule A: Products without ANY active offers → INACTIVE (empty pages)
+    // Rule B: Products without image → INACTIVE (unpresentable on site)
+    // These products can be reactivated when they get offers/images again.
+    ctx.log('Deactivating zombie products...');
     let zombieProducts = 0;
     try {
-      // Products with NO active offers at all
-      const zombies = await prisma.product.findMany({
-        where: {
-          status: 'ACTIVE',
-          imageUrl: null,
-          listings: {
-            none: {
-              offers: { some: { isActive: true } },
-            },
-          },
-        },
-        select: { id: true },
-        take: 500,
-      });
-      if (zombies.length > 0) {
-        const result = await prisma.product.updateMany({
-          where: { id: { in: zombies.map(z => z.id) } },
-          data: { status: 'INACTIVE' },
-        });
-        zombieProducts = result.count;
-        log.warn('cleanup.zombie-products-deactivated', { count: zombieProducts });
-      }
-      // Also deactivate products with image but ALL offers inactive
-      const noOfferProducts = await prisma.product.findMany({
+      // Rule A: No active offers at all
+      const noOffers = await prisma.product.findMany({
         where: {
           status: 'ACTIVE',
           listings: {
@@ -247,16 +226,31 @@ export async function cleanupData(): Promise<JobResult> {
           },
         },
         select: { id: true },
-        take: 500,
+        take: 1000,
       });
-      if (noOfferProducts.length > 0) {
+      if (noOffers.length > 0) {
         const result = await prisma.product.updateMany({
-          where: { id: { in: noOfferProducts.map(z => z.id) } },
+          where: { id: { in: noOffers.map(z => z.id) } },
           data: { status: 'INACTIVE' },
         });
         zombieProducts += result.count;
+        log.warn('cleanup.no-offer-products-deactivated', { count: result.count });
       }
-      ctx.log(`Deactivated ${zombieProducts} zombie products`);
+
+      // Rule B: No image — can't show on site without looking broken
+      const noImage = await prisma.product.updateMany({
+        where: {
+          status: 'ACTIVE',
+          imageUrl: null,
+        },
+        data: { status: 'INACTIVE' },
+      });
+      zombieProducts += noImage.count;
+      if (noImage.count > 0) {
+        log.warn('cleanup.no-image-products-deactivated', { count: noImage.count });
+      }
+
+      ctx.log(`Deactivated ${zombieProducts} zombie products (no offers: ${noOffers.length}, no image: ${noImage.count})`);
     } catch (err) {
       ctx.log(`Warning: zombie product cleanup failed: ${err}`);
     }
