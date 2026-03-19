@@ -103,13 +103,13 @@ export default function DecisionSummary({
     priceStats !== null && priceStats !== undefined,
     bestPrice.offerScore >= 60,
   ].filter(Boolean).length;
-  const confidence = dataPoints >= 3 ? "alta" : dataPoints >= 2 ? "media" : "baixa";
+  const confidenceLabel = dataPoints >= 3 ? "Dados verificados" : dataPoints >= 2 ? "Dados parciais" : "Coletando dados";
   const confidenceColor =
-    confidence === "alta"
+    dataPoints >= 3
       ? "text-accent-green bg-green-50"
-      : confidence === "media"
+      : dataPoints >= 2
         ? "text-accent-blue bg-blue-50"
-        : "text-accent-orange bg-orange-50";
+        : "text-surface-500 bg-surface-100";
 
   // Price verification
   const isVerified = bestPrice.offerScore >= 60;
@@ -126,7 +126,7 @@ export default function DecisionSummary({
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${confidenceColor}`}
         >
           <BarChart3 className="h-2.5 w-2.5" />
-          Confianca {confidence}
+          {confidenceLabel}
         </span>
       </div>
 
@@ -160,7 +160,7 @@ export default function DecisionSummary({
           <div className="flex items-center gap-1 mb-1">
             <DollarSign className="h-3 w-3 text-accent-blue" />
             <p className="text-[10px] font-medium text-text-muted uppercase tracking-wider">
-              Melhor Preco
+              Melhor Preço
             </p>
           </div>
           <p className="text-lg font-bold font-display text-accent-blue">
@@ -169,7 +169,7 @@ export default function DecisionSummary({
           <p className="text-[10px] text-text-muted mt-0.5">em {bestPrice.sourceName}</p>
           {isVerified && (
             <span className="inline-flex items-center gap-0.5 text-[10px] text-accent-green mt-1">
-              <ShieldCheck className="h-3 w-3" /> Preco verificado
+              <ShieldCheck className="h-3 w-3" /> Preço verificado
             </span>
           )}
         </div>
@@ -188,7 +188,7 @@ export default function DecisionSummary({
             </p>
             <p className="text-[10px] text-text-muted mt-0.5">em {bestValue.sourceName}</p>
             <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted mt-1">
-              Score: {Math.round(bestValue.offerScore)}
+              Melhor preco = melhor valor
             </span>
           </div>
         )}
