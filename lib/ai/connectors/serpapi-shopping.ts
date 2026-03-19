@@ -51,7 +51,8 @@ export const serpApiShoppingConnector: SourceConnector = {
         params.set('tbs', `mr:1,price:1,ppr_max:${options.maxPrice}`)
       }
 
-      const res = await fetch(`https://serpapi.com/search.json?${params}`, {
+      // SearchAPI.io (https://www.searchapi.io) — compatible with SerpApi response format
+      const res = await fetch(`https://www.searchapi.io/api/v1/search?${params}`, {
         signal: AbortSignal.timeout(10000), // 10s timeout
       })
 
