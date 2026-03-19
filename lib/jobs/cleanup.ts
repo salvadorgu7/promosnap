@@ -238,13 +238,16 @@ export async function cleanupData(): Promise<JobResult> {
       }
 
       // Rule B: No image — can't show on site without looking broken
-      const noImage = await prisma.product.updateMany({
-        where: {
-          status: 'ACTIVE',
-          imageUrl: null,
-        },
+      // Check for null AND empty string (CSV imports may set '' instead of null)
+      const noImageNull = await prisma.product.updateMany({
+        where: { status: 'ACTIVE', imageUrl: null },
         data: { status: 'INACTIVE' },
       });
+      const noImageEmpty = await prisma.product.updateMany({
+        where: { status: 'ACTIVE', imageUrl: '' },
+        data: { status: 'INACTIVE' },
+      });
+      const noImage = { count: noImageNull.count + noImageEmpty.count };
       zombieProducts += noImage.count;
       if (noImage.count > 0) {
         log.warn('cleanup.no-image-products-deactivated', { count: noImage.count });
