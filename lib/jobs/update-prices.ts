@@ -122,9 +122,17 @@ export async function updatePrices(): Promise<JobResult> {
         continue;
       }
 
+      let adapterIdx = 0;
       for (const offer of offers) {
         const externalId = offer.listing?.externalId;
         if (!externalId) continue;
+
+        // Rate limit: 1 req/s for ML, 500ms for others — prevents API throttling
+        if (adapterIdx > 0) {
+          const delay = sourceSlug === 'mercadolivre' ? 1200 : 600;
+          await new Promise(r => setTimeout(r, delay));
+        }
+        adapterIdx++;
 
         try {
           const fresh = adapter.refreshOffer
