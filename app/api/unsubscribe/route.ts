@@ -18,8 +18,6 @@ function generateUnsubscribeToken(email: string): string {
   return createHash('sha256').update(`${email}:${secret}`).digest('hex').slice(0, 16)
 }
 
-export { generateUnsubscribeToken }
-
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get('email')
   const token = req.nextUrl.searchParams.get('token')
