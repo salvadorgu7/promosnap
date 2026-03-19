@@ -68,8 +68,33 @@ export async function GET(req: NextRequest) {
     ['sitemap', () => import('@/lib/jobs/generate-sitemap').then(m => m.generateSitemap())],
     // process-promosapp: VALUE — processes approved PromosApp candidates into import pipeline (behind feature flag)
     ['process-promosapp', () => import('@/lib/jobs/process-promosapp').then(m => m.processPromosApp())],
-    // category-fill: HYGIENE — auto-categorizes products from listing data
-    ['category-fill', () => import('@/lib/jobs/category-fill').then(m => m.fillPriorityCategories())],
+    // category-fill: HYGIENE — auto-categorizes uncategorized products by title keywords
+    ['category-fill', async () => {
+      const { inferCategory } = await import('@/lib/catalog/normalize')
+      const pMod = await import('@/lib/db/prisma')
+      const db = pMod.default
+
+      const uncategorized = await db.product.findMany({
+        where: { status: 'ACTIVE', categoryId: null },
+        select: { id: true, name: true },
+        take: 500,
+      })
+
+      let categorized = 0
+      for (const p of uncategorized) {
+        const slug = inferCategory(p.name)
+        if (!slug) continue
+        const cat = await db.category.upsert({
+          where: { slug },
+          create: { name: slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), slug },
+          update: {},
+        })
+        await db.product.update({ where: { id: p.id }, data: { categoryId: cat.id } })
+        categorized++
+      }
+
+      return { itemsTotal: uncategorized.length, itemsDone: categorized, metadata: { categorized } }
+    }],
   ]
 
   // Filter to requested subset if ?jobs= is provided
