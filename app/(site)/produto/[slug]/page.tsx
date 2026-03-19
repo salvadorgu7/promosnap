@@ -52,6 +52,10 @@ import DecisionBlocks from "@/components/product/DecisionBlocks";
 import HeroVerdict from "@/components/product/HeroVerdict";
 import MobileDecisionCompact from "@/components/product/MobileDecisionCompact";
 import InlineAlertPrompt from "@/components/product/InlineAlertPrompt";
+import UseCaseRecommendation from "@/components/product/UseCaseRecommendation";
+import ProductCaveat from "@/components/product/ProductCaveat";
+import ComparisonContext from "@/components/product/ComparisonContext";
+import AskAIBlock from "@/components/product/AskAIBlock";
 import { analyzeCrossSource, buildCrossSourceOffer } from "@/lib/source/cross-source";
 import { getCanonicalComparison, getBestChoice } from "@/lib/catalog/smart-comparison";
 import { buildMetadata, productSchema, breadcrumbSchema, generateProductMeta } from "@/lib/seo/metadata";
@@ -491,6 +495,26 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
+          {/* Use case recommendation — "Melhor para: fotografia, bateria" */}
+          <UseCaseRecommendation
+            productName={product.name}
+            productTitle={product.listings[0]?.rawTitle || product.name}
+            categorySlug={product.category?.slug}
+            specsJson={specs}
+          />
+
+          {/* Product caveat — honest single warning */}
+          <ProductCaveat
+            buySignal={buySignal}
+            trend={priceStats?.trend}
+            cheaperAlternative={
+              alternatives.length > 0 && alternatives[0].bestOffer?.price < bestPrice * 0.85
+                ? { name: alternatives[0].name, price: alternatives[0].bestOffer.price, slug: alternatives[0].slug }
+                : null
+            }
+            reviewConfidence={consolidatedRating?.confidence ?? null}
+          />
+
           {/* Price drop alert — returning visitor notification */}
           {bestOffer && (
             <PriceDropAlert
@@ -791,6 +815,28 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
+          {/* Comparison context — structured vs best alternative */}
+          {alternatives.length > 0 && product.category?.slug && bestOffer && (
+            <ComparisonContext
+              product={{
+                name: product.name,
+                title: product.listings[0]?.rawTitle || product.name,
+                price: bestPrice,
+                discount: discount ?? undefined,
+                isFreeShipping: bestOffer.isFreeShipping,
+              }}
+              alternative={{
+                name: alternatives[0].name,
+                title: alternatives[0].name,
+                price: alternatives[0].bestOffer?.price || 0,
+                slug: alternatives[0].slug,
+                discount: alternatives[0].bestOffer?.discount ?? undefined,
+                isFreeShipping: alternatives[0].bestOffer?.isFreeShipping,
+              }}
+              categorySlug={product.category.slug}
+            />
+          )}
+
           {/* Cross-store price comparison — rich comparator with badges */}
           {allOffers.length > 1 && (
             <PriceComparison
@@ -976,6 +1022,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               price={bestOffer ? formatPrice(bestPrice) : ""}
             />
           </div>
+
+          {/* Ask AI block — link to assistant with product context */}
+          <AskAIBlock productName={product.name} productSlug={slug} />
 
           {/* Trust disclaimer */}
           <div className="card p-4 flex items-center gap-3">
