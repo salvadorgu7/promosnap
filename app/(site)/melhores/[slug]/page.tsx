@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Award, ChevronRight, HelpCircle, Scale, Sparkles } from "lucide-react";
+import { Award, ChevronRight, HelpCircle, Scale, Sparkles, Target, Trophy } from "lucide-react";
 import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import InternalLinks from "@/components/seo/InternalLinks";
@@ -9,6 +9,7 @@ import { getProductsByCategory, searchListings } from "@/lib/db/queries";
 import { BEST_PAGES, BEST_PAGE_SLUGS } from "@/lib/seo/best-pages";
 import { COMPARISON_LIST } from "@/lib/seo/comparisons";
 import { getBaseUrl } from "@/lib/seo/url";
+import { getCategoryConfig, rankByUseCase } from "@/lib/comparison/category-specs";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -189,6 +190,79 @@ export default async function MelhoresPage({
           </p>
         </div>
       )}
+
+      {/* Use-case ranking — "Melhor para cada uso" */}
+      {(() => {
+        const categorySlug = page.query.categories?.[0]
+        const config = categorySlug ? getCategoryConfig(categorySlug) : null
+        if (!config || products.length < 3) return null
+
+        const productData = products.map(p => ({
+          id: p.id,
+          name: p.name,
+          title: p.name,
+          specsJson: null,
+        }))
+
+        return (
+          <section className="mb-12">
+            <div className="flex items-center gap-2 mb-4">
+              <Target className="w-5 h-5 text-accent-purple" />
+              <h2 className="font-display font-bold text-lg text-text-primary">
+                Melhor para Cada Uso
+              </h2>
+            </div>
+            <p className="text-sm text-text-muted mb-4">
+              Comparamos os produtos por caso de uso — nem sempre o mais caro é o melhor para você.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {config.useCases.map(useCase => {
+                const ranked = rankByUseCase(productData, useCase.slug, categorySlug!)
+                const winner = ranked[0]
+                if (!winner || winner.score === 0) return null
+                const winnerProduct = products.find(p => p.id === winner.productId)
+                if (!winnerProduct) return null
+
+                return (
+                  <Link
+                    key={useCase.slug}
+                    href={`/produto/${winnerProduct.slug}`}
+                    className="group flex items-start gap-3 p-4 rounded-xl border border-surface-200 bg-white hover:border-accent-purple/30 hover:bg-accent-purple/5 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-accent-purple/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Trophy className="w-4 h-4 text-accent-purple" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-accent-purple uppercase tracking-wider">
+                        Melhor para {useCase.label}
+                      </p>
+                      <p className="text-sm font-medium text-text-primary group-hover:text-accent-purple transition-colors mt-0.5 line-clamp-1">
+                        {winnerProduct.name}
+                      </p>
+                      <p className="text-xs text-text-muted mt-1">
+                        {useCase.description}
+                      </p>
+                      {winner.breakdown.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {winner.breakdown.slice(0, 3).map((b, i) => (
+                            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-surface-100 text-text-muted">
+                              {b.attribute}: {typeof b.value === 'number' ? b.value : '✓'}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <span className="text-lg font-bold font-display text-accent-purple">{winner.score}</span>
+                      <span className="text-[10px] text-text-muted block">/100</span>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })()}
 
       {/* FAQ section */}
       <section className="mb-12">
