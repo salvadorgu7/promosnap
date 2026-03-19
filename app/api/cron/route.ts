@@ -68,6 +68,8 @@ export async function GET(req: NextRequest) {
     ['sitemap', () => import('@/lib/jobs/generate-sitemap').then(m => m.generateSitemap())],
     // process-promosapp: VALUE — processes approved PromosApp candidates into import pipeline (behind feature flag)
     ['process-promosapp', () => import('@/lib/jobs/process-promosapp').then(m => m.processPromosApp())],
+    // category-fill: HYGIENE — auto-categorizes products from listing data
+    ['category-fill', () => import('@/lib/jobs/category-fill').then(m => m.fillPriorityCategories())],
   ]
 
   // Filter to requested subset if ?jobs= is provided
