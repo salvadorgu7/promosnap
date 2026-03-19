@@ -104,12 +104,42 @@ async function deactivateBadPriceOffers(): Promise<number> {
     rule3Count = result.count;
   }
 
-  const total = rule1.count + rule2Count + rule3Count;
+  // Rule 4: Installment-as-price pattern — currentPrice < R$200 with discount > 75%
+  // This catches WhatsApp parse errors where "12x de R$ 10,31" was grabbed as the price.
+  // Pre-filter: currentPrice between R$5-200, originalPrice > R$400, discount implied > 75%
+  const rule4Candidates = await prisma.offer.findMany({
+    where: {
+      isActive: true,
+      currentPrice: { gte: 5, lt: 200 },
+      originalPrice: { gt: 400 },
+    },
+    select: { id: true, currentPrice: true, originalPrice: true },
+  });
+
+  const rule4Ids = rule4Candidates
+    .filter(o => {
+      if (!o.originalPrice) return false;
+      const discount = (o.originalPrice - o.currentPrice) / o.originalPrice;
+      return discount > 0.75; // > 75% off with price < R$200 = almost certainly parse error
+    })
+    .map(o => o.id);
+
+  let rule4Count = 0;
+  if (rule4Ids.length > 0) {
+    const result = await prisma.offer.updateMany({
+      where: { id: { in: rule4Ids } },
+      data: { isActive: false },
+    });
+    rule4Count = result.count;
+  }
+
+  const total = rule1.count + rule2Count + rule3Count + rule4Count;
   if (total > 0) {
     log.warn('cleanup.bad-prices-deactivated', {
       rule1: rule1.count,
       rule2: rule2Count,
       rule3: rule3Count,
+      rule4: rule4Count,
       total,
     });
   }

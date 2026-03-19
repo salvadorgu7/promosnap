@@ -133,24 +133,74 @@ function parsePrice(raw: string): number {
 }
 
 function extractPrices(text: string): { current: number; original?: number } {
-  const prices: number[] = []
+  // ── Strategy 1: "De X Por Y" pattern (most reliable) ────────────────────
+  // Brazilian promo messages follow: "De R$ 699,00 Por R$ 123,75"
+  const dePattern = /(?:de|era|antes)\s*R?\$?\s*([\d.,]+)/gi
+  const porPattern = /(?:por|agora|hoje)\s*R?\$?\s*([\d.,]+)/gi
 
+  let dePrice = 0
+  let porPrice = 0
+
+  let m = dePattern.exec(text)
+  if (m) dePrice = parsePrice(m[1])
+  m = porPattern.exec(text)
+  if (m) porPrice = parsePrice(m[1])
+
+  if (porPrice > 0 && dePrice > porPrice) {
+    return { current: porPrice, original: dePrice }
+  }
+
+  // ── Strategy 2: emoji-labeled prices (💸 Por R$ X / 🏷️ De R$ Y) ───────
+  const emojiPorMatch = text.match(/💸\s*(?:por)?\s*R?\$?\s*([\d.,]+)/i)
+  const emojiDeMatch = text.match(/(?:🏷️|🏷)\s*(?:de)?\s*R?\$?\s*([\d.,]+)/i)
+  if (emojiPorMatch) {
+    const ep = parsePrice(emojiPorMatch[1])
+    const ed = emojiDeMatch ? parsePrice(emojiDeMatch[1]) : 0
+    if (ep > 0) return { current: ep, original: ed > ep ? ed : undefined }
+  }
+
+  // ── Strategy 3: R$ pattern fallback ─────────────────────────────────────
+  // Collect all R$ prices but EXCLUDE installment patterns like "12x de R$ X"
+  const installmentPattern = /\d+x\s*(?:de\s*)?R?\$?\s*[\d.,]+/gi
+  const installmentRanges: [number, number][] = []
+  let im
+  while ((im = installmentPattern.exec(text)) !== null) {
+    installmentRanges.push([im.index, im.index + im[0].length])
+  }
+
+  const prices: number[] = []
   for (const pattern of PRICE_PATTERNS) {
     pattern.lastIndex = 0
     let match
     while ((match = pattern.exec(text)) !== null) {
+      // Skip prices inside installment expressions (e.g. "12x de R$ 10,31")
+      const pos = match.index
+      const isInstallment = installmentRanges.some(([s, e]) => pos >= s && pos < e)
+      if (isInstallment) continue
+
       const p = parsePrice(match[1])
-      if (p > 0 && p < 100000) prices.push(p) // Sanity: reject > R$100k
+      if (p > 0 && p < 100000) prices.push(p)
     }
   }
 
-  // Deduplicate
+  // Deduplicate and sort
   const unique = [...new Set(prices)].sort((a, b) => a - b)
 
   if (unique.length === 0) return { current: 0 }
   if (unique.length === 1) return { current: unique[0] }
 
-  // Smallest = current, largest = original (typical promo message pattern: "de X por Y")
+  // With "De/Por" pattern already tried above, fall back to:
+  // If we have exactly 2 prices, smaller = current, larger = original
+  // If we have 3+ prices, use 2nd smallest as current (skip possible shipping/installment)
+  if (unique.length === 2) {
+    return { current: unique[0], original: unique[1] }
+  }
+
+  // 3+ prices: skip the smallest (likely shipping/installment), use next
+  // Unless smallest > R$20 (then it's probably a real price)
+  if (unique[0] < 20 && unique.length >= 3) {
+    return { current: unique[1], original: unique[unique.length - 1] }
+  }
   return { current: unique[0], original: unique[unique.length - 1] }
 }
 
