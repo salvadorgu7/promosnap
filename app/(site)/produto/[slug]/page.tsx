@@ -68,6 +68,8 @@ import {
   getPriceHistory,
 } from "@/lib/db/queries";
 import { getConsolidatedRating } from "@/lib/reviews/consolidated";
+import { getReviewAggregate } from "@/lib/reviews/aggregate";
+import ReviewSummary from "@/components/product/ReviewSummary";
 import { getCategoryInsights } from "@/lib/reviews/ranking";
 import { getShippingSignals } from "@/lib/shipping/intelligence";
 import prisma from "@/lib/db/prisma";
@@ -157,8 +159,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     getAlternatives(product.category?.slug, bestPrice, product.id, 6),
   ]);
 
-  // Consolidated rating
+  // Consolidated rating + review aggregate
   const consolidatedRating = await getConsolidatedRating(product.id);
+  const reviewAggregate = await getReviewAggregate(product.id).catch(() => null);
 
   // Category insights
   const categoryInsight = product.categoryId
@@ -437,6 +440,11 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           {/* Consolidated rating */}
           {consolidatedRating && (
             <ConsolidatedRatingComponent rating={consolidatedRating} />
+          )}
+
+          {/* Review summary — enriched aggregate with themes */}
+          {reviewAggregate && (
+            <ReviewSummary aggregate={reviewAggregate} />
           )}
 
           {/* About this product */}

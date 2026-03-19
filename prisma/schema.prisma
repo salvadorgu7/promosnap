@@ -117,8 +117,9 @@ model Product {
 
   brand    Brand?           @relation(fields: [brandId], references: [id])
   category Category?        @relation(fields: [categoryId], references: [id])
-  variants ProductVariant[]
-  listings Listing[]
+  variants        ProductVariant[]
+  listings        Listing[]
+  reviewAggregate ReviewAggregate?
 
   @@index([slug])
   @@index([categoryId])
@@ -625,6 +626,36 @@ enum CandidateStatus {
   APPROVED
   REJECTED
   IMPORTED
+}
+
+// ============================================
+// REVIEW AGGREGATES (cached consolidated reviews)
+// ============================================
+
+model ReviewAggregate {
+  id            String   @id @default(cuid())
+  productId     String   @unique
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Consolidated rating
+  rating        Float    // 1-5 weighted average
+  totalReviews  Int
+  confidence    String   // high | medium | low | insufficient_data
+  sourcesCount  Int
+
+  // Structured themes (prepared for AI enrichment)
+  themes        Json?    // ReviewTheme[] → [{ theme, polarity, strength, mentions, confidence }]
+
+  // AI-generated summary cache
+  aiSummary     Json?    // { summary, goodFor, considerIf, generatedAt }
+
+  // Freshness
+  dataFreshness String   @default("fresh") // fresh (<7d) | recent (<30d) | stale (>30d)
+  lastUpdatedAt DateTime @default(now())
+
+  @@index([confidence])
+  @@index([rating(sort: Desc)])
+  @@map("review_aggregates")
 }
 
 // ============================================
