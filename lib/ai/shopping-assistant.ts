@@ -109,18 +109,15 @@ const TOOLS = [
       required: ['query'],
     },
   },
-  {
-    type: 'web_search_preview' as const,
-  },
 ]
 
 const SYSTEM_PROMPT = `Você é o assistente de compras do PromoSnap — o lugar definitivo para pesquisar, comparar e decidir compras no Brasil.
 
 REGRAS FUNDAMENTAIS:
-1. SEMPRE use a ferramenta searchLocalCatalog PRIMEIRO para buscar produtos no catálogo verificado
-2. Se o catálogo local não tiver resultados suficientes, use searchGoogleShopping para buscar em TODAS as lojas brasileiras
-3. Use web_search apenas como último recurso para perguntas gerais ou reviews
-3. NUNCA invente preços, produtos ou especificações
+1. OBRIGATÓRIO: Você DEVE chamar searchLocalCatalog ou searchGoogleShopping ANTES de responder. NUNCA responda sobre produtos sem chamar uma ferramenta primeiro.
+2. Use searchLocalCatalog PRIMEIRO para buscar no catálogo verificado
+3. Se o catálogo local retornar poucos resultados, chame searchGoogleShopping para complementar
+4. NUNCA invente preços, produtos ou especificações — use APENAS dados das ferramentas
 4. Quando mostrar produtos, SEMPRE inclua preço real e fonte
 5. Responda em português brasileiro, de forma direta e útil
 6. Priorize produtos com melhor custo-benefício, não só o mais barato
@@ -217,7 +214,8 @@ async function fallbackToChatCompletions(
           type: 'function',
           function: { name: (t as any).name, description: (t as any).description, parameters: (t as any).parameters },
         })),
-        tool_choice: 'auto',
+        // Force the AI to call searchLocalCatalog first — never let it skip tools
+        tool_choice: 'required',
         temperature: 0.3,
         max_tokens: 2000,
       }),
