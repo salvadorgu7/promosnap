@@ -104,14 +104,14 @@ async function deactivateBadPriceOffers(): Promise<number> {
     rule3Count = result.count;
   }
 
-  // Rule 4: Installment-as-price pattern — currentPrice < R$200 with discount > 75%
-  // This catches WhatsApp parse errors where "12x de R$ 10,31" was grabbed as the price.
-  // Pre-filter: currentPrice between R$5-200, originalPrice > R$400, discount implied > 75%
+  // Rule 4: Installment-as-price pattern — discount > 65% where price looks like a parcela
+  // WhatsApp parse errors: "12x de R$ 50" grabbed as price, "5x de R$ 10,31" as price, etc.
+  // Any product with >65% discount is suspicious; with >70% almost certainly wrong.
   const rule4Candidates = await prisma.offer.findMany({
     where: {
       isActive: true,
-      currentPrice: { gte: 5, lt: 200 },
-      originalPrice: { gt: 400 },
+      currentPrice: { gte: 5, lt: 300 },
+      originalPrice: { gt: 100 },
     },
     select: { id: true, currentPrice: true, originalPrice: true },
   });
@@ -120,7 +120,7 @@ async function deactivateBadPriceOffers(): Promise<number> {
     .filter(o => {
       if (!o.originalPrice) return false;
       const discount = (o.originalPrice - o.currentPrice) / o.originalPrice;
-      return discount > 0.75; // > 75% off with price < R$200 = almost certainly parse error
+      return discount > 0.65; // > 65% off with price < R$300 = very likely parse error
     })
     .map(o => o.id);
 
