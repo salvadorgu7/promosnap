@@ -242,19 +242,28 @@ export function candidateToAssistantProduct(candidate: ResolvedCandidate): {
   confidence: 'verified' | 'resolved' | 'raw'
   monetization: 'verified' | 'best_effort' | 'none'
 } {
+  // If no affiliate URL was resolved, generate ML search link as fallback
+  // This ensures every product can monetize through ML affiliate search
+  let affiliateUrl = candidate.affiliateUrl
+  let monetization = candidate.monetization
+  if (monetization === 'none' || affiliateUrl === candidate.externalUrl) {
+    affiliateUrl = generateMLSearchAffiliateUrl(candidate.normalizedTitle)
+    monetization = 'best_effort'
+  }
+
   return {
     name: candidate.normalizedTitle,
     price: candidate.price,
     originalPrice: candidate.originalPrice,
     source: candidate.merchant || candidate.sourceDomain,
     url: candidate.externalUrl,
-    affiliateUrl: candidate.affiliateUrl,
+    affiliateUrl,
     imageUrl: candidate.imageUrl,
     isFromCatalog: false,
     confidence: candidate.status === 'resolved' ? 'resolved'
       : candidate.status === 'partially_resolved' ? 'resolved'
       : 'raw',
-    monetization: candidate.monetization,
+    monetization,
   }
 }
 
@@ -303,6 +312,23 @@ export class ConnectorRegistry {
       .filter((r): r is PromiseFulfilledResult<ExternalCandidate[]> => r.status === 'fulfilled')
       .flatMap(r => r.value)
   }
+}
+
+// ── Fallback Affiliate Link Generator ──────────────────────────────────────
+
+/**
+ * Generate a Mercado Livre search link with affiliate tag for any product name.
+ * Used as fallback when we don't have a direct product URL.
+ * This ensures every product card can monetize, even external results.
+ */
+export function generateMLSearchAffiliateUrl(productName: string): string {
+  const mlAffiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID
+  const query = encodeURIComponent(productName.slice(0, 100))
+  const baseUrl = `https://lista.mercadolivre.com.br/${query}`
+  if (mlAffiliateId) {
+    return `${baseUrl}#matt_tool=${mlAffiliateId}`
+  }
+  return baseUrl
 }
 
 /** Global connector registry */
