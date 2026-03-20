@@ -4,7 +4,7 @@ import { useState, useCallback } from "react"
 import Image, { type ImageProps } from "next/image"
 import { Package, ImageOff, Tag, Newspaper } from "lucide-react"
 import type { ImageType } from "@/lib/images/types"
-import { getFallbackImage, isValidImageUrl } from "@/lib/images"
+import { getFallbackImage, isValidImageUrl, getImageUrl } from "@/lib/images"
 
 // ---------------------------------------------------------------------------
 // Fallback icon per entity type
@@ -70,9 +70,13 @@ export default function SafeImage({
   const handleLoad = useCallback(() => setLoaded(true), [])
   const handleError = useCallback(() => setError(true), [])
 
-  // Validate the src URL
+  // Validate the src URL, apply CDN transform if configured
   const srcStr = typeof src === "string" ? src : (src as any)?.src ?? ""
-  const validSrc = isValidImageUrl(srcStr) ? src : null
+  const optimizedSrc = getImageUrl(srcStr, {
+    width: typeof width === "number" ? width : undefined,
+    height: typeof height === "number" ? height : undefined,
+  })
+  const validSrc = isValidImageUrl(srcStr) ? optimizedSrc : null
 
   // --- Fallback state ---
   if (!validSrc || error) {
@@ -115,7 +119,6 @@ export default function SafeImage({
         priority={priority}
         placeholder={blurData ? "blur" : "empty"}
         blurDataURL={blurData}
-        unoptimized
         {...rest}
       />
     </div>
