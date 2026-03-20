@@ -95,11 +95,10 @@ const PENDING_ITEMS: PendingItem[] = [
     id: "cron-production",
     title: "Cron jobs em producao",
     description:
-      "Vercel Cron ou scheduler externo precisa estar configurado para rodar jobs automaticamente (ingestao, precos, scores, alertas).",
+      "Vercel Cron configurado em vercel.json com 10 schedules (update-prices, cleanup, alerts, ingest, scores, shopee, pages, radar, digest, win-back).",
     group: "critical_for_execution",
-    status: "open",
-    blockedBy: "adapter-real-feeds",
-    estimatedEffort: "1 dia",
+    status: "closed",
+    estimatedEffort: "0",
   },
   {
     id: "conversion-tracking",
@@ -114,10 +113,10 @@ const PENDING_ITEMS: PendingItem[] = [
     id: "error-monitoring-production",
     title: "Monitoramento de erros em producao",
     description:
-      "captureError loga no console. Para producao precisa de Sentry, LogRocket ou similar.",
+      "Sentry integrado via @sentry/nextjs. Ativa automaticamente com SENTRY_DSN configurado. Configs client/server/edge criados.",
     group: "critical_for_execution",
-    status: "open",
-    estimatedEffort: "1 dia",
+    status: "closed",
+    estimatedEffort: "0",
   },
 
   // ── Important, Not Blocking ────────────────────────────────────────────────
@@ -134,10 +133,10 @@ const PENDING_ITEMS: PendingItem[] = [
     id: "e2e-tests",
     title: "Testes E2E automatizados",
     description:
-      "Sem testes E2E com Playwright/Cypress. Fluxos criticos (clickout, newsletter, busca) deveriam ter cobertura.",
+      "Playwright configurado com 8 smoke E2E tests (homepage, busca, produto, ofertas, alertas, API search, trending, clickout). Expandir cobertura conforme necessidade.",
     group: "important_not_blocking",
-    status: "open",
-    estimatedEffort: "3-5 dias",
+    status: "closed",
+    estimatedEffort: "0",
   },
   {
     id: "advanced-auth",
@@ -170,10 +169,10 @@ const PENDING_ITEMS: PendingItem[] = [
     id: "rate-limit-persistent",
     title: "Rate limiting persistente",
     description:
-      "Rate limit atual e in-memory. Para multi-instancia, precisa de Redis ou Upstash.",
+      "Rate limit migrado para Redis quando REDIS_URL disponivel. In-memory preservado como fallback para single-instance.",
     group: "important_not_blocking",
-    status: "partial",
-    estimatedEffort: "1 dia",
+    status: "closed",
+    estimatedEffort: "0",
   },
   {
     id: "backup-strategy",
@@ -332,28 +331,28 @@ export function getSystemBottlenecks(): SystemBottleneck[] {
     {
       area: "Operacao",
       description:
-        "Cron jobs nao estao agendados em ambiente de producao. Ingestao e atualizacao de precos sao manuais.",
-      severity: "critical",
+        "Vercel Cron configurado com 10 schedules. CRON_SECRET deve estar configurado na Vercel.",
+      severity: "info",
       recommendation:
-        "Configurar Vercel Cron ou scheduler externo com CRON_SECRET para automacao.",
+        "Verificar que CRON_SECRET esta definido nas env vars da Vercel.",
     },
     {
       area: "Operacao",
       description:
-        "Monitoramento de erros e via console.log. Sem alertas proativos em producao.",
-      severity: "warning",
+        "Sentry integrado via @sentry/nextjs. Requer SENTRY_DSN configurado para ativar.",
+      severity: "info",
       recommendation:
-        "Integrar Sentry ou similar para captura e alerta de erros em tempo real.",
+        "Configurar SENTRY_DSN e SENTRY_ORG/SENTRY_PROJECT na Vercel para monitoramento real.",
     },
 
     // Security gaps
     {
       area: "Seguranca",
       description:
-        "Rate limit e in-memory, perdido em restart/multi-instancia.",
-      severity: "warning",
+        "Rate limit agora usa Redis quando REDIS_URL disponivel. In-memory como fallback.",
+      severity: "info",
       recommendation:
-        "Migrar para Redis/Upstash para rate limiting persistente.",
+        "Garantir REDIS_URL configurado em producao para rate limiting distribuido.",
     },
     {
       area: "Seguranca",
