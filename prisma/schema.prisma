@@ -659,7 +659,7 @@ model ReviewAggregate {
 }
 
 // ============================================
-// SYSTEM SETTINGS (key-value store)
+// SYSTEM SETTINGS (key-value store for ML OAuth tokens, etc.)
 // ============================================
 
 model SystemSetting {
@@ -669,3 +669,4 @@ model SystemSetting {
 
   @@map("system_settings")
 }
+

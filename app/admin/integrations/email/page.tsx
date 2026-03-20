@@ -14,10 +14,10 @@ import {
 
 interface EmailLogEntry {
   id: string
-  type: string
-  recipient: string
+  to: string
+  subject: string
+  template: string
   status: string
-  error?: string
   sentAt: string
 }
 
@@ -49,8 +49,10 @@ export default function EmailIntegrationPage() {
     details: Record<string, unknown> | null
   } | null>(null)
   const [configTesting, setConfigTesting] = useState(false)
+  const [emailLogs, setEmailLogs] = useState<EmailLogEntry[]>([])
+  const [emailStats, setEmailStats] = useState<EmailStats | null>(null)
 
-  // Test general email config on mount
+  // Test general email config + fetch logs on mount
   useEffect(() => {
     async function checkConfig() {
       setConfigTesting(true)
@@ -68,7 +70,22 @@ export default function EmailIntegrationPage() {
         setConfigTesting(false)
       }
     }
+
+    async function fetchLogs() {
+      try {
+        const res = await fetch('/api/admin/integrations/email/logs')
+        if (res.ok) {
+          const data = await res.json()
+          setEmailLogs(data.logs || [])
+          setEmailStats(data.stats || null)
+        }
+      } catch {
+        // logs fetch failed — not critical
+      }
+    }
+
     checkConfig()
+    fetchLogs()
   }, [])
 
   async function handleTemplateTest(template: TemplateKey) {
@@ -194,18 +211,51 @@ export default function EmailIntegrationPage() {
         )}
       </section>
 
-      {/* Recent sends — placeholder since logs are in-memory server-side */}
+      {/* Recent sends */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Envios Recentes</h2>
-        <div className="rounded-xl border border-gray-200 p-6 text-center">
-          <Clock className="mx-auto h-8 w-8 text-gray-300" />
-          <p className="mt-2 text-sm text-gray-500">
-            O log de envios é mantido em memoria no servidor.
-          </p>
-          <p className="text-xs text-gray-400">
-            Use o teste de templates acima para gerar entradas.
-          </p>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Envios Recentes</h2>
+          {emailStats && (
+            <div className="flex gap-3 text-xs text-gray-500">
+              <span className="text-emerald-600">{emailStats.totalSent} enviados</span>
+              {emailStats.totalFailed > 0 && (
+                <span className="text-red-500">{emailStats.totalFailed} falharam</span>
+              )}
+            </div>
+          )}
         </div>
+
+        {emailLogs.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 p-6 text-center">
+            <Clock className="mx-auto h-8 w-8 text-gray-300" />
+            <p className="mt-2 text-sm text-gray-500">Nenhum email enviado ainda.</p>
+            <p className="text-xs text-gray-400">Use o teste de templates acima para gerar entradas.</p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+            {emailLogs.slice(0, 20).map((log) => (
+              <div key={log.id} className="flex items-center gap-3 px-4 py-2.5">
+                {log.status === 'sent' ? (
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                ) : (
+                  <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-900 truncate">{log.to}</p>
+                  <p className="text-xs text-gray-500 truncate">{log.subject}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                    {log.template}
+                  </span>
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    {new Date(log.sentAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   )

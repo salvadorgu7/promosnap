@@ -78,6 +78,10 @@ export async function GET(req: NextRequest) {
         name: true,
         slug: true,
         imageUrl: true,
+        variants: {
+          select: { specsJson: true },
+          take: 1,
+        },
         ...PRODUCT_INCLUDE,
       },
       take: 50, // Fetch more to rank and cut
@@ -88,8 +92,8 @@ export async function GET(req: NextRequest) {
       products.map(p => ({
         id: p.id,
         name: p.name,
-        title: p.name, // Use product name as title for attribute extraction
-        specsJson: null, // TODO: fetch from variants when available
+        title: p.name,
+        specsJson: (p as any).variants?.[0]?.specsJson ?? null,
       })),
       useCaseSlug,
       categorySlug

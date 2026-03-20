@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "test:legacy": "npx tsx lib/__tests__/run-all.ts",
     "test:smoke": "npx tsx scripts/smoke-test.ts",
+    "test:e2e": "npx playwright test",
     "verify": "npx tsx lib/__tests__/run-all.ts && npx tsx scripts/smoke-test.ts && next build",
     "verify:quick": "npx tsx scripts/verify.ts",
     "verify:ci": "npx tsc --noEmit && next build",
@@ -26,6 +27,7 @@
   },
   "dependencies": {
     "@prisma/client": "6.2.1",
+    "@sentry/nextjs": "^10.45.0",
     "clsx": "^2.1.1",
     "ioredis": "^5.4.0",
     "lucide-react": "^0.469.0",
@@ -40,6 +42,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.1.6",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
