@@ -8,6 +8,9 @@ import ReturnHook from "@/components/engagement/ReturnHook";
 import StickyAlertBar from "@/components/engagement/StickyAlertBar";
 import ChatBubble from "@/components/ai/ChatBubble";
 import WebVitals from "@/components/analytics/WebVitals";
+import dynamic from "next/dynamic";
+
+const ExitIntentCapture = dynamic(() => import("@/components/engagement/ExitIntentCapture"));
 import { organizationSchema, websiteSchema } from "@/lib/seo/metadata";
 
 export default function SiteLayout({
@@ -39,6 +42,7 @@ export default function SiteLayout({
       <PromoModal />
       <ChatBubble />
       <WebVitals />
+      <ExitIntentCapture />
     </div>
   );
 }

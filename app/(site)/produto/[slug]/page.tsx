@@ -39,6 +39,8 @@ import AmazonAlternative from "@/components/product/AmazonAlternative";
 import RelatedContent from "@/components/seo/RelatedContent";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import CrossClusterLinks from "@/components/seo/CrossClusterLinks";
+import LiveViewers from "@/components/product/LiveViewers";
+import SimilarProducts from "@/components/product/SimilarProducts";
 import { getRelatedLinks } from "@/lib/seo/internal-links";
 import UrgencySignals from "@/components/product/UrgencySignals";
 import CommercialCTA from "@/components/product/CommercialCTA";
@@ -497,6 +499,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                 <Users className="h-3 w-3" /> {viewCountDisplay} pessoas viram este produto
               </p>
             )}
+            <LiveViewers popularityScore={product.popularityScore} />
           </div>
 
           {/* Hero Verdict — primary decision signal */}
@@ -1157,6 +1160,13 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
       {product.category?.slug && (
         <CrossClusterLinks categorySlug={product.category.slug} />
       )}
+
+      {/* Similar products cross-sell */}
+      <SimilarProducts
+        productId={product.id}
+        categorySlug={product.category?.slug}
+        brandId={product.brandId ?? undefined}
+      />
 
       {/* Sticky mobile actions bar */}
       {bestOffer && (
