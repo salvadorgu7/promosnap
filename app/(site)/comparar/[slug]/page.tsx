@@ -213,8 +213,11 @@ function ProductSideCard({
       <div className="flex items-center gap-2 text-xs text-text-muted mb-4">
         <Star className="w-3.5 h-3.5" />
         <span>Score: {Math.round(best.bestOffer.offerScore)}/100</span>
-        {best.offersCount > 1 && (
-          <span>em {best.offersCount} lojas</span>
+        {best.storesCount > 1 && (
+          <span>em {best.storesCount} lojas</span>
+        )}
+        {best.storesCount <= 1 && best.offersCount > 1 && (
+          <span>{best.offersCount} ofertas</span>
         )}
       </div>
       <a

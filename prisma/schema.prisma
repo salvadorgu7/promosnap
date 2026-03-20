@@ -499,24 +499,106 @@ model Referral {
 // ============================================
 
 model Subscriber {
-  id        String           @id @default(cuid())
-  email     String           @unique
-  status    SubscriberStatus @default(ACTIVE)
-  source    String           @default("website")
-  interests String[] // category slugs of interest
-  tags      String[] // segmentation tags: tech, bargain, gamer, etc.
-  frequency String           @default("weekly") // daily, weekly, monthly
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id              String           @id @default(cuid())
+  email           String           @unique
+  phone           String?          // WhatsApp number (E.164 format)
+  name            String?          // First name for personalisation
+  status          SubscriberStatus @default(ACTIVE)
+  source          String           @default("website")
+  interests       String[]         // category slugs of interest
+  tags            String[]         // segmentation tags: tech, bargain, gamer, etc.
+  frequency       String           @default("weekly") // daily, weekly, monthly
+  // Channel opt-in
+  channelEmail    Boolean          @default(true)
+  channelWhatsApp Boolean          @default(false)
+  channelPush     Boolean          @default(false)
+  // Engagement
+  engagementScore Int              @default(0) // 0-100
+  segment         String?          // tech_enthusiast, bargain_hunter, gamer, etc.
+  lastActiveAt    DateTime?
+  // Quiet hours (BRT)
+  quietStart      Int?             // hour 0-23 (null = no preference)
+  quietEnd        Int?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  messages CrmMessage[]
 
   @@index([status])
   @@index([source])
+  @@index([phone])
+  @@index([engagementScore])
+  @@index([status, channelWhatsApp])
   @@map("subscribers")
 }
 
 enum SubscriberStatus {
   ACTIVE
   UNSUBSCRIBED
+}
+
+// ============================================
+// CRM — EVENTS, MESSAGES, QUEUE
+// ============================================
+
+model CrmEvent {
+  id           String   @id @default(cuid())
+  sessionId    String?
+  email        String?
+  eventType    String   // search, view_product, clickout, favorite, alert_create, compare, etc.
+  payload      Json?    // { productId, query, category, source, price, ... }
+  createdAt    DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([eventType, createdAt])
+  @@index([sessionId])
+  @@map("crm_events")
+}
+
+model CrmMessage {
+  id            String         @id @default(cuid())
+  subscriberId  String
+  channel       CrmChannel
+  messageType   String         // alert_triggered, price_drop, weekly_digest, welcome, reengagement, etc.
+  subject       String?
+  body          String
+  productId     String?
+  offerId       String?
+  status        CrmMsgStatus   @default(QUEUED)
+  scheduledAt   DateTime?
+  sentAt        DateTime?
+  clickedAt     DateTime?
+  errorMessage  String?
+  // Quality gate metadata
+  valueScore    Float          @default(0) // 0-100 — estimated value of sending this
+  spamRiskScore Float          @default(0) // 0-100 — risk of being perceived as spam
+  dedupKey      String?        // subscriberId:productId:messageType:window → idempotency
+  aiGenerated   Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+
+  subscriber Subscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  @@unique([dedupKey])
+  @@index([subscriberId, createdAt])
+  @@index([status, scheduledAt])
+  @@index([channel, status])
+  @@index([messageType, createdAt])
+  @@map("crm_messages")
+}
+
+enum CrmChannel {
+  EMAIL
+  WHATSAPP
+  PUSH
+  ONSITE
+}
+
+enum CrmMsgStatus {
+  QUEUED
+  SENT
+  CLICKED
+  FAILED
+  SUPPRESSED // blocked by quality gate
 }
 
 // ============================================

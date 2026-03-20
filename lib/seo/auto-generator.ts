@@ -205,7 +205,7 @@ function truncate(str: string, maxLen: number): string {
 
 const CURRENT_YEAR = new Date().getFullYear()
 
-const STORES = ['Amazon', 'Mercado Livre', 'Shopee', 'Magalu']
+const STORES = ['Amazon', 'Mercado Livre', 'Shopee', 'Shein']
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GENERATORS PER PAGE TYPE
@@ -545,7 +545,7 @@ export function generatePageSEO(input: SEOInput): GeneratedSEO {
     case 'home':
       return {
         title: 'PromoSnap — Ofertas reais, preço de verdade',
-        metaDescription: 'Compare preços na Amazon, Mercado Livre, Shopee e Magalu. Histórico de 90 dias, alertas de queda e cupons. Economize com dados reais.',
+        metaDescription: 'Compare preços na Amazon, Mercado Livre, Shopee e Shein. Histórico de 90 dias, alertas de queda e cupons. Economize com dados reais.',
         h1: 'Melhores Ofertas Agora',
         subtitle: 'Preços comparados em tempo real',
         schemaTypes: ['WebSite', 'Organization'],

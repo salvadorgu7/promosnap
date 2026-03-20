@@ -61,7 +61,9 @@ import ProductCaveat from "@/components/product/ProductCaveat";
 import ComparisonContext from "@/components/product/ComparisonContext";
 import AskAIBlock from "@/components/product/AskAIBlock";
 import AISummaryBlock from "@/components/product/AISummaryBlock";
+import ViewTracker from "@/components/product/ViewTracker";
 import { analyzeCrossSource, buildCrossSourceOffer } from "@/lib/source/cross-source";
+import { countDistinctStores } from "@/lib/source/normalize";
 import { getCanonicalComparison, getBestChoice } from "@/lib/catalog/smart-comparison";
 import { buildMetadata, productSchema, breadcrumbSchema, generateProductMeta } from "@/lib/seo/metadata";
 import { findComparisonsForProduct } from "@/lib/seo/comparisons";
@@ -186,8 +188,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     orderBy: { variantName: "asc" },
   }).catch(() => []);
 
-  // Count distinct sources for canonical view
+  // Count distinct commercial sources (canonical, no duplicates, no internal)
   const distinctSources = new Set(product.listings.map((l) => l.source.slug));
+  const storesCount = countDistinctStores(product.listings.map((l: any) => l.source.slug));
 
   // Shipping signals for each offer
   const offersWithShipping = allOffers.map((offer) => ({
@@ -301,6 +304,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 pb-20 lg:pb-6">
+      {/* View tracker — stores recently viewed + CRM event */}
+      <ViewTracker slug={product.slug} productId={product.id} />
+
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} />
 
@@ -560,6 +566,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             <MobileDecisionCompact
               buySignal={buySignal}
               offersCount={allOffers.length}
+              storesCount={storesCount}
               discount={discount}
               isFreeShipping={bestOffer.isFreeShipping}
               sourceSlug={bestOffer.sourceSlug}
@@ -586,6 +593,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                 avg30d={priceStats?.avg30d}
                 allTimeMin={priceStats?.allTimeMin}
                 offersCount={allOffers.length}
+                storesCount={storesCount}
                 isFreeShipping={bestOffer.isFreeShipping}
                 offerScore={bestOffer.offerScore}
                 trend={priceStats?.trend}
@@ -627,6 +635,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                 avg30d={priceStats?.avg30d}
                 allTimeMin={priceStats?.allTimeMin}
                 offersCount={allOffers.length}
+                storesCount={storesCount}
                 isFreeShipping={bestOffer.isFreeShipping}
                 offerScore={bestOffer.offerScore}
                 trend={priceStats?.trend}

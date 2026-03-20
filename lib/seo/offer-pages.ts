@@ -125,7 +125,7 @@ export const OFFER_PAGES: Record<string, OfferPageDef> = {
     faqs: [
       { q: 'Os precos de eletronicos mudam todo dia?', a: 'Sim, precos de eletronicos podem variar varias vezes ao dia nos marketplaces. O PromoSnap monitora essas variacoes para destacar os melhores momentos de compra.' },
       { q: 'Como saber se uma oferta de eletronico e real?', a: 'Verifique o historico de precos no PromoSnap. Se o preco atual esta abaixo da media dos ultimos 30 dias, o desconto e real.' },
-      { q: 'Qual marketplace tem mais ofertas de eletronicos?', a: 'Amazon e Mercado Livre costumam ter o maior volume de ofertas, seguidos por Magazine Luiza e Americanas.' },
+      { q: 'Qual marketplace tem mais ofertas de eletronicos?', a: 'Amazon e Mercado Livre costumam ter o maior volume de ofertas, seguidos por Shopee e Shein.' },
     ],
   },
   'casa-inteligente': {
@@ -235,7 +235,7 @@ export const OFFER_PAGES: Record<string, OfferPageDef> = {
     searchQuery: 'cadeira gamer escritorio ergonomica home office',
     faqs: [
       { q: 'Cadeira gamer ou ergonômica para trabalho?', a: 'Para longas horas de trabalho, cadeiras ergonômicas como Herman Miller, Flexform ou Brizza são superiores em apoio lombar. Cadeiras gamer são mais chamativas, mas nem sempre mais ergonômicas.' },
-      { q: 'Quando cadeiras ficam mais baratas?', a: 'Black Friday e volta às aulas são os melhores momentos. Lojas como Kabum e Pichau costumam ter liquidações em cadeiras gamer que reduzem 20-40% do preço.' },
+      { q: 'Quando cadeiras ficam mais baratas?', a: 'Black Friday e volta às aulas são os melhores momentos. Amazon e Mercado Livre costumam ter liquidações em cadeiras gamer que reduzem 20-40% do preço.' },
     ],
   },
   cafeteiras: {

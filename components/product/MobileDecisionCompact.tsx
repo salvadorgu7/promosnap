@@ -7,6 +7,7 @@ import type { BuySignal } from "@/lib/decision/buy-signal"
 interface MobileDecisionCompactProps {
   buySignal: BuySignal | null
   offersCount: number
+  storesCount?: number
   discount: number | null
   isFreeShipping: boolean
   sourceSlug: string
@@ -17,12 +18,14 @@ interface MobileDecisionCompactProps {
 export default function MobileDecisionCompact({
   buySignal,
   offersCount,
+  storesCount,
   discount,
   isFreeShipping,
   offerScore,
   children,
 }: MobileDecisionCompactProps) {
   const [expanded, setExpanded] = useState(false)
+  const uniqueStores = storesCount ?? offersCount
 
   const chips: { label: string; icon: typeof TrendingDown; positive: boolean }[] = []
 
@@ -30,8 +33,10 @@ export default function MobileDecisionCompact({
     chips.push({ label: `-${discount}%`, icon: TrendingDown, positive: true })
   if (isFreeShipping)
     chips.push({ label: "Frete gratis", icon: Truck, positive: true })
-  if (offersCount > 1)
-    chips.push({ label: `${offersCount} lojas`, icon: ShoppingBag, positive: true })
+  if (uniqueStores > 1)
+    chips.push({ label: `${uniqueStores} lojas`, icon: ShoppingBag, positive: true })
+  else if (offersCount > 1)
+    chips.push({ label: `${offersCount} ofertas`, icon: ShoppingBag, positive: true })
   if (offerScore >= 70)
     chips.push({ label: `Score ${offerScore}`, icon: Shield, positive: true })
 

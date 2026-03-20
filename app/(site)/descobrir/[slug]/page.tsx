@@ -125,6 +125,7 @@ export default async function DescobrirPage({ params }: Props) {
           offerScore: offer.offerScore,
         },
         offersCount: 1,
+        storesCount: 1,
         popularityScore: p.popularityScore,
         badges: [],
       } satisfies ProductCard

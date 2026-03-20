@@ -109,6 +109,7 @@ export interface ProductCard {
     offerScore: number
   }
   offersCount: number
+  storesCount: number
   minPrice30d?: number
   popularityScore: number
   originType?: string

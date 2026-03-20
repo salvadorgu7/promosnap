@@ -40,6 +40,7 @@ const mockProduct: ProductCard = {
     offerScore: 85,
   },
   offersCount: 3,
+  storesCount: 3,
   popularityScore: 75,
   badges: [
     { type: "hot_deal", label: "Oferta Quente", color: "red" },

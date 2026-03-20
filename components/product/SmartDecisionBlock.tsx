@@ -9,6 +9,7 @@ interface SmartDecisionBlockProps {
   avg30d?: number;
   allTimeMin?: number;
   offersCount: number;
+  storesCount?: number;
   isFreeShipping: boolean;
   offerScore: number;
   trend?: "up" | "down" | "stable";
@@ -23,6 +24,7 @@ export default function SmartDecisionBlock({
   avg30d,
   allTimeMin,
   offersCount,
+  storesCount,
   isFreeShipping,
   offerScore,
   trend,
@@ -68,12 +70,21 @@ export default function SmartDecisionBlock({
     }
   }
 
-  // Multiple sources
-  if (offersCount > 1) {
+  // Multiple sources — use storesCount for "lojas", offersCount for "ofertas"
+  const uniqueStores = storesCount ?? offersCount;
+  if (uniqueStores > 1) {
     signals.push({
       icon: Scale,
-      label: `${offersCount} lojas comparadas`,
+      label: `${uniqueStores} lojas comparadas`,
       detail: "Você está vendo o melhor preço entre todas as fontes",
+      color: "text-brand-500",
+      positive: true,
+    });
+  } else if (offersCount > 1) {
+    signals.push({
+      icon: Scale,
+      label: `${offersCount} ofertas comparadas`,
+      detail: "Você está vendo o melhor preço entre todas as ofertas",
       color: "text-brand-500",
       positive: true,
     });

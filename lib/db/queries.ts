@@ -3,6 +3,7 @@ import type { ProductCard, Badge } from '@/types'
 import { calculateCommercialScore, type CommercialSignals } from '@/lib/ranking/commercial'
 import { memoryCache } from '@/lib/cache/memory'
 import { logger } from '@/lib/logger'
+import { countDistinctStores, getCommercialSlugs } from '@/lib/source/normalize'
 
 const HOMEPAGE_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
@@ -92,6 +93,7 @@ export function buildProductCard(p: any): ProductCard | null {
       offerScore: best.offerScore,
     },
     offersCount: allOffers.length,
+    storesCount: countDistinctStores(allOffers.map((o: any) => o.sourceSlug)),
     popularityScore: p.popularityScore,
     originType: p.originType || undefined,
     badges,
@@ -880,10 +882,13 @@ export async function getSiteStats() {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const weekAgo = new Date(today.getTime() - 7 * 86400000)
 
+  const commercialSlugs = getCommercialSlugs()
+
   const [listings, activeOffers, sources, clickoutsToday, clickoutsWeek, categories, brands] = await Promise.all([
     prisma.listing.count({ where: { status: 'ACTIVE' } }),
     prisma.offer.count({ where: { isActive: true } }),
-    prisma.source.count({ where: { status: 'ACTIVE' } }),
+    // Only count public commercial marketplaces — exclude internal/operational sources
+    prisma.source.count({ where: { status: 'ACTIVE', slug: { in: commercialSlugs } } }),
     prisma.clickout.count({ where: { clickedAt: { gte: today } } }),
     prisma.clickout.count({ where: { clickedAt: { gte: weekAgo } } }),
     prisma.category.count(),

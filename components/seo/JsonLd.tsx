@@ -19,7 +19,7 @@ export function WebsiteJsonLd() {
         "@type": "WebSite",
         name: "PromoSnap",
         url: "https://www.promosnap.com.br",
-        description: "Compare preços de produtos em Amazon, Mercado Livre, Shopee e Magazine Luiza. Encontre o menor preço com histórico de preços e alertas.",
+        description: "Compare preços de produtos em Amazon, Mercado Livre, Shopee e Shein. Encontre o menor preço com histórico de preços e alertas.",
         potentialAction: {
           "@type": "SearchAction",
           target: {

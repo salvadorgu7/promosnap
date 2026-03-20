@@ -265,7 +265,7 @@ export const BEST_PAGES: Record<string, BestPageDef> = {
     faqs: [
       { q: 'Quanto custa um bom tênis em 2026?', a: 'Na faixa de R$150-300 você encontra tênis de boa qualidade para uso casual. Para corrida, a partir de R$250 já existem modelos com amortecimento decente.' },
       { q: 'Tênis barato vale a pena?', a: 'Modelos entry-level de grandes marcas (Nike Revolution, Adidas Duramo, Puma Softride) são baratos e confiáveis. Evite marcas desconhecidas sem avaliações.' },
-      { q: 'Onde encontrar os melhores descontos em tênis?', a: 'O PromoSnap monitora preços em Amazon, Mercado Livre, Shopee e Magazine Luiza. Datas como Black Friday, Dia do Consumidor e trocas de coleção oferecem os maiores descontos.' },
+      { q: 'Onde encontrar os melhores descontos em tênis?', a: 'O PromoSnap monitora preços em Amazon, Mercado Livre, Shopee e Shein. Datas como Black Friday, Dia do Consumidor e trocas de coleção oferecem os maiores descontos.' },
     ],
   },
   'melhores-celulares-ate-1500': {

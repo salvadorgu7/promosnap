@@ -113,6 +113,8 @@ export async function GET(req: NextRequest) {
     ['win-back', () => import('@/lib/jobs/win-back').then(m => m.runWinBack())],
     // variant-fill: HYGIENE — auto-populates ProductVariant from title parsing
     ['variant-fill', () => import('@/lib/catalog/variant-parser').then(m => m.populateVariants())],
+    // crm-engine: RETENTION — alerts, digests, reengagement, segmentation via CRM pipeline
+    ['crm-engine', () => import('@/lib/jobs/crm-engine').then(m => m.runCrmEngineJob())],
   ]
 
   // Filter to requested subset if ?jobs= is provided

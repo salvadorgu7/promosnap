@@ -30,6 +30,7 @@ const PriceDropRail = nextDynamic(() => import("@/components/home/PriceDropRail"
 const OpportunityRail = nextDynamic(() => import("@/components/home/OpportunityRail"));
 const EditorialRail = nextDynamic(() => import("@/components/home/EditorialRail"));
 const AIAssistantCTA = nextDynamic(() => import("@/components/home/AIAssistantCTA"));
+const RetentionRail = nextDynamic(() => import("@/components/home/RetentionRail"));
 import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/seo/JsonLd";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
@@ -527,6 +528,9 @@ export default async function HomePage() {
 
       {/* ===== 19. RECENTLY VIEWED ===== */}
       <RecentlyViewedRail />
+
+      {/* ===== 19a. RETENTION RAIL — price drops + alert nudge ===== */}
+      <RetentionRail />
 
       {/* ===== 19b. AI ASSISTANT CTA ===== */}
       <AIAssistantCTA />

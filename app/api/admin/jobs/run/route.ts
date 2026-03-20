@@ -33,6 +33,10 @@ async function loadJobs() {
   JOB_MAP['discover-import'] = { fn: () => discoverAndImport(), description: 'Discovery automatico + importacao via ML (daily)', requiresCredentials: 'ML_CLIENT_ID', jobRunName: 'discover-import' }
   JOB_MAP['discover-import-massive'] = { fn: () => discoverAndImport({ mode: 'massive' }), description: 'Import massivo — todas as 28 categorias, até 500 produtos', requiresCredentials: 'ML_CLIENT_ID', jobRunName: 'discover-import' }
   JOB_MAP['discover-import-extended'] = { fn: () => discoverAndImport({ mode: 'extended' }), description: 'Import estendido — todas as categorias, até 150 produtos', requiresCredentials: 'ML_CLIENT_ID', jobRunName: 'discover-import' }
+
+  // CRM engine
+  const { runCrmEngineJob } = await import('@/lib/jobs/crm-engine')
+  JOB_MAP['crm-engine'] = { fn: runCrmEngineJob, description: 'Motor CRM — alertas, digests, reengagement, segmentacao', jobRunName: 'crm-engine' }
 }
 
 // ---------------------------------------------------------------------------

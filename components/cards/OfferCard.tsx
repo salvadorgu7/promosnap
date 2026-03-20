@@ -127,9 +127,14 @@ export default function OfferCard({ product, railSource, page, position }: { pro
             <Store className="h-2.5 w-2.5" />
             {bestOffer.sourceName}
           </span>
-          {product.offersCount > 1 && (
+          {product.storesCount > 1 && (
             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-surface-100 text-[9px] font-medium text-text-muted">
-              {product.offersCount} lojas
+              {product.storesCount} lojas
+            </span>
+          )}
+          {product.storesCount <= 1 && product.offersCount > 1 && (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-surface-100 text-[9px] font-medium text-text-muted">
+              {product.offersCount} ofertas
             </span>
           )}
           {bestOffer.isFreeShipping && (
