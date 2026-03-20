@@ -245,6 +245,7 @@ model Offer {
   @@index([currentPrice])
   @@index([isActive, offerScore(sort: Desc)])
   @@index([isActive, listingId])
+  @@index([listingId, isActive, offerScore(sort: Desc)])
   @@map("offers")
 }
 
@@ -319,7 +320,8 @@ model Clickout {
   productId    String? // product that was being viewed when clickout happened
   referralCode String?
 
-  offer Offer @relation(fields: [offerId], references: [id])
+  offer       Offer        @relation(fields: [offerId], references: [id])
+  conversions Conversion[]
 
   @@index([offerId])
   @@index([clickedAt])
@@ -444,6 +446,7 @@ model TrendingKeyword {
 
   @@unique([keyword, fetchedAt])
   @@index([fetchedAt])
+  @@index([keyword])
   @@map("trending_keywords")
 }
 
@@ -550,6 +553,7 @@ model CrmEvent {
   createdAt    DateTime @default(now())
 
   @@index([email, createdAt])
+  @@index([email, eventType])
   @@index([eventType, createdAt])
   @@index([sessionId])
   @@map("crm_events")
@@ -599,6 +603,41 @@ enum CrmMsgStatus {
   CLICKED
   FAILED
   SUPPRESSED // blocked by quality gate
+}
+
+// ============================================
+// CONVERSIONS (affiliate postback tracking)
+// ============================================
+
+model Conversion {
+  id            String           @id @default(cuid())
+  clickoutId    String?
+  source        String           // "amazon", "mercadolivre", "shopee", "shein"
+  externalTxId  String?          // transaction ID from affiliate network
+  subId         String?          // our clickout ID passed as sub_id
+  orderValue    Float?           // gross order value (GMV)
+  commission    Float?           // confirmed commission
+  currency      String           @default("BRL")
+  status        ConversionStatus @default(PENDING)
+  postbackRaw   Json?            // raw postback payload for audit
+  confirmedAt   DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  clickout Clickout? @relation(fields: [clickoutId], references: [id])
+
+  @@unique([source, externalTxId])
+  @@index([clickoutId])
+  @@index([source, status])
+  @@index([createdAt])
+  @@index([status])
+  @@map("conversions")
+}
+
+enum ConversionStatus {
+  PENDING    // postback received, not yet confirmed
+  CONFIRMED  // confirmed by affiliate network
+  REJECTED   // rejected/cancelled
 }
 
 // ============================================

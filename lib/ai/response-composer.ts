@@ -300,7 +300,7 @@ export function buildIntentPromptSection(intent: ClassifiedIntent): string {
   parts.push('- ORGANIZE por perfil quando fizer sentido')
   parts.push('- JUSTIFIQUE brevemente cada sugestão')
   parts.push('- SEMPRE inclua preço e loja')
-  parts.push('- TODO link deve usar o affiliateUrl fornecido')
+  parts.push('- OBRIGATÓRIO: todo link de produto DEVE usar o affiliateUrl fornecido (nunca link direto da loja)')
 
   return parts.join('\n')
 }

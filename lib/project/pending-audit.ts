@@ -50,10 +50,10 @@ const PENDING_ITEMS: PendingItem[] = [
     id: "adapter-real-feeds",
     title: "Adapters com feeds reais",
     description:
-      "Amazon, Shopee, Shein adapters sao stubs. Precisam de integracao real com APIs de afiliados para ingestao automatica de produtos.",
+      "Amazon e Shopee parcialmente implementados. Shein adapter agora production-ready com API Affiliate. Precisa de credenciais reais para ativar.",
     group: "critical_for_execution",
     status: "partial",
-    estimatedEffort: "3-5 dias por adapter",
+    estimatedEffort: "1-2 dias (configurar credenciais)",
   },
   {
     id: "ml-feed-sync",
@@ -104,10 +104,10 @@ const PENDING_ITEMS: PendingItem[] = [
     id: "conversion-tracking",
     title: "Tracking de conversao pos-clickout",
     description:
-      "Nao ha callback de conversao dos afiliados. Sem isso, revenue estimado e aproximacao baseada em clickouts.",
+      "Endpoint de postback implementado (/api/postback/[source]) com parsers para Amazon, ML, Shopee e Shein. Modelo Conversion no Prisma. Falta configurar callbacks nos programas de afiliados.",
     group: "critical_for_execution",
-    status: "open",
-    estimatedEffort: "3-5 dias (depende de cada programa de afiliados)",
+    status: "partial",
+    estimatedEffort: "1 dia (configurar postback URLs nos dashboards de afiliados)",
   },
   {
     id: "error-monitoring-production",
@@ -160,10 +160,10 @@ const PENDING_ITEMS: PendingItem[] = [
     id: "database-indexes",
     title: "Otimizacao de indices do banco",
     description:
-      "Queries complexas (clickouts por dia, trending sem cobertura) podem precisar de indices dedicados em producao.",
+      "Indices compostos adicionados: CrmEvent(email+eventType), TrendingKeyword(keyword), Offer(listingId+isActive+offerScore), Conversion indexes. Cobertura completa.",
     group: "important_not_blocking",
-    status: "open",
-    estimatedEffort: "1 dia",
+    status: "closed",
+    estimatedEffort: "0",
   },
   {
     id: "rate-limit-persistent",
@@ -287,10 +287,10 @@ export function getSystemBottlenecks(): SystemBottleneck[] {
     {
       area: "Integracao",
       description:
-        "3 de 4 adapters de fontes (Amazon, Shopee, Shein) sao stubs sem conexao real com APIs de afiliados.",
-      severity: "critical",
+        "Shein adapter agora production-ready. Amazon e Shopee parcialmente implementados. Faltam credenciais reais.",
+      severity: "warning",
       recommendation:
-        "Priorizar integracao com pelo menos 1 fonte real alem de ML para diversificar catalogo.",
+        "Configurar SHEIN_API_KEY + AMAZON_CREDENTIAL_ID + SHOPEE_APP_ID para ativar adapters.",
     },
     {
       area: "Integracao",
@@ -305,10 +305,10 @@ export function getSystemBottlenecks(): SystemBottleneck[] {
     {
       area: "Medicao",
       description:
-        "Sem tracking de conversao pos-clickout. Revenue e estimado, nao confirmado.",
-      severity: "critical",
+        "Postback endpoint implementado (/api/postback/[source]). Modelo Conversion no Prisma. Faltam configurar URLs nos dashboards de afiliados.",
+      severity: "warning",
       recommendation:
-        "Implementar postback/callback de conversao ou integrar com dashboards dos programas de afiliados.",
+        "Registrar postback URLs nos programas de afiliados: Amazon, ML, Shopee, Shein. Configurar POSTBACK_SECRET.",
     },
     {
       area: "Medicao",

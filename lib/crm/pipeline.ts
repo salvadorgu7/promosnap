@@ -196,18 +196,56 @@ async function sendViaEmail(email: string, msg: any): Promise<boolean> {
   }
 }
 
-async function sendViaWhatsApp(_email: string, _msg: any): Promise<boolean> {
-  // WhatsApp delivery — currently in preview mode (manual copy-paste)
-  // Will be automated when WHATSAPP_API_URL + WHATSAPP_API_TOKEN are configured
+async function sendViaWhatsApp(_email: string, msg: any): Promise<boolean> {
   try {
-    const { getReadinessStatus } = await import('@/lib/distribution/whatsapp')
+    const { getActiveProvider, getReadinessStatus } = await import('@/lib/distribution/whatsapp')
     const ready = getReadinessStatus()
-    if (!ready.configured) return false
 
-    // TODO: actual API call when webhook is configured
-    logger.info('[CRM] WhatsApp message formatted (preview mode)')
+    if (!ready.configured) {
+      logger.info('[CRM] WhatsApp not configured — message stored for manual review')
+      return false
+    }
+
+    const provider = getActiveProvider()
+
+    if (ready.mode === 'preview') {
+      logger.info('[CRM] WhatsApp preview mode — message formatted but not sent')
+      return false
+    }
+
+    // Build WhatsApp-friendly plain text
+    const text = [
+      msg.headline || msg.subject || '',
+      '',
+      msg.body || '',
+      '',
+      msg.ctaUrl ? `Ver oferta: ${msg.ctaUrl}` : '',
+      '',
+      '— PromoSnap',
+    ].filter(Boolean).join('\n')
+
+    // Resolve subscriber phone
+    const sub = await prisma.subscriber.findFirst({
+      where: { email: _email, channelWhatsApp: true, phone: { not: null } },
+      select: { phone: true },
+    })
+
+    if (!sub?.phone) {
+      logger.info('[CRM] WhatsApp delivery skipped — subscriber has no phone', { email: _email })
+      return false
+    }
+
+    const result = await provider.send(text, sub.phone)
+
+    if (!result.success) {
+      logger.warn('[CRM] WhatsApp delivery failed', { email: _email, error: result.error })
+      return false
+    }
+
+    logger.info('[CRM] WhatsApp message sent', { email: _email, provider: ready.provider })
     return true
-  } catch {
+  } catch (err) {
+    logger.error('[CRM] WhatsApp delivery error', { err })
     return false
   }
 }
