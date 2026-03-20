@@ -28,6 +28,9 @@ const MARKETPLACES: MarketplaceConfig[] = [
     domains: ['mercadolivre.com.br', 'mercadolibre.com', 'produto.mercadolivre.com.br'],
     envVar: 'MERCADOLIVRE_AFFILIATE_ID',
     param: 'matt_tool',
+    extraParams: process.env.MERCADOLIVRE_AFFILIATE_WORD
+      ? { matt_word: process.env.MERCADOLIVRE_AFFILIATE_WORD }
+      : undefined,
   },
   {
     domains: ['amazon.com.br'],

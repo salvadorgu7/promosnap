@@ -22,18 +22,26 @@ export const mercadoLivreConnector: SourceConnector = {
   slug: 'mercadolivre-search',
 
   isReady(): boolean {
-    return !!process.env.MERCADOLIVRE_APP_ID
+    // Accept either naming convention for ML credentials
+    return !!(process.env.MERCADOLIVRE_APP_ID || process.env.ML_CLIENT_ID)
   },
 
   async search(query: string, options?: { maxPrice?: number; limit?: number }): Promise<ExternalCandidate[]> {
-    if (!this.isReady()) return []
+    if (!this.isReady()) {
+      log.debug('ml-connector.not-ready', {
+        hint: 'Configure MERCADOLIVRE_APP_ID ou ML_CLIENT_ID + respectivo SECRET',
+      })
+      return []
+    }
 
     try {
       const { MercadoLivreSourceAdapter } = await import('@/lib/adapters/mercadolivre')
       const adapter = new MercadoLivreSourceAdapter()
 
       if (!adapter.isConfigured()) {
-        log.debug('ml-connector.not-configured')
+        log.warn('ml-connector.not-configured', {
+          hint: 'APP_ID presente mas SECRET ausente — verifique MERCADOLIVRE_SECRET / ML_CLIENT_SECRET',
+        })
         return []
       }
 

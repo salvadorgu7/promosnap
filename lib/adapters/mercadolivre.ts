@@ -41,6 +41,99 @@ const ML_BASE_HEADERS: Record<string, string> = {
 }
 
 // ---------------------------------------------------------------------------
+// Circuit breaker — stops hammering ML API when it's consistently failing
+// ---------------------------------------------------------------------------
+
+const circuitBreaker = {
+  failures: 0,
+  lastFailure: 0,
+  /** Threshold: after N consecutive failures, open the circuit */
+  threshold: 5,
+  /** Reset window: circuit closes after this many ms without a call */
+  resetMs: 60_000, // 1 min
+
+  isOpen(): boolean {
+    if (this.failures < this.threshold) return false
+    // Auto-close after reset window
+    if (Date.now() - this.lastFailure > this.resetMs) {
+      this.failures = 0
+      return false
+    }
+    return true
+  },
+
+  recordSuccess() {
+    this.failures = 0
+  },
+
+  recordFailure() {
+    this.failures++
+    this.lastFailure = Date.now()
+  },
+}
+
+// ---------------------------------------------------------------------------
+// Rate limiter — basic token bucket (10 req/s burst, refills at 5/s)
+// ---------------------------------------------------------------------------
+
+const rateBucket = {
+  tokens: 10,
+  maxTokens: 10,
+  refillRate: 5, // tokens per second
+  lastRefill: Date.now(),
+
+  async acquire(): Promise<void> {
+    const now = Date.now()
+    const elapsed = (now - this.lastRefill) / 1000
+    this.tokens = Math.min(this.maxTokens, this.tokens + elapsed * this.refillRate)
+    this.lastRefill = now
+
+    if (this.tokens < 1) {
+      const waitMs = Math.ceil((1 - this.tokens) / this.refillRate * 1000)
+      await new Promise(resolve => setTimeout(resolve, waitMs))
+      this.tokens = 1
+    }
+    this.tokens--
+  },
+}
+
+/** Fetch with rate limit + circuit breaker + retry on 429 */
+async function mlFetch(url: string, options?: RequestInit): Promise<Response> {
+  if (circuitBreaker.isOpen()) {
+    throw new Error('ML API circuit breaker aberto — muitas falhas consecutivas. Aguarde 1min.')
+  }
+
+  await rateBucket.acquire()
+
+  const res = await fetch(url, options)
+
+  // Handle 429 (Too Many Requests) with retry-after
+  if (res.status === 429) {
+    const retryAfter = parseInt(res.headers.get('retry-after') || '2', 10)
+    const waitMs = Math.min(retryAfter * 1000, 10_000) // cap at 10s
+    log.warn('ml.rate-limited', { url, retryAfter, waitMs })
+    await new Promise(resolve => setTimeout(resolve, waitMs))
+
+    await rateBucket.acquire()
+    const retry = await fetch(url, options)
+    if (!retry.ok) {
+      circuitBreaker.recordFailure()
+    } else {
+      circuitBreaker.recordSuccess()
+    }
+    return retry
+  }
+
+  if (res.status >= 500) {
+    circuitBreaker.recordFailure()
+  } else {
+    circuitBreaker.recordSuccess()
+  }
+
+  return res
+}
+
+// ---------------------------------------------------------------------------
 // ML API response types
 // ---------------------------------------------------------------------------
 
@@ -357,7 +450,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       let lastErr = ''
 
       // Attempt 1: no auth first (ML search is a public API — fastest path)
-      res = await fetch(url.toString(), { headers: { ...ML_BASE_HEADERS } })
+      res = await mlFetch(url.toString(), { headers: { ...ML_BASE_HEADERS } })
       if (!res.ok) {
         lastErr = `noAuth(${res.status})`
         log.warn('search.noauth.failed', { status: res.status })
@@ -368,7 +461,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       if (!res) {
         const authHeaders = await getAuthHeaders()
         if (Object.keys(authHeaders).length > 0) {
-          res = await fetch(url.toString(), { headers: { ...ML_BASE_HEADERS, ...authHeaders } })
+          res = await mlFetch(url.toString(), { headers: { ...ML_BASE_HEADERS, ...authHeaders } })
           if (res.ok) { /* success */ }
           else {
             lastErr = `auth(${res.status})`
@@ -382,7 +475,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
       if (!res) {
         try {
           const appToken = await getMLAppToken()
-          res = await fetch(url.toString(), { headers: { ...ML_BASE_HEADERS, Authorization: `Bearer ${appToken}` } })
+          res = await mlFetch(url.toString(), { headers: { ...ML_BASE_HEADERS, Authorization: `Bearer ${appToken}` } })
           if (res.ok) { /* success */ }
           else {
             lastErr = `app_token(${res.status})`
@@ -426,7 +519,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     let lastErr = ''
 
     // Attempt 1: no auth (works for public/active items)
-    res = await fetch(itemUrl, { headers: { ...ML_BASE_HEADERS } })
+    res = await mlFetch(itemUrl, { headers: { ...ML_BASE_HEADERS } })
     if (!res.ok) {
       lastErr = `noAuth(${res.status})`
       log.warn('getProduct.noauth.failed', { externalId, status: res.status })
@@ -437,7 +530,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     if (!res) {
       const headers = await getAuthHeaders()
       if (Object.keys(headers).length > 0) {
-        res = await fetch(itemUrl, { headers: { ...ML_BASE_HEADERS, ...headers } })
+        res = await mlFetch(itemUrl, { headers: { ...ML_BASE_HEADERS, ...headers } })
         if (!res.ok) {
           lastErr = `auth(${res.status})`
           log.warn('getProduct.auth.failed', { externalId, status: res.status })
@@ -450,7 +543,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     if (!res) {
       try {
         const appToken = await getMLAppToken()
-        res = await fetch(itemUrl, { headers: { ...ML_BASE_HEADERS, Authorization: `Bearer ${appToken}` } })
+        res = await mlFetch(itemUrl, { headers: { ...ML_BASE_HEADERS, Authorization: `Bearer ${appToken}` } })
         if (!res.ok) {
           lastErr = `appToken(${res.status})`
           log.warn('getProduct.apptoken.failed', { externalId, status: res.status })
@@ -464,7 +557,7 @@ export class MercadoLivreSourceAdapter implements SourceAdapter {
     // Attempt 4: multi-get endpoint (different ML policy, sometimes works when /items/{id} doesn't)
     if (!res) {
       try {
-        const multiRes = await fetch(multiGetUrl, { headers: { ...ML_BASE_HEADERS } })
+        const multiRes = await mlFetch(multiGetUrl, { headers: { ...ML_BASE_HEADERS } })
         if (multiRes.ok) {
           const multiData = await multiRes.json()
           if (Array.isArray(multiData) && multiData[0]?.code === 200 && multiData[0]?.body) {

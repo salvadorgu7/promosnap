@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/db/prisma'
-import { MercadoLivreAdapter } from '@/adapters/mercadolivre'
+import { buildAffiliateUrl } from '@/lib/affiliate'
 import { validateAdmin } from '@/lib/auth/admin'
 import { logger } from '@/lib/logger'
 
@@ -176,7 +176,6 @@ export async function POST(req: NextRequest) {
   if (denied) return denied
 
   try {
-    const adapter = new MercadoLivreAdapter()
     const mlSource = await prisma.source.upsert({
       where: { slug: 'mercadolivre' },
       update: {},
@@ -225,7 +224,7 @@ export async function POST(req: NextRequest) {
           where: { listingId: listing.id, isActive: true },
         })
 
-        const affiliateUrl = adapter.buildAffiliateUrl(p.url)
+        const affiliateUrl = buildAffiliateUrl(p.url)
 
         const offer = await prisma.offer.upsert({
           where: { id: existingOffer?.id ?? '' },

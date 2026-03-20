@@ -50,6 +50,8 @@ export async function GET(req: NextRequest) {
   captureEvent('cron:start')
 
   const allJobs: [string, () => Promise<any>][] = [
+    // ml-token-refresh: SUPPORT — proactively refreshes ML OAuth token before expiry
+    ['ml-token-refresh', () => import('@/lib/jobs/ml-token-refresh').then(m => m.refreshMLToken())],
     // ingest: VALUE — ingests ML trending keywords for discovery
     ['ingest', () => import('@/lib/jobs/ingest-ml').then(m => m.ingestMLTrends())],
     // update-prices: VALUE — refreshes prices for tracked listings

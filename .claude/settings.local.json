@@ -26,7 +26,28 @@
       "Bash(npx next:*)",
       "Bash(git add:*)",
       "Bash(find \"/c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/app/\\(site\\)\" -name \"*.tsx\" -o -name \"*.ts\")",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "Bash(npx tsc:*)",
+      "Bash(grep -r \"ML_CLIENT_ID\\\\|ML_CLIENT_SECRET\\\\|MERCADOLIVRE\" /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/.env*)",
+      "Bash(find /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/lib/seo -type f -name *.ts)",
+      "Bash(grep -r \"getFlag\\\\|FF_\\\\|enhancedScoring\\\\|priceAlerts\\\\|trendingKeywords\\\\|priceRefresh\\\\|amazonAdapter\\\\|searchIntelligence\\\\|originTracking\\\\|debugMode\\\\|promosappEnabled\\\\|promosappAutoPublish\\\\|whatsappAutoIngest\\\\|comparisonHero\\\\|buySignals\\\\|shopeeEnabled\" /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/lib --include=*.ts)",
+      "Bash(find c:/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.mjs -o -name *.prisma \\\\\\) ! -path */node_modules/* ! -path */.next/* ! -path */.git/* -exec grep -n \"TODO\\\\|FIXME\\\\|HACK\\\\|XXX\" {} +)",
+      "Bash(find c:/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.mjs -o -name *.prisma \\\\\\) ! -path */node_modules/* ! -path */.next/* ! -path */.git/* -exec grep -in \"temp\\\\|temporary\" {} +)",
+      "Bash(grep -r \"export.*function\\\\|export.*const\\\\|export.*class\\\\|export.*interface\\\\|export.*type\" /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/lib --include=*.ts)",
+      "Bash(grep -r \"DISABLED\\\\|disabled\\\\|skip.*test\\\\|x\\\\.test\\\\|x\\\\.it\\\\|pending\\\\|\\\\.skip\" /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap --include=*.test.ts --include=*.spec.ts)",
+      "Bash(find /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/app/api -name \"route.ts\" -exec wc -l {})",
+      "Bash(grep -rn \"stub\\\\|placeholder\" c:/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap --include=*.ts --include=*.tsx --include=*.js --include=*.mjs --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=__tests__ --exclude-dir=test)",
+      "Bash(grep -rn \"@todo\\\\|// mock\\\\|// fake\\\\|// dummy\" c:/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap --include=*.ts --include=*.tsx --include=*.js --include=*.mjs --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git)",
+      "Bash(grep -r \"Referral\\\\|TrendingKeyword\\\\|EditorialBlock\\\\|SystemSetting\" /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/lib --include=*.ts)",
+      "Bash(grep -r \"Magalu\\\\|KaBuM\\\\|Kabum\" /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"CLERK\\\\|Clerk\\\\|RBAC\\\\|rbac\" /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"MAGALU_PARTNER_ID\\\\|KABUM_AFFILIATE_ID\\\\|SHEIN_API_KEY\" /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap --include=*.ts --include=*.tsx)",
+      "Bash(npx vitest:*)",
+      "Bash(find /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\))",
+      "Bash(npm install:*)",
+      "Bash(find /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/lib -type f \\\\\\(-name *engine* -o -name *score* -o -name *rank* -o -name *recommend* -o -name *smart* -o -name *auto* -o -name *intelligence* -o -name *cluster* \\\\\\))",
+      "Bash(grep -r sourceSlug --include=*.ts --include=*.tsx lib/distribution lib/execution app/api/clickout)",
+      "Bash(find /c/Users/salva/Downloads/files/promosnap-foundation-v2/promosnap/lib/business -type f -name *.ts)"
     ]
   }
 }

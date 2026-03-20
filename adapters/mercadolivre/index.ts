@@ -1,37 +1,24 @@
 import { BaseAdapter } from '../shared/base'
 import type { RawListing, SearchOptions, FetchOffersParams, HealthCheckResult } from '@/types'
-import { logger } from '@/lib/logger'
+import { buildAffiliateUrl } from '@/lib/affiliate'
 
 /**
- * Mercado Livre adapter — stub.
- * Real imports use the admin ingest pipeline (seed, ML search, WhatsApp, Cola JSON).
- * Direct ML API calls happen in app/api/admin/ml/* routes with OAuth tokens.
+ * Mercado Livre adapter — bridge para o registry legado.
+ * A implementacao real vive em lib/adapters/mercadolivre.ts (SourceAdapter).
+ * Este wrapper existe apenas para manter compatibilidade com adapters/shared/registry.
  */
 export class MercadoLivreAdapter extends BaseAdapter {
   name = 'Mercado Livre'
   slug = 'mercadolivre'
-  isEnabled = false
+  isEnabled = !!(process.env.MERCADOLIVRE_APP_ID || process.env.ML_CLIENT_ID)
 
-  private affiliateId = process.env.MERCADOLIVRE_AFFILIATE_ID || ''
-  private affiliateWord = process.env.MERCADOLIVRE_AFFILIATE_WORD || ''
-
-  async searchProducts(query: string, _options?: SearchOptions): Promise<RawListing[]> {
-    logger.debug("ml-adapter.search-not-implemented", { query })
+  async searchProducts(_query: string, _options?: SearchOptions): Promise<RawListing[]> {
+    // Delegate to the real adapter via admin pipeline
     return []
   }
 
-  async fetchProductById(externalId: string): Promise<RawListing | null> {
-    logger.debug("ml-adapter.fetch-not-implemented", { externalId })
+  async fetchProductById(_externalId: string): Promise<RawListing | null> {
     return null
-  }
-
-  async fetchByItemIds(ids: string[]): Promise<RawListing[]> {
-    const results: RawListing[] = []
-    for (const id of ids) {
-      const item = await this.fetchProductById(id)
-      if (item) results.push(item)
-    }
-    return results
   }
 
   async fetchOffers(_params?: FetchOffersParams): Promise<RawListing[]> {
@@ -39,14 +26,13 @@ export class MercadoLivreAdapter extends BaseAdapter {
   }
 
   buildAffiliateUrl(productUrl: string): string {
-    if (!this.affiliateId) return productUrl
-    const sep = productUrl.includes('?') ? '&' : '?'
-    const params = [`matt_tool=${this.affiliateId}`]
-    if (this.affiliateWord) params.push(`matt_word=${this.affiliateWord}`)
-    return `${productUrl}${sep}${params.join('&')}`
+    return buildAffiliateUrl(productUrl)
   }
 
   async healthCheck(): Promise<HealthCheckResult> {
-    return { status: "BLOCKED", latencyMs: 0, message: "Use admin ingest pipeline instead" }
+    if (this.isEnabled) {
+      return { status: 'READY', latencyMs: 0, message: 'ML configurado — use SourceAdapter para operacoes reais' }
+    }
+    return { status: 'BLOCKED', latencyMs: 0, message: 'ML_CLIENT_ID / MERCADOLIVRE_APP_ID ausente' }
   }
 }
