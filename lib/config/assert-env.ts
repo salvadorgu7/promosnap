@@ -75,6 +75,8 @@ const RECOMMENDED_ENVS: EnvVar[] = [
   { name: 'ML_CLIENT_SECRET', requiredInProd: false, description: 'ML API client secret' },
   { name: 'AMAZON_AFFILIATE_TAG', requiredInProd: false, description: 'Amazon affiliate tag (e.g. promosnap-20)' },
   { name: 'SHOPEE_AFFILIATE_ID', requiredInProd: false, description: 'Shopee affiliate af_id' },
+  { name: 'SHOPEE_APP_ID', requiredInProd: false, description: 'Shopee Open Platform App ID (for affiliate API)' },
+  { name: 'SHOPEE_APP_SECRET', requiredInProd: false, description: 'Shopee Open Platform App Secret (for HMAC signing)' },
   { name: 'RESEND_API_KEY', requiredInProd: false, description: 'Resend API key for email delivery' },
   { name: 'EVOLUTION_WEBHOOK_SECRET', requiredInProd: false, description: 'Secret for WhatsApp webhook auth' },
 ]

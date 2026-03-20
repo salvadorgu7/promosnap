@@ -199,12 +199,13 @@ export async function processShoppingQuery(
     })
 
     // ── Pre-fetch results BEFORE calling AI (saves 1 round trip) ──────────
-    const [localResults, shoppingResults] = await Promise.all([
+    const [localResults, shoppingResults, marketplaceResults] = await Promise.all([
       executeLocalSearch(userMessage, intent.categories?.[0], intent.budget?.max, intentTone.maxItems).catch(() => []),
       executeGoogleShoppingSearch(userMessage, intent.budget?.max, 6).catch(() => []),
+      executeMarketplaceSearch(userMessage, intent.budget?.max, 4).catch(() => []),
     ])
 
-    const allProducts = [...localResults, ...shoppingResults]
+    const allProducts = deduplicateProducts([...localResults, ...shoppingResults, ...marketplaceResults])
     const productContext = allProducts.length > 0
       ? `\n\nRESULTADOS ENCONTRADOS (use estes dados REAIS para responder):\n${allProducts.map((p, i) =>
           `${i + 1}. ${p.name} — R$ ${p.price?.toFixed(2) || '?'} em ${p.source}${p.isFromCatalog ? ' [VERIFICADO]' : ''}${p.discount ? ` (${p.discount}% OFF)` : ''}`
@@ -531,6 +532,71 @@ async function executeGoogleShoppingSearch(
     log.error('google-shopping.failed', { query, error: err })
     return []
   }
+}
+
+// ── Marketplace Direct Search (ML + Shopee) ──────────────────────────────
+
+async function executeMarketplaceSearch(
+  query: string,
+  maxPrice?: number,
+  limit: number = 4
+): Promise<AssistantProduct[]> {
+  try {
+    const { connectorRegistry, resolveCandidates, candidateToAssistantProduct } = await import('./candidate-resolver')
+
+    const connectors = ['mercadolivre-search', 'shopee-search']
+      .map(slug => connectorRegistry.get(slug))
+      .filter((c): c is NonNullable<typeof c> => !!c && c.isReady())
+
+    if (connectors.length === 0) return []
+
+    const allResults = await Promise.all(
+      connectors.map(c => c.search(query, { maxPrice, limit: Math.ceil(limit / connectors.length) }).catch(() => []))
+    )
+
+    const rawResults = allResults.flat()
+    if (rawResults.length === 0) return []
+
+    const resolved = resolveCandidates(rawResults)
+
+    log.info('marketplace-search.resolved', {
+      query,
+      connectors: connectors.map(c => c.slug),
+      raw: rawResults.length,
+      resolved: resolved.length,
+    })
+
+    return resolved.slice(0, limit).map(candidateToAssistantProduct)
+  } catch (err) {
+    log.error('marketplace-search.failed', { query, error: err })
+    return []
+  }
+}
+
+// ── Product Deduplication ─────────────────────────────────────────────────
+
+function deduplicateProducts(products: AssistantProduct[]): AssistantProduct[] {
+  const seen = new Map<string, AssistantProduct>()
+
+  for (const p of products) {
+    // Fingerprint: normalized name + source
+    const key = p.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40) + ':' + p.source.toLowerCase()
+    const existing = seen.get(key)
+    if (!existing) {
+      seen.set(key, p)
+    } else {
+      // Keep the one with better monetization or lower price
+      if (p.isFromCatalog && !existing.isFromCatalog) {
+        seen.set(key, p) // Prefer catalog
+      } else if (p.monetization === 'verified' && existing.monetization !== 'verified') {
+        seen.set(key, p) // Prefer verified affiliate
+      } else if (p.price && existing.price && p.price < existing.price) {
+        seen.set(key, p) // Prefer lower price
+      }
+    }
+  }
+
+  return Array.from(seen.values())
 }
 
 // ── Response Parsing ───────────────────────────────────────────────────────

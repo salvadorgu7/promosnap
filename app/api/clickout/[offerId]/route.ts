@@ -60,10 +60,11 @@ function appendAffiliateParams(url: string, sourceSlug: string): string {
       }
     }
 
-    // Shopee (includes s.shopee.com.br short links)
+    // Shopee (includes s.shopee.com.br and shope.ee short links)
     if (
       sourceSlug === "shopee" ||
-      parsed.hostname.includes("shopee.com.br")
+      parsed.hostname.includes("shopee.com.br") ||
+      parsed.hostname.includes("shope.ee")
     ) {
       const afId = process.env.SHOPEE_AFFILIATE_ID;
       if (afId) {
@@ -222,7 +223,15 @@ export async function GET(
 
     // Ensure affiliate params are present on redirect URL
     const finalUrl = appendAffiliateParams(offer.affiliateUrl, sourceSlug);
-    return NextResponse.redirect(finalUrl, 302);
+
+    // Inject clickout ID as sub_id for postback conversion matching
+    try {
+      const redirectUrl = new URL(finalUrl);
+      redirectUrl.searchParams.set("sub_id", offer.id);
+      return NextResponse.redirect(redirectUrl.toString(), 302);
+    } catch {
+      return NextResponse.redirect(finalUrl, 302);
+    }
   } catch (error) {
     await captureError(error, { route: "/api/clickout", offerId });
     return NextResponse.redirect(homeUrl, 302);

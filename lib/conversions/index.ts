@@ -68,18 +68,37 @@ export function parseMercadoLivrePostback(params: Record<string, string>): Postb
 
 /**
  * Parse Shopee affiliate postback.
+ *
+ * Shopee Open Platform postback fields (may vary by integration):
+ * - sub_id / custom_id / aff_sub → clickout correlation
+ * - order_sn / transaction_id → external order reference
+ * - purchase_amount / amount / order_amount → total order value
+ * - estimated_commission / commission → affiliate commission
+ * - status → order status (approved, rejected, pending)
+ *
+ * Ref: https://open.shopee.com/documents/v2/
  */
 export function parseShopeePostback(params: Record<string, string>): PostbackPayload {
-  return {
+  const payload: PostbackPayload = {
     source: 'shopee',
-    subId: params.sub_id || params.custom_id || params.aff_sub,
-    externalTxId: params.order_sn || params.transaction_id,
-    orderValue: parseFloat(params.purchase_amount || params.amount || '0') || undefined,
-    commission: parseFloat(params.estimated_commission || params.commission || '0') || undefined,
+    subId: params.sub_id || params.custom_id || params.aff_sub || params.click_id,
+    externalTxId: params.order_sn || params.transaction_id || params.order_id,
+    orderValue: parseFloat(params.purchase_amount || params.order_amount || params.amount || '0') || undefined,
+    commission: parseFloat(params.estimated_commission || params.commission || params.payout || '0') || undefined,
     currency: 'BRL',
     status: normalizeStatus(params.status),
     raw: params,
   }
+
+  // Log para debug — ajuda a mapear campos reais quando Shopee chamar pela primeira vez
+  if (!payload.subId && !payload.externalTxId) {
+    logger.warn('[Conversion] Shopee postback sem sub_id nem order_sn — verificar campos', {
+      receivedKeys: Object.keys(params),
+      sample: Object.fromEntries(Object.entries(params).slice(0, 10)),
+    })
+  }
+
+  return payload
 }
 
 /**

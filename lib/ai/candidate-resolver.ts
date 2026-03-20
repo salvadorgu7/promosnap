@@ -338,4 +338,8 @@ export const connectorRegistry = new ConnectorRegistry()
 // Connectors self-check isReady() — no error if env var is missing
 
 import { serpApiShoppingConnector } from './connectors/serpapi-shopping'
+import { mercadoLivreConnector, shopeeConnector } from './connectors/marketplace-search'
+
 connectorRegistry.register(serpApiShoppingConnector)
+connectorRegistry.register(mercadoLivreConnector)
+connectorRegistry.register(shopeeConnector)

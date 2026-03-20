@@ -194,7 +194,14 @@ async function searchAffiliateApi(query: string, limit = 10): Promise<AdapterRes
     })
 
     if (!res.ok) {
-      log.warn('shopee.affiliate-api.search-failed', { status: res.status, query })
+      const errorBody = await res.text().catch(() => '')
+      if (res.status === 401 || res.status === 403) {
+        log.error('shopee.affiliate-api.auth-failed', { status: res.status, query, error: errorBody })
+      } else if (res.status === 429) {
+        log.warn('shopee.affiliate-api.rate-limited', { status: res.status, query })
+      } else {
+        log.warn('shopee.affiliate-api.http-error', { status: res.status, query, error: errorBody })
+      }
       // Fallback to public API
       return searchPublicApi(query, limit)
     }
@@ -209,7 +216,7 @@ async function searchAffiliateApi(query: string, limit = 10): Promise<AdapterRes
       productUrl: node.productLink || `${SHOPEE_PUBLIC_BASE}/product/${node.shopId}.${node.itemId}`,
       affiliateUrl: node.offerLink || node.productLink,
       currentPrice: node.priceMin / 100000,
-      originalPrice: node.priceMax > node.priceMin ? node.priceMax / 100000 : undefined,
+      originalPrice: node.priceMax / 100000 > node.priceMin / 100000 ? node.priceMax / 100000 : undefined,
       currency: 'BRL',
       availability: 'in_stock' as const,
       salesCount: node.sales,

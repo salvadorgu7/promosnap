@@ -12,8 +12,10 @@ export interface FeatureFlags {
   enhancedScoring: boolean
   /** Enable consumer-facing buy signals */
   buySignals: boolean
-  /** Enable Shopee CSV-first integration (import via affiliate CSV export) */
+  /** Enable Shopee integration (CSV import + API when credentials available) */
   shopeeEnabled: boolean
+  /** Shopee Affiliate API is configured (SHOPEE_APP_ID + SHOPEE_APP_SECRET) */
+  shopeeApiReady: boolean
   /** Enable Mercado Livre search in discovery engine */
   mlSearchEnabled: boolean
 }
@@ -31,6 +33,7 @@ export function getAllFlags(): FeatureFlags {
     enhancedScoring: envBool('FF_ENHANCED_SCORING'),
     buySignals: envBool('FF_BUY_SIGNALS'),
     shopeeEnabled: envBool('SHOPEE_ENABLED') || !!process.env.SHOPEE_AFFILIATE_ID,
+    shopeeApiReady: !!process.env.SHOPEE_APP_ID && !!process.env.SHOPEE_APP_SECRET,
     mlSearchEnabled: envBool('FF_ML_SEARCH_ENABLED'),
   }
 }
