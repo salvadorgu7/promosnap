@@ -105,6 +105,10 @@ export async function GET(req: NextRequest) {
     ['personalized-digest', () => import('@/lib/jobs/personalized-digest-job').then(m => m.runPersonalizedDigest())],
     // price-drop-radar: RETENTION — detects price drops and notifies subscribers
     ['price-drop-radar', () => import('@/lib/jobs/price-drop-radar').then(m => m.runPriceDropRadar())],
+    // welcome-email: RETENTION — sends welcome emails to new subscribers
+    ['welcome-email', () => import('@/lib/jobs/welcome-email').then(m => m.runWelcomeEmails())],
+    // brand-fill: HYGIENE — auto-assigns brands to products from title extraction
+    ['brand-fill', () => import('@/lib/jobs/brand-fill').then(m => m.brandFill())],
   ]
 
   // Filter to requested subset if ?jobs= is provided

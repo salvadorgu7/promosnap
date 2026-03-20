@@ -7,6 +7,20 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br
 const BRAND_COLOR = "#6366f1";
 const BRAND_GRADIENT = "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)";
 
+/** Append UTM parameters to a URL for email tracking */
+function addUTM(url: string, template: string): string {
+  try {
+    const u = new URL(url)
+    u.searchParams.set('utm_source', 'email')
+    u.searchParams.set('utm_medium', 'digest')
+    u.searchParams.set('utm_campaign', template)
+    return u.toString()
+  } catch {
+    const sep = url.includes('?') ? '&' : '?'
+    return `${url}${sep}utm_source=email&utm_medium=digest&utm_campaign=${template}`
+  }
+}
+
 function baseLayout(content: string, preheader?: string): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -428,7 +442,7 @@ export function personalizedDigestEmail(digest: {
           <p style="color:#71717a;font-size:12px;text-decoration:line-through;margin:0;">De: R$ ${d.previousPrice.toFixed(2).replace(".", ",")}</p>
           <p class="deal-price">R$ ${d.price.toFixed(2).replace(".", ",")}</p>
           <p style="color:#16a34a;font-size:12px;font-weight:600;margin:2px 0 0;">Economia: R$ ${savings}</p>
-          <a href="${escapeHtml(d.url)}" class="deal-btn">Ver Oferta &rarr;</a>
+          <a href="${escapeHtml(addUTM(d.url, 'personalized-digest'))}" class="deal-btn">Ver Oferta &rarr;</a>
         </div>`;
       })
       .join("");
@@ -443,7 +457,7 @@ export function personalizedDigestEmail(digest: {
           <p class="deal-name">${escapeHtml(n.name)}</p>
           <p class="deal-price">R$ ${n.price.toFixed(2).replace(".", ",")}</p>
           <p style="color:#71717a;font-size:12px;margin:2px 0 0;">Categoria: ${escapeHtml(n.category)}</p>
-          <a href="${escapeHtml(n.url)}" class="deal-btn">Ver Produto &rarr;</a>
+          <a href="${escapeHtml(addUTM(n.url, 'personalized-digest'))}" class="deal-btn">Ver Produto &rarr;</a>
         </div>`)
       .join("");
     sections.push(`<h2 style="color:${BRAND_COLOR};font-size:18px;">🆕 Novos na sua categoria</h2>${items}`);
@@ -457,7 +471,7 @@ export function personalizedDigestEmail(digest: {
           <p class="deal-name">${escapeHtml(d.name)}</p>
           <p class="deal-price">R$ ${d.price.toFixed(2).replace(".", ",")}</p>
           <p class="deal-discount">-${d.discount}% OFF</p>
-          <a href="${escapeHtml(d.url)}" class="deal-btn">Ver Oferta &rarr;</a>
+          <a href="${escapeHtml(addUTM(d.url, 'personalized-digest'))}" class="deal-btn">Ver Oferta &rarr;</a>
         </div>`)
       .join("");
     sections.push(`<h2 style="color:#16a34a;font-size:18px;">🔥 Top deals da semana</h2>${items}`);
@@ -508,7 +522,7 @@ export function priceDropEmail(drop: {
       </p>
     </div>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${escapeHtml(drop.productUrl)}" class="btn">Ver Produto &rarr;</a>
+      <a href="${escapeHtml(addUTM(drop.productUrl, 'price-drop'))}" class="btn">Ver Produto &rarr;</a>
     </p>
     <hr class="divider">
     <p style="font-size:13px;color:#71717a;">
