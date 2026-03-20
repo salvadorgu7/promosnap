@@ -68,28 +68,28 @@ const PENDING_ITEMS: PendingItem[] = [
     id: "search-endpoint",
     title: "Endpoint de busca funcional",
     description:
-      "O /api/search retorna array vazio. Precisa de full-text search no Postgres ou integracao com motor de busca.",
+      "Implementado com full-text search, intent analysis, fallbacks e zero-result handling. Dados dependem de catalogo populado.",
     group: "critical_for_execution",
-    status: "open",
-    estimatedEffort: "2-3 dias",
+    status: "closed",
+    estimatedEffort: "0",
   },
   {
     id: "trending-endpoint",
     title: "Endpoint de trending funcional",
     description:
-      "O /api/trending retorna array vazio. Precisa conectar ao banco para retornar produtos populares.",
+      "Implementado com monetization scoring, category inference e catalog coverage. Dados dependem de TrendingKeyword populado via cron.",
     group: "critical_for_execution",
-    status: "open",
-    estimatedEffort: "1 dia",
+    status: "closed",
+    estimatedEffort: "0",
   },
   {
     id: "price-history-endpoint",
     title: "Endpoint de historico de precos",
     description:
-      "O /api/price-history retorna snapshots vazio. Precisa conectar ao PriceSnapshot do Prisma.",
+      "Implementado com analytics extendido, trend detection, volatility e buy timing. Dados dependem de PriceSnapshot populado via jobs.",
     group: "critical_for_execution",
-    status: "open",
-    estimatedEffort: "1 dia",
+    status: "closed",
+    estimatedEffort: "0",
   },
   {
     id: "cron-production",
@@ -296,10 +296,10 @@ export function getSystemBottlenecks(): SystemBottleneck[] {
     {
       area: "Integracao",
       description:
-        "Endpoints de busca e trending retornam dados vazios sem conexao ao banco.",
-      severity: "critical",
+        "Endpoints de busca, trending e price-history estao implementados mas dependem de dados populados no banco (catalogo, TrendingKeyword, PriceSnapshot).",
+      severity: "warning",
       recommendation:
-        "Conectar /api/search e /api/trending ao Prisma para funcionalidade real.",
+        "Garantir que cron jobs e adapters estao ativos para popular dados continuamente.",
     },
 
     // Measurement gaps
@@ -314,10 +314,10 @@ export function getSystemBottlenecks(): SystemBottleneck[] {
     {
       area: "Medicao",
       description:
-        "Historico de precos (PriceSnapshot) existe no schema mas endpoint retorna vazio.",
-      severity: "warning",
+        "Historico de precos (PriceSnapshot) endpoint implementado. Dados dependem de jobs de update-prices ativos.",
+      severity: "info",
       recommendation:
-        "Conectar /api/price-history ao banco e garantir que job de update-prices salva snapshots.",
+        "Verificar que job de update-prices esta a gravar snapshots regularmente.",
     },
     {
       area: "Medicao",

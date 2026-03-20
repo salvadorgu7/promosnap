@@ -19,7 +19,7 @@ export function runUrlTests() {
       delete process.env.NEXT_PUBLIC_APP_URL;
       delete process.env.APP_URL;
       const url = getBaseUrl();
-      expect(url).toBe("https://www.promosnap.com.br");
+      expect(url).toBe("https://promosnap.com.br");
     });
 
     it("should respect NEXT_PUBLIC_APP_URL env", () => {
@@ -43,28 +43,28 @@ export function runUrlTests() {
       delete process.env.NEXT_PUBLIC_APP_URL;
       delete process.env.APP_URL;
       const url = absoluteUrl("");
-      expect(url).toBe("https://www.promosnap.com.br");
+      expect(url).toBe("https://promosnap.com.br");
     });
 
     it("should return base URL for root path", () => {
       delete process.env.NEXT_PUBLIC_APP_URL;
       delete process.env.APP_URL;
       const url = absoluteUrl("/");
-      expect(url).toBe("https://www.promosnap.com.br");
+      expect(url).toBe("https://promosnap.com.br");
     });
 
     it("should prepend slash if missing", () => {
       delete process.env.NEXT_PUBLIC_APP_URL;
       delete process.env.APP_URL;
       const url = absoluteUrl("ofertas");
-      expect(url).toBe("https://www.promosnap.com.br/ofertas");
+      expect(url).toBe("https://promosnap.com.br/ofertas");
     });
 
     it("should handle path with leading slash", () => {
       delete process.env.NEXT_PUBLIC_APP_URL;
       delete process.env.APP_URL;
       const url = absoluteUrl("/categorias/eletronicos");
-      expect(url).toBe("https://www.promosnap.com.br/categorias/eletronicos");
+      expect(url).toBe("https://promosnap.com.br/categorias/eletronicos");
     });
   });
 

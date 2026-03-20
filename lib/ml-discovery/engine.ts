@@ -8,6 +8,7 @@ import { fetchTrendingSignals, getTrendCategories } from './trends'
 import { fetchHighlightsForCategories } from './highlights'
 import { batchHydrateItems, normalizeItem, type HydrateEntry } from './items'
 import { rankDiscoveryResults, deduplicateProducts } from './ranking'
+import { getFlag } from '@/lib/config/feature-flags'
 import { logger } from '@/lib/logger'
 
 function log(stage: string, msg: string, extra?: Record<string, unknown>) {
@@ -186,7 +187,7 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
 
   // ── Stage 4b: Search Fallback (if hydrate returned too few products) ────
   // Search API (/sites/MLB/search) is known to return 403. Only attempt if explicitly enabled.
-  const mlSearchEnabled = process.env.FF_ML_SEARCH_ENABLED === 'true'
+  const mlSearchEnabled = getFlag('mlSearchEnabled')
   if (products.length < 5 && categoryIds.length > 0 && mlSearchEnabled) {
     const searchStart = Date.now()
     log('search-fallback', `Hydrate returned ${products.length} products — falling back to ML Search API`)
