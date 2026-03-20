@@ -411,6 +411,44 @@ enum JobStatus {
 }
 
 // ============================================
+// GROWTH ACTIONS (Agent auto-execution)
+// ============================================
+
+model GrowthAction {
+  id              String             @id @default(cuid())
+  agentName       String             // e.g. "opportunity-agent"
+  actionType      String             // e.g. "fill_hero_slot", "prepare_campaign"
+  description     String
+  priorityScore   Int                @default(50) // 0-100
+  impactScore     Int                @default(50) // 0-100
+  confidenceScore Int                @default(50) // 0-100
+  status          GrowthActionStatus @default(SUGGESTED)
+  autoApproved    Boolean            @default(false)
+  guardrailsPassed String[]          // guardrails that were checked
+  guardrailsFailed String[]          // guardrails that blocked
+  result          Json?              // outcome data after execution
+  errorLog        String?
+  metadata        Json?
+  createdAt       DateTime           @default(now())
+  executedAt      DateTime?
+  completedAt     DateTime?
+
+  @@index([agentName, status])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("growth_actions")
+}
+
+enum GrowthActionStatus {
+  SUGGESTED
+  APPROVED
+  EXECUTING
+  DONE
+  FAILED
+  SKIPPED
+}
+
+// ============================================
 // PRICE ALERTS
 // ============================================
 

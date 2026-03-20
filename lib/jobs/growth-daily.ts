@@ -22,6 +22,7 @@ export async function runGrowthDaily(): Promise<{
   opportunitiesDetected: number
   slotsRefreshed: number
   anomalies: string[]
+  agentSummary: { agents: number; executed: number; succeeded: number; failed: number }
 }> {
   logger.info('[GROWTH-DAILY] Starting daily growth ritual')
 
@@ -48,7 +49,23 @@ export async function runGrowthDaily(): Promise<{
     logger.warn('[GROWTH-DAILY] Auto-merchandising failed', { err })
   }
 
-  // 5. Anomaly detection
+  // 5. Run autonomous agents — detect, auto-approve, execute
+  let agentSummary = { agents: 0, executed: 0, succeeded: 0, failed: 0 }
+  try {
+    const { runAllAgents } = await import('@/lib/growth/agent-executor')
+    const { ALL_AGENTS } = await import('@/lib/growth/agents')
+    const summaries = await runAllAgents(ALL_AGENTS)
+    agentSummary = {
+      agents: summaries.length,
+      executed: summaries.reduce((s, a) => s + a.executed, 0),
+      succeeded: summaries.reduce((s, a) => s + a.succeeded, 0),
+      failed: summaries.reduce((s, a) => s + a.failed, 0),
+    }
+  } catch (err) {
+    logger.warn('[GROWTH-DAILY] Agent execution failed', { err })
+  }
+
+  // 6. Anomaly detection (legacy — anomaly-agent also does this now)
   const anomalies: string[] = []
   try {
     const now = new Date()
@@ -78,6 +95,7 @@ export async function runGrowthDaily(): Promise<{
     opportunitiesDetected,
     slotsRefreshed,
     anomalies,
+    agentSummary,
   }
 
   logger.info('[GROWTH-DAILY] Daily growth ritual complete', {
@@ -85,6 +103,7 @@ export async function runGrowthDaily(): Promise<{
     campaignsToPrep: result.campaignsToPrep,
     opportunities: result.opportunitiesDetected,
     anomalies: result.anomalies.length,
+    agents: agentSummary,
   })
 
   return result
