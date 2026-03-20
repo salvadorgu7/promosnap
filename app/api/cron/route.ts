@@ -97,6 +97,14 @@ export async function GET(req: NextRequest) {
 
       return { itemsTotal: uncategorized.length, itemsDone: categorized, metadata: { categorized } }
     }],
+    // auto-pages: GROWTH — auto-generates landing pages from popular search queries
+    ['auto-pages', () => import('@/lib/jobs/auto-pages').then(m => m.autoGeneratePages())],
+    // generate-content: GROWTH — auto-generates article drafts from content recommendations
+    ['generate-content', () => import('@/lib/jobs/generate-content').then(m => m.generateContentJob())],
+    // personalized-digest: RETENTION — sends weekly personalized digest emails
+    ['personalized-digest', () => import('@/lib/jobs/personalized-digest-job').then(m => m.runPersonalizedDigest())],
+    // price-drop-radar: RETENTION — detects price drops and notifies subscribers
+    ['price-drop-radar', () => import('@/lib/jobs/price-drop-radar').then(m => m.runPriceDropRadar())],
   ]
 
   // Filter to requested subset if ?jobs= is provided

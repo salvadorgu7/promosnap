@@ -1,6 +1,9 @@
 import { CheckCircle, Clock, AlertTriangle, ExternalLink } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
 import type { BuySignal } from "@/lib/decision/buy-signal"
+import dynamic from "next/dynamic"
+
+const WaitScore = dynamic(() => import("@/components/product/WaitScore"))
 
 type Verdict = "comprar" | "esperar" | "evitar"
 
@@ -12,6 +15,7 @@ interface HeroVerdictProps {
   discount?: number | null
   isNearAllTimeLow: boolean
   priceBelowAvg30d: number | null
+  productSlug?: string
 }
 
 function computeVerdict(signal: BuySignal, discount?: number | null): Verdict {
@@ -68,6 +72,7 @@ export default function HeroVerdict({
   discount,
   isNearAllTimeLow,
   priceBelowAvg30d,
+  productSlug,
 }: HeroVerdictProps) {
   const verdict = computeVerdict(buySignal, discount)
   const config = VERDICT_CONFIG[verdict]
@@ -120,6 +125,9 @@ export default function HeroVerdict({
           </a>
         </div>
       </div>
+
+      {/* Wait Score — predictive timing */}
+      {productSlug && <WaitScore productSlug={productSlug} />}
     </div>
   )
 }

@@ -248,3 +248,159 @@ export function pricePosition90d(
   const position = ((currentPrice - min90d) / (max90d - min90d)) * 100
   return Math.max(0, Math.min(100, Math.round(position)))
 }
+
+// ── Velocity (rate of change per day) ───────────────────────────────────────
+
+export interface PriceVelocity {
+  /** Average daily change in % over the window */
+  dailyChangePct: number
+  /** Absolute average daily change in BRL */
+  dailyChangeBRL: number
+  /** Direction based on velocity */
+  direction: TrendDirection
+}
+
+/**
+ * Compute price velocity — average daily % change over a window.
+ * Positive = rising, negative = falling.
+ */
+export function computeVelocity(
+  snapshots: PriceSnapshot[],
+  windowDays = 7
+): PriceVelocity {
+  const now = Date.now()
+  const windowMs = windowDays * MS_PER_DAY
+  const recent = snapshots
+    .filter(s => now - s.capturedAt.getTime() < windowMs)
+    .sort((a, b) => a.capturedAt.getTime() - b.capturedAt.getTime())
+
+  if (recent.length < 2) {
+    return { dailyChangePct: 0, dailyChangeBRL: 0, direction: 'stable' }
+  }
+
+  // Compute day-over-day deltas
+  let totalPctChange = 0
+  let totalBRLChange = 0
+  let deltaCount = 0
+
+  for (let i = 1; i < recent.length; i++) {
+    const prev = recent[i - 1]
+    const curr = recent[i]
+    const daysDiff = (curr.capturedAt.getTime() - prev.capturedAt.getTime()) / MS_PER_DAY
+    if (daysDiff < 0.1) continue // Skip same-day duplicates
+
+    const pctChange = prev.price > 0 ? ((curr.price - prev.price) / prev.price) * 100 : 0
+    totalPctChange += pctChange / daysDiff
+    totalBRLChange += (curr.price - prev.price) / daysDiff
+    deltaCount++
+  }
+
+  if (deltaCount === 0) {
+    return { dailyChangePct: 0, dailyChangeBRL: 0, direction: 'stable' }
+  }
+
+  const dailyChangePct = Math.round((totalPctChange / deltaCount) * 100) / 100
+  const dailyChangeBRL = Math.round((totalBRLChange / deltaCount) * 100) / 100
+  const direction: TrendDirection =
+    dailyChangePct < -0.5 ? 'down' : dailyChangePct > 0.5 ? 'up' : 'stable'
+
+  return { dailyChangePct, dailyChangeBRL, direction }
+}
+
+// ── Momentum (acceleration of price change) ─────────────────────────────────
+
+export type MomentumState = 'accelerating' | 'decelerating' | 'stable'
+
+/**
+ * Compute momentum — is the price change speeding up or slowing down?
+ * Compares velocity of last 3 days vs previous 4 days.
+ */
+export function computeMomentum(snapshots: PriceSnapshot[]): MomentumState {
+  const recentVelocity = computeVelocity(snapshots, 3)
+  const priorVelocity = computeVelocity(
+    snapshots.filter(s => {
+      const age = (Date.now() - s.capturedAt.getTime()) / MS_PER_DAY
+      return age >= 3 && age < 7
+    }),
+    4
+  )
+
+  const diff = Math.abs(recentVelocity.dailyChangePct) - Math.abs(priorVelocity.dailyChangePct)
+
+  if (diff > 0.3) return 'accelerating'
+  if (diff < -0.3) return 'decelerating'
+  return 'stable'
+}
+
+// ── Support Level (price floor) ─────────────────────────────────────────────
+
+/**
+ * Find the support level — the price "floor" where the price tends to bounce.
+ * Uses the lowest 10th percentile of recent prices as the support zone.
+ */
+export function findSupportLevel(snapshots: PriceSnapshot[]): number {
+  if (snapshots.length === 0) return 0
+
+  const prices = snapshots.map(s => s.price).sort((a, b) => a - b)
+  // 10th percentile as support
+  const idx = Math.max(0, Math.floor(prices.length * 0.1))
+  return Math.round(prices[idx] * 100) / 100
+}
+
+// ── Seasonal Events (Brazilian commerce calendar) ───────────────────────────
+
+export interface SeasonalEvent {
+  name: string
+  month: number // 1-12
+  day: number
+  /** Expected discount range in % (conservative) */
+  discountExpected: number
+  /** Categories most affected */
+  categories?: string[]
+}
+
+export const SEASONAL_EVENTS: SeasonalEvent[] = [
+  { name: 'Ano Novo', month: 1, day: 1, discountExpected: 15 },
+  { name: 'Volta às Aulas', month: 2, day: 1, discountExpected: 10, categories: ['notebooks', 'tablets', 'papelaria'] },
+  { name: 'Carnaval', month: 2, day: 25, discountExpected: 10 },
+  { name: 'Dia do Consumidor', month: 3, day: 15, discountExpected: 25 },
+  { name: 'Dia das Mães', month: 5, day: 11, discountExpected: 20, categories: ['celulares', 'beleza', 'eletrodomesticos'] },
+  { name: 'Dia dos Namorados', month: 6, day: 12, discountExpected: 15 },
+  { name: 'Dia dos Pais', month: 8, day: 10, discountExpected: 15, categories: ['eletronicos', 'ferramentas', 'esportes'] },
+  { name: 'Dia das Crianças', month: 10, day: 12, discountExpected: 20, categories: ['brinquedos', 'games', 'tablets'] },
+  { name: 'Black Friday', month: 11, day: 29, discountExpected: 35 },
+  { name: 'Cyber Monday', month: 12, day: 2, discountExpected: 30 },
+  { name: 'Natal', month: 12, day: 25, discountExpected: 15 },
+  { name: 'Amazon Prime Day', month: 7, day: 15, discountExpected: 30, categories: ['eletronicos', 'livros', 'smart-home'] },
+  { name: 'Semana do Brasil', month: 9, day: 7, discountExpected: 20 },
+]
+
+/**
+ * Find the next seasonal event with expected discounts.
+ * Returns null if no event within 45 days.
+ */
+export function getNextSeasonalEvent(categorySlug?: string): SeasonalEvent | null {
+  const now = new Date()
+  const year = now.getFullYear()
+
+  let closest: { event: SeasonalEvent; daysUntil: number } | null = null
+
+  for (const event of SEASONAL_EVENTS) {
+    // Check this year and next year
+    for (const y of [year, year + 1]) {
+      const eventDate = new Date(y, event.month - 1, event.day)
+      const daysUntil = Math.round((eventDate.getTime() - now.getTime()) / MS_PER_DAY)
+
+      if (daysUntil < 0 || daysUntil > 45) continue
+
+      // Filter by category if specified
+      if (categorySlug && event.categories && !event.categories.includes(categorySlug)) continue
+
+      if (!closest || daysUntil < closest.daysUntil) {
+        closest = { event, daysUntil }
+      }
+    }
+  }
+
+  return closest?.event ?? null
+}

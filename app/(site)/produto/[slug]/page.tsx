@@ -37,6 +37,8 @@ import QuickCompare from "@/components/product/QuickCompare";
 import ContinueExploring from "@/components/product/ContinueExploring";
 import AmazonAlternative from "@/components/product/AmazonAlternative";
 import RelatedContent from "@/components/seo/RelatedContent";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import CrossClusterLinks from "@/components/seo/CrossClusterLinks";
 import { getRelatedLinks } from "@/lib/seo/internal-links";
 import UrgencySignals from "@/components/product/UrgencySignals";
 import CommercialCTA from "@/components/product/CommercialCTA";
@@ -459,6 +461,12 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
 
         {/* Right column: Info + Offers + Chart */}
         <div className="lg:col-span-2 space-y-4 lg:space-y-6">
+          {/* Breadcrumbs */}
+          <Breadcrumbs items={[
+            ...(product.category ? [{ label: product.category.name, href: `/categoria/${product.category.slug}` }] : []),
+            { label: product.name },
+          ]} />
+
           {/* Product header */}
           <div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -501,6 +509,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               discount={discount}
               isNearAllTimeLow={isNearAllTimeLow}
               priceBelowAvg30d={priceBelowAvg30d}
+              productSlug={product.slug}
             />
           )}
 
@@ -1143,6 +1152,11 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         })}
         title="Conteudo Relacionado"
       />
+
+      {/* Cross-cluster navigation */}
+      {product.category?.slug && (
+        <CrossClusterLinks categorySlug={product.category.slug} />
+      )}
 
       {/* Sticky mobile actions bar */}
       {bestOffer && (

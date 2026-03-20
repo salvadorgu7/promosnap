@@ -26,6 +26,9 @@ const PersonalizedRails = nextDynamic(() => import("@/components/home/Personaliz
 const SinceLastVisit = nextDynamic(() => import("@/components/home/SinceLastVisit"));
 const RecentlyViewedRail = nextDynamic(() => import("@/components/home/RecentlyViewedRail"));
 const SmartSuggestions = nextDynamic(() => import("@/components/home/SmartSuggestions"));
+const PriceDropRail = nextDynamic(() => import("@/components/home/PriceDropRail"));
+const OpportunityRail = nextDynamic(() => import("@/components/home/OpportunityRail"));
+const EditorialRail = nextDynamic(() => import("@/components/home/EditorialRail"));
 import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/seo/JsonLd";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
@@ -338,8 +341,14 @@ export default async function HomePage() {
         </div>
       )}
 
+      {/* ===== 7b. CAIU AGORA — price drops in last 24h ===== */}
+      <PriceDropRail />
+
       {/* ===== 8. OPORTUNIDADES DO DIA ===== */}
       <DailyOpportunities />
+
+      {/* ===== 8b. EM ALTA — trending intent products ===== */}
+      <OpportunityRail />
 
       {/* ===== 9. SINCE LAST VISIT ===== */}
       <SinceLastVisit />
@@ -413,6 +422,9 @@ export default async function HomePage() {
 
       {/* ===== AMAZON PROMO — after commercial rails, before discovery ===== */}
       <AmazonPromo />
+
+      {/* ===== 13c. DESCOBRIR — auto-generated editorial pages ===== */}
+      <EditorialRail />
 
       <SectionSeparator />
 

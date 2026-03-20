@@ -406,3 +406,118 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+/**
+ * Personalized digest email with price drops, new products, and top deals
+ */
+export function personalizedDigestEmail(digest: {
+  priceDrops: Array<{ name: string; price: number; previousPrice: number; url: string }>;
+  newInCategories: Array<{ name: string; price: number; category: string; url: string }>;
+  topDeals: Array<{ name: string; price: number; discount: number; url: string }>;
+}): string {
+  const sections: string[] = [];
+
+  if (digest.priceDrops.length > 0) {
+    const items = digest.priceDrops
+      .slice(0, 5)
+      .map(d => {
+        const savings = (d.previousPrice - d.price).toFixed(2).replace(".", ",");
+        return `
+        <div class="deal-card">
+          <p class="deal-name">${escapeHtml(d.name)}</p>
+          <p style="color:#71717a;font-size:12px;text-decoration:line-through;margin:0;">De: R$ ${d.previousPrice.toFixed(2).replace(".", ",")}</p>
+          <p class="deal-price">R$ ${d.price.toFixed(2).replace(".", ",")}</p>
+          <p style="color:#16a34a;font-size:12px;font-weight:600;margin:2px 0 0;">Economia: R$ ${savings}</p>
+          <a href="${escapeHtml(d.url)}" class="deal-btn">Ver Oferta &rarr;</a>
+        </div>`;
+      })
+      .join("");
+    sections.push(`<h2 style="color:#ea580c;font-size:18px;">📉 Quedas nos seus interesses</h2>${items}`);
+  }
+
+  if (digest.newInCategories.length > 0) {
+    const items = digest.newInCategories
+      .slice(0, 5)
+      .map(n => `
+        <div class="deal-card">
+          <p class="deal-name">${escapeHtml(n.name)}</p>
+          <p class="deal-price">R$ ${n.price.toFixed(2).replace(".", ",")}</p>
+          <p style="color:#71717a;font-size:12px;margin:2px 0 0;">Categoria: ${escapeHtml(n.category)}</p>
+          <a href="${escapeHtml(n.url)}" class="deal-btn">Ver Produto &rarr;</a>
+        </div>`)
+      .join("");
+    sections.push(`<h2 style="color:${BRAND_COLOR};font-size:18px;">🆕 Novos na sua categoria</h2>${items}`);
+  }
+
+  if (digest.topDeals.length > 0) {
+    const items = digest.topDeals
+      .slice(0, 5)
+      .map(d => `
+        <div class="deal-card">
+          <p class="deal-name">${escapeHtml(d.name)}</p>
+          <p class="deal-price">R$ ${d.price.toFixed(2).replace(".", ",")}</p>
+          <p class="deal-discount">-${d.discount}% OFF</p>
+          <a href="${escapeHtml(d.url)}" class="deal-btn">Ver Oferta &rarr;</a>
+        </div>`)
+      .join("");
+    sections.push(`<h2 style="color:#16a34a;font-size:18px;">🔥 Top deals da semana</h2>${items}`);
+  }
+
+  const content = `
+    <h2>Seu resumo personalizado</h2>
+    <p>Separamos as melhores oportunidades baseadas nos seus interesses.</p>
+    <hr class="divider">
+    ${sections.join('<hr class="divider">')}
+    <hr class="divider">
+    <p style="text-align:center;">
+      <a href="${APP_URL}/alertas" class="btn">Gerenciar Alertas</a>
+    </p>
+  `;
+
+  return baseLayout(content, "Suas ofertas personalizadas da semana estao aqui!");
+}
+
+/**
+ * Price drop notification email
+ */
+export function priceDropEmail(drop: {
+  productName: string;
+  currentPrice: number;
+  previousPrice: number;
+  discountPct: number;
+  productUrl: string;
+  imageUrl?: string | null;
+}): string {
+  const savings = (drop.previousPrice - drop.currentPrice).toFixed(2).replace(".", ",");
+
+  const content = `
+    <div class="alert-box">
+      <p style="font-size:11px;color:#16a34a;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">
+        Queda de Preco Detectada
+      </p>
+      ${drop.imageUrl ? `<div style="text-align:center;margin-bottom:12px;"><img src="${escapeHtml(drop.imageUrl)}" alt="${escapeHtml(drop.productName)}" style="max-width:140px;max-height:140px;border-radius:8px;" /></div>` : ""}
+      <p style="color:#18181b;font-size:18px;font-weight:700;margin:0 0 12px;">
+        ${escapeHtml(drop.productName)}
+      </p>
+      <p style="color:#71717a;font-size:13px;text-decoration:line-through;margin:0 0 4px;">
+        De: R$ ${drop.previousPrice.toFixed(2).replace(".", ",")}
+      </p>
+      <p class="price">R$ ${drop.currentPrice.toFixed(2).replace(".", ",")}</p>
+      <p style="color:#16a34a;font-size:16px;font-weight:700;margin:4px 0;">
+        -${drop.discountPct}% | Economia de R$ ${savings}
+      </p>
+    </div>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${escapeHtml(drop.productUrl)}" class="btn">Ver Produto &rarr;</a>
+    </p>
+    <hr class="divider">
+    <p style="font-size:13px;color:#71717a;">
+      Detectamos esta queda nas ultimas 24h. Os precos sao monitorados em tempo real.
+    </p>
+    <p style="text-align:center;">
+      <a href="${APP_URL}/alertas" style="color:${BRAND_COLOR};font-size:13px;">Gerenciar meus alertas</a>
+    </p>
+  `;
+
+  return baseLayout(content, `${drop.productName} caiu ${drop.discountPct}%! De R$ ${drop.previousPrice.toFixed(2)} por R$ ${drop.currentPrice.toFixed(2)}`);
+}
