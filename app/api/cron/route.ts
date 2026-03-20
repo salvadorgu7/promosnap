@@ -117,6 +117,8 @@ export async function GET(req: NextRequest) {
     ['crm-engine', () => import('@/lib/jobs/crm-engine').then(m => m.runCrmEngineJob())],
     // growth-daily: GROWTH — daily briefing, opportunity detection, campaign calendar, merchandising
     ['growth-daily', () => import('@/lib/jobs/growth-daily').then(m => m.runGrowthDaily())],
+    // campaign-landings: GROWTH — auto-create/update landing pages for promo calendar campaigns
+    ['campaign-landings', () => import('@/lib/jobs/campaign-landings').then(m => m.generateCampaignLandings())],
   ]
 
   // Filter to requested subset if ?jobs= is provided

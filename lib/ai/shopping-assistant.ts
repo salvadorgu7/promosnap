@@ -16,6 +16,9 @@
 
 import { logger } from '@/lib/logger'
 import { buildAffiliateUrl } from '@/lib/affiliate'
+import { classifyIntent, getIntentTone } from './intent-classifier'
+import { buildIntentPromptSection } from './response-composer'
+import { trackAssistantInteraction } from './assistant-metrics'
 
 const log = logger.child({ module: 'shopping-assistant' })
 
@@ -181,13 +184,24 @@ export async function processShoppingQuery(
   }
 
   try {
+    // ── Classify intent FIRST — drives search, prompt, and copy ───────────
+    const intent = classifyIntent(userMessage)
+    const intentTone = getIntentTone(intent)
+    const intentPromptSection = buildIntentPromptSection(intent)
+
+    log.info('intent.classified', {
+      query: userMessage.slice(0, 50),
+      type: intent.type,
+      mode: intent.mode,
+      budget: intent.budget,
+      brands: intent.brands,
+      confidence: intent.confidence,
+    })
+
     // ── Pre-fetch results BEFORE calling AI (saves 1 round trip) ──────────
-    // This avoids the tool_choice→callback pattern which takes 2 API calls
-    // and exceeds Vercel's 30s timeout. Instead, we fetch data first and
-    // give it to the AI in one shot.
     const [localResults, shoppingResults] = await Promise.all([
-      executeLocalSearch(userMessage, undefined, undefined, 5).catch(() => []),
-      executeGoogleShoppingSearch(userMessage, undefined, 6).catch(() => []),
+      executeLocalSearch(userMessage, intent.categories?.[0], intent.budget?.max, intentTone.maxItems).catch(() => []),
+      executeGoogleShoppingSearch(userMessage, intent.budget?.max, 6).catch(() => []),
     ])
 
     const allProducts = [...localResults, ...shoppingResults]
@@ -197,8 +211,11 @@ export async function processShoppingQuery(
         ).join('\n')}`
       : '\n\nNenhum resultado encontrado no catálogo nem no Google Shopping.'
 
+    // Enhanced system prompt with intent understanding
+    const enhancedSystemPrompt = SYSTEM_PROMPT + intentPromptSection
+
     const messages = [
-      { role: 'system' as const, content: SYSTEM_PROMPT },
+      { role: 'system' as const, content: enhancedSystemPrompt },
       ...conversationHistory.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
       { role: 'user' as const, content: userMessage + productContext },
     ]
@@ -233,10 +250,24 @@ export async function processShoppingQuery(
 
     log.info('ai.chat.success', {
       query: userMessage.slice(0, 50),
+      intent: intent.type,
       localHits: localResults.length,
       shoppingHits: shoppingResults.length,
       durationMs: Date.now() - startTime,
     })
+
+    // ── Track assistant metrics (non-blocking) ───────────────────────────
+    const affiliateCount = allProducts.filter(p => p.monetization === 'verified').length
+    trackAssistantInteraction({
+      query: userMessage,
+      intentType: intent.type,
+      productsShown: allProducts.length,
+      productsFromCatalog: localResults.length,
+      productsFromExternal: shoppingResults.length,
+      affiliateCoverage: allProducts.length > 0 ? affiliateCount / allProducts.length : 0,
+      durationMs: Date.now() - startTime,
+      timestamp: new Date(),
+    }).catch(() => {})
 
     // ── Fire-and-forget: auto-import external products into catalog ──────
     // Products found via Google Shopping that aren't in our catalog get
