@@ -535,3 +535,49 @@ export function priceDropEmail(drop: {
 
   return baseLayout(content, `${drop.productName} caiu ${drop.discountPct}%! De R$ ${drop.previousPrice.toFixed(2)} por R$ ${drop.currentPrice.toFixed(2)}`);
 }
+
+/**
+ * Win-back email — re-engage inactive subscribers
+ */
+export function winBackEmail(data: {
+  priceDrops: Array<{ name: string; price: number; previousPrice: number; url: string }>;
+  topDeals: Array<{ name: string; price: number; discount: number; url: string }>;
+}): string {
+  const dropItems = data.priceDrops
+    .map(d => `
+      <div class="deal-card">
+        <p class="deal-name">${escapeHtml(d.name)}</p>
+        <p style="color:#71717a;font-size:12px;text-decoration:line-through;margin:0;">De: R$ ${d.previousPrice.toFixed(2).replace(".", ",")}</p>
+        <p class="deal-price">R$ ${d.price.toFixed(2).replace(".", ",")}</p>
+        <a href="${escapeHtml(addUTM(d.url, 'win-back'))}" class="deal-btn">Ver Oferta &rarr;</a>
+      </div>`)
+    .join("");
+
+  const dealItems = data.topDeals
+    .map(d => `
+      <div class="deal-card">
+        <p class="deal-name">${escapeHtml(d.name)}</p>
+        <p class="deal-price">R$ ${d.price.toFixed(2).replace(".", ",")}</p>
+        <p class="deal-discount">-${d.discount}% OFF</p>
+        <a href="${escapeHtml(addUTM(d.url, 'win-back'))}" class="deal-btn">Ver Oferta &rarr;</a>
+      </div>`)
+    .join("");
+
+  const content = `
+    <h2>Sentimos sua falta!</h2>
+    <p>Faz tempo que voce nao passa por aqui. Muita coisa mudou — veja o que encontramos para voce:</p>
+    <hr class="divider">
+    ${dropItems ? `<h3 style="color:#ea580c;font-size:16px;">Quedas de preco recentes</h3>${dropItems}` : ""}
+    ${dealItems ? `<h3 style="color:#16a34a;font-size:16px;">Melhores ofertas agora</h3>${dealItems}` : ""}
+    <hr class="divider">
+    <p style="text-align:center;">
+      <a href="${APP_URL}" class="btn">Voltar ao PromoSnap</a>
+    </p>
+    <hr class="divider">
+    <p style="font-size:13px;color:#71717a;">
+      Estamos sempre monitorando precos para voce. Volte quando quiser — estaremos aqui.
+    </p>
+  `;
+
+  return baseLayout(content, "Sentimos sua falta! Veja as quedas de preco que encontramos.");
+}

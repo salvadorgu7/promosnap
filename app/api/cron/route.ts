@@ -109,6 +109,10 @@ export async function GET(req: NextRequest) {
     ['welcome-email', () => import('@/lib/jobs/welcome-email').then(m => m.runWelcomeEmails())],
     // brand-fill: HYGIENE — auto-assigns brands to products from title extraction
     ['brand-fill', () => import('@/lib/jobs/brand-fill').then(m => m.brandFill())],
+    // win-back: RETENTION — re-engages inactive subscribers with personalized deals
+    ['win-back', () => import('@/lib/jobs/win-back').then(m => m.runWinBack())],
+    // variant-fill: HYGIENE — auto-populates ProductVariant from title parsing
+    ['variant-fill', () => import('@/lib/catalog/variant-parser').then(m => m.populateVariants())],
   ]
 
   // Filter to requested subset if ?jobs= is provided
