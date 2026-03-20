@@ -37,6 +37,10 @@ async function loadJobs() {
   // CRM engine
   const { runCrmEngineJob } = await import('@/lib/jobs/crm-engine')
   JOB_MAP['crm-engine'] = { fn: runCrmEngineJob, description: 'Motor CRM — alertas, digests, reengagement, segmentacao', jobRunName: 'crm-engine' }
+
+  // Growth daily ritual
+  const { runGrowthDaily } = await import('@/lib/jobs/growth-daily')
+  JOB_MAP['growth-daily'] = { fn: runGrowthDaily, description: 'Growth diario — briefing, oportunidades, calendario, merchandising', jobRunName: 'growth-daily' }
 }
 
 // ---------------------------------------------------------------------------

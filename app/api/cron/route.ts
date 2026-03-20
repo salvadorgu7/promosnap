@@ -115,6 +115,8 @@ export async function GET(req: NextRequest) {
     ['variant-fill', () => import('@/lib/catalog/variant-parser').then(m => m.populateVariants())],
     // crm-engine: RETENTION — alerts, digests, reengagement, segmentation via CRM pipeline
     ['crm-engine', () => import('@/lib/jobs/crm-engine').then(m => m.runCrmEngineJob())],
+    // growth-daily: GROWTH — daily briefing, opportunity detection, campaign calendar, merchandising
+    ['growth-daily', () => import('@/lib/jobs/growth-daily').then(m => m.runGrowthDaily())],
   ]
 
   // Filter to requested subset if ?jobs= is provided
