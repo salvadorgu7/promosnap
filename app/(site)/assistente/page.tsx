@@ -139,9 +139,9 @@ export default function AssistentePage() {
                   {msg.products.slice(0, 5).map((p, j) => (
                     <a
                       key={j}
-                      href={p.slug ? `/produto/${p.slug}` : (p.affiliateUrl || p.url)}
-                      target={p.slug ? "_self" : "_blank"}
-                      rel={p.slug ? undefined : "noopener noreferrer nofollow sponsored"}
+                      href={p.affiliateUrl || p.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow sponsored"
                       className="flex items-center gap-3 p-2 rounded-lg bg-surface-50 hover:bg-surface-100 transition-colors"
                     >
                       {p.imageUrl && (

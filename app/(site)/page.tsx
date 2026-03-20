@@ -29,6 +29,7 @@ const SmartSuggestions = nextDynamic(() => import("@/components/home/SmartSugges
 const PriceDropRail = nextDynamic(() => import("@/components/home/PriceDropRail"));
 const OpportunityRail = nextDynamic(() => import("@/components/home/OpportunityRail"));
 const EditorialRail = nextDynamic(() => import("@/components/home/EditorialRail"));
+const AIAssistantCTA = nextDynamic(() => import("@/components/home/AIAssistantCTA"));
 import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/seo/JsonLd";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
@@ -526,6 +527,9 @@ export default async function HomePage() {
 
       {/* ===== 19. RECENTLY VIEWED ===== */}
       <RecentlyViewedRail />
+
+      {/* ===== 19b. AI ASSISTANT CTA ===== */}
+      <AIAssistantCTA />
 
       {/* ===== 20. NEWSLETTER ===== */}
       <div id="newsletter" className="section-deep">

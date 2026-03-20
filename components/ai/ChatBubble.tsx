@@ -46,6 +46,7 @@ export default function ChatBubble() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -55,6 +56,26 @@ export default function ChatBubble() {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [messages, open]);
+
+  // Show tooltip after 5s on first visits (max 3 times)
+  useEffect(() => {
+    if (open) return;
+    const shown = parseInt(localStorage.getItem("ps:chat-tooltip-count") || "0", 10);
+    if (shown >= 3) return;
+    const timer = setTimeout(() => {
+      setShowTooltip(true);
+      localStorage.setItem("ps:chat-tooltip-count", String(shown + 1));
+      setTimeout(() => setShowTooltip(false), 6000);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  // Listen for external open event (from homepage CTA)
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("ps:open-chat", handler);
+    return () => window.removeEventListener("ps:open-chat", handler);
+  }, []);
 
   const sendMessage = async (text?: string) => {
     const msg = text || input.trim();
@@ -91,16 +112,24 @@ export default function ChatBubble() {
   // Floating button
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-20 md:bottom-6 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-accent-purple text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center group"
-        aria-label="Abrir assistente de compras"
-      >
-        <MessageCircle className="w-6 h-6 group-hover:hidden" />
-        <Sparkles className="w-6 h-6 hidden group-hover:block" />
-        {/* Notification dot */}
-        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-accent-green border-2 border-white" />
-      </button>
+      <div className="fixed bottom-20 md:bottom-6 right-4 z-50 flex items-center gap-2">
+        {/* Tooltip */}
+        {showTooltip && (
+          <div className="bg-white rounded-xl shadow-lg border border-surface-200 px-3 py-2 animate-fade-in max-w-[200px]">
+            <p className="text-xs font-medium text-text-primary">Precisa de ajuda para escolher?</p>
+            <p className="text-[10px] text-text-muted">Nosso assistente IA compara precos por voce</p>
+          </div>
+        )}
+        <button
+          onClick={() => { setOpen(true); setShowTooltip(false); }}
+          className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-accent-purple text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center group animate-pulse-subtle"
+          aria-label="Abrir assistente de compras"
+        >
+          <MessageCircle className="w-6 h-6 group-hover:hidden" />
+          <Sparkles className="w-6 h-6 hidden group-hover:block" />
+          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-accent-green border-2 border-white" />
+        </button>
+      </div>
     );
   }
 
@@ -183,9 +212,9 @@ export default function ChatBubble() {
                   {msg.products.slice(0, 3).map((p, j) => (
                     <a
                       key={j}
-                      href={p.slug ? `/produto/${p.slug}` : (p.affiliateUrl || p.url)}
-                      target={p.slug ? "_self" : "_blank"}
-                      rel={p.slug ? undefined : "noopener noreferrer nofollow sponsored"}
+                      href={p.affiliateUrl || p.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow sponsored"
                       className="flex items-center gap-2 p-1.5 rounded-lg bg-white border border-surface-100 hover:border-brand-500/30 transition-colors"
                     >
                       {p.imageUrl && (

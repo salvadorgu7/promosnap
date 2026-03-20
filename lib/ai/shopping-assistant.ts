@@ -425,6 +425,9 @@ async function executeLocalSearch(
 
     return products.slice(0, limit).map((p: any) => {
       const hasAffiliate = p.bestOffer?.affiliateUrl && p.bestOffer.affiliateUrl !== '#'
+      // Always provide a clickout/affiliate URL — never link to internal product page
+      const offerId = p.bestOffer?.offerId
+      const clickoutUrl = offerId ? `${APP_URL}/api/clickout/${offerId}?page=assistant` : `${APP_URL}/produto/${p.slug}`
       return {
         name: p.name,
         price: p.bestOffer?.price,
@@ -432,11 +435,11 @@ async function executeLocalSearch(
         discount: p.bestOffer?.discount,
         source: p.bestOffer?.sourceName || 'PromoSnap',
         url: `${APP_URL}/produto/${p.slug}`,
-        affiliateUrl: hasAffiliate ? p.bestOffer.affiliateUrl : `${APP_URL}/produto/${p.slug}`,
+        affiliateUrl: hasAffiliate ? p.bestOffer.affiliateUrl : clickoutUrl,
         imageUrl: p.imageUrl,
         isFromCatalog: true,
         confidence: 'verified' as const,
-        monetization: (hasAffiliate ? 'verified' : 'none') as MonetizationStatus,
+        monetization: (hasAffiliate ? 'verified' : 'best_effort') as MonetizationStatus,
         slug: p.slug,
       }
     })

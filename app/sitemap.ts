@@ -125,6 +125,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     urls.push({ url: `${APP_URL}/guia-compra/${slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.70 })
   }
 
+  // ─── NEW PAGES (vale-esperar, assistente, descobrir) ─────────────────
+  urls.push(
+    { url: `${APP_URL}/vale-esperar`, lastModified: now, changeFrequency: "daily", priority: 0.75 },
+    { url: `${APP_URL}/assistente`, lastModified: now, changeFrequency: "monthly", priority: 0.60 },
+  )
+
+  // Auto-generated discovery pages
+  try {
+    const discoveryPages = await prisma.editorialBlock.findMany({
+      where: { status: "PUBLISHED", blockType: "RAIL" },
+      select: { slug: true, updatedAt: true },
+    })
+    for (const page of discoveryPages) {
+      const pageSlug = page.slug.replace("descobrir-", "")
+      urls.push({
+        url: `${APP_URL}/descobrir/${pageSlug}`,
+        lastModified: page.updatedAt,
+        changeFrequency: "weekly",
+        priority: 0.65,
+      })
+    }
+  } catch (err) {
+    console.error("[sitemap] Failed to fetch discovery pages:", err)
+  }
+
   // ─── PROGRAMMATIC SEO ──────────────────────────────────────────────────
   for (const slug of BEST_PAGE_SLUGS) {
     urls.push({ url: `${APP_URL}/melhores/${slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.80 })
