@@ -25,7 +25,7 @@ import { logger } from '@/lib/logger'
 
 const log = logger.child({ job: 'catalog-amplifier' })
 
-const MAX_NEW_PRODUCTS = 200
+const MAX_NEW_PRODUCTS = 500
 const MIN_PRICE = 10
 
 // Category slugs that we want to cover
@@ -72,7 +72,7 @@ export async function amplifyCatalog() {
     ...gapQueries,
   ])]
     .filter(q => q.length >= 3 && q.length <= 50)
-    .slice(0, 30) // Max 30 queries per run
+    .slice(0, 50) // Max 50 queries per run
 
   log.info('amplifier.queries', { total: allQueries.length })
 
@@ -88,7 +88,7 @@ export async function amplifyCatalog() {
       if (allImportItems.length >= MAX_NEW_PRODUCTS) break
 
       try {
-        const results = await adapter.search(query, { limit: 8 })
+        const results = await adapter.search(query, { limit: 20 })
         totalSearched += results.length
 
         for (const r of results) {

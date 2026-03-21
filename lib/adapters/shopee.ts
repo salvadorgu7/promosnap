@@ -427,7 +427,7 @@ export class ShopeeSourceAdapter implements SourceAdapter {
 
     for (const q of queries) {
       try {
-        const results = await this.search(q.term, { limit: 15 })
+        const results = await this.search(q.term, { limit: 25 })
         if (results.length === 0) continue
 
         const importItems: ImportItem[] = results

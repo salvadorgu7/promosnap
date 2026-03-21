@@ -161,7 +161,7 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
 
   if (hydrateEntries.length > 0) {
     // Hydrate up to 3x limit (capped at 200 to stay within Vercel function timeout)
-    const hydrateCap = Math.min(limit * 3, 200)
+    const hydrateCap = Math.min(limit * 3, 400)
     const entriesToHydrate = hydrateEntries.slice(0, hydrateCap)
 
     try {
