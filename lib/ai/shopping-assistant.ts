@@ -19,6 +19,9 @@ import { buildAffiliateUrl } from '@/lib/affiliate'
 import { classifyIntent, getIntentTone } from './intent-classifier'
 import { buildIntentPromptSection } from './response-composer'
 import { trackAssistantInteraction } from './assistant-metrics'
+import { enrichProducts } from './product-enrichment'
+import { generateFollowUps, generateAlertSuggestions } from './follow-up-generator'
+import type { StructuredBlock, EnrichedProduct } from './structured-response'
 
 const log = logger.child({ module: 'shopping-assistant' })
 
@@ -36,6 +39,8 @@ export interface AssistantMessage {
 export interface AssistantResponse {
   message: string
   products?: AssistantProduct[]
+  /** Structured blocks for rich UI rendering */
+  blocks?: StructuredBlock[]
   /** Which data sources were used */
   dataSources: ('catalog' | 'web' | 'comparison')[]
   /** Tracking metadata */
@@ -202,14 +207,30 @@ export async function processShoppingQuery(
 
     const merged = deduplicateProducts([...localResults, ...shoppingResults, ...marketplaceResults])
     // Enforce budget: remove products above maxPrice (API filters may fail)
-    const allProducts = intent.budget?.max
+    const budgetFiltered = intent.budget?.max
       ? merged.filter(p => !p.price || p.price <= intent.budget!.max!)
       : merged
+
+    // ── Enrich products with price history, buy signals, specs, deal scores ─
+    const enrichedProducts: EnrichedProduct[] = await enrichProducts(budgetFiltered, intent.categories?.[0])
+      .catch(() => budgetFiltered.map(p => ({ ...p, dealScore: 50 })) as EnrichedProduct[])
+    const allProducts = enrichedProducts as (AssistantProduct & Partial<EnrichedProduct>)[]
+
+    // Build rich context for GPT (includes price intelligence)
     const productContext = allProducts.length > 0
-      ? `\n\nRESULTADOS ENCONTRADOS (use estes dados REAIS para responder):\n${allProducts.map((p, i) =>
-          `${i + 1}. ${p.name} — R$ ${p.price?.toFixed(2) || '?'} em ${p.source}${p.isFromCatalog ? ' [VERIFICADO]' : ''}${p.discount ? ` (${p.discount}% OFF)` : ''}`
-        ).join('\n')}`
-      : '\n\nNenhum resultado encontrado no catálogo nem no Google Shopping.'
+      ? `\n\nRESULTADOS ENCONTRADOS (use estes dados REAIS para responder):\n${allProducts.map((p, i) => {
+          const ep = p as EnrichedProduct
+          let line = `${i + 1}. ${p.name} — R$ ${p.price?.toFixed(2) || '?'} em ${p.source}`
+          if (p.isFromCatalog) line += ' [VERIFICADO]'
+          if (p.discount && p.discount > 0) line += ` (${p.discount}% OFF)`
+          if (ep.buySignal) line += ` | Sinal: ${ep.buySignal.headline}`
+          if (ep.priceContext?.isHistoricalLow) line += ' | MENOR PRECO HISTORICO'
+          else if (ep.priceContext?.pctBelowAvg && ep.priceContext.pctBelowAvg > 0) line += ` | ${ep.priceContext.pctBelowAvg}% abaixo da media`
+          if (ep.dealScore) line += ` | Score: ${ep.dealScore}/100`
+          if (ep.specs && ep.specs.length > 0) line += ` | ${ep.specs.map(s => `${s.value}${s.unit || ''}`).join(', ')}`
+          return line
+        }).join('\n')}`
+      : '\n\nNenhum resultado encontrado no catalogo nem no Google Shopping.'
 
     // Enhanced system prompt with intent understanding
     const enhancedSystemPrompt = SYSTEM_PROMPT + intentPromptSection
@@ -278,9 +299,37 @@ export async function processShoppingQuery(
       })
     }
 
+    // ── Build structured blocks for rich UI ───────────────────────────────
+    const blocks: StructuredBlock[] = []
+
+    // Text block (AI narrative)
+    blocks.push({ type: 'text', content: message })
+
+    // Product cards block (enriched)
+    if (enrichedProducts.length > 0) {
+      blocks.push({
+        type: 'product_cards',
+        products: enrichedProducts.slice(0, 8),
+        layout: enrichedProducts.length <= 3 ? 'list' : 'grid',
+      })
+    }
+
+    // Alert suggestions (for products not at historical low)
+    const alertSuggestions = generateAlertSuggestions(enrichedProducts)
+    for (const alert of alertSuggestions) {
+      blocks.push(alert)
+    }
+
+    // Follow-up buttons
+    const followUps = generateFollowUps(intent, enrichedProducts, userMessage)
+    if (followUps.length > 0) {
+      blocks.push({ type: 'follow_up_buttons', suggestions: followUps })
+    }
+
     return {
       message,
       products: allProducts.length > 0 ? allProducts : undefined,
+      blocks,
       dataSources,
       meta: {
         toolsUsed: ['searchLocalCatalog', ...(shoppingResults.length > 0 ? ['searchGoogleShopping'] : [])],

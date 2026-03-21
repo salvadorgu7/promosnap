@@ -1,41 +1,37 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
-import { Send, Sparkles, ShoppingBag, Loader2, ExternalLink, ArrowRight } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
-import ImageWithFallback from "@/components/ui/ImageWithFallback";
-import { buildMetadata } from "@/lib/seo/metadata";
+import { Send, Sparkles, ShoppingBag, Loader2 } from "lucide-react";
+import SmartProductCard from "@/components/assistant/SmartProductCard";
+import FollowUpChips from "@/components/assistant/FollowUpChips";
+import AlertSuggestion from "@/components/assistant/AlertSuggestion";
+
+// ── Types ──────────────────────────────────────────────────────────────────
+
+interface StructuredBlock {
+  type: string;
+  [key: string]: any;
+}
 
 interface Message {
   role: "user" | "assistant";
   content: string;
-  products?: Product[];
+  products?: any[];
+  blocks?: StructuredBlock[];
 }
 
-interface Product {
-  name: string;
-  price?: number;
-  originalPrice?: number;
-  discount?: number;
-  source: string;
-  url: string;
-  affiliateUrl: string;
-  imageUrl?: string;
-  isFromCatalog: boolean;
-  confidence?: "verified" | "resolved" | "raw";
-  monetization?: "verified" | "best_effort" | "none";
-  slug?: string;
-}
+// ── Suggestions ────────────────────────────────────────────────────────────
 
 const SUGGESTIONS = [
-  "Melhor celular para fotografia até R$ 3.000",
-  "Notebook bom para trabalho e estudo",
+  "Melhor celular até R$ 2.000",
+  "Notebook bom para trabalho até R$ 4.000",
   "Fone bluetooth com cancelamento de ruído",
   "Smart TV 55 polegadas custo-benefício",
   "Vale a pena comprar iPhone 15 agora?",
   "Air Fryer boa e barata",
 ];
+
+// ── Page Component ─────────────────────────────────────────────────────────
 
 export default function AssistentePage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -72,6 +68,7 @@ export default function AssistentePage() {
         role: "assistant",
         content: data.message || "Sem resposta.",
         products: data.products,
+        blocks: data.blocks,
       };
       setMessages(prev => [...prev, assistantMsg]);
     } catch {
@@ -97,7 +94,7 @@ export default function AssistentePage() {
           O que você quer comprar?
         </h1>
         <p className="text-sm text-text-muted mt-1 max-w-lg mx-auto">
-          Pergunte sobre qualquer produto. Eu busco, comparo e te ajudo a decidir.
+          Busco, comparo preços, analiso histórico e te ajudo a decidir a melhor hora de comprar.
         </p>
       </div>
 
@@ -122,68 +119,30 @@ export default function AssistentePage() {
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+              className={`max-w-[90%] md:max-w-[85%] rounded-2xl px-4 py-3 ${
                 msg.role === "user"
                   ? "bg-brand-500 text-white"
                   : "bg-white border border-surface-200 text-text-primary"
               }`}
             >
-              {/* Text content */}
-              <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                {msg.content}
-              </div>
+              {msg.role === "assistant" && msg.blocks ? (
+                <AssistantBlocks blocks={msg.blocks} onFollowUp={sendMessage} />
+              ) : (
+                <>
+                  {/* Text content */}
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {msg.content}
+                  </div>
 
-              {/* Product cards */}
-              {msg.products && msg.products.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {msg.products.slice(0, 5).map((p, j) => (
-                    <a
-                      key={j}
-                      href={p.affiliateUrl || p.url}
-                      target="_blank"
-                      rel="noopener noreferrer nofollow sponsored"
-                      className="flex items-center gap-3 p-2 rounded-lg bg-surface-50 hover:bg-surface-100 transition-colors"
-                    >
-                      {p.imageUrl && (
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-white flex-shrink-0">
-                          <ImageWithFallback
-                            src={p.imageUrl}
-                            alt={p.name}
-                            width={48}
-                            height={48}
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-text-primary line-clamp-1">
-                          {p.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {p.price && (
-                            <span className="text-sm font-bold text-accent-green">
-                              {formatPrice(p.price)}
-                            </span>
-                          )}
-                          {p.discount && p.discount > 0 && (
-                            <span className="text-[10px] font-semibold text-white bg-accent-red px-1.5 py-0.5 rounded">
-                              -{p.discount}%
-                            </span>
-                          )}
-                          <span className="text-[10px] text-text-muted">
-                            {p.source}
-                          </span>
-                          {p.confidence === "verified" && (
-                            <span className="text-[9px] px-1 py-0.5 rounded bg-accent-green/10 text-accent-green font-medium">
-                              ✓ Verificado
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <ExternalLink className="w-3.5 h-3.5 text-surface-400 flex-shrink-0" />
-                    </a>
-                  ))}
-                </div>
+                  {/* Legacy product cards (fallback if no blocks) */}
+                  {msg.role === "assistant" && msg.products && msg.products.length > 0 && !msg.blocks && (
+                    <div className="mt-3 space-y-2">
+                      {msg.products.slice(0, 6).map((p: any, j: number) => (
+                        <SmartProductCard key={j} product={p} rank={j + 1} />
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -194,8 +153,8 @@ export default function AssistentePage() {
           <div className="flex justify-start">
             <div className="bg-white border border-surface-200 rounded-2xl px-4 py-3">
               <div className="flex items-center gap-2 text-sm text-text-muted">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Buscando e comparando...
+                <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
+                <span>Buscando, comparando preços e analisando ofertas...</span>
               </div>
             </div>
           </div>
@@ -215,7 +174,7 @@ export default function AssistentePage() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ex: melhor notebook para trabalho até R$ 4.000..."
+            placeholder="Ex: melhor celular até R$ 2.000, notebook para trabalho..."
             className="flex-1 text-sm bg-transparent outline-none text-text-primary placeholder:text-surface-400 min-h-[44px]"
             disabled={loading}
             maxLength={500}
@@ -229,9 +188,88 @@ export default function AssistentePage() {
           </button>
         </form>
         <p className="text-[10px] text-text-muted text-center mt-2">
-          Busca com IA · Preços verificados · Links seguros para lojas parceiras
+          Busca com IA · Preços verificados · Histórico de 90 dias · Links seguros
         </p>
       </div>
+    </div>
+  );
+}
+
+// ── Block Renderer ─────────────────────────────────────────────────────────
+
+function AssistantBlocks({
+  blocks,
+  onFollowUp,
+}: {
+  blocks: StructuredBlock[];
+  onFollowUp: (query: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {blocks.map((block, i) => {
+        switch (block.type) {
+          case "text":
+            return (
+              <div key={i} className="text-sm leading-relaxed whitespace-pre-wrap">
+                {block.content}
+              </div>
+            );
+
+          case "product_cards":
+            return (
+              <div key={i} className="space-y-2 mt-2">
+                {(block.products || []).slice(0, 8).map((p: any, j: number) => (
+                  <SmartProductCard key={j} product={p} rank={j + 1} />
+                ))}
+              </div>
+            );
+
+          case "alert_suggestion":
+            return (
+              <AlertSuggestion
+                key={i}
+                productName={block.productName}
+                currentPrice={block.currentPrice}
+                suggestedTargetPrice={block.suggestedTargetPrice}
+                slug={block.slug}
+              />
+            );
+
+          case "follow_up_buttons":
+            return (
+              <FollowUpChips
+                key={i}
+                suggestions={block.suggestions || []}
+                onSelect={onFollowUp}
+              />
+            );
+
+          case "deal_verdict":
+            return (
+              <div key={i} className={`p-3 rounded-xl border mt-2 ${
+                block.verdict === "comprar" ? "bg-emerald-50 border-emerald-200" :
+                block.verdict === "esperar" ? "bg-amber-50 border-amber-200" :
+                "bg-gray-50 border-gray-200"
+              }`}>
+                <p className="text-sm font-semibold">
+                  {block.verdict === "comprar" ? "✅ Bom momento para comprar" :
+                   block.verdict === "esperar" ? "⏳ Vale esperar um pouco" :
+                   "➡️ Preço dentro da média"}
+                </p>
+                {block.reasons && (
+                  <ul className="text-xs text-text-muted mt-1 space-y-0.5">
+                    {block.reasons.map((r: string, j: number) => (
+                      <li key={j}>• {r}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+
+          default:
+            return null;
+        }
+      })}
     </div>
   );
 }
