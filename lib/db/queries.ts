@@ -52,6 +52,16 @@ export function buildProductCard(p: any): ProductCard | null {
     [/galaxy\s+z/i, 500],
     [/\bps5\b|playstation/i, 1500],
     [/xbox\s+series/i, 1500],
+    [/rtx\s*[2345]\d{3}/i, 1000],       // GPU NVIDIA
+    [/placa\s+de\s+v[ií]deo.*(?:rtx|gtx\s*1[6-9])/i, 1000], // "Placa de Video" + mid/high GPU
+    [/airpods\s+pro/i, 150],
+    [/airpods\s+max/i, 300],
+    [/apple\s+watch\s+(ultra|series)/i, 200],
+    [/ryzen\s*9/i, 200],
+    [/core\s+i[79]/i, 150],
+    [/geladeira|refrigerador/i, 200],
+    [/lava.?seca|lavadora.*secadora/i, 300],
+    [/ar.?condicionado|split.*inverter/i, 800],
   ]
   for (const [pattern, floor] of HIGH_VALUE_DISPLAY_RULES) {
     if (pattern.test(productName) && best.currentPrice < floor) return null

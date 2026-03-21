@@ -297,7 +297,8 @@ function validateItem(item: ImportItem): string | null {
     [/airpods\s+pro/i, 150],
     [/airpods\s+max/i, 300],
     [/apple\s+watch\s+(ultra|series)/i, 200],
-    [/rtx\s*[345]\d{3}/i, 300],        // GPU NVIDIA
+    [/rtx\s*[2345]\d{3}/i, 1000],       // GPU NVIDIA — cheapest RTX is ~R$1200 in BR
+    [/placa\s+de\s+v[ií]deo.*(?:rtx|gtx\s*1[6-9])/i, 1000], // "Placa de Video" + mid/high GPU
     [/ryzen\s*9/i, 200],               // CPU high-end
     [/core\s+i[79]/i, 150],            // Intel high-end
     [/geladeira|refrigerador/i, 200],

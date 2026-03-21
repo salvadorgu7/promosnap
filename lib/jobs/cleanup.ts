@@ -79,6 +79,8 @@ async function deactivateBadPriceOffers(): Promise<number> {
     /ar.?condicionado|split.*inverter/i,
     /geladeira|refrigerador/i,
     /lava.?seca/i,
+    /rtx\s*[2345]\d{3}/i,               // GPU NVIDIA
+    /placa\s+de\s+v[ií]deo.*(?:rtx|gtx\s*1[6-9])/i, // "Placa de Video" + mid/high GPU
   ];
   const HIGH_VALUE_MIN_PRICE = 800; // R$ — below this for these products = certainly wrong
 
