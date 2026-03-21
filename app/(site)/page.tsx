@@ -15,7 +15,6 @@ import OfferCarousel from "@/components/home/OfferCarousel";
 import SocialProof from "@/components/home/SocialProof";
 import RadarBanner from "@/components/home/RadarBanner";
 import ReturnUserGreeting from "@/components/home/ReturnUserGreeting";
-import AmazonPromo from "@/components/home/AmazonPromo";
 import FirstSaleBanner from "@/components/home/FirstSaleBanner";
 import EmailCapture from "@/components/engagement/EmailCapture";
 import StoreTrustBar from "@/components/home/StoreTrustBar";
@@ -421,9 +420,6 @@ export default async function HomePage() {
           </RailSection>
         </div>
       )}
-
-      {/* ===== AMAZON PROMO — after commercial rails, before discovery ===== */}
-      <AmazonPromo />
 
       {/* ===== 13c. DESCOBRIR — auto-generated editorial pages ===== */}
       <EditorialRail />
