@@ -273,7 +273,31 @@ export default async function CompararPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const def = COMPARISONS[slug];
+  let def = COMPARISONS[slug];
+
+  // Dynamic comparison: if slug contains "-vs-", extract two product slugs
+  if (!def && slug.includes('-vs-')) {
+    const parts = slug.split('-vs-')
+    if (parts.length === 2) {
+      const [slugA, slugB] = parts
+      const nameA = slugA.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      const nameB = slugB.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      def = {
+        slug,
+        title: `${nameA} vs ${nameB}`,
+        description: `Compare ${nameA} e ${nameB} — preços, especificações e qual vale mais a pena.`,
+        productA: { name: nameA, query: slugA.replace(/-/g, ' ') },
+        productB: { name: nameB, query: slugB.replace(/-/g, ' ') },
+        intro: `Compare ${nameA} e ${nameB} com preços atualizados e descubra qual vale mais a pena.`,
+        verdict: '',
+        faqs: [
+          { q: `Qual é melhor: ${nameA} ou ${nameB}?`, a: `Compare preços e especificações no PromoSnap para decidir qual vale mais a pena para o seu uso.` },
+          { q: `Onde comprar mais barato?`, a: `O PromoSnap compara preços entre Amazon, Mercado Livre, Shopee, Magazine Luiza e Shein para encontrar o menor preço.` },
+        ],
+      }
+    }
+  }
+
   if (!def) notFound();
 
   const [productsA, productsB] = await Promise.all([
