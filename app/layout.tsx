@@ -3,6 +3,10 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import { getBaseUrl } from "@/lib/seo/url";
 import { assertCriticalEnvs } from "@/lib/config/assert-env";
+import dynamic from "next/dynamic";
+
+const OnboardingWizard = dynamic(() => import("@/components/engagement/OnboardingWizard"), { ssr: false });
+const PushNotificationPrompt = dynamic(() => import("@/components/ui/PushNotificationPrompt"), { ssr: false });
 import "@/styles/globals.css";
 
 // Validate environment on server startup (runs once at module load)
@@ -122,6 +126,8 @@ export default function RootLayout({
       <body className="min-h-screen font-sans antialiased">
         <GoogleAnalytics />
         {children}
+        <OnboardingWizard />
+        <PushNotificationPrompt />
       </body>
     </html>
   );

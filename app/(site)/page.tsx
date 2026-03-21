@@ -30,6 +30,7 @@ const OpportunityRail = nextDynamic(() => import("@/components/home/OpportunityR
 const EditorialRail = nextDynamic(() => import("@/components/home/EditorialRail"));
 const AIAssistantCTA = nextDynamic(() => import("@/components/home/AIAssistantCTA"));
 const RetentionRail = nextDynamic(() => import("@/components/home/RetentionRail"));
+const CountdownBanner = nextDynamic(() => import("@/components/home/CountdownBanner"));
 import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/seo/JsonLd";
 import { getHotOffers, getBestSellers, getLowestPrices, getRecentlyImported, getBestValue, getReadyForCampaign, getCategories, getSiteStats, getActiveCoupons, getProductsByCategory } from "@/lib/db/queries";
 import { getSocialRanking } from "@/lib/commerce/social-ranking";
@@ -420,6 +421,11 @@ export default async function HomePage() {
           </RailSection>
         </div>
       )}
+
+      {/* ===== COUNTDOWN — campaign timer (shows if campaign is within 30 days) ===== */}
+      <div className="max-w-7xl mx-auto px-4 py-2">
+        <CountdownBanner />
+      </div>
 
       {/* ===== 13c. DESCOBRIR — auto-generated editorial pages ===== */}
       <EditorialRail />

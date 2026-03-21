@@ -53,7 +53,7 @@ async function searchProducts(query: string, limit = 8): Promise<ProductCard[]> 
     });
     return products.map(buildProductCard).filter(Boolean) as ProductCard[];
   } catch (err) {
-    console.error("[comparar] DB fetch failed, rendering empty state:", err);
+    // DB fetch failed — render empty state gracefully
     return [];
   }
 }

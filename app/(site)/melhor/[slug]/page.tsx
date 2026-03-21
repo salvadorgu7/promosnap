@@ -66,7 +66,8 @@ export default async function LandingPage({ params }: PageProps) {
   const config = LANDING_PAGES[slug]
   if (!config) notFound()
 
-  // Fetch products from catalog
+  // Fetch products from catalog — filter by category AND query keywords
+  const queryWords = config.query.split(' ').filter(w => w.length > 2)
   const where: any = {
     status: "ACTIVE",
     listings: { some: { offers: { some: { isActive: true } } } },
@@ -74,6 +75,13 @@ export default async function LandingPage({ params }: PageProps) {
 
   if (config.category) {
     where.category = { slug: config.category }
+  }
+
+  // Name must match at least one query keyword (prevents category leakage)
+  if (queryWords.length > 0) {
+    where.OR = queryWords.map(word => ({
+      name: { contains: word, mode: "insensitive" as const },
+    }))
   }
 
   const products = await prisma.product.findMany({
