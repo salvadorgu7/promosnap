@@ -105,3 +105,44 @@ export const shopeeConnector: SourceConnector = {
     }
   },
 }
+
+// ── Magazine Luiza Connector ──────────────────────────────────────────────
+
+export const magaluConnector: SourceConnector = {
+  name: 'Magazine Luiza',
+  slug: 'magalu-search',
+
+  isReady(): boolean {
+    return !!(process.env.MAGALU_API_KEY)
+  },
+
+  async search(query: string, options?: { maxPrice?: number; limit?: number }): Promise<ExternalCandidate[]> {
+    if (!this.isReady()) return []
+
+    try {
+      const { MagaluSourceAdapter } = await import('@/lib/adapters/magalu')
+      const adapter = new MagaluSourceAdapter()
+
+      if (!adapter.isConfigured()) return []
+
+      const results = await adapter.search(query, { limit: options?.limit || 8 })
+
+      log.info('magalu-connector.search.ok', { query, results: results.length })
+
+      return results
+        .filter(r => r.currentPrice > 0 && (!options?.maxPrice || r.currentPrice <= options.maxPrice))
+        .map(r => ({
+          rawTitle: r.title,
+          externalUrl: r.affiliateUrl || r.productUrl,
+          price: r.currentPrice,
+          originalPrice: r.originalPrice,
+          imageUrl: r.imageUrl,
+          sourceDomain: 'magazineluiza.com.br',
+          merchant: 'Magazine Luiza',
+        }))
+    } catch (err) {
+      log.error('magalu-connector.search.failed', { query, error: String(err) })
+      return []
+    }
+  },
+}

@@ -196,6 +196,7 @@ export async function discoverAndImport(options?: DiscoverImportOptions): Promis
       { slug: 'amazon-br', label: 'Amazon' },
       { slug: 'shopee', label: 'Shopee' },
       { slug: 'shein', label: 'Shein' },
+      { slug: 'magalu', label: 'Magazine Luiza' },
     ]
 
     for (const target of syncTargets) {

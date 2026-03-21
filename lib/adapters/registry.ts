@@ -5,6 +5,7 @@ import { AmazonSourceAdapter } from './amazon'
 import { MercadoLivreSourceAdapter } from './mercadolivre'
 import { ShopeeSourceAdapter } from './shopee'
 import { SheinSourceAdapter } from './shein'
+import { MagaluSourceAdapter } from './magalu'
 
 // ---------------------------------------------------------------------------
 // Singleton Registry
@@ -18,6 +19,7 @@ class AdapterRegistry {
     this.register(new MercadoLivreSourceAdapter())
     this.register(new ShopeeSourceAdapter())
     this.register(new SheinSourceAdapter())
+    this.register(new MagaluSourceAdapter())
   }
 
   /** Register a new adapter */

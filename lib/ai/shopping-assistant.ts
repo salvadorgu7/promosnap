@@ -592,7 +592,7 @@ async function executeMarketplaceSearch(
   try {
     const { connectorRegistry, resolveCandidates, candidateToAssistantProduct } = await import('./candidate-resolver')
 
-    const connectors = ['mercadolivre-search', 'shopee-search']
+    const connectors = ['mercadolivre-search', 'shopee-search', 'magalu-search']
       .map(slug => connectorRegistry.get(slug))
       .filter((c): c is NonNullable<typeof c> => !!c && c.isReady())
 
