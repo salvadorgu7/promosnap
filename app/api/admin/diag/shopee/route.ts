@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
       productsFound: products.length,
       sampleProduct: products[0] ? {
         name: products[0].productName,
-        price: products[0].priceMin ? (products[0].priceMin / 100000).toFixed(2) : null,
+        price: products[0].priceMin ? `R$ ${parseFloat(products[0].priceMin).toFixed(2)}` : null,
         sales: products[0].sales,
         hasOfferLink: !!products[0].offerLink,
       } : null,
