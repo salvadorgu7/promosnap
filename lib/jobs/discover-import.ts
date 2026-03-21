@@ -189,30 +189,41 @@ export async function discoverAndImport(options?: DiscoverImportOptions): Promis
 
     await ctx.updateProgress(importResult.created + importResult.updated, importResult.total)
 
-    // Stage 3: Amazon discovery via syncFeed (if configured)
-    let amazonStats = { synced: 0, failed: 0, errors: [] as string[] }
-    try {
-      const amazonAdapter = adapterRegistry.get('amazon-br')
-      if (amazonAdapter?.isConfigured() && amazonAdapter.syncFeed) {
-        ctx.log('Running Amazon discovery via syncFeed...')
-        const amazonResult = await amazonAdapter.syncFeed()
-        amazonStats = { synced: amazonResult.synced, failed: amazonResult.failed, errors: amazonResult.errors }
-        ctx.log(`Amazon discovery: ${amazonResult.synced} synced, ${amazonResult.failed} failed`)
-      } else {
-        ctx.log('Amazon adapter not configured — skipping Amazon discovery')
+    // Stage 3: Multi-marketplace discovery via syncFeed (Amazon + Shopee + Shein)
+    const marketplaceStats: Record<string, { synced: number; failed: number; errors: string[] }> = {}
+
+    const syncTargets = [
+      { slug: 'amazon-br', label: 'Amazon' },
+      { slug: 'shopee', label: 'Shopee' },
+      { slug: 'shein', label: 'Shein' },
+    ]
+
+    for (const target of syncTargets) {
+      try {
+        const adapter = adapterRegistry.get(target.slug)
+        if (adapter?.isConfigured() && adapter.syncFeed) {
+          ctx.log(`Running ${target.label} discovery via syncFeed...`)
+          const result = await adapter.syncFeed()
+          marketplaceStats[target.slug] = { synced: result.synced, failed: result.failed, errors: result.errors }
+          ctx.log(`${target.label} discovery: ${result.synced} synced, ${result.failed} failed`)
+        } else {
+          ctx.log(`${target.label} adapter not configured — skipping`)
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        ctx.warn(`${target.label} discovery failed (non-fatal): ${msg}`)
+        marketplaceStats[target.slug] = { synced: 0, failed: 0, errors: [msg] }
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      ctx.warn(`Amazon discovery failed (non-fatal): ${msg}`)
-      amazonStats.errors.push(msg)
     }
 
+    const totalMarketplaceSynced = Object.values(marketplaceStats).reduce((s, m) => s + m.synced, 0)
+
     const pipelineMs = Date.now() - pipelineStart
-    ctx.log(`Pipeline complete in ${pipelineMs}ms (discovery: ${discoveryResult.meta.timing.totalMs}ms, import: ${importResult.durationMs}ms)`)
+    ctx.log(`Pipeline complete in ${pipelineMs}ms (discovery: ${discoveryResult.meta.timing.totalMs}ms, import: ${importResult.durationMs}ms, marketplaces: ${totalMarketplaceSynced} synced)`)
 
     return {
-      itemsTotal: importResult.total + amazonStats.synced,
-      itemsDone: importResult.created + importResult.updated + amazonStats.synced,
+      itemsTotal: importResult.total + totalMarketplaceSynced,
+      itemsDone: importResult.created + importResult.updated + totalMarketplaceSynced,
       metadata: {
         mode,
         discoveryMs: discoveryResult.meta.timing.totalMs,
@@ -228,9 +239,7 @@ export async function discoverAndImport(options?: DiscoverImportOptions): Promis
         categoryStats: importResult.categoryStats,
         priceStats: importResult.priceStats,
         categoryFetchStats: discoveryResult.meta.stats.categoryFetchStats,
-        amazon: amazonStats.synced > 0 || amazonStats.errors.length > 0
-          ? { synced: amazonStats.synced, failed: amazonStats.failed, errors: amazonStats.errors }
-          : undefined,
+        marketplaces: Object.keys(marketplaceStats).length > 0 ? marketplaceStats : undefined,
       },
     }
   })
