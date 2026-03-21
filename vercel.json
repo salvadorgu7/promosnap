@@ -1,36 +1,48 @@
 {
   "crons": [
     {
-      "path": "/api/cron?jobs=update-prices",
+      "path": "/api/cron?jobs=update-prices,ml-token-refresh",
       "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=ingest,discover-import",
+      "schedule": "0 6,10,14,18,22 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=catalog-amplifier",
+      "schedule": "0 8,13,19 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=compute-scores,process-promosapp",
+      "schedule": "0 */3 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=check-alerts,push-price-drops",
+      "schedule": "0 */3 * * *"
     },
     {
       "path": "/api/cron?jobs=cleanup,backfill-images,category-fill,brand-fill,variant-fill",
       "schedule": "0 */6 * * *"
     },
     {
-      "path": "/api/cron?jobs=check-alerts,welcome-email",
-      "schedule": "0 */4 * * *"
-    },
-    {
-      "path": "/api/cron?jobs=ingest,discover-import",
-      "schedule": "0 8,14,20 * * *"
-    },
-    {
-      "path": "/api/cron?jobs=compute-scores,process-promosapp",
-      "schedule": "0 */4 * * *"
-    },
-    {
       "path": "/api/cron/sync-shopee",
-      "schedule": "0 3 * * *"
+      "schedule": "0 3,15 * * *"
     },
     {
-      "path": "/api/cron?jobs=auto-pages,generate-content",
-      "schedule": "0 6 * * *"
+      "path": "/api/cron?jobs=telegram-deals,twitter-deals",
+      "schedule": "0 9,17 * * *"
     },
     {
-      "path": "/api/cron?jobs=price-drop-radar",
+      "path": "/api/cron?jobs=ai-content,auto-pages,generate-content",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=price-drop-radar,welcome-email",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron?jobs=crm-engine,growth-daily",
+      "schedule": "0 10 * * *"
     },
     {
       "path": "/api/cron?jobs=personalized-digest",
@@ -39,6 +51,10 @@
     {
       "path": "/api/cron?jobs=win-back",
       "schedule": "0 11 * * 3"
+    },
+    {
+      "path": "/api/cron?jobs=auto-blog,price-index",
+      "schedule": "0 5 1 * *"
     }
   ]
 }
