@@ -15,13 +15,14 @@ const ALL_JOBS = [
   "discover-import",
   "catalog-amplifier",
   "ingest",
-  // Manutenção
+  // Manutencao
   "update-prices",
   "compute-scores",
   "ml-token-refresh",
-  // Retenção
+  // Retencao
   "check-alerts",
   "push-price-drops",
+  "crm-engine",
   // Growth
   "ai-content",
   "growth-daily",
@@ -30,9 +31,6 @@ const ALL_JOBS = [
   // Higiene
   "cleanup",
   "sitemap",
-  "category-fill",
-  "brand-fill",
-  "variant-fill",
 ]
 
 export default function RunAllJobs() {
