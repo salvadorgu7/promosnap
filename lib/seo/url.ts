@@ -4,15 +4,17 @@
  * to ensure canonical domain consistency.
  */
 
-const CANONICAL_DOMAIN = "https://promosnap.com.br";
+/**
+ * Canonical domain — MUST match NEXT_PUBLIC_APP_URL in Vercel.
+ * Google treats www and non-www as different sites.
+ * Pick ONE and stick with it everywhere.
+ */
+const CANONICAL_DOMAIN = "https://www.promosnap.com.br";
 
-/** Returns the canonical base URL, respecting env override */
+/** Returns the canonical base URL, always consistent */
 export function getBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.APP_URL ||
-    CANONICAL_DOMAIN
-  );
+  // CANONICAL_DOMAIN takes precedence to avoid www/non-www split
+  return CANONICAL_DOMAIN;
 }
 
 /** Build an absolute URL from a path */
