@@ -5,13 +5,29 @@ import JobRunner from "@/components/admin/JobRunner";
 
 export const dynamic = "force-dynamic";
 
-const JOB_DESCRIPTIONS: Record<string, { label: string; description: string }> = {
-  ingest: { label: "Ingestão ML", description: "Busca tendências do Mercado Livre e persiste keywords" },
-  "update-prices": { label: "Atualizar Preços", description: "Marca ofertas stale e cria snapshots" },
-  "compute-scores": { label: "Calcular Scores", description: "Recalcula offerScore e popularityScore" },
-  cleanup: { label: "Limpeza", description: "Remove snapshots e logs antigos" },
-  sitemap: { label: "Sitemap", description: "Verifica URLs do sitemap dinâmico" },
-  "check-alerts": { label: "Alertas de Preço", description: "Verifica e dispara alertas atingidos" },
+const JOB_DESCRIPTIONS: Record<string, { label: string; description: string; category?: string }> = {
+  // Valor — trazem dados novos
+  "discover-import": { label: "🔍 Discovery + Import", description: "Descobre e importa produtos de ML, Shopee, Magalu, Shein, Amazon", category: "valor" },
+  "discover-import-massive": { label: "🔍 Import Massivo", description: "Todas as 28 categorias, até 500 produtos", category: "valor" },
+  "catalog-amplifier": { label: "📈 Amplificar Catálogo", description: "Importa produtos baseado em demanda + trends + gaps de categoria", category: "valor" },
+  ingest: { label: "📊 Ingestão ML", description: "Busca tendências do Mercado Livre e persiste keywords", category: "valor" },
+  // Manutenção
+  "update-prices": { label: "💰 Atualizar Preços", description: "Marca ofertas stale e cria snapshots", category: "manutencao" },
+  "compute-scores": { label: "⭐ Calcular Scores", description: "Recalcula offerScore e popularityScore", category: "manutencao" },
+  "ml-token-refresh": { label: "🔑 Renovar Token ML", description: "Renova token OAuth do Mercado Livre", category: "manutencao" },
+  cleanup: { label: "🧹 Limpeza", description: "Remove snapshots e logs antigos", category: "manutencao" },
+  sitemap: { label: "🗺️ Sitemap", description: "Verifica URLs do sitemap dinâmico", category: "manutencao" },
+  // Retenção
+  "check-alerts": { label: "🔔 Alertas de Preço", description: "Verifica e dispara alertas atingidos", category: "retencao" },
+  "push-price-drops": { label: "📉 Detectar Quedas", description: "Detecta quedas de preço > 10% nas últimas 24h", category: "retencao" },
+  "crm-engine": { label: "📧 Motor CRM", description: "Alertas, digests, reengagement, segmentação", category: "retencao" },
+  // Growth
+  "ai-content": { label: "🤖 IA Content", description: "Gera FAQs, guias e posts sociais com dados reais", category: "growth" },
+  "telegram-deals": { label: "📱 Telegram Deals", description: "Posta top 5 deals no canal Telegram", category: "growth" },
+  "twitter-deals": { label: "🐦 Twitter Deals", description: "Posta melhor deal no Twitter/X", category: "growth" },
+  "auto-blog": { label: "📝 Auto Blog", description: "Gera artigos mensais (melhores de cada categoria)", category: "growth" },
+  "price-index": { label: "📊 Índice de Preços", description: "Gera relatório mensal de preços por categoria", category: "growth" },
+  "growth-daily": { label: "🚀 Growth Diário", description: "Briefing, oportunidades, calendário, merchandising", category: "growth" },
 };
 
 const statusConfig: Record<string, { icon: typeof CheckCircle; color: string; bg: string }> = {

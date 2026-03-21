@@ -41,6 +41,38 @@ async function loadJobs() {
   // Growth daily ritual
   const { runGrowthDaily } = await import('@/lib/jobs/growth-daily')
   JOB_MAP['growth-daily'] = { fn: runGrowthDaily, description: 'Growth diario — briefing, oportunidades, calendario, merchandising', jobRunName: 'growth-daily' }
+
+  // Catalog Amplifier — demand-driven discovery from all marketplaces
+  const { amplifyCatalog } = await import('@/lib/jobs/catalog-amplifier')
+  JOB_MAP['catalog-amplifier'] = { fn: amplifyCatalog, description: 'Amplificar catalogo — busca produtos com base em demanda, trends e gaps', jobRunName: 'catalog-amplifier' }
+
+  // AI Content Enrichment
+  const { runAIContentEnrichment } = await import('@/lib/jobs/ai-content-enrichment')
+  JOB_MAP['ai-content'] = { fn: runAIContentEnrichment, description: 'IA gera FAQs, guias e posts sociais com dados reais', requiresCredentials: 'OPENAI_API_KEY', jobRunName: 'ai-content' }
+
+  // Telegram daily deals
+  const { sendDailyDeals } = await import('@/lib/jobs/telegram-daily-deals')
+  JOB_MAP['telegram-deals'] = { fn: sendDailyDeals, description: 'Postar top 5 deals no canal Telegram', requiresCredentials: 'TELEGRAM_BOT_TOKEN', jobRunName: 'telegram-deals' }
+
+  // Twitter deals
+  const { postDailyDeals } = await import('@/lib/jobs/twitter-deals')
+  JOB_MAP['twitter-deals'] = { fn: postDailyDeals, description: 'Postar melhor deal no Twitter/X', requiresCredentials: 'TWITTER_API_KEY', jobRunName: 'twitter-deals' }
+
+  // ML token refresh
+  const { refreshMLToken } = await import('@/lib/jobs/ml-token-refresh')
+  JOB_MAP['ml-token-refresh'] = { fn: refreshMLToken, description: 'Renovar token OAuth do Mercado Livre', jobRunName: 'ml-token-refresh' }
+
+  // Price index
+  const { generatePriceIndex } = await import('@/lib/jobs/price-index')
+  JOB_MAP['price-index'] = { fn: generatePriceIndex, description: 'Gerar indice mensal de precos por categoria', jobRunName: 'price-index' }
+
+  // Auto blog
+  const { generateAutoBlog } = await import('@/lib/jobs/auto-blog')
+  JOB_MAP['auto-blog'] = { fn: generateAutoBlog, description: 'Gerar artigos mensais (melhores de cada categoria)', jobRunName: 'auto-blog' }
+
+  // Push price drops
+  const { pushPriceDrops } = await import('@/lib/jobs/push-price-drops')
+  JOB_MAP['push-price-drops'] = { fn: pushPriceDrops, description: 'Detectar quedas de preco significativas (>10%)', jobRunName: 'push-price-drops' }
 }
 
 // ---------------------------------------------------------------------------
