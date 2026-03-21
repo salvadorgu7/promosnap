@@ -65,6 +65,10 @@ export const metadata: Metadata = {
     title: "PromoSnap",
     statusBarStyle: "default",
   },
+  verification: {
+    // Add Google Search Console verification code via env var
+    ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+  },
   other: {
     "mobile-web-app-capable": "yes",
   },
