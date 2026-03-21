@@ -131,6 +131,10 @@ export async function GET(req: NextRequest) {
     ['auto-blog', () => import('@/lib/jobs/auto-blog').then(m => m.generateAutoBlog())],
     // price-index: GROWTH — monthly price index report per category
     ['price-index', () => import('@/lib/jobs/price-index').then(m => m.generatePriceIndex())],
+    // ai-content: GROWTH — AI-generated FAQs, guides, social posts from real catalog data
+    ['ai-content', () => import('@/lib/jobs/ai-content-enrichment').then(m => m.runAIContentEnrichment())],
+    // catalog-amplifier: VALUE — discovers and imports new products based on user demand + trends + coverage gaps
+    ['catalog-amplifier', () => import('@/lib/jobs/catalog-amplifier').then(m => m.amplifyCatalog())],
   ]
 
   // Filter to requested subset if ?jobs= is provided

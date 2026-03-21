@@ -233,7 +233,10 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
       : null;
 
   // Specs
-  const specs = product.specsJson as Record<string, string> | null;
+  const specs = product.specsJson as Record<string, unknown> | null;
+
+  // AI-generated FAQs (for FAQ schema → Google rich results)
+  const aiFaqs = (specs?.aiFaqs as Array<{ question: string; answer: string }>) || null;
 
   const productUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br"}/produto/${slug}`;
 
@@ -375,6 +378,12 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                     },
                   }]
                 : []),
+              // AI-generated FAQs (enriched by daily cron)
+              ...(aiFaqs || []).map(faq => ({
+                "@type": "Question",
+                name: faq.question,
+                acceptedAnswer: { "@type": "Answer", text: faq.answer },
+              })),
             ],
           }),
         }}
@@ -438,10 +447,10 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                 <Package className="h-4 w-4 text-text-muted" /> Especificacoes
               </h3>
               <div className="space-y-2">
-                {Object.entries(specs).map(([key, value]) => (
+                {Object.entries(specs).filter(([k]) => k !== 'aiFaqs' && k !== 'aiFaqsGeneratedAt').map(([key, value]) => (
                   <div key={key} className="flex justify-between text-sm gap-2">
                     <span className="text-text-muted flex-shrink-0">{key}</span>
-                    <span className="text-text-secondary font-medium text-right">{value}</span>
+                    <span className="text-text-secondary font-medium text-right">{String(value)}</span>
                   </div>
                 ))}
               </div>
