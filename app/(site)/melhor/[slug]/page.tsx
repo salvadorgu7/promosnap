@@ -18,10 +18,11 @@ interface LandingConfig {
   query: string
   maxPrice?: number
   category?: string
+  faqs?: { q: string; a: string }[]
 }
 
 const LANDING_PAGES: Record<string, LandingConfig> = {
-  "celular-ate-1000": { title: "Melhor Celular até R$ 1.000", heading: "Melhores Celulares até R$ 1.000", description: "Compare os melhores celulares por menos de R$ 1.000 com preços verificados e histórico de 90 dias.", query: "celular smartphone", maxPrice: 1000, category: "celulares" },
+  "celular-ate-1000": { title: "Melhor Celular até R$ 1.000", heading: "Melhores Celulares até R$ 1.000", description: "Compare os melhores celulares por menos de R$ 1.000 com preços verificados e histórico de 90 dias.", query: "celular smartphone", maxPrice: 1000, category: "celulares", faqs: [{ q: "Qual o melhor celular até R$ 1.000 em 2026?", a: "Os melhores celulares nessa faixa incluem modelos Motorola, Samsung e Xiaomi com bom custo-benefício. Compare preços em tempo real no PromoSnap." }, { q: "Vale a pena comprar celular até mil reais?", a: "Sim! Celulares nessa faixa já oferecem bom desempenho, câmeras de 50MP+ e bateria de longa duração." }] },
   "celular-ate-1500": { title: "Melhor Celular até R$ 1.500", heading: "Melhores Celulares até R$ 1.500", description: "Os melhores smartphones até R$ 1.500 comparados entre Amazon, ML e Shopee.", query: "celular smartphone", maxPrice: 1500, category: "celulares" },
   "celular-ate-2000": { title: "Melhor Celular até R$ 2.000", heading: "Melhores Celulares até R$ 2.000", description: "Descubra os melhores celulares por até R$ 2.000 com comparação de preços em tempo real.", query: "celular smartphone", maxPrice: 2000, category: "celulares" },
   "celular-ate-3000": { title: "Melhor Celular até R$ 3.000", heading: "Melhores Celulares até R$ 3.000", description: "Compare celulares premium até R$ 3.000 nas principais lojas do Brasil.", query: "celular smartphone", maxPrice: 3000, category: "celulares" },
@@ -128,8 +129,26 @@ export default async function LandingPage({ params }: PageProps) {
     .filter(Boolean)
     .slice(0, 20)
 
+  // FAQ JSON-LD schema for Google rich results
+  const faqSchema = config.faqs ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": config.faqs.map(f => ({
+      "@type": "Question",
+      "name": f.q,
+      "acceptedAnswer": { "@type": "Answer", "text": f.a },
+    })),
+  } : null
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* FAQ Schema */}
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
       {/* SEO header */}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-display font-bold text-text-primary mb-2">

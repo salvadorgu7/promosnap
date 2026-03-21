@@ -121,6 +121,14 @@ export async function GET(req: NextRequest) {
     ['growth-daily', () => import('@/lib/jobs/growth-daily').then(m => m.runGrowthDaily())],
     // campaign-landings: GROWTH — auto-create/update landing pages for promo calendar campaigns
     ['campaign-landings', () => import('@/lib/jobs/campaign-landings').then(m => m.generateCampaignLandings())],
+    // telegram-deals: GROWTH — posts top daily deals to Telegram channel
+    ['telegram-deals', () => import('@/lib/jobs/telegram-daily-deals').then(m => m.sendDailyDeals())],
+    // twitter-deals: GROWTH — posts top deal to Twitter/X
+    ['twitter-deals', () => import('@/lib/jobs/twitter-deals').then(m => m.postDailyDeals())],
+    // push-price-drops: RETENTION — detects significant price drops for push notifications
+    ['push-price-drops', () => import('@/lib/jobs/push-price-drops').then(m => m.pushPriceDrops())],
+    // auto-blog: GROWTH — generates monthly "best of" articles from catalog data
+    ['auto-blog', () => import('@/lib/jobs/auto-blog').then(m => m.generateAutoBlog())],
   ]
 
   // Filter to requested subset if ?jobs= is provided
