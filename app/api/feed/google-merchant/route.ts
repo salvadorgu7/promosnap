@@ -16,6 +16,65 @@ import { getBaseUrl } from "@/lib/seo/url"
 
 export const revalidate = 3600 // Regenerate hourly
 
+/** Infer brand from product name when not available in DB */
+const KNOWN_BRANDS = [
+  "Apple", "Samsung", "Xiaomi", "Motorola", "LG", "Sony", "JBL", "Philips",
+  "Bose", "Dell", "Lenovo", "HP", "Asus", "Acer", "MSI", "Intel", "AMD",
+  "Logitech", "Razer", "HyperX", "Corsair", "Kingston", "SanDisk", "WD",
+  "Seagate", "TP-Link", "Intelbras", "Positivo", "Multilaser", "Mondial",
+  "Electrolux", "Brastemp", "Consul", "Arno", "Britânia", "Cadence",
+  "Nintendo", "Microsoft", "Google", "Amazon", "Huawei", "Realme", "POCO",
+  "OnePlus", "Redmi", "Galaxy", "iPhone", "MacBook", "iPad", "AirPods",
+  "PlayStation", "Xbox", "Brinox", "Tramontina", "Oster", "Nespresso",
+]
+
+function inferBrandFromName(name: string): string {
+  const lower = name.toLowerCase()
+  for (const brand of KNOWN_BRANDS) {
+    if (lower.includes(brand.toLowerCase())) return brand
+  }
+  return ""
+}
+
+/** Map internal category to Google product taxonomy ID */
+const GOOGLE_CATEGORY_MAP: Record<string, string> = {
+  "celulares": "267",           // Electronics > Communications > Telephony > Mobile Phones
+  "smartphones": "267",
+  "notebooks": "328",           // Electronics > Computers > Laptops
+  "informatica": "325",         // Electronics > Computers
+  "computadores": "325",
+  "audio": "232",               // Electronics > Audio
+  "fones": "232",
+  "smart-tvs": "404",           // Electronics > Video > Televisions
+  "televisores": "404",
+  "eletrodomesticos": "604",    // Home & Garden > Kitchen & Dining > Small Kitchen Appliances
+  "casa": "536",                // Home & Garden
+  "gamer": "1279",              // Electronics > Video Game Consoles & Accessories
+  "games": "1279",
+  "tablets": "4745",            // Electronics > Computers > Tablet Computers
+  "cameras": "178",             // Cameras & Optics
+  "relogios": "201",            // Apparel & Accessories > Watches
+  "beleza": "469",              // Health & Beauty
+  "esportes": "990",            // Sporting Goods
+  "brinquedos": "1253",         // Toys & Games
+}
+
+function mapGoogleCategory(category: string, productName: string): string {
+  const catSlug = category.toLowerCase().replace(/\s+/g, "-")
+  if (GOOGLE_CATEGORY_MAP[catSlug]) return GOOGLE_CATEGORY_MAP[catSlug]
+
+  // Infer from product name
+  const lower = productName.toLowerCase()
+  if (lower.includes("iphone") || lower.includes("galaxy") || lower.includes("celular") || lower.includes("smartphone")) return "267"
+  if (lower.includes("notebook") || lower.includes("laptop") || lower.includes("macbook")) return "328"
+  if (lower.includes("fone") || lower.includes("headphone") || lower.includes("earbuds") || lower.includes("jbl") || lower.includes("airpods")) return "232"
+  if (lower.includes("tv") || lower.includes("smart tv") || lower.includes("televisor")) return "404"
+  if (lower.includes("playstation") || lower.includes("xbox") || lower.includes("nintendo") || lower.includes("ps5")) return "1279"
+  if (lower.includes("tablet") || lower.includes("ipad")) return "4745"
+  if (lower.includes("air fryer") || lower.includes("cafeteira") || lower.includes("liquidificador") || lower.includes("panela")) return "604"
+  return ""
+}
+
 const APP_URL = getBaseUrl()
 const MAX_PRODUCTS = 2000
 const MIN_PRICE = 5
@@ -75,13 +134,20 @@ export async function GET() {
 
       if (!bestOffer || !p.imageUrl) continue
 
-      const price = bestOffer.currentPrice
+      const currentPrice = bestOffer.currentPrice
       const originalPrice = bestOffer.originalPrice
-      const hasDiscount = originalPrice && originalPrice > price * 1.05
+      const hasDiscount = originalPrice && originalPrice > currentPrice * 1.05
+
+      // Google Merchant: price = regular price, sale_price = discounted price
+      const displayPrice = hasDiscount ? originalPrice : currentPrice
+      const salePrice = hasDiscount ? currentPrice : null
 
       const description = (p.description || p.name)
         .replace(/[\t\n\r]/g, " ")
         .slice(0, 500)
+
+      // Infer brand from product name if not in DB
+      const brandName = p.brand?.name || inferBrandFromName(p.name)
 
       const row = [
         p.id,
@@ -89,13 +155,13 @@ export async function GET() {
         description,
         `${APP_URL}/produto/${p.slug}`,
         p.imageUrl,
-        `${price.toFixed(2)} BRL`,
-        hasDiscount ? `${price.toFixed(2)} BRL` : "",
+        `${displayPrice.toFixed(2)} BRL`,
+        salePrice ? `${salePrice.toFixed(2)} BRL` : "",
         "in_stock",
         "new",
-        p.brand?.name || "",
+        brandName,
         p.category?.name || "",
-        "", // Google product category — auto-detected by Google
+        mapGoogleCategory(p.category?.name || "", p.name),
       ]
 
       rows.push(row.join("\t"))
