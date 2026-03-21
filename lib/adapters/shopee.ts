@@ -215,19 +215,24 @@ async function searchAffiliateApi(query: string, limit = 10): Promise<AdapterRes
     const data = await res.json()
     const nodes = data.data?.productOfferV2?.nodes || []
 
-    return nodes.map((node: any) => ({
+    return nodes.map((node: any) => {
+      // Affiliate API returns prices as strings in BRL (NOT micro-units like public API v4)
+      const priceMin = parseFloat(node.priceMin) || 0
+      const priceMax = parseFloat(node.priceMax) || 0
+
+      return {
       externalId: `${node.shopId}.${node.itemId}`,
       title: node.productName,
       imageUrl: node.imageUrl,
       productUrl: node.productLink || `${SHOPEE_PUBLIC_BASE}/product/${node.shopId}.${node.itemId}`,
       affiliateUrl: node.offerLink || node.productLink,
-      currentPrice: node.priceMin / 100000,
-      originalPrice: node.priceMax / 100000 > node.priceMin / 100000 ? node.priceMax / 100000 : undefined,
+      currentPrice: priceMin,
+      originalPrice: priceMax > priceMin ? priceMax : undefined,
       currency: 'BRL',
       availability: 'in_stock' as const,
       salesCount: node.sales,
       rating: node.ratingStar,
-    }))
+    }})
   } catch (err) {
     log.warn('shopee.affiliate-api.search-error', { query, error: String(err) })
     // Fallback to public API
@@ -285,8 +290,8 @@ async function discoverPopularOffers(sortType: 1 | 2 = 2, limit = 20): Promise<A
           imageUrl: node.imageUrl,
           productUrl: node.productLink || `${SHOPEE_PUBLIC_BASE}/product/${node.shopId}.${node.itemId}`,
           affiliateUrl: node.offerLink || node.productLink,
-          currentPrice: node.priceMin / 100000,
-          originalPrice: node.priceMax / 100000 > node.priceMin / 100000 ? node.priceMax / 100000 : undefined,
+          currentPrice: parseFloat(node.priceMin) || 0,
+          originalPrice: parseFloat(node.priceMax) > parseFloat(node.priceMin) ? parseFloat(node.priceMax) : undefined,
           currency: 'BRL',
           availability: 'in_stock' as const,
           salesCount: node.sales,
