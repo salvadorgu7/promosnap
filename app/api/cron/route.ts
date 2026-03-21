@@ -129,6 +129,8 @@ export async function GET(req: NextRequest) {
     ['push-price-drops', () => import('@/lib/jobs/push-price-drops').then(m => m.pushPriceDrops())],
     // auto-blog: GROWTH — generates monthly "best of" articles from catalog data
     ['auto-blog', () => import('@/lib/jobs/auto-blog').then(m => m.generateAutoBlog())],
+    // price-index: GROWTH — monthly price index report per category
+    ['price-index', () => import('@/lib/jobs/price-index').then(m => m.generatePriceIndex())],
   ]
 
   // Filter to requested subset if ?jobs= is provided

@@ -120,6 +120,7 @@ model Product {
   variants        ProductVariant[]
   listings        Listing[]
   reviewAggregate ReviewAggregate?
+  userReviews     UserReview[]
 
   @@index([slug])
   @@index([categoryId])
@@ -456,18 +457,21 @@ model PriceAlert {
   id          String    @id @default(cuid())
   listingId   String
   email       String
+  userId      String?
   targetPrice Float
   isActive    Boolean   @default(true)
   triggeredAt DateTime?
   createdAt   DateTime  @default(now())
 
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user    User?   @relation("UserAlerts", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([email])
   @@index([isActive])
   @@index([listingId])
   @@index([email, isActive])
   @@index([isActive, listingId])
+  @@index([userId])
   @@map("price_alerts")
 }
 
@@ -827,5 +831,128 @@ model SystemSetting {
   updatedAt DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+// ============================================
+// AUTH — NextAuth.js compatible models
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  interests     String[]  // category slugs
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  reviews     UserReview[]
+  alerts      PriceAlert[] @relation("UserAlerts")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// USER REVIEWS
+// ============================================
+
+model UserReview {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String?
+  // For anonymous reviews (no auth required)
+  authorName  String?
+  authorEmail String?
+  // Review content
+  rating    Int      // 1-5
+  title     String?
+  content   String?  @db.Text
+  pros      String[] // "Bateria dura muito", "Camera excelente"
+  cons      String[] // "Pesado", "Esquenta"
+  verified  Boolean  @default(false) // true if user bought via PromoSnap
+  status    ReviewStatus @default(PENDING)
+  helpful   Int      @default(0) // "achei útil" counter
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productId, status])
+  @@index([userId])
+  @@index([rating])
+  @@index([createdAt])
+  @@map("user_reviews")
+}
+
+enum ReviewStatus {
+  PENDING   // awaiting moderation
+  APPROVED  // visible to all
+  REJECTED  // spam or inappropriate
+}
+
+// ============================================
+// PRICE INDEX — monthly market reports
+// ============================================
+
+model PriceIndex {
+  id         String   @id @default(cuid())
+  period     String   @unique // "2026-03", "2026-04"
+  category   String   // "celulares", "notebooks", "all"
+  avgPrice   Float
+  minPrice   Float
+  maxPrice   Float
+  medianPrice Float
+  productCount Int
+  priceChange Float   // % change vs previous period
+  topDeals   Json?    // top 5 deals of the period
+  insights   Json?    // AI-generated insights
+  createdAt  DateTime @default(now())
+
+  @@index([period, category])
+  @@map("price_indexes")
 }
 
