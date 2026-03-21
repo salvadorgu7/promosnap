@@ -2,6 +2,7 @@ import { CheckCircle, XCircle, Loader2, AlertTriangle, Clock, Zap } from "lucide
 import prisma from "@/lib/db/prisma";
 import { timeAgo } from "@/lib/utils";
 import JobRunner from "@/components/admin/JobRunner";
+import RunAllJobs from "@/components/admin/RunAllJobs";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,9 @@ export default async function AdminJobsPage() {
         <h1 className="text-2xl font-bold font-display text-text-primary">Jobs</h1>
         <p className="text-sm text-text-muted">Sistema de automação e monitoramento</p>
       </div>
+
+      {/* Run All button */}
+      <RunAllJobs />
 
       {/* Job cards grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
