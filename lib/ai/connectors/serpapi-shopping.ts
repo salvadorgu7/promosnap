@@ -70,10 +70,16 @@ export const serpApiShoppingConnector: SourceConnector = {
         searchId: data.search_metadata?.id,
       })
 
+      const maxPrice = options?.maxPrice
+
       return results
-        .slice(0, limit)
         .map((item: any) => mapToCandidate(item))
         .filter((c: ExternalCandidate | null): c is ExternalCandidate => c !== null)
+        // Client-side price filter — API filter may fail silently
+        .filter((c: ExternalCandidate) => !maxPrice || !c.price || c.price <= maxPrice)
+        // Exclude second-hand / classified marketplaces
+        .filter((c: ExternalCandidate) => !isExcludedSource(c.sourceDomain))
+        .slice(0, limit)
     } catch (err) {
       log.error('serpapi.search.error', { query, error: err })
       return []
@@ -128,6 +134,20 @@ function mapToCandidate(item: any): ExternalCandidate | null {
     sourceDomain,
     merchant,
   }
+}
+
+/** Sources to exclude — second-hand, classified, or unreliable marketplaces */
+const EXCLUDED_SOURCES = [
+  'olx.com.br', 'enjoei.com.br', 'vinted.com', 'brechó', 'brecho',
+  'mercadolivre.com.br/p/MLB', // used listings (not catalog)
+  'facebook.com', 'instagram.com', 'tiktok.com',
+  'aliexpress.com', 'wish.com', 'gearbest.com', 'banggood.com',
+  'ebay.com', 'etsy.com',
+]
+
+function isExcludedSource(domain: string): boolean {
+  const d = domain.toLowerCase()
+  return EXCLUDED_SOURCES.some(ex => d.includes(ex))
 }
 
 function extractDomain(url: string): string {

@@ -115,31 +115,26 @@ const TOOLS = [
   },
 ]
 
-const SYSTEM_PROMPT = `Você é o assistente de compras do PromoSnap — o lugar definitivo para pesquisar, comparar e decidir compras no Brasil.
+const SYSTEM_PROMPT = `Você é o assistente de compras do PromoSnap — plataforma brasileira de comparação de preços.
 
-REGRAS FUNDAMENTAIS:
-1. OBRIGATÓRIO: Você DEVE chamar searchLocalCatalog ou searchGoogleShopping ANTES de responder. NUNCA responda sobre produtos sem chamar uma ferramenta primeiro.
-2. Use searchLocalCatalog PRIMEIRO para buscar no catálogo verificado
-3. Se o catálogo local retornar poucos resultados, chame searchGoogleShopping para complementar
-4. NUNCA invente preços, produtos ou especificações — use APENAS dados das ferramentas
-4. Quando mostrar produtos, SEMPRE inclua preço real e fonte
-5. Responda em português brasileiro, de forma direta e útil
-6. Priorize produtos com melhor custo-benefício, não só o mais barato
-7. Quando comparar, explique PORQUÊ um é melhor que outro para o caso específico
-8. Se o usuário perguntar "vale a pena?", use dados de preço e histórico para responder
-9. Mantenha respostas concisas mas informativas — máximo 3-4 parágrafos
-10. Sempre sugira explorar mais no PromoSnap quando relevante
+REGRAS OBRIGATÓRIAS:
+1. Use APENAS os produtos listados em RESULTADOS ENCONTRADOS. NUNCA invente produtos, preços ou especificações.
+2. Se o usuário definiu um orçamento (ex: "até R$ 2000"), mostre APENAS produtos dentro desse limite. IGNORE produtos acima do orçamento.
+3. Priorize produtos marcados como [VERIFICADO] — são do catálogo PromoSnap com preços confirmados.
+4. Mostre pelo menos 3-5 produtos quando disponíveis, ordenados por melhor custo-benefício.
+5. Para cada produto inclua: nome, preço, desconto (se houver), e loja.
+6. Responda em português brasileiro, de forma direta e prática.
+7. Nunca recomende produtos usados, seminovos ou de classificados (OLX, Enjoei, etc.).
 
-FORMATO DE RESPOSTA:
-- Use markdown leve (negrito para nomes de produto, preços em destaque)
-- Liste produtos com preço e fonte
-- Termine com sugestão de próximo passo (comparar, ver histórico, etc.)
+FORMATO:
+- Liste produtos com preço em destaque e loja entre parênteses
+- Destaque o melhor custo-benefício com uma breve justificativa (1 linha)
+- No final, sugira criar um alerta de preço no PromoSnap se o usuário estiver em dúvida
 
 CONTEXTO:
-- O PromoSnap compara preços entre Amazon, Mercado Livre, Shopee e Shein
-- Temos histórico de preços de 90 dias
-- Links de afiliado geram comissão sem custo extra ao usuário
-- Foco em produtos reais com preços verificados`
+- PromoSnap compara Amazon, Mercado Livre, Shopee e Shein
+- Todos os links geram comissão sem custo extra ao usuário
+- Produtos verificados têm histórico de preços de 90 dias`
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -200,12 +195,16 @@ export async function processShoppingQuery(
 
     // ── Pre-fetch results BEFORE calling AI (saves 1 round trip) ──────────
     const [localResults, shoppingResults, marketplaceResults] = await Promise.all([
-      executeLocalSearch(userMessage, intent.categories?.[0], intent.budget?.max, intentTone.maxItems).catch(() => []),
-      executeGoogleShoppingSearch(userMessage, intent.budget?.max, 6).catch(() => []),
-      executeMarketplaceSearch(userMessage, intent.budget?.max, 4).catch(() => []),
+      executeLocalSearch(userMessage, intent.categories?.[0], intent.budget?.max, Math.max(intentTone.maxItems, 8)).catch(() => []),
+      executeGoogleShoppingSearch(userMessage, intent.budget?.max, 10).catch(() => []),
+      executeMarketplaceSearch(userMessage, intent.budget?.max, 8).catch(() => []),
     ])
 
-    const allProducts = deduplicateProducts([...localResults, ...shoppingResults, ...marketplaceResults])
+    const merged = deduplicateProducts([...localResults, ...shoppingResults, ...marketplaceResults])
+    // Enforce budget: remove products above maxPrice (API filters may fail)
+    const allProducts = intent.budget?.max
+      ? merged.filter(p => !p.price || p.price <= intent.budget!.max!)
+      : merged
     const productContext = allProducts.length > 0
       ? `\n\nRESULTADOS ENCONTRADOS (use estes dados REAIS para responder):\n${allProducts.map((p, i) =>
           `${i + 1}. ${p.name} — R$ ${p.price?.toFixed(2) || '?'} em ${p.source}${p.isFromCatalog ? ' [VERIFICADO]' : ''}${p.discount ? ` (${p.discount}% OFF)` : ''}`

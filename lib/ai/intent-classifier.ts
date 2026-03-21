@@ -64,6 +64,26 @@ const USE_CASE_KEYWORDS = ['para ', 'pra ', 'ideal para', 'bom para', 'melhor pa
 const URGENCY_KEYWORDS = ['urgente', 'preciso agora', 'hoje', 'rápido', 'rapido', 'pressa']
 const BEST_KEYWORDS = ['melhor', 'top', 'recomend']
 
+/** Maps user terms to PromoSnap category slugs for targeted search */
+const CATEGORY_MAP: [RegExp, string][] = [
+  [/celular|smartphone|iphone|galaxy|xiaomi|motorola|telefone/i, 'celulares'],
+  [/notebook|laptop|macbook|chromebook/i, 'notebooks'],
+  [/fone|headphone|earphone|airpods|headset|caixa.?de.?som|speaker/i, 'audio'],
+  [/tv|televisao|televisor|smart.?tv/i, 'smart-tvs'],
+  [/console|playstation|ps5|xbox|nintendo|switch|videogame/i, 'gamer'],
+  [/smartwatch|relogio.?inteligente|apple.?watch|galaxy.?watch/i, 'wearables'],
+  [/tablet|ipad/i, 'celulares'],
+  [/monitor|tela.?gamer/i, 'informatica'],
+  [/mouse|teclado|placa.?de.?video|gpu|ssd|processador|memoria.?ram|desktop|pc.?gamer/i, 'informatica'],
+  [/airfryer|fritadeira|cafeteira|aspirador|geladeira|lavadora|micro.?ondas|ar.?condicionado/i, 'casa'],
+  [/perfume|maquiagem|skincare|creme|shampoo|chapinha|secador/i, 'beleza'],
+  [/tenis|sneaker|nike|adidas/i, 'tenis'],
+  [/mochila|bolsa|mala/i, 'moda'],
+  [/brinquedo|lego|boneca/i, 'infantil'],
+  [/camera|gopro|webcam/i, 'informatica'],
+  [/impressora/i, 'informatica'],
+]
+
 const BRAND_PATTERNS = [
   'apple', 'samsung', 'xiaomi', 'motorola', 'lg', 'sony', 'dell', 'lenovo', 'hp', 'asus',
   'acer', 'jbl', 'bose', 'nike', 'adidas', 'philips', 'electrolux', 'brastemp', 'consul',
@@ -102,6 +122,15 @@ export function classifyIntent(query: string): ClassifiedIntent {
       break
     }
   }
+
+  // Detect categories
+  const detectedCategories: string[] = []
+  for (const [pattern, slug] of CATEGORY_MAP) {
+    if (pattern.test(q) && !detectedCategories.includes(slug)) {
+      detectedCategories.push(slug)
+    }
+  }
+  if (detectedCategories.length > 0) result.categories = detectedCategories
 
   // Detect brands
   const brands = BRAND_PATTERNS.filter(b => q.includes(b))
