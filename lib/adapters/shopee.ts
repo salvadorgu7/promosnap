@@ -22,7 +22,7 @@ import type {
   SyncResult, SourceCapabilityTruth,
 } from './types'
 import { logger } from '@/lib/logger'
-import { createHmac } from 'crypto'
+import { createHash } from 'crypto'
 import { runImportPipeline, type ImportItem } from '@/lib/import/pipeline'
 
 const log = logger.child({ module: 'shopee-adapter' })
@@ -33,13 +33,15 @@ const SHOPEE_PUBLIC_BASE = 'https://shopee.com.br'
 
 const REQUIRED_ENV_VARS = ['SHOPEE_APP_ID', 'SHOPEE_APP_SECRET'] as const
 
-// ─── HMAC Signing ────────────────────────────────────────────────────────────
+// ─── SHA256 Signing (per Shopee Affiliate API docs) ─────────────────────────
+// Formula: SHA256(AppId + Timestamp + Payload + Secret)
+// NOT HMAC — it's a direct SHA256 hash of the concatenation.
 
-function signRequest(path: string, timestamp: number): string {
+function signRequest(timestamp: number, payload: string): string {
   const appId = process.env.SHOPEE_APP_ID!
   const secret = process.env.SHOPEE_APP_SECRET!
-  const factor = `${appId}${path}${timestamp}`
-  return createHmac('sha256', secret).update(factor).digest('hex')
+  const factor = `${appId}${timestamp}${payload}${secret}`
+  return createHash('sha256').update(factor).digest('hex')
 }
 
 // ─── Public API Fallback (v4) ────────────────────────────────────────────────
@@ -177,11 +179,15 @@ async function searchAffiliateApi(query: string, limit = 10): Promise<AdapterRes
   try {
     const timestamp = Math.floor(Date.now() / 1000)
     const path = '/graphql'
-    const signature = signRequest(path, timestamp)
 
+    // Build payload FIRST (needed for signature)
     const payload = {
       query: `query { productOfferV2(keyword: "${query.replace(/"/g, '\\"')}", limit: ${limit}, sortType: 2) { nodes { productName itemId shopId commissionRate productLink imageUrl priceMin priceMax sales ratingStar offerLink } } }`,
     }
+    const payloadStr = JSON.stringify(payload)
+
+    // Sign: SHA256(AppId + Timestamp + Payload + Secret)
+    const signature = signRequest(timestamp, payloadStr)
 
     const res = await fetch(`${SHOPEE_API_BASE}${path}`, {
       method: 'POST',
@@ -189,7 +195,7 @@ async function searchAffiliateApi(query: string, limit = 10): Promise<AdapterRes
         'Content-Type': 'application/json',
         'Authorization': `SHA256 Credential=${process.env.SHOPEE_APP_ID}, Timestamp=${timestamp}, Signature=${signature}`,
       },
-      body: JSON.stringify(payload),
+      body: payloadStr,
       signal: AbortSignal.timeout(10000),
     })
 
@@ -247,11 +253,12 @@ async function discoverPopularOffers(sortType: 1 | 2 = 2, limit = 20): Promise<A
     try {
       const timestamp = Math.floor(Date.now() / 1000)
       const path = '/graphql'
-      const signature = signRequest(path, timestamp)
 
       const payload = {
         query: `query { productOfferV2(keyword: "${term}", limit: ${limit}, sortType: ${sortType}) { nodes { productName itemId shopId commissionRate productLink imageUrl priceMin priceMax sales ratingStar offerLink } } }`,
       }
+      const payloadStr = JSON.stringify(payload)
+      const signature = signRequest(timestamp, payloadStr)
 
       const res = await fetch(`${SHOPEE_API_BASE}${path}`, {
         method: 'POST',
@@ -259,7 +266,7 @@ async function discoverPopularOffers(sortType: 1 | 2 = 2, limit = 20): Promise<A
           'Content-Type': 'application/json',
           'Authorization': `SHA256 Credential=${process.env.SHOPEE_APP_ID}, Timestamp=${timestamp}, Signature=${signature}`,
         },
-        body: JSON.stringify(payload),
+        body: payloadStr,
         signal: AbortSignal.timeout(10000),
       })
 
