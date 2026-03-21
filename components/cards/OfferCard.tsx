@@ -209,7 +209,7 @@ export default function OfferCard({ product, railSource, page, position }: { pro
                 store: bestOffer.sourceName,
                 price: bestOffer.price,
               })}
-              className={`btn-offer h-9 sm:h-8 text-xs font-semibold touch-target ${
+              className={`btn-offer min-h-[44px] sm:min-h-[36px] text-xs font-semibold touch-target ${
                 bestOffer.offerScore >= 80 ? "animate-pulse-subtle" : ""
               }`}
             >
@@ -228,7 +228,7 @@ export default function OfferCard({ product, railSource, page, position }: { pro
           <Link
             href={`/produto/${product.slug}`}
             aria-label={`Comparar preços de ${product.name}`}
-            className="btn-offer mt-2 h-9 sm:h-8 text-xs font-semibold flex items-center justify-center gap-1.5 touch-target"
+            className="btn-offer mt-2 min-h-[44px] sm:min-h-[36px] text-xs font-semibold flex items-center justify-center gap-1.5 touch-target"
           >
             Comparar Preços
             <ExternalLink className="w-3 h-3" />

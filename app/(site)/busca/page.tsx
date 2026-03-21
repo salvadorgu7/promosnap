@@ -274,9 +274,9 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
               {source && <input type="hidden" name="source" value={source} />}
               {freeShipping && <input type="hidden" name="freeShipping" value="true" />}
               {category && <input type="hidden" name="category" value={category} />}
-              <input type="number" name="minPrice" placeholder="Min" defaultValue={params.minPrice || ""} className="input text-xs py-1.5 px-2 w-full" min="0" step="0.01" />
-              <input type="number" name="maxPrice" placeholder="Max" defaultValue={params.maxPrice || ""} className="input text-xs py-1.5 px-2 w-full" min="0" step="0.01" />
-              <button type="submit" formAction="/busca" className="btn-secondary text-xs px-3 py-1.5 whitespace-nowrap">Ir</button>
+              <input type="number" name="minPrice" placeholder="Min" defaultValue={params.minPrice || ""} className="input text-sm w-full" min="0" step="0.01" />
+              <input type="number" name="maxPrice" placeholder="Max" defaultValue={params.maxPrice || ""} className="input text-sm w-full" min="0" step="0.01" />
+              <button type="submit" formAction="/busca" className="btn-secondary text-xs px-3 min-h-[44px] whitespace-nowrap">Ir</button>
             </form>
           </div>
           {/* Source */}
@@ -512,7 +512,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                       <Link
                         key={pageNum}
                         href={buildSearchUrl(params, { page: String(pageNum) })}
-                        className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                        className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                           page === pageNum
                             ? "bg-brand-500 text-white shadow-sm"
                             : "bg-surface-100 text-text-muted hover:bg-surface-200"
