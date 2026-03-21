@@ -160,8 +160,9 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
   let failedCount = 0
 
   if (hydrateEntries.length > 0) {
-    // Limit how many we hydrate to avoid excessive API calls
-    const entriesToHydrate = hydrateEntries.slice(0, Math.min(limit * 2, 40))
+    // Hydrate up to 3x limit (capped at 200 to stay within Vercel function timeout)
+    const hydrateCap = Math.min(limit * 3, 200)
+    const entriesToHydrate = hydrateEntries.slice(0, hydrateCap)
 
     try {
       const { products: hydrated, failed } = await batchHydrateItems(entriesToHydrate)

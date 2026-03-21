@@ -229,6 +229,72 @@ async function searchAffiliateApi(query: string, limit = 10): Promise<AdapterRes
   }
 }
 
+// ─── Popular / High-Commission Discovery ────────────────────────────────────
+
+/**
+ * Fetch popular offers sorted by sales volume (sortType 2) or commission (sortType 1).
+ * Uses broad generic keywords to surface trending items across categories.
+ */
+async function discoverPopularOffers(sortType: 1 | 2 = 2, limit = 20): Promise<AdapterResult[]> {
+  if (!process.env.SHOPEE_APP_ID || !process.env.SHOPEE_APP_SECRET) return []
+
+  // Broad keywords that surface popular cross-category items
+  const broadTerms = ['oferta', 'mais vendido', 'promoção', 'desconto']
+  const allResults: AdapterResult[] = []
+  const seenIds = new Set<string>()
+
+  for (const term of broadTerms) {
+    try {
+      const timestamp = Math.floor(Date.now() / 1000)
+      const path = '/graphql'
+      const signature = signRequest(path, timestamp)
+
+      const payload = {
+        query: `query { productOfferV2(keyword: "${term}", limit: ${limit}, sortType: ${sortType}) { nodes { productName itemId shopId commissionRate productLink imageUrl priceMin priceMax sales ratingStar offerLink } } }`,
+      }
+
+      const res = await fetch(`${SHOPEE_API_BASE}${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `SHA256 Credential=${process.env.SHOPEE_APP_ID}, Timestamp=${timestamp}, Signature=${signature}`,
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (!res.ok) continue
+
+      const data = await res.json()
+      const nodes = data.data?.productOfferV2?.nodes || []
+
+      for (const node of nodes) {
+        const id = `${node.shopId}.${node.itemId}`
+        if (seenIds.has(id)) continue
+        seenIds.add(id)
+        allResults.push({
+          externalId: id,
+          title: node.productName,
+          imageUrl: node.imageUrl,
+          productUrl: node.productLink || `${SHOPEE_PUBLIC_BASE}/product/${node.shopId}.${node.itemId}`,
+          affiliateUrl: node.offerLink || node.productLink,
+          currentPrice: node.priceMin / 100000,
+          originalPrice: node.priceMax / 100000 > node.priceMin / 100000 ? node.priceMax / 100000 : undefined,
+          currency: 'BRL',
+          availability: 'in_stock' as const,
+          salesCount: node.sales,
+          rating: node.ratingStar,
+        })
+      }
+    } catch {
+      // Non-fatal — continue with other terms
+    }
+  }
+
+  log.info('shopee.discover-popular', { sortType, results: allResults.length })
+  return allResults
+}
+
 // ─── Adapter Implementation ──────────────────────────────────────────────────
 
 export class ShopeeSourceAdapter implements SourceAdapter {
@@ -328,14 +394,40 @@ export class ShopeeSourceAdapter implements SourceAdapter {
   // ---------------------------------------------------------------------------
 
   async syncFeed(): Promise<SyncResult> {
-    const categories = ['celular', 'fone bluetooth', 'smartwatch', 'airfryer']
+    // Broad category coverage — mirrors the PromoSnap category taxonomy
+    const queries: { term: string; categorySlug: string }[] = [
+      // Tech — alta demanda
+      { term: 'celular smartphone', categorySlug: 'celulares' },
+      { term: 'fone bluetooth', categorySlug: 'audio' },
+      { term: 'smartwatch relogio inteligente', categorySlug: 'wearables' },
+      { term: 'notebook laptop', categorySlug: 'notebooks' },
+      { term: 'tablet ipad', categorySlug: 'celulares' },
+      { term: 'smart tv 4k', categorySlug: 'smart-tvs' },
+      { term: 'console playstation xbox', categorySlug: 'gamer' },
+      { term: 'mouse teclado gamer', categorySlug: 'informatica' },
+      { term: 'monitor gamer', categorySlug: 'informatica' },
+      { term: 'ssd pen drive', categorySlug: 'informatica' },
+      // Casa & Cozinha
+      { term: 'airfryer fritadeira', categorySlug: 'casa' },
+      { term: 'aspirador robo', categorySlug: 'casa' },
+      { term: 'cafeteira nespresso', categorySlug: 'casa' },
+      // Beleza
+      { term: 'perfume importado', categorySlug: 'beleza' },
+      { term: 'skincare creme hidratante', categorySlug: 'beleza' },
+      // Moda
+      { term: 'tenis nike adidas', categorySlug: 'tenis' },
+      { term: 'mochila bolsa', categorySlug: 'moda' },
+      // Infantil
+      { term: 'brinquedo lego', categorySlug: 'infantil' },
+    ]
+
     let totalSynced = 0
     let totalFailed = 0
     const errors: string[] = []
 
-    for (const cat of categories) {
+    for (const q of queries) {
       try {
-        const results = await this.search(cat, { limit: 10 })
+        const results = await this.search(q.term, { limit: 15 })
         if (results.length === 0) continue
 
         const importItems: ImportItem[] = results
@@ -350,7 +442,7 @@ export class ShopeeSourceAdapter implements SourceAdapter {
             isFreeShipping: r.isFreeShipping,
             availability: (r.availability === 'in_stock' || r.availability === 'out_of_stock') ? r.availability : 'unknown' as const,
             brand: r.brand,
-            categorySlug: r.category,
+            categorySlug: r.category || q.categorySlug,
             sourceSlug: 'shopee',
             discoverySource: 'shopee_sync_feed',
           }))
@@ -360,15 +452,50 @@ export class ShopeeSourceAdapter implements SourceAdapter {
           totalSynced += result.created + result.updated
           totalFailed += result.failed
           if (result.failed > 0) {
-            errors.push(`"${cat}": ${result.failed} falhas no import`)
+            errors.push(`"${q.term}": ${result.failed} falhas`)
           }
+          log.info('syncFeed.query', { term: q.term, searched: results.length, imported: result.created + result.updated })
         }
       } catch (err) {
         totalFailed++
-        errors.push(`${cat}: ${String(err)}`)
+        errors.push(`${q.term}: ${String(err)}`)
       }
     }
 
+    // Stage 2: Discover popular/trending offers (by sales + by commission)
+    try {
+      const [bySales, byCommission] = await Promise.all([
+        discoverPopularOffers(2, 20), // sortType 2 = by sales
+        discoverPopularOffers(1, 15), // sortType 1 = by commission
+      ])
+
+      const popularItems: ImportItem[] = [...bySales, ...byCommission]
+        .filter((r) => r.currentPrice > 0)
+        .map((r) => ({
+          externalId: r.externalId,
+          title: r.title,
+          currentPrice: r.currentPrice,
+          originalPrice: r.originalPrice,
+          productUrl: r.productUrl,
+          imageUrl: r.imageUrl,
+          isFreeShipping: r.isFreeShipping,
+          availability: (r.availability === 'in_stock' || r.availability === 'out_of_stock') ? r.availability : 'unknown' as const,
+          brand: r.brand,
+          sourceSlug: 'shopee',
+          discoverySource: 'shopee_popular',
+        }))
+
+      if (popularItems.length > 0) {
+        const result = await runImportPipeline(popularItems)
+        totalSynced += result.created + result.updated
+        totalFailed += result.failed
+        log.info('syncFeed.popular', { bySales: bySales.length, byCommission: byCommission.length, imported: result.created + result.updated })
+      }
+    } catch (err) {
+      errors.push(`popular discovery: ${String(err)}`)
+    }
+
+    log.info('syncFeed.complete', { totalSynced, totalFailed, queries: queries.length })
     return { synced: totalSynced, failed: totalFailed, stale: 0, errors }
   }
 

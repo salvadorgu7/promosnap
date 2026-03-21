@@ -20,7 +20,7 @@ interface ModeConfig {
 }
 
 const MODE_CONFIGS: Record<DiscoverImportMode, ModeConfig> = {
-  daily:    { limit: 300, label: 'daily (all categories, limit 300)' },
+  daily:    { limit: 500, label: 'daily (all categories, limit 500)' },
   extended: { limit: 500, label: 'extended (all categories, limit 500)' },
   massive:  { limit: 500, label: 'massive (all categories, limit 500)' },
   category: { limit: 50, label: 'single category' },
@@ -67,8 +67,8 @@ export async function discoverAndImport(options?: DiscoverImportOptions): Promis
     if (mode === 'category' && options?.categoryId) {
       discoveryOpts.categoryId = options.categoryId
     }
-    // For massive/extended modes, use ALL categories instead of just priority ≤ 2
-    if (mode === 'massive' || mode === 'extended') {
+    // Use ALL categories for daily/extended/massive — maximizes catalog variety
+    if (mode === 'daily' || mode === 'massive' || mode === 'extended') {
       discoveryOpts.categoryIds = getAllCategories().map(c => c.id)
       ctx.log(`Using all ${discoveryOpts.categoryIds.length} categories for ${mode} mode`)
     }
