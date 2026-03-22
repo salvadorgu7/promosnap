@@ -123,6 +123,8 @@ export async function GET(req: NextRequest) {
     ['campaign-landings', () => import('@/lib/jobs/campaign-landings').then(m => m.generateCampaignLandings())],
     // telegram-deals: GROWTH — posts top daily deals to Telegram channel
     ['telegram-deals', () => import('@/lib/jobs/telegram-daily-deals').then(m => m.sendDailyDeals())],
+    // whatsapp-broadcast: GROWTH — runs scheduled WhatsApp broadcast campaigns
+    ['whatsapp-broadcast', () => import('@/lib/jobs/whatsapp-broadcast').then(m => m.runWhatsAppBroadcast())],
     // twitter-deals: GROWTH — posts top deal to Twitter/X
     ['twitter-deals', () => import('@/lib/jobs/twitter-deals').then(m => m.postDailyDeals())],
     // push-price-drops: RETENTION — detects significant price drops for push notifications
