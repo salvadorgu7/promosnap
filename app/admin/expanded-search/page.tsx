@@ -7,9 +7,6 @@
 
 import {
   Activity,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
   Zap,
   Radio,
   FlaskConical,
