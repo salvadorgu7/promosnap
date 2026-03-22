@@ -7,6 +7,7 @@ import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
 import RelatedSearches from "@/components/ui/RelatedSearches";
 import ExpandedResults from "@/components/search/ExpandedResults";
+import type { UnifiedResult } from "@/lib/search/expanded/types";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { getProductsByCategory, getCategoryBySlug } from "@/lib/db/queries";
 import { getFlag } from "@/lib/config/feature-flags";
@@ -139,7 +140,7 @@ export default async function CategoriaPage({
   const name = category.name;
 
   // ── Busca Ampliada complement for thin categories ──────────
-  let expandedData: { results: any[]; framing?: string; coverageScore: number } | null = null;
+  let expandedData: { results: UnifiedResult[]; framing?: string; coverageScore: number } | null = null;
   if (getFlag('expandedSearch') && page === 1 && products.length < 12) {
     try {
       const { expandedSearch } = await import('@/lib/search/expanded')
@@ -403,6 +404,17 @@ export default async function CategoriaPage({
             </nav>
           )}
         </>
+      ) : expandedData ? (
+        /* Zero internal products but expanded search found alternatives */
+        <aside data-expanded-results data-nosnippet aria-label="Opções em lojas parceiras">
+          <ExpandedResults
+            results={expandedData.results}
+            framing={expandedData.framing || `Encontramos opções de ${name} em lojas parceiras`}
+            coverageScore={expandedData.coverageScore}
+            query={name}
+            mode="rescue"
+          />
+        </aside>
       ) : (
         <EmptyState
           icon={SlidersHorizontal}

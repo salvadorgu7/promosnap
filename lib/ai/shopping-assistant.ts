@@ -363,7 +363,7 @@ Siga estas regras adicionais:
 
     const dataSources: AssistantResponse['dataSources'] = []
     if (localResults.length > 0) dataSources.push('catalog')
-    if (shoppingResults.length > 0) dataSources.push('web')
+    if (shoppingResults.length > 0 || marketplaceResults.length > 0 || expandedResults.length > 0) dataSources.push('web')
 
     log.info('ai.chat.success', {
       query: userMessage.slice(0, 50),

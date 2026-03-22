@@ -8,6 +8,7 @@ import ZeroResultActions from "@/components/search/ZeroResultActions";
 import SpellSuggestion from "@/components/search/SpellSuggestion";
 import ExpandedResults from "@/components/search/ExpandedResults";
 import WeakResultsBanner from "@/components/search/WeakResultsBanner";
+import type { UnifiedResult } from "@/lib/search/expanded/types";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getBaseUrl } from "@/lib/seo/url";
 import { searchListings } from "@/lib/db/queries";
@@ -160,10 +161,17 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
   const totalPages = Math.ceil(total / limit);
 
   // ── Busca Ampliada (expanded search) — only when FF enabled ──────────
-  let expandedData: { results: any[]; framing?: string; coverageScore: number } | null = null;
+  let expandedData: { results: UnifiedResult[]; framing?: string; coverageScore: number } | null = null;
   if (query && getFlag('expandedSearch') && page === 1) {
     try {
       const { expandedSearch } = await import('@/lib/search/expanded')
+      // Map search page sort values to expanded search sort values
+      const sortMap: Record<string, 'relevance' | 'price_asc' | 'price_desc' | 'score'> = {
+        relevance: 'relevance',
+        price_asc: 'price_asc',
+        score: 'score',
+        discount: 'score', // "discount" sort → use score as proxy (no direct equivalent)
+      }
       const expanded = await expandedSearch({
         query,
         page: 1,
@@ -173,7 +181,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
         source,
         minPrice,
         maxPrice,
-        sortBy: (sort as any) || 'relevance',
+        sortBy: sortMap[sort] || 'relevance',
       })
       // Only show expanded results if there are actual external results
       if (expanded.expandedResults.length > 0) {
@@ -232,7 +240,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
         <SearchAnalytics
           query={query}
           resultCount={total}
-          expandedCount={expandedData?.results.filter((r: any) => r.sourceType === "expanded").length}
+          expandedCount={expandedData?.results.length}
           coverageScore={expandedData?.coverageScore}
         />
       )}
@@ -521,7 +529,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             <WeakResultsBanner
               query={query}
               internalCount={products.length}
-              expandedCount={expandedData.results.filter((r: any) => r.sourceType === "expanded").length}
+              expandedCount={expandedData.results.length}
             />
           )}
 
