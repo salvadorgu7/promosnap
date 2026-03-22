@@ -11,19 +11,13 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getFlag } from '@/lib/config/feature-flags'
 import { EXPERIMENTS, getUserExperiments } from '@/lib/search/expanded/experiments'
+import { validateAdmin } from '@/lib/auth/admin'
 
 export const dynamic = 'force-dynamic'
 
-function checkAdminSecret(req: NextRequest): boolean {
-  const secret = process.env.ADMIN_SECRET
-  if (!secret) return false
-  return req.headers.get('x-admin-secret') === secret
-}
-
 export async function GET(req: NextRequest) {
-  if (!checkAdminSecret(req)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = validateAdmin(req)
+  if (authError) return authError
 
   const testQuery = req.nextUrl.searchParams.get('q') || 'iPhone 15'
   const startTime = Date.now()

@@ -13,14 +13,13 @@ import { generateSmartSuggestions } from '@/lib/ai/smart-suggestions'
 import { computeTrustScore } from '@/lib/ai/review-intelligence'
 import { categorize } from '@/lib/ai/smart-categorizer'
 import { analyzeConversation } from '@/lib/ai/conversation-intelligence'
+import { validateAdmin } from '@/lib/auth/admin'
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get('x-admin-secret')
-  if (ADMIN_SECRET && secret !== ADMIN_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = validateAdmin(req)
+  if (authError) return authError
 
   const testQuery = req.nextUrl.searchParams.get('q') || 'melhor celular até R$ 2000'
 
