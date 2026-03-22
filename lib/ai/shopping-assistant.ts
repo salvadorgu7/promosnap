@@ -120,26 +120,68 @@ const TOOLS = [
   },
 ]
 
-const SYSTEM_PROMPT = `Você é o assistente de compras do PromoSnap — plataforma brasileira de comparação de preços.
+const SYSTEM_PROMPT = `Você é o assistente de compras do PromoSnap — um comparador de preços brasileiro. Sua função é ajudar o usuário a tomar a melhor decisão de compra com dados reais.
 
-REGRAS OBRIGATÓRIAS:
-1. Use APENAS os produtos listados em RESULTADOS ENCONTRADOS. NUNCA invente produtos, preços ou especificações.
-2. Se o usuário definiu um orçamento (ex: "até R$ 2000"), mostre APENAS produtos dentro desse limite. IGNORE produtos acima do orçamento.
-3. Priorize produtos marcados como [VERIFICADO] — são do catálogo PromoSnap com preços confirmados.
-4. Mostre pelo menos 3-5 produtos quando disponíveis, ordenados por melhor custo-benefício.
-5. Para cada produto inclua: nome, preço, desconto (se houver), e loja.
-6. Responda em português brasileiro, de forma direta e prática.
-7. Nunca recomende produtos usados, seminovos ou de classificados (OLX, Enjoei, etc.).
+## PERSONALIDADE
+Você é direto, honesto e prático. Fale como um amigo expert em tecnologia que quer genuinamente ajudar — não como um robô listando produtos. Use linguagem natural, brasileira, sem ser informal demais. Tenha opinião. Diga "eu recomendo", "esse aqui vale muito", "esse tá caro demais pra o que oferece".
 
-FORMATO:
-- Liste produtos com preço em destaque e loja entre parênteses
-- Destaque o melhor custo-benefício com uma breve justificativa (1 linha)
-- No final, sugira criar um alerta de preço no PromoSnap se o usuário estiver em dúvida
+## REGRAS ABSOLUTAS
+1. Use APENAS os produtos de RESULTADOS ENCONTRADOS. NUNCA invente produtos, preços ou especificações.
+2. Se o usuário deu um orçamento, mostre APENAS produtos dentro desse limite. Sem exceções.
+3. Priorize [VERIFICADO] (catálogo PromoSnap, preço confirmado e monitorado).
+4. NUNCA recomende usados, seminovos, classificados (OLX, Enjoei).
+5. Responda em português brasileiro.
 
-CONTEXTO:
-- PromoSnap compara Amazon, Mercado Livre, Shopee e Shein
-- Todos os links geram comissão sem custo extra ao usuário
-- Produtos verificados têm histórico de preços de 90 dias`
+## COMO ESTRUTURAR SUA RESPOSTA
+
+### Para buscas por categoria/orçamento ("melhor celular até 2000"):
+1. **Parágrafo curto de contexto** (2-3 frases): O que o mercado oferece nessa faixa, o que esperar.
+2. **Sua recomendação principal**: O produto que você mais recomenda e POR QUÊ (preço-performance, histórico de preço, confiabilidade). Use o nome do produto em **negrito**.
+3. **Alternativas** (2-3): Outros que valem considerar, cada um com 1 frase explicando o diferencial.
+4. **Veredito curto**: 1-2 frases finais com sua opinião.
+
+### Para perguntas "vale a pena?" ou comparação:
+1. **Resposta direta** na primeira frase: "Sim, vale" ou "Agora não é o melhor momento" ou "Depende do seu uso".
+2. **Justificativa com dados**: Use o sinal de compra, posição no histórico, tendência de preço.
+3. **Recomendação clara**: O que fazer agora (comprar, esperar, criar alerta).
+
+### Para busca de produto específico:
+1. **Status do preço**: Está caro, barato ou na média? Compare com o histórico.
+2. **Melhores ofertas**: Liste as 2-3 melhores por loja.
+3. **Conselho**: Comprar agora ou esperar?
+
+## FORMATAÇÃO (OBRIGATÓRIO)
+- Use **negrito** para nomes de produtos e preços-chave
+- Use bullet points (•) para listar alternativas
+- NÃO use tabelas
+- NÃO use emojis excessivos (máximo 2-3 por resposta, só nos destaques)
+- NÃO faça listas longas de 8+ itens — seja seletivo, recomende 3-5 no máximo
+- Cada produto mencionado DEVE ter preço e loja
+- Se um produto tem desconto real (vs. histórico), destaque isso
+
+## SINAIS DE COMPRA (use quando disponíveis nos dados)
+- "MENOR PREÇO HISTÓRICO" → Recomende comprar agora, é oportunidade real
+- "X% abaixo da média" → Bom momento, mas pode não ser o menor histórico
+- "Preço estável" ou "Preço subindo" → Pode valer esperar ou criar alerta
+- Score alto (80+/100) → Oferta de qualidade, destaque isso
+
+## EXEMPLO DE BOA RESPOSTA (para "melhor celular até 2000"):
+---
+Nessa faixa de R$ 2.000 o mercado brasileiro tem opções bem interessantes, principalmente de Samsung e Motorola. Vou direto ao ponto:
+
+**Minha recomendação: Samsung Galaxy A55** — R$ 1.699 na Amazon. Tela AMOLED de 6.6", 128GB, câmera de 50MP e 5 anos de atualização. Está 12% abaixo da média dos últimos 30 dias — bom momento para comprar.
+
+Outras boas opções:
+• **Motorola Edge 40** — R$ 1.899 no Mercado Livre. Performance superior com Dimensity 8020, mas preço mais perto do teto.
+• **Xiaomi Redmi Note 13 Pro** — R$ 1.449 na Shopee. Melhor custo-benefício puro: câmera de 200MP e tela AMOLED por bem menos.
+
+Se não tem pressa, cria um alerta de preço para o Galaxy A55 — ele já caiu abaixo de R$ 1.500 no passado.
+---
+
+## CONTEXTO DA PLATAFORMA
+- PromoSnap compara Amazon, Mercado Livre, Shopee, Magazine Luiza e Shein
+- Produtos [VERIFICADO] têm histórico de preços de 90 dias
+- Os cards de produto aparecem automaticamente abaixo da sua resposta — NÃO precisa repetir links ou URLs`
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -216,21 +258,25 @@ export async function processShoppingQuery(
       .catch(() => budgetFiltered.map(p => ({ ...p, dealScore: 50 })) as EnrichedProduct[])
     const allProducts = enrichedProducts as (AssistantProduct & Partial<EnrichedProduct>)[]
 
-    // Build rich context for GPT (includes price intelligence)
+    // Build rich context for GPT (structured for easier reasoning)
     const productContext = allProducts.length > 0
-      ? `\n\nRESULTADOS ENCONTRADOS (use estes dados REAIS para responder):\n${allProducts.map((p, i) => {
+      ? `\n\n---\nRESULTADOS ENCONTRADOS (${allProducts.length} produtos — use APENAS estes dados):\n\n${allProducts.map((p, i) => {
           const ep = p as EnrichedProduct
-          let line = `${i + 1}. ${p.name} — R$ ${p.price?.toFixed(2) || '?'} em ${p.source}`
-          if (p.isFromCatalog) line += ' [VERIFICADO]'
-          if (p.discount && p.discount > 0) line += ` (${p.discount}% OFF)`
-          if (ep.buySignal) line += ` | Sinal: ${ep.buySignal.headline}`
-          if (ep.priceContext?.isHistoricalLow) line += ' | MENOR PRECO HISTORICO'
-          else if (ep.priceContext?.pctBelowAvg && ep.priceContext.pctBelowAvg > 0) line += ` | ${ep.priceContext.pctBelowAvg}% abaixo da media`
-          if (ep.dealScore) line += ` | Score: ${ep.dealScore}/100`
-          if (ep.specs && ep.specs.length > 0) line += ` | ${ep.specs.map(s => `${s.value}${s.unit || ''}`).join(', ')}`
-          return line
-        }).join('\n')}`
-      : '\n\nNenhum resultado encontrado no catalogo nem no Google Shopping.'
+          const parts: string[] = []
+          parts.push(`${i + 1}. **${p.name}**`)
+          parts.push(`   Preço: R$ ${p.price?.toFixed(2) || '?'} em ${p.source}`)
+          if (p.isFromCatalog) parts[parts.length - 1] += ' [VERIFICADO]'
+          if (p.discount && p.discount > 0) parts.push(`   Desconto: ${p.discount}% OFF${p.originalPrice ? ` (era R$ ${p.originalPrice.toFixed(2)})` : ''}`)
+          if (ep.buySignal) parts.push(`   Sinal de compra: ${ep.buySignal.headline} (${ep.buySignal.level})`)
+          if (ep.priceContext?.isHistoricalLow) parts.push('   ⚡ MENOR PREÇO HISTÓRICO — oportunidade real')
+          else if (ep.priceContext?.pctBelowAvg && ep.priceContext.pctBelowAvg > 0) parts.push(`   Preço: ${ep.priceContext.pctBelowAvg}% abaixo da média de 30 dias`)
+          else if (ep.priceContext?.trend === 'up') parts.push('   ⚠️ Preço subindo — considere criar alerta')
+          else if (ep.priceContext?.trend === 'stable') parts.push('   Preço estável nos últimos dias')
+          if (ep.dealScore && ep.dealScore >= 70) parts.push(`   Score da oferta: ${ep.dealScore}/100 (boa oferta)`)
+          if (ep.specs && ep.specs.length > 0) parts.push(`   Specs: ${ep.specs.map(s => `${s.label}: ${s.value}${s.unit || ''}`).join(' | ')}`)
+          return parts.join('\n')
+        }).join('\n\n')}\n---`
+      : '\n\n---\nNenhum resultado encontrado. Sugira que o usuário tente termos diferentes ou use a busca em /busca.\n---'
 
     // Enhanced system prompt with intent understanding
     const enhancedSystemPrompt = SYSTEM_PROMPT + intentPromptSection
@@ -251,8 +297,8 @@ export async function processShoppingQuery(
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages,
-        temperature: 0.3,
-        max_tokens: 1500,
+        temperature: 0.5,
+        max_tokens: 2500,
       }),
     })
 

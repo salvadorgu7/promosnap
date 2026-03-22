@@ -292,15 +292,17 @@ export function buildIntentPromptSection(intent: ClassifiedIntent): string {
     parts.push('Seja rápido. Destaque a melhor opção primeiro. CTA forte.')
   }
 
-  parts.push('\nREGRAS DE COPY:')
-  parts.push('- NÃO use linguagem de artigo escolar')
-  parts.push('- NÃO use tabelas mortas')
-  parts.push('- NÃO liste 10 itens sem critério')
-  parts.push('- FALE como alguém que ajuda a decidir')
-  parts.push('- ORGANIZE por perfil quando fizer sentido')
-  parts.push('- JUSTIFIQUE brevemente cada sugestão')
-  parts.push('- SEMPRE inclua preço e loja')
-  parts.push('- OBRIGATÓRIO: todo link de produto DEVE usar o affiliateUrl fornecido (nunca link direto da loja)')
+  if (tone.style === 'enthusiastic') {
+    parts.push('Mostre entusiasmo genuíno pelas boas ofertas. Destaque os deals reais.')
+  }
+
+  parts.push('\nLEMBRETE FINAL:')
+  parts.push('- Tenha opinião — diga qual é o melhor e porquê')
+  parts.push('- Use **negrito** para destacar nomes de produtos e preços importantes')
+  parts.push('- Máximo 3-5 produtos — qualidade > quantidade')
+  parts.push('- Os cards de produto aparecem automaticamente — foque no texto consultivo')
+  parts.push('- Se o preço está em mínimo histórico, destaque isso como oportunidade')
+  parts.push('- Se o preço está subindo, seja honesto e sugira esperar ou criar alerta')
 
   return parts.join('\n')
 }

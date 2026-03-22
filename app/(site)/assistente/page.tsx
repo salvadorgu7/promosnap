@@ -23,12 +23,12 @@ interface Message {
 // ── Suggestions ────────────────────────────────────────────────────────────
 
 const SUGGESTIONS = [
-  "Melhor celular até R$ 2.000",
-  "Notebook bom para trabalho até R$ 4.000",
-  "Fone bluetooth com cancelamento de ruído",
-  "Smart TV 55 polegadas custo-benefício",
-  "Vale a pena comprar iPhone 15 agora?",
-  "Air Fryer boa e barata",
+  { text: "Melhor celular até R$ 2.000", icon: "📱" },
+  { text: "Notebook para trabalho até R$ 4.000", icon: "💻" },
+  { text: "Fone com cancelamento de ruído bom e barato", icon: "🎧" },
+  { text: "Smart TV 55\" custo-benefício", icon: "📺" },
+  { text: "Vale a pena comprar iPhone 15 agora?", icon: "🤔" },
+  { text: "Air Fryer boa até R$ 500", icon: "🍳" },
 ];
 
 // ── Page Component ─────────────────────────────────────────────────────────
@@ -91,10 +91,10 @@ export default function AssistentePage() {
           Assistente de Compras IA
         </div>
         <h1 className="font-display font-bold text-2xl md:text-3xl text-text-primary">
-          O que você quer comprar?
+          Me conta o que você procura
         </h1>
-        <p className="text-sm text-text-muted mt-1 max-w-lg mx-auto">
-          Busco, comparo preços, analiso histórico e te ajudo a decidir a melhor hora de comprar.
+        <p className="text-sm text-text-muted mt-1.5 max-w-lg mx-auto leading-relaxed">
+          Comparo preços em tempo real, analiso o histórico de 90 dias e te digo se é hora de comprar ou esperar.
         </p>
       </div>
 
@@ -103,12 +103,12 @@ export default function AssistentePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 max-w-2xl mx-auto w-full">
           {SUGGESTIONS.map((s) => (
             <button
-              key={s}
-              onClick={() => sendMessage(s)}
-              className="text-left px-4 py-3 rounded-xl border border-surface-200 bg-white hover:border-brand-500/30 hover:bg-brand-50/50 transition-colors text-sm text-text-secondary hover:text-brand-600"
+              key={s.text}
+              onClick={() => sendMessage(s.text)}
+              className="text-left px-4 py-3 rounded-xl border border-surface-200 bg-white hover:border-brand-500/30 hover:bg-brand-50/50 transition-all hover:shadow-sm text-sm text-text-secondary hover:text-brand-600 group"
             >
-              <ShoppingBag className="w-3.5 h-3.5 inline mr-2 text-brand-400" />
-              {s}
+              <span className="mr-2 text-base">{s.icon}</span>
+              <span className="group-hover:font-medium transition-all">{s.text}</span>
             </button>
           ))}
         </div>
@@ -130,8 +130,12 @@ export default function AssistentePage() {
               ) : (
                 <>
                   {/* Text content */}
-                  <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {msg.content}
+                  <div className="text-sm leading-relaxed">
+                    {msg.role === "assistant" ? (
+                      <div className="space-y-1">{renderMarkdown(msg.content)}</div>
+                    ) : (
+                      msg.content
+                    )}
                   </div>
 
                   {/* Legacy product cards (fallback if no blocks) */}
@@ -197,6 +201,42 @@ export default function AssistentePage() {
 
 // ── Block Renderer ─────────────────────────────────────────────────────────
 
+/** Simple markdown renderer — handles **bold**, bullet points, and line breaks */
+function renderMarkdown(text: string) {
+  if (!text) return null;
+
+  return text.split('\n').map((line, lineIdx) => {
+    // Empty line = paragraph break
+    if (!line.trim()) return <div key={lineIdx} className="h-2" />;
+
+    // Bullet point lines
+    const isBullet = /^[\s]*[•\-\*]\s/.test(line);
+    const cleanLine = isBullet ? line.replace(/^[\s]*[•\-\*]\s/, '') : line;
+
+    // Parse inline **bold** and *italic*
+    const parts = cleanLine.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).map((part, partIdx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={partIdx} className="font-semibold">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return <em key={partIdx}>{part.slice(1, -1)}</em>;
+      }
+      return <span key={partIdx}>{part}</span>;
+    });
+
+    if (isBullet) {
+      return (
+        <div key={lineIdx} className="flex gap-2 pl-1">
+          <span className="text-brand-400 flex-shrink-0">•</span>
+          <span>{parts}</span>
+        </div>
+      );
+    }
+
+    return <div key={lineIdx}>{parts}</div>;
+  });
+}
+
 function AssistantBlocks({
   blocks,
   onFollowUp,
@@ -210,8 +250,8 @@ function AssistantBlocks({
         switch (block.type) {
           case "text":
             return (
-              <div key={i} className="text-sm leading-relaxed whitespace-pre-wrap">
-                {block.content}
+              <div key={i} className="text-sm leading-relaxed space-y-1">
+                {renderMarkdown(block.content)}
               </div>
             );
 
