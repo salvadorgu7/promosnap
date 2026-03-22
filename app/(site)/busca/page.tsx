@@ -7,6 +7,7 @@ import RelatedSearches from "@/components/ui/RelatedSearches";
 import ZeroResultActions from "@/components/search/ZeroResultActions";
 import SpellSuggestion from "@/components/search/SpellSuggestion";
 import ExpandedResults from "@/components/search/ExpandedResults";
+import WeakResultsBanner from "@/components/search/WeakResultsBanner";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getBaseUrl } from "@/lib/seo/url";
 import { searchListings } from "@/lib/db/queries";
@@ -226,8 +227,15 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      {/* Search analytics — fires GA4 search + zero_results events */}
-      {query && <SearchAnalytics query={query} resultCount={total} />}
+      {/* Search analytics — fires GA4 search + zero_results + expanded events */}
+      {query && (
+        <SearchAnalytics
+          query={query}
+          resultCount={total}
+          expandedCount={expandedData?.results.filter((r: any) => r.sourceType === "expanded").length}
+          coverageScore={expandedData?.coverageScore}
+        />
+      )}
 
       {/* ItemList JSON-LD for search results */}
       {query && products.length > 0 && (
@@ -508,6 +516,15 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             );
           })()}
 
+          {/* Weak results banner — few internal but expanded found more */}
+          {expandedData && products.length > 0 && products.length <= 4 && (
+            <WeakResultsBanner
+              query={query}
+              internalCount={products.length}
+              expandedCount={expandedData.results.filter((r: any) => r.sourceType === "expanded").length}
+            />
+          )}
+
           {/* Product grid */}
           {products.length > 0 ? (
             <>
@@ -519,11 +536,15 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
 
               {/* Expanded results — external marketplace results */}
               {expandedData && (
-                <ExpandedResults
-                  results={expandedData.results}
-                  framing={expandedData.framing}
-                  coverageScore={expandedData.coverageScore}
-                />
+                <div data-expanded-results>
+                  <ExpandedResults
+                    results={expandedData.results}
+                    framing={expandedData.framing}
+                    coverageScore={expandedData.coverageScore}
+                    query={query}
+                    mode="complement"
+                  />
+                </div>
               )}
 
               {/* Pagination */}
@@ -579,14 +600,13 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             <>
               {/* Even with zero internal results, expanded search may have found matches */}
               {expandedData ? (
-                <div>
-                  <p className="text-sm text-text-muted mb-2">
-                    Não encontramos no catálogo, mas encontramos opções em lojas parceiras:
-                  </p>
+                <div data-expanded-results>
                   <ExpandedResults
                     results={expandedData.results}
                     framing={expandedData.framing}
                     coverageScore={expandedData.coverageScore}
+                    query={query}
+                    mode="rescue"
                   />
                 </div>
               ) : (

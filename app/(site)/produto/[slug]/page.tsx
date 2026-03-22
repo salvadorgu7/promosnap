@@ -58,6 +58,7 @@ import MobileDecisionCompact from "@/components/product/MobileDecisionCompact";
 import InlineAlertPrompt from "@/components/product/InlineAlertPrompt";
 import UseCaseRecommendation from "@/components/product/UseCaseRecommendation";
 import ProductCaveat from "@/components/product/ProductCaveat";
+import ExpandedAlternatives from "@/components/product/ExpandedAlternatives";
 import ComparisonContext from "@/components/product/ComparisonContext";
 import AskAIBlock from "@/components/product/AskAIBlock";
 import AISummaryBlock from "@/components/product/AISummaryBlock";
@@ -1162,6 +1163,15 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         categorySlug={product.category?.slug}
         categoryName={product.category?.name}
       />
+
+      {/* Expanded alternatives — external marketplace options (FF_EXPANDED_SEARCH) */}
+      {getFlag('expandedSearch') && (
+        <ExpandedAlternatives
+          productName={product.name}
+          productSlug={slug}
+          categorySlug={product.category?.slug}
+        />
+      )}
 
       {/* Related Content — SEO internal linking */}
       <RelatedContent

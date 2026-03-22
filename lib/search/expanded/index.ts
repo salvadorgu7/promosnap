@@ -190,16 +190,61 @@ function deduplicateAgainstInternal(
   })
 }
 
-// ── UX Framing ───────────────────────────────────────────────────────────────
+// ── UX Framing Copy Library ──────────────────────────────────────────────────
+// Mega-prompt-03, Bloco 4: Framing nunca sugere falha, sempre ajuda inteligente.
+// Variações por cenário + tom. O copy curto (mobile) vem primeiro.
 
-function getExpandedFraming(expandedCount: number, internalCount: number): string {
+type FramingContext = {
+  expandedCount: number
+  internalCount: number
+  hasMonetizable: boolean
+}
+
+const FRAMINGS = {
+  // Zero internal → expanded is the hero (rescue mode)
+  rescue: [
+    (c: FramingContext) => `Encontramos ${c.expandedCount} opções em lojas parceiras`,
+    () => 'Continuamos a busca e encontramos alternativas relevantes',
+    () => 'Separamos opções de lojas confiáveis para você',
+  ],
+  // Internal present, few expanded → subtle complement
+  complement_light: [
+    () => 'Ampliamos a busca com mais opções',
+    () => 'Além do catálogo, separamos outras alternativas',
+    () => 'Mais opções encontradas em lojas parceiras',
+  ],
+  // Internal present, many expanded → confident expansion
+  complement_strong: [
+    (c: FramingContext) => `Mais ${c.expandedCount} alternativas em lojas parceiras`,
+    (c: FramingContext) => `Ampliamos a busca e encontramos ${c.expandedCount} opções relevantes`,
+    () => 'Continuamos procurando para trazer mais opções sem você sair daqui',
+  ],
+  // Internal weak (few results) → expansion compensates
+  weak_internal: [
+    () => 'Ampliamos a busca para encontrar opções mais próximas do que você quer',
+    () => 'Trouxemos mais opções para completar sua pesquisa',
+    () => 'Encontramos alternativas relevantes em mais lojas',
+  ],
+} as const
+
+function getExpandedFraming(expandedCount: number, internalCount: number, hasMonetizable = true): string {
+  const ctx: FramingContext = { expandedCount, internalCount, hasMonetizable }
+
+  let pool: readonly ((c: FramingContext) => string)[]
+
   if (internalCount === 0) {
-    return `Encontramos ${expandedCount} opções em lojas parceiras`
+    pool = FRAMINGS.rescue
+  } else if (internalCount <= 4) {
+    pool = FRAMINGS.weak_internal
+  } else if (expandedCount <= 3) {
+    pool = FRAMINGS.complement_light
+  } else {
+    pool = FRAMINGS.complement_strong
   }
-  if (expandedCount <= 3) {
-    return 'Ampliamos a busca com mais opções relevantes'
-  }
-  return `Ampliamos a busca e encontramos mais ${expandedCount} alternativas`
+
+  // Deterministic pick based on count (no random — SSR-safe)
+  const idx = (expandedCount + internalCount) % pool.length
+  return pool[idx](ctx)
 }
 
 // ── Main Pipeline ────────────────────────────────────────────────────────────

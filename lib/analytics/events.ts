@@ -155,6 +155,74 @@ export function guideView(params: {
   trackEvent("guide_view", params)
 }
 
+// ── Expanded Search (Busca Ampliada) ──────────────────────
+
+export function expandedSearchTriggered(params: {
+  query: string
+  internalCount: number
+  expandedCount: number
+  coverageScore: number
+}) {
+  trackEvent("expanded_search_triggered", {
+    search_term: params.query,
+    internal_count: params.internalCount,
+    expanded_count: params.expandedCount,
+    coverage_score: params.coverageScore,
+  })
+}
+
+export function expandedResultClick(params: {
+  query: string
+  resultId: string
+  marketplace: string
+  price: number
+  position: number
+  affiliateStatus: string
+}) {
+  trackEvent("expanded_result_click", {
+    search_term: params.query,
+    result_id: params.resultId,
+    marketplace: params.marketplace,
+    price: params.price,
+    position: params.position,
+    affiliate_status: params.affiliateStatus,
+  })
+}
+
+export function expandedResultImpression(params: {
+  query: string
+  resultCount: number
+  visibleCount: number
+  coverageScore: number
+}) {
+  trackEvent("expanded_result_impression", {
+    search_term: params.query,
+    result_count: params.resultCount,
+    visible_count: params.visibleCount,
+    coverage_score: params.coverageScore,
+  })
+}
+
+export function expandedShowMore(params: {
+  query: string
+  totalResults: number
+}) {
+  trackEvent("expanded_show_more", {
+    search_term: params.query,
+    total_results: params.totalResults,
+  })
+}
+
+export function weakResultsExpand(params: {
+  query: string
+  internalCount: number
+}) {
+  trackEvent("weak_results_expand", {
+    search_term: params.query,
+    internal_count: params.internalCount,
+  })
+}
+
 // ── Bundle export ───────────────────────────────────────
 
 export const analytics = {
@@ -173,4 +241,9 @@ export const analytics = {
   affiliateClickout,
   categoryView,
   guideView,
+  expandedSearchTriggered,
+  expandedResultClick,
+  expandedResultImpression,
+  expandedShowMore,
+  weakResultsExpand,
 }
