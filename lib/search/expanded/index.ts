@@ -374,9 +374,14 @@ export async function expandedSearch(params: ExpandedSearchParams): Promise<Expa
   const resolvedCandidates = resolveCandidates(allCandidates)
   stages.push({ stage: 'candidate_resolution', durationMs: Date.now() - nStart, itemsIn: allCandidates.length, itemsOut: resolvedCandidates.length })
 
-  // ── 7. Quality Gates ─────────────────────────────────────────────────
+  // ── 7. Quality Gates (category-aware thresholds) ────────────────────
   const qStart = Date.now()
-  const qualityAssessed = applyQualityGates(resolvedCandidates)
+  // Derive category from params or from query understanding entities
+  const detectedCategory = params.category
+    || understanding.entities?.find(e => e.type === 'category')?.value
+  const qualityAssessed = applyQualityGates(resolvedCandidates, {
+    categorySlug: detectedCategory,
+  })
   stages.push({ stage: 'quality_gates', durationMs: Date.now() - qStart, itemsIn: resolvedCandidates.length, itemsOut: qualityAssessed.length })
 
   // ── 8. Convert to Unified + Dedup ────────────────────────────────────
@@ -444,7 +449,7 @@ export async function expandedSearch(params: ExpandedSearchParams): Promise<Expa
     understanding,
     searchLogId: internalResult.searchLogId,
     expandedFraming: expandedUnified.length > 0
-      ? getCategoryAwareFraming(expandedUnified.length, internalUnified.length, params.category)
+      ? getCategoryAwareFraming(expandedUnified.length, internalUnified.length, detectedCategory)
       : undefined,
     ...(trace ? { trace } : {}),
   }

@@ -1,5 +1,6 @@
 // Feature flags — driven by environment variables for simplicity.
 // Each flag defaults to false unless the corresponding env var is set to "true" or "1".
+// Supports percentage-based rollout: FF_X=50 means 50% of requests get the feature.
 
 export interface FeatureFlags {
   /** Enable PromosApp integration (ingestion, scoring, review queue) */
@@ -27,6 +28,26 @@ function envBool(key: string): boolean {
   return val === 'true' || val === '1'
 }
 
+/**
+ * Percentage-based rollout check.
+ * Accepts: "true"/"1" (100%), "false"/"0"/undefined (0%), or "10"-"99" (percentage).
+ * Uses minute-of-hour as bucket for consistent behavior within each minute.
+ */
+function envRollout(key: string): boolean {
+  const val = process.env[key]
+  if (!val) return false
+  if (val === 'true' || val === '1') return true
+  if (val === 'false' || val === '0') return false
+
+  const pct = parseInt(val, 10)
+  if (isNaN(pct) || pct <= 0) return false
+  if (pct >= 100) return true
+
+  // Deterministic per-minute bucket (consistent within each minute, varies across minutes)
+  const bucket = new Date().getMinutes() % 100
+  return bucket < pct
+}
+
 export function getAllFlags(): FeatureFlags {
   return {
     promosappEnabled: envBool('FF_PROMOSAPP_ENABLED'),
@@ -37,10 +58,23 @@ export function getAllFlags(): FeatureFlags {
     shopeeEnabled: envBool('SHOPEE_ENABLED') || !!process.env.SHOPEE_AFFILIATE_ID,
     shopeeApiReady: !!process.env.SHOPEE_APP_ID && !!process.env.SHOPEE_APP_SECRET,
     mlSearchEnabled: envBool('FF_ML_SEARCH_ENABLED'),
-    expandedSearch: envBool('FF_EXPANDED_SEARCH'),
+    expandedSearch: envRollout('FF_EXPANDED_SEARCH'),
   }
 }
 
 export function getFlag(flag: keyof FeatureFlags): boolean {
   return getAllFlags()[flag]
+}
+
+/**
+ * Get the raw rollout percentage for a flag.
+ * Returns 0 (off), 100 (on), or the percentage value.
+ */
+export function getRolloutPercentage(key: string): number {
+  const val = process.env[key]
+  if (!val || val === 'false' || val === '0') return 0
+  if (val === 'true' || val === '1') return 100
+  const pct = parseInt(val, 10)
+  if (isNaN(pct)) return 0
+  return Math.max(0, Math.min(100, pct))
 }

@@ -10,10 +10,14 @@
  * - Fora da intenção = rebaixado
  * - Fonte desconhecida = penalizado
  * - Sem monetização = penalizado (nunca em posição nobre no mobile)
+ *
+ * Category-aware thresholds: stricter minQualityScore and maxTrustDiscount
+ * per vertical via category-personalization profiles.
  */
 
 import type { ResolvedCandidate } from '@/lib/ai/candidate-resolver'
 import type { QualityLevel } from './types'
+import { getCategoryProfile, type CategoryProfile } from './category-personalization'
 
 // ── Quality Assessment ───────────────────────────────────────────────────────
 
@@ -25,16 +29,31 @@ export interface QualityAssessment {
   passesGate: boolean
 }
 
-/** Minimum score to pass quality gate */
-const MIN_QUALITY_SCORE = 25
+/** Default minimum score to pass quality gate (overridden by category profile) */
+const DEFAULT_MIN_QUALITY_SCORE = 25
 /** Minimum score for "high" positions (mobile first screen) */
 const MIN_HIGH_POSITION_SCORE = 50
 
+// ── Category-Aware Options ──────────────────────────────────────────────────
+
+export interface QualityGateOptions {
+  /** Category slug — used to look up stricter thresholds per vertical */
+  categorySlug?: string
+  /** Override minimum quality score (ignores category profile) */
+  minQualityScore?: number
+  /** Override max trusted discount (ignores category profile) */
+  maxTrustDiscount?: number
+}
+
 // ── Score Calculation ────────────────────────────────────────────────────────
 
-function calculateQualityScore(candidate: ResolvedCandidate): { score: number; reasons: string[] } {
+function calculateQualityScore(
+  candidate: ResolvedCandidate,
+  profile?: CategoryProfile,
+): { score: number; reasons: string[] } {
   let score = 0
   const reasons: string[] = []
+  const maxTrustDiscount = profile?.maxTrustDiscount ?? 85
 
   // Title quality (0-20)
   if (candidate.normalizedTitle.length >= 15) {
@@ -61,14 +80,14 @@ function calculateQualityScore(candidate: ResolvedCandidate): { score: number; r
       score -= 5
       reasons.push('preço muito alto')
     }
-    // Has discount
+    // Has discount — use category-aware maxTrustDiscount
     if (candidate.originalPrice && candidate.originalPrice > candidate.price) {
       const discount = ((candidate.originalPrice - candidate.price) / candidate.originalPrice) * 100
-      if (discount > 0 && discount <= 85) {
+      if (discount > 0 && discount <= maxTrustDiscount) {
         score += 10
-      } else if (discount > 85) {
+      } else if (discount > maxTrustDiscount) {
         score -= 10
-        reasons.push('desconto suspeito (> 85%)')
+        reasons.push(`desconto suspeito (> ${maxTrustDiscount}%)`)
       }
     }
   } else {
@@ -128,13 +147,23 @@ function detectSourceSlug(domain: string): string {
 
 // ── Gate Application ─────────────────────────────────────────────────────────
 
-export function assessQuality(candidate: ResolvedCandidate): QualityAssessment {
-  const { score, reasons } = calculateQualityScore(candidate)
+/**
+ * Assess quality for a single candidate.
+ * When categorySlug is provided, uses stricter category-specific thresholds.
+ */
+export function assessQuality(
+  candidate: ResolvedCandidate,
+  options?: QualityGateOptions,
+): QualityAssessment {
+  const profile = options?.categorySlug ? getCategoryProfile(options.categorySlug) : undefined
+  const minScore = options?.minQualityScore ?? profile?.minQualityScore ?? DEFAULT_MIN_QUALITY_SCORE
+
+  const { score, reasons } = calculateQualityScore(candidate, profile)
 
   let quality: QualityLevel
   if (score >= 70) quality = 'high'
   else if (score >= 50) quality = 'medium'
-  else if (score >= MIN_QUALITY_SCORE) quality = 'low'
+  else if (score >= minScore) quality = 'low'
   else quality = 'rejected'
 
   return {
@@ -142,17 +171,23 @@ export function assessQuality(candidate: ResolvedCandidate): QualityAssessment {
     quality,
     qualityScore: score,
     reasons,
-    passesGate: score >= MIN_QUALITY_SCORE,
+    passesGate: score >= minScore,
   }
 }
 
 /**
  * Apply quality gates to a batch of resolved candidates.
  * Returns only those that pass, with quality metadata.
+ *
+ * @param candidates - Resolved candidates to filter
+ * @param options - Optional category-aware thresholds
  */
-export function applyQualityGates(candidates: ResolvedCandidate[]): QualityAssessment[] {
+export function applyQualityGates(
+  candidates: ResolvedCandidate[],
+  options?: QualityGateOptions,
+): QualityAssessment[] {
   return candidates
-    .map(c => assessQuality(c))
+    .map(c => assessQuality(c, options))
     .filter(a => a.passesGate)
     .sort((a, b) => b.qualityScore - a.qualityScore)
 }

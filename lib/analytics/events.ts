@@ -162,12 +162,15 @@ export function expandedSearchTriggered(params: {
   internalCount: number
   expandedCount: number
   coverageScore: number
+  /** A/B experiment assignments (e.g., expanded_feature_name: "mais_opcoes") */
+  experiments?: Record<string, string>
 }) {
   trackEvent("expanded_search_triggered", {
     search_term: params.query,
     internal_count: params.internalCount,
     expanded_count: params.expandedCount,
     coverage_score: params.coverageScore,
+    ...(params.experiments || {}),
   })
 }
 
@@ -178,6 +181,8 @@ export function expandedResultClick(params: {
   price: number
   position: number
   affiliateStatus: string
+  /** A/B experiment assignments */
+  experiments?: Record<string, string>
 }) {
   trackEvent("expanded_result_click", {
     search_term: params.query,
@@ -186,6 +191,7 @@ export function expandedResultClick(params: {
     price: params.price,
     position: params.position,
     affiliate_status: params.affiliateStatus,
+    ...(params.experiments || {}),
   })
 }
 
@@ -194,12 +200,15 @@ export function expandedResultImpression(params: {
   resultCount: number
   visibleCount: number
   coverageScore: number
+  /** A/B experiment assignments */
+  experiments?: Record<string, string>
 }) {
   trackEvent("expanded_result_impression", {
     search_term: params.query,
     result_count: params.resultCount,
     visible_count: params.visibleCount,
     coverage_score: params.coverageScore,
+    ...(params.experiments || {}),
   })
 }
 

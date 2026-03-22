@@ -283,6 +283,11 @@ export async function processShoppingQuery(
       ? merged.filter(p => !p.price || p.price <= intent.budget!.max!)
       : merged
 
+    // Track which results came from expanded search
+    const hasExpandedSources = expandedResults.length > 0
+    const catalogCount = budgetFiltered.filter(p => p.isFromCatalog).length
+    const externalCount = budgetFiltered.filter(p => !p.isFromCatalog).length
+
     // ── Enrich products with price history, buy signals, specs, deal scores ─
     const enrichedProducts: EnrichedProduct[] = await enrichProducts(budgetFiltered, intent.categories?.[0])
       .catch(() => budgetFiltered.map(p => ({ ...p, dealScore: 50 })) as EnrichedProduct[])
@@ -296,6 +301,7 @@ export async function processShoppingQuery(
           parts.push(`${i + 1}. **${p.name}**`)
           parts.push(`   Preço: R$ ${p.price?.toFixed(2) || '?'} em ${p.source}`)
           if (p.isFromCatalog) parts[parts.length - 1] += ' [VERIFICADO]'
+          else parts[parts.length - 1] += ' [LOJA PARCEIRA]'
           if (p.discount && p.discount > 0) parts.push(`   Desconto: ${p.discount}% OFF${p.originalPrice ? ` (era R$ ${p.originalPrice.toFixed(2)})` : ''}`)
           if (ep.buySignal) parts.push(`   Sinal de compra: ${ep.buySignal.headline} (${ep.buySignal.level})`)
           if (ep.priceContext?.isHistoricalLow) parts.push('   ⚡ MENOR PREÇO HISTÓRICO — oportunidade real')
@@ -308,8 +314,22 @@ export async function processShoppingQuery(
         }).join('\n\n')}\n---`
       : '\n\n---\nNenhum resultado encontrado. Sugira que o usuário tente termos diferentes ou use a busca em /busca.\n---'
 
-    // Enhanced system prompt with intent understanding
-    const enhancedSystemPrompt = SYSTEM_PROMPT + intentPromptSection
+    // ── Consultative framing when expanded search contributed results ──────
+    const expandedFramingPrompt = hasExpandedSources ? `
+
+## BUSCA AMPLIADA ATIVA
+Você tem ${catalogCount} produtos do catálogo verificado PromoSnap e ${externalCount} de lojas parceiras.
+Siga estas regras adicionais:
+- Priorize SEMPRE os [VERIFICADO] — são produtos com preço monitorado e confiável.
+- Apresente os [LOJA PARCEIRA] como alternativas complementares: "Também encontramos em lojas parceiras..."
+- NUNCA diga "busca ampliada" ao usuário. Use linguagem natural: "ampliamos a pesquisa", "encontramos em mais lojas", "há alternativas em lojas parceiras".
+- Se só tem [LOJA PARCEIRA] (sem verificados), seja transparente: "Não temos esse produto no catálogo monitorado, mas encontramos opções em lojas parceiras — os preços podem variar."
+- Para [LOJA PARCEIRA], sempre mencione a loja e note que o preço é "no momento da consulta" (não monitorado).
+- Se um [LOJA PARCEIRA] tem preço muito menor que um [VERIFICADO] similar, sugira verificar diretamente na loja.
+` : ''
+
+    // Enhanced system prompt with intent understanding + expanded framing
+    const enhancedSystemPrompt = SYSTEM_PROMPT + intentPromptSection + expandedFramingPrompt
 
     const messages = [
       { role: 'system' as const, content: enhancedSystemPrompt },

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import {
   Sparkles,
   ChevronDown,
@@ -16,6 +16,7 @@ import {
 import Image from "next/image"
 import { formatPrice } from "@/lib/utils"
 import { analytics } from "@/lib/analytics/events"
+import { getVariant, getVariantLabel, getUserExperiments } from "@/lib/search/expanded/experiments"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,8 @@ interface ExpandedResultsProps {
   mode?: "complement" | "rescue"
   /** "grid" = responsive grid, "rail" = horizontal scroll on mobile */
   layout?: "grid" | "rail"
+  /** Optional user/session ID for A/B experiment assignment */
+  experimentUserId?: string
 }
 
 // ── Store Branding ──────────────────────────────────────────────────────────
@@ -87,9 +90,15 @@ function computeBadges(result: ExpandedResult, allResults: ExpandedResult[]) {
   return badges.slice(0, 1) // Max 1 badge per card to keep clean
 }
 
-// ── CTA Text by Context ────────────────────────────────────────────────────
+// ── CTA Text by Context (A/B experiment: expanded_cta_text) ─────────────────
 
-function getCtaText(result: ExpandedResult, mode: "complement" | "rescue"): string {
+function getCtaText(result: ExpandedResult, mode: "complement" | "rescue", ctaVariant?: string | null): string {
+  // If A/B experiment assigned a CTA variant, use it
+  if (ctaVariant) {
+    const label = getVariantLabel("expanded_cta_text", ctaVariant)
+    if (label) return label
+  }
+  // Fallback to context-based logic
   if (mode === "rescue") return "Ver oferta"
   if (result.affiliateStatus === "verified") return "Ver oferta"
   return "Ver opção"
@@ -113,6 +122,7 @@ export default function ExpandedResults({
   query = "",
   mode = "complement",
   layout = "grid",
+  experimentUserId,
 }: ExpandedResultsProps) {
   const [showAll, setShowAll] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -121,13 +131,38 @@ export default function ExpandedResults({
   // Only expanded (external) results
   const expanded = results.filter(r => r.sourceType === "expanded")
 
+  // ── A/B Experiment Assignments ──────────────────────────────────────
+  // Deterministic: same userId always gets same variant (SSR-safe, no flicker)
+  const userId = experimentUserId || `anon:${query.slice(0, 20)}`
+
+  const experiments = useMemo(() => ({
+    featureName: getVariant("expanded_feature_name", userId),
+    ctaText: getVariant("expanded_cta_text", userId),
+    countBadge: getVariant("expanded_count_badge", userId),
+    categoryLayout: getVariant("category_expanded_layout", userId),
+    // Get all assignments for analytics
+    allAssignments: getUserExperiments(userId),
+  }), [userId])
+
+  // Resolve the feature name label from experiment variant
+  const featureNameLabel = experiments.featureName
+    ? getVariantLabel("expanded_feature_name", experiments.featureName)
+    : null
+
+  // Resolve layout from experiment (category pages can override)
+  const effectiveLayout = layout === "rail" && experiments.categoryLayout === "grid"
+    ? "grid"
+    : layout === "grid" && experiments.categoryLayout === "rail"
+    ? "rail"
+    : layout
+
   // Smooth mount animation
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 50)
     return () => clearTimeout(timer)
   }, [])
 
-  // Track impression once on mount
+  // Track impression once on mount (includes experiment assignments)
   useEffect(() => {
     if (expanded.length > 0 && !trackedRef.current) {
       trackedRef.current = true
@@ -136,15 +171,17 @@ export default function ExpandedResults({
         resultCount: expanded.length,
         visibleCount: Math.min(expanded.length, 4),
         coverageScore,
+        experiments: experiments.allAssignments,
       })
       analytics.expandedSearchTriggered({
         query,
         internalCount: results.filter(r => r.sourceType === "internal").length,
         expandedCount: expanded.length,
         coverageScore,
+        experiments: experiments.allAssignments,
       })
     }
-  }, [expanded.length, query, coverageScore, results])
+  }, [expanded.length, query, coverageScore, results, experiments.allAssignments])
 
   if (expanded.length === 0) return null
 
@@ -159,6 +196,7 @@ export default function ExpandedResults({
       price: result.price,
       position,
       affiliateStatus: result.affiliateStatus,
+      experiments: experiments.allAssignments,
     })
   }
 
@@ -189,27 +227,30 @@ export default function ExpandedResults({
         </div>
       )}
 
-      {/* ── Section header ───────────────────────────────────── */}
+      {/* ── Section header (A/B: feature name + count badge) ─── */}
       <div className="flex items-center gap-2.5 mb-3">
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500/15 to-accent-blue/10 flex items-center justify-center flex-shrink-0">
           <Sparkles className="w-4 h-4 text-brand-500" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-display font-semibold text-sm text-text-primary leading-tight">
-            {framing || "Mais opções em lojas parceiras"}
+            {featureNameLabel || framing || "Mais opções em lojas parceiras"}
           </h3>
           <p className="text-[10px] text-text-muted mt-0.5 hidden sm:block">
             Resultados verificados com link seguro para a loja
           </p>
         </div>
-        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-500/10">
-          <ShoppingBag className="w-3 h-3 text-brand-500" />
-          <span className="text-[10px] font-bold text-brand-600">{expanded.length}</span>
-        </div>
+        {/* Count badge — A/B test: show vs hide */}
+        {experiments.countBadge !== "hide" && (
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-500/10">
+            <ShoppingBag className="w-3 h-3 text-brand-500" />
+            <span className="text-[10px] font-bold text-brand-600">{expanded.length}</span>
+          </div>
+        )}
       </div>
 
-      {/* ── Results — grid or horizontal rail ────────────────── */}
-      {layout === "rail" ? (
+      {/* ── Results — grid or horizontal rail (A/B: layout) ──── */}
+      {effectiveLayout === "rail" ? (
         /* Horizontal scroll rail — great for mobile, compact discovery */
         <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
           {expanded.map((result, i) => (
@@ -219,6 +260,7 @@ export default function ExpandedResults({
                 allResults={expanded}
                 position={i}
                 mode={mode}
+                ctaVariant={experiments.ctaText}
                 onClick={() => handleCardClick(result, i)}
               />
             </div>
@@ -235,6 +277,7 @@ export default function ExpandedResults({
                 allResults={expanded}
                 position={i}
                 mode={mode}
+                ctaVariant={experiments.ctaText}
                 onClick={() => handleCardClick(result, i)}
               />
             ))}
@@ -276,19 +319,21 @@ function ExpandedCard({
   allResults,
   position,
   mode,
+  ctaVariant,
   onClick,
 }: {
   result: ExpandedResult
   allResults: ExpandedResult[]
   position: number
   mode: "complement" | "rescue"
+  ctaVariant?: string | null
   onClick?: () => void
 }) {
   const brand = STORE_BRAND[result.marketplace]
   const storeColor = brand?.color || "text-text-secondary"
   const storeLabel = brand?.label || result.storeName
   const badges = computeBadges(result, allResults)
-  const ctaText = getCtaText(result, mode)
+  const ctaText = getCtaText(result, mode, ctaVariant)
 
   return (
     <a
