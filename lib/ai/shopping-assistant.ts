@@ -178,10 +178,38 @@ Outras boas opções:
 Se não tem pressa, cria um alerta de preço para o Galaxy A55 — ele já caiu abaixo de R$ 1.500 no passado.
 ---
 
+## CONVERSA COM HISTÓRICO
+Se houver mensagens anteriores, o usuário está fazendo um follow-up. Use o contexto:
+- Se pediu "e esse?" ou "e o segundo?", refira-se aos produtos da resposta anterior
+- Se pediu "mais barato", busque abaixo do preço dos que já mostrou
+- Se pediu "comparar esses dois", faça uma comparação detalhada
+- Seja natural na continuidade — não repita a introdução toda vez
+
+## CONHECIMENTO POR CATEGORIA
+
+### Celulares
+Critérios-chave: tela (AMOLED > LCD), processador (Snapdragon 8 > Dimensity > Helio), câmera (MP + sensor), bateria (4500mAh+), armazenamento (128GB mínimo em 2026), atualizações (Samsung 5 anos, Apple 6+, Xiaomi 3-4).
+Marcas tier: Premium (Apple, Samsung S) → Custo-benefício (Samsung A, Xiaomi, Motorola) → Econômico (Realme, Poco).
+
+### Notebooks
+Critérios-chave: processador (i5/Ryzen 5 mínimo para trabalho), RAM (8GB mínimo, 16GB ideal), SSD (obrigatório, 256GB+), tela (IPS > TN, 15.6" trabalho, 14" portátil), bateria (6h+ real), peso (<2kg portátil).
+Para trabalho: ThinkPad, Dell Latitude. Custo-benefício: Acer, Lenovo IdeaPad. Para criação: MacBook, Dell XPS.
+
+### Fones
+Critérios-chave: tipo (TWS vs over-ear vs in-ear), ANC (cancelamento de ruído), driver (40mm+), bateria (6h+ TWS, 30h+ over-ear), codec (LDAC > aptX > AAC > SBC), IP rating (exercício precisa IPX4+).
+TWS top: AirPods Pro, Galaxy Buds, Sony WF. Over-ear: Sony WH-1000XM, AirPods Max. Custo-benefício: Edifier, QCY, Haylou.
+
+### Smart TVs
+Critérios-chave: painel (OLED > QLED > LED), resolução (4K obrigatório 50"+), HDR (Dolby Vision > HDR10+), sistema (Google TV > Tizen > webOS), refresh (120Hz para gaming), tamanho (sala: 55-65", quarto: 32-43").
+
+### Air Fryers / Casa
+Critérios-chave: capacidade (4L+ para família, 2-3L individual), potência (1500W+), material (inox > plástico), facilidade de limpeza, funcionalidades extras (grill, desidratador).
+
 ## CONTEXTO DA PLATAFORMA
 - PromoSnap compara Amazon, Mercado Livre, Shopee, Magazine Luiza e Shein
 - Produtos [VERIFICADO] têm histórico de preços de 90 dias
-- Os cards de produto aparecem automaticamente abaixo da sua resposta — NÃO precisa repetir links ou URLs`
+- Os cards de produto aparecem automaticamente abaixo da sua resposta — NÃO precisa repetir links ou URLs
+- Quando sugerir alerta de preço, o card de alerta também aparece automaticamente`
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -351,13 +379,29 @@ export async function processShoppingQuery(
     // Text block (AI narrative)
     blocks.push({ type: 'text', content: message })
 
-    // Product cards block (enriched)
+    // Product cards block (enriched) — cap at 5 to match AI's 3-5 selection
     if (enrichedProducts.length > 0) {
+      const maxCards = Math.min(intentTone.maxItems, 5)
       blocks.push({
         type: 'product_cards',
-        products: enrichedProducts.slice(0, 8),
+        products: enrichedProducts.slice(0, maxCards),
         layout: enrichedProducts.length <= 3 ? 'list' : 'grid',
       })
+    }
+
+    // Deal verdict block — for "vale a pena?" / "worth_it" queries or when we have strong signals
+    if (intent.type === 'worth_it' || intent.type === 'specific_product' || intent.type === 'has_promo') {
+      const topProduct = enrichedProducts[0]
+      if (topProduct?.priceContext || topProduct?.buySignal) {
+        const verdict = buildDealVerdict(topProduct)
+        if (verdict) blocks.push(verdict)
+      }
+    }
+
+    // Comparison table block — for "X vs Y" / compare_models queries
+    if (intent.type === 'compare_models' && enrichedProducts.length >= 2) {
+      const comparisonBlock = buildComparisonTable(enrichedProducts.slice(0, 3))
+      if (comparisonBlock) blocks.push(comparisonBlock)
     }
 
     // Alert suggestions (for products not at historical low)
@@ -716,6 +760,163 @@ function parseOpenAIResponse(data: any): AssistantResponse {
     dataSources: ['web'],
     meta: { toolsUsed: ['web_search'], catalogHits: 0, webUsed: true, durationMs: 0 },
   })
+}
+
+// ── Deal Verdict Builder ─────────────────────────────────────────────────
+
+function buildDealVerdict(product: EnrichedProduct): StructuredBlock | null {
+  const reasons: string[] = []
+  let verdict: 'comprar' | 'esperar' | 'neutro' = 'neutro'
+
+  const pc = product.priceContext
+  const bs = product.buySignal
+
+  if (pc?.isHistoricalLow) {
+    verdict = 'comprar'
+    reasons.push('Preço no menor valor histórico')
+  }
+
+  if (pc?.pctBelowAvg && pc.pctBelowAvg >= 15) {
+    verdict = 'comprar'
+    reasons.push(`${pc.pctBelowAvg}% abaixo da média dos últimos 30 dias`)
+  } else if (pc?.pctBelowAvg && pc.pctBelowAvg >= 5) {
+    if (verdict !== 'comprar') verdict = 'comprar'
+    reasons.push(`${pc.pctBelowAvg}% abaixo da média recente`)
+  }
+
+  if (product.discount && product.discount >= 20) {
+    reasons.push(`Desconto real de ${product.discount}%`)
+  }
+
+  if (pc?.trend === 'up') {
+    if (verdict !== 'comprar') verdict = 'esperar'
+    reasons.push('Tendência de preço subindo — pode ser melhor criar alerta')
+  } else if (pc?.trend === 'down') {
+    reasons.push('Tendência de queda — preço pode cair mais')
+    if (verdict !== 'comprar') verdict = 'esperar'
+  } else if (pc?.trend === 'stable' && verdict === 'neutro') {
+    reasons.push('Preço estável — sem urgência para comprar')
+  }
+
+  if (bs?.level === 'excelente') {
+    verdict = 'comprar'
+    reasons.push(bs.headline)
+  } else if (bs?.level === 'aguarde') {
+    verdict = 'esperar'
+    reasons.push(bs.headline)
+  }
+
+  if (product.dealScore && product.dealScore >= 80) {
+    reasons.push(`Score de oferta: ${product.dealScore}/100`)
+  }
+
+  if (reasons.length === 0) return null
+
+  return {
+    type: 'deal_verdict',
+    productName: product.name,
+    verdict,
+    reasons: reasons.slice(0, 4),
+    priceContext: pc,
+  }
+}
+
+// ── Comparison Table Builder ─────────────────────────────────────────────
+
+function buildComparisonTable(products: EnrichedProduct[]): StructuredBlock | null {
+  if (products.length < 2) return null
+
+  const specs: { key: string; label: string; unit?: string; values: (string | number | null)[] }[] = []
+
+  // Always show price
+  specs.push({
+    key: 'price',
+    label: 'Preço',
+    unit: 'R$',
+    values: products.map(p => p.price ?? null),
+  })
+
+  // Show store
+  specs.push({
+    key: 'source',
+    label: 'Loja',
+    values: products.map(p => p.source),
+  })
+
+  // Show discount if any product has one
+  if (products.some(p => p.discount && p.discount > 0)) {
+    specs.push({
+      key: 'discount',
+      label: 'Desconto',
+      unit: '%',
+      values: products.map(p => p.discount ?? null),
+    })
+  }
+
+  // Show buy signal level
+  if (products.some(p => p.buySignal)) {
+    specs.push({
+      key: 'buySignal',
+      label: 'Sinal de compra',
+      values: products.map(p => p.buySignal?.headline ?? null),
+    })
+  }
+
+  // Show deal score
+  if (products.some(p => p.dealScore && p.dealScore > 0)) {
+    specs.push({
+      key: 'dealScore',
+      label: 'Score',
+      unit: '/100',
+      values: products.map(p => p.dealScore ?? null),
+    })
+  }
+
+  // Extract matching specs from enriched data
+  const allSpecKeys = new Set<string>()
+  for (const p of products) {
+    if (p.specs) {
+      for (const s of p.specs) allSpecKeys.add(s.key)
+    }
+  }
+
+  for (const key of allSpecKeys) {
+    const firstSpec = products.find(p => p.specs?.some(s => s.key === key))?.specs?.find(s => s.key === key)
+    if (!firstSpec) continue
+
+    specs.push({
+      key,
+      label: firstSpec.label,
+      unit: firstSpec.unit,
+      values: products.map(p => {
+        const spec = p.specs?.find(s => s.key === key)
+        return spec ? spec.value : null
+      }),
+    })
+  }
+
+  // Build a verdict line
+  const cheapest = products.reduce((a, b) => ((a.price ?? Infinity) < (b.price ?? Infinity) ? a : b))
+  const bestScore = products.reduce((a, b) => ((a.dealScore ?? 0) > (b.dealScore ?? 0) ? a : b))
+
+  let verdict = ''
+  if (cheapest.name === bestScore.name) {
+    verdict = `**${shortenProductName(cheapest.name)}** ganha em preço e score de oferta.`
+  } else {
+    verdict = `**${shortenProductName(cheapest.name)}** é mais barato, mas **${shortenProductName(bestScore.name)}** tem melhor score geral.`
+  }
+
+  return {
+    type: 'comparison_table',
+    products,
+    specs,
+    verdict,
+  }
+}
+
+function shortenProductName(name: string): string {
+  const words = name.split(/\s+/).filter(w => w.length > 1)
+  return words.length <= 4 ? name : words.slice(0, 4).join(' ')
 }
 
 // ── Auto-Import External Products ────────────────────────────────────────

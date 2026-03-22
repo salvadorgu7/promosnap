@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import {
   MessageCircle,
@@ -40,6 +40,52 @@ const QUICK_PROMPTS = [
   "Fone bluetooth bom",
   "Smart TV custo-benefício",
 ];
+
+const LOADING_STEPS = [
+  "Buscando...",
+  "Comparando preços...",
+  "Analisando ofertas...",
+  "Montando resposta...",
+];
+
+/** Simple markdown: **bold**, *italic*, bullet points */
+function renderBubbleMarkdown(text: string): ReactNode[] {
+  if (!text) return [];
+  return text.split('\n').map((line, lineIdx) => {
+    if (!line.trim()) return <div key={lineIdx} className="h-1.5" />;
+    const isBullet = /^[\s]*[•\-\*]\s/.test(line);
+    const cleanLine = isBullet ? line.replace(/^[\s]*[•\-\*]\s/, '') : line;
+    const parts = cleanLine.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).map((part, partIdx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={partIdx} className="font-semibold">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return <em key={partIdx}>{part.slice(1, -1)}</em>;
+      }
+      return <span key={partIdx}>{part}</span>;
+    });
+    if (isBullet) {
+      return (
+        <div key={lineIdx} className="flex gap-1.5 pl-0.5">
+          <span className="text-brand-400 flex-shrink-0">•</span>
+          <span>{parts}</span>
+        </div>
+      );
+    }
+    return <div key={lineIdx}>{parts}</div>;
+  });
+}
+
+function ProgressiveLoading() {
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStep((prev) => (prev < LOADING_STEPS.length - 1 ? prev + 1 : prev));
+    }, 1800);
+    return () => clearInterval(interval);
+  }, []);
+  return <span>{LOADING_STEPS[step]}</span>;
+}
 
 export default function ChatBubble() {
   const [open, setOpen] = useState(false);
@@ -204,7 +250,9 @@ export default function ChatBubble() {
                   : "bg-surface-50 border border-surface-200 text-text-primary text-[13px]"
               }`}
             >
-              <div className="leading-relaxed whitespace-pre-wrap">{msg.content}</div>
+              <div className="leading-relaxed space-y-0.5">
+                {msg.role === "assistant" ? renderBubbleMarkdown(msg.content) : msg.content}
+              </div>
 
               {/* Inline product cards */}
               {msg.products && msg.products.length > 0 && (
@@ -254,13 +302,13 @@ export default function ChatBubble() {
           </div>
         ))}
 
-        {/* Loading */}
+        {/* Loading — progressive messages */}
         {loading && (
           <div className="flex justify-start">
             <div className="bg-surface-50 border border-surface-200 rounded-2xl px-3 py-2">
               <div className="flex items-center gap-1.5 text-xs text-text-muted">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Buscando...
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-500" />
+                <ProgressiveLoading />
               </div>
             </div>
           </div>

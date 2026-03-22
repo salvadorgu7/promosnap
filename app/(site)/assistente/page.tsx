@@ -152,13 +152,13 @@ export default function AssistentePage() {
           </div>
         ))}
 
-        {/* Loading indicator */}
+        {/* Loading indicator — progressive messages */}
         {loading && (
           <div className="flex justify-start">
             <div className="bg-white border border-surface-200 rounded-2xl px-4 py-3">
               <div className="flex items-center gap-2 text-sm text-text-muted">
                 <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
-                <span>Buscando, comparando preços e analisando ofertas...</span>
+                <ProgressiveLoadingText />
               </div>
             </div>
           </div>
@@ -197,6 +197,28 @@ export default function AssistentePage() {
       </div>
     </div>
   );
+}
+
+// ── Progressive Loading ───────────────────────────────────────────────────
+
+const LOADING_STEPS = [
+  "Buscando no catálogo...",
+  "Comparando preços entre lojas...",
+  "Analisando histórico de preços...",
+  "Montando recomendação...",
+];
+
+function ProgressiveLoadingText() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStep((prev) => (prev < LOADING_STEPS.length - 1 ? prev + 1 : prev));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return <span className="transition-opacity duration-300">{LOADING_STEPS[step]}</span>;
 }
 
 // ── Block Renderer ─────────────────────────────────────────────────────────
@@ -258,7 +280,7 @@ function AssistantBlocks({
           case "product_cards":
             return (
               <div key={i} className="space-y-2 mt-2">
-                {(block.products || []).slice(0, 8).map((p: any, j: number) => (
+                {(block.products || []).slice(0, 5).map((p: any, j: number) => (
                   <SmartProductCard key={j} product={p} rank={j + 1} />
                 ))}
               </div>
@@ -291,17 +313,68 @@ function AssistantBlocks({
                 block.verdict === "esperar" ? "bg-amber-50 border-amber-200" :
                 "bg-gray-50 border-gray-200"
               }`}>
-                <p className="text-sm font-semibold">
-                  {block.verdict === "comprar" ? "✅ Bom momento para comprar" :
-                   block.verdict === "esperar" ? "⏳ Vale esperar um pouco" :
-                   "➡️ Preço dentro da média"}
-                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">
+                    {block.verdict === "comprar" ? "✅" :
+                     block.verdict === "esperar" ? "⏳" : "➡️"}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-text-primary">
+                      {block.verdict === "comprar" ? "Bom momento para comprar" :
+                       block.verdict === "esperar" ? "Vale esperar um pouco" :
+                       "Preço dentro da média"}
+                    </p>
+                    {block.productName && (
+                      <p className="text-[11px] text-text-muted">{block.productName}</p>
+                    )}
+                  </div>
+                </div>
                 {block.reasons && (
-                  <ul className="text-xs text-text-muted mt-1 space-y-0.5">
+                  <ul className="text-xs text-text-secondary mt-1.5 space-y-0.5 pl-7">
                     {block.reasons.map((r: string, j: number) => (
-                      <li key={j}>• {r}</li>
+                      <li key={j} className="flex items-start gap-1.5">
+                        <span className="text-brand-400 mt-0.5 flex-shrink-0">•</span>
+                        <span>{r}</span>
+                      </li>
                     ))}
                   </ul>
+                )}
+              </div>
+            );
+
+          case "comparison_table":
+            return (
+              <div key={i} className="mt-2 overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-surface-200">
+                      <th className="text-left py-2 px-2 text-text-muted font-medium">Spec</th>
+                      {(block.products || []).map((p: any, j: number) => (
+                        <th key={j} className="text-left py-2 px-2 font-semibold text-text-primary max-w-[120px]">
+                          <span className="line-clamp-2">{p.name?.split(' ').slice(0, 3).join(' ')}</span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(block.specs || []).map((spec: any, j: number) => (
+                      <tr key={j} className={j % 2 === 0 ? "bg-surface-50/50" : ""}>
+                        <td className="py-1.5 px-2 text-text-muted font-medium">{spec.label}</td>
+                        {(spec.values || []).map((val: any, k: number) => (
+                          <td key={k} className="py-1.5 px-2 text-text-primary">
+                            {val !== null && val !== undefined
+                              ? `${spec.key === 'price' ? 'R$ ' : ''}${typeof val === 'number' ? val.toLocaleString('pt-BR') : val}${spec.unit && spec.key !== 'price' ? spec.unit : ''}`
+                              : <span className="text-surface-300">—</span>}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {block.verdict && (
+                  <div className="mt-2 text-xs text-text-secondary p-2 bg-brand-50/50 rounded-lg">
+                    {renderMarkdown(block.verdict)}
+                  </div>
                 )}
               </div>
             );
