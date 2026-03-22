@@ -40,7 +40,7 @@ export async function runWelcomeEmails() {
     try {
       await sendEmail({
         to: sub.email,
-        subject: 'Bem-vindo ao PromoSnap! Comece a economizar',
+        subject: '👋 Bem-vindo ao PromoSnap — suas melhores ofertas estão a caminho!',
         html: welcomeEmail(),
         template: 'welcome',
       })

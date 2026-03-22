@@ -94,9 +94,15 @@ export async function checkAlerts(): Promise<JobResult> {
               promoSnapUrl,
             });
 
+            // Subject dinâmico com nome curto e preço
+            const shortName = alert.listing.rawTitle.length > 45
+              ? alert.listing.rawTitle.slice(0, 42) + '...'
+              : alert.listing.rawTitle;
+            const priceStr = Number(bestOffer.currentPrice).toFixed(2).replace('.', ',');
+
             const ok = await sendEmail({
               to: alert.email,
-              subject: `Alerta de Preco: ${alert.listing.rawTitle} atingiu R$ ${Number(bestOffer.currentPrice).toFixed(2).replace('.', ',')}`,
+              subject: `🔔 ${shortName} — agora R$ ${priceStr}!`,
               html,
               template: 'alert-triggered',
             });

@@ -102,9 +102,14 @@ export async function runPriceDropRadar() {
           imageUrl: drop.imageUrl,
         })
 
+        const shortName = drop.productName.length > 40
+          ? drop.productName.slice(0, 37) + '...'
+          : drop.productName
+        const priceStr = drop.currentPrice.toFixed(2).replace('.', ',')
+
         await sendEmail({
           to: sub.email,
-          subject: `📉 ${drop.productName} caiu ${discountPct}%!`,
+          subject: `📉 ${shortName} caiu ${discountPct}% — agora R$ ${priceStr}`,
           html,
           template: 'price-drop',
         })

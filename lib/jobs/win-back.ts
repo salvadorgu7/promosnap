@@ -63,7 +63,7 @@ export async function runWinBack() {
 
       await sendEmail({
         to: sub.email,
-        subject: '📉 Sentimos sua falta — veja o que mudou no PromoSnap',
+        subject: `👀 Sentimos sua falta — ${digest.priceDrops.length > 0 ? `${digest.priceDrops.length} preços caíram` : 'veja o que mudou'} no PromoSnap`,
         html,
         template: 'win-back',
       })

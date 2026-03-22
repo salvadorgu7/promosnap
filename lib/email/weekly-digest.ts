@@ -111,9 +111,16 @@ export async function runWeeklyDigestJob(): Promise<SendResult> {
       if (sentEmails.has(sub.email)) continue;
       sentEmails.add(sub.email);
 
+      // Subject dinâmico com contagem real
+      const discounts = deals.map((d) => d.discount).filter((d) => d && d > 0);
+      const maxDiscount = discounts.length > 0 ? Math.max(...discounts) : 0;
+      const subjectLine = maxDiscount > 0
+        ? `📊 ${deals.length} ofertas com até ${maxDiscount}% OFF — Resumo de ${weekLabel}`
+        : `📊 ${deals.length} ofertas selecionadas — Resumo de ${weekLabel}`;
+
       const ok = await sendEmail({
         to: sub.email,
-        subject: `Resumo Semanal - ${weekLabel} | PromoSnap`,
+        subject: subjectLine,
         html,
         template: "weekly-digest",
       });

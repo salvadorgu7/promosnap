@@ -58,7 +58,7 @@ export async function runDailyDealsJob(): Promise<SendResult> {
 
         const ok = await sendEmail({
           to: sub.email,
-          subject: `Ofertas do Dia - ${today} | PromoSnap`,
+          subject: `🛍️ ${deals.length} ofertas selecionadas para hoje — ${today}`,
           html,
           template: 'daily-deals',
         })
@@ -81,7 +81,7 @@ export async function runDailyDealsJob(): Promise<SendResult> {
         for (const sub of unsegmented) {
           const ok = await sendEmail({
             to: sub.email,
-            subject: `Ofertas do Dia - ${today} | PromoSnap`,
+            subject: `🛍️ ${deals.length} ofertas selecionadas para hoje — ${today}`,
             html,
             template: 'daily-deals',
           })
@@ -141,7 +141,7 @@ export async function runCampaignEmailJob(campaignId: string): Promise<SendResul
     for (const sub of subscribers) {
       const ok = await sendEmail({
         to: sub.email,
-        subject: `Ofertas Especiais | PromoSnap`,
+        subject: `⭐ Ofertas especiais selecionadas para você — PromoSnap`,
         html,
         template: `campaign:${campaignId}`,
       })
@@ -194,7 +194,7 @@ export async function runSegmentedNewsletterJob(): Promise<SendResult> {
 
         const ok = await sendEmail({
           to: sub.email,
-          subject: `Newsletter Personalizada - ${segment.label} | PromoSnap`,
+          subject: `🎯 Selecionamos ofertas de ${segment.label} para você`,
           html,
           template: `newsletter:${segmentLabel}`,
         })

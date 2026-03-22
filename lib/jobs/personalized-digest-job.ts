@@ -1,5 +1,5 @@
 // ============================================================================
-// Personalized Digest Job — sends weekly personalized emails to subscribers
+// Personalized Digest Job — envia emails personalizados semanais
 // ============================================================================
 
 import prisma from '@/lib/db/prisma'
@@ -20,7 +20,7 @@ export async function runPersonalizedDigest() {
       status: 'ACTIVE',
       frequency: { in: ['weekly', 'daily'] },
     },
-    select: { email: true, interests: true },
+    select: { email: true, interests: true, name: true },
     take: MAX_EMAILS_PER_RUN,
   })
 
@@ -29,7 +29,7 @@ export async function runPersonalizedDigest() {
 
   for (const sub of subscribers) {
     try {
-      // Check if already sent this week
+      // Verificar se já enviou esta semana (6 dias cooldown)
       const recentEmail = await prisma.emailLog.findFirst({
         where: {
           to: sub.email,
@@ -45,17 +45,29 @@ export async function runPersonalizedDigest() {
 
       const digest = await buildPersonalizedDigest(sub.interests, 5)
 
-      // Skip if no interesting content
-      if (digest.priceDrops.length === 0 && digest.topDeals.length === 0) {
+      // Pular se não tem conteúdo interessante
+      if (digest.priceDrops.length === 0 && digest.topDeals.length === 0 && digest.newInCategories.length === 0) {
         skipped++
         continue
       }
 
       const html = personalizedDigestEmail(digest)
 
+      // Subject line dinâmico baseado no conteúdo
+      const dropCount = digest.priceDrops.length
+      const dealCount = digest.topDeals.length
+      let subject: string
+      if (dropCount > 0 && dealCount > 0) {
+        subject = `📉 ${dropCount} preços caíram + ${dealCount} ofertas selecionadas`
+      } else if (dropCount > 0) {
+        subject = `📉 ${dropCount} ${dropCount === 1 ? 'produto caiu' : 'produtos caíram'} de preço — veja agora`
+      } else {
+        subject = `🔥 ${dealCount} ofertas imperdíveis para você esta semana`
+      }
+
       await sendEmail({
         to: sub.email,
-        subject: `🔥 Suas ofertas da semana — ${digest.priceDrops.length} quedas de preco`,
+        subject,
         html,
         template: 'personalized-digest',
       })
