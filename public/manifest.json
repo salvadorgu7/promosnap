@@ -1,47 +1,26 @@
 {
-  "name": "PromoSnap — Ofertas reais, preço de verdade",
+  "name": "PromoSnap — Comparação de Preços Inteligente",
   "short_name": "PromoSnap",
-  "description": "Comparador e buscador de ofertas com foco em conversão. Ofertas que realmente fazem diferença.",
+  "description": "Compare preços entre Amazon, Mercado Livre, Shopee e Shein. Histórico real, alertas e IA.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B1020",
-  "theme_color": "#0B1020",
+  "background_color": "#f5f3ff",
+  "theme_color": "#7c3aed",
   "orientation": "portrait-primary",
-  "lang": "pt-BR",
-  "categories": ["shopping", "finance"],
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
-  "screenshots": [],
-  "shortcuts": [
-    {
-      "name": "Ofertas",
-      "short_name": "Ofertas",
-      "url": "/ofertas",
-      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Buscar",
-      "short_name": "Buscar",
-      "url": "/busca",
-      "icons": [{ "src": "/android-chrome-192x192.png", "sizes": "192x192" }]
-    }
-  ]
+  "categories": ["shopping", "finance"],
+  "lang": "pt-BR"
 }

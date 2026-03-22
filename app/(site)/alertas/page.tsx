@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, Trash2, Plus, TrendingDown, Loader2 } from "lucide-react"
+import { Bell, Trash2, Plus, TrendingDown, Loader2, Search, Mail } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
 import Link from "next/link"
 
@@ -98,13 +98,13 @@ export default function AlertasPage() {
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500/10 text-brand-500 text-sm font-medium mb-3">
           <Bell className="w-4 h-4" />
-          Alertas de Preco
+          Alertas de Preço
         </div>
         <h1 className="font-display text-3xl font-bold text-text-primary">
           Meus Alertas
         </h1>
         <p className="text-text-secondary mt-2">
-          Monitore precos e receba notificacoes quando o produto atingir o valor desejado.
+          Monitore preços e receba notificações quando atingir o valor desejado.
         </p>
       </div>
 
@@ -139,10 +139,49 @@ export default function AlertasPage() {
             </h2>
 
             {activeAlerts.length === 0 ? (
-              <div className="text-center py-10 bg-surface-50 rounded-xl border border-surface-200">
-                <Bell className="w-10 h-10 text-text-muted mx-auto mb-2 opacity-40" />
-                <p className="text-text-muted text-sm">Nenhum alerta ativo.</p>
-                <p className="text-text-muted text-xs mt-1">Crie alertas nas paginas de produto.</p>
+              <div className="py-10 px-6 bg-surface-50 rounded-xl border border-surface-200">
+                {/* Icon + Title */}
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-500/10 mb-3">
+                    <Bell className="w-6 h-6 text-brand-500" />
+                  </div>
+                  <p className="text-sm font-semibold text-text-primary">Nenhum alerta ativo</p>
+                </div>
+
+                {/* 3-step tutorial */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-4 sm:gap-8 mb-6">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-500/10 flex-shrink-0">
+                      <Search className="w-4 h-4 text-brand-500" />
+                    </div>
+                    <p className="text-xs text-text-secondary">Encontre um produto que deseja</p>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-500/10 flex-shrink-0">
+                      <Bell className="w-4 h-4 text-brand-500" />
+                    </div>
+                    <p className="text-xs text-text-secondary">Defina o preço desejado na página do produto</p>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-500/10 flex-shrink-0">
+                      <Mail className="w-4 h-4 text-brand-500" />
+                    </div>
+                    <p className="text-xs text-text-secondary">Receba um email quando o preço baixar</p>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="text-center">
+                  <Link
+                    href="/ofertas"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-500 text-white text-sm font-bold hover:bg-brand-600 transition-colors"
+                  >
+                    Explorar ofertas
+                  </Link>
+                  <p className="text-xs text-text-muted mt-3">
+                    Dica: nas páginas de produto, toque no ícone 🔔 para criar alertas rápidos.
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -195,7 +234,7 @@ export default function AlertasPage() {
                         {alert.listing.product?.name ?? alert.listing.rawTitle}
                       </p>
                       <p className="text-xs text-accent-green font-medium">
-                        Preco atingiu {formatPrice(alert.targetPrice)} ✓
+                        Preço atingiu {formatPrice(alert.targetPrice)} ✓
                       </p>
                     </div>
                   </div>

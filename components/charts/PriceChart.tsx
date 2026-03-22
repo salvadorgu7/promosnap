@@ -3,6 +3,7 @@
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
+import { LineChart } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import type { PriceHistoryPoint, PriceStats } from "@/types";
 
@@ -15,8 +16,42 @@ interface PriceChartProps {
 export default function PriceChart({ data, stats, height = 220 }: PriceChartProps) {
   if (data.length === 0) {
     return (
-      <div className="card flex items-center justify-center text-text-muted text-sm" style={{ height }}>
-        Histórico de preço indisponível
+      <div
+        className="card flex flex-col items-center justify-center gap-3 px-6 text-center relative overflow-hidden"
+        style={{ height }}
+      >
+        {/* Decorative mini fake chart line */}
+        <svg
+          className="absolute inset-0 w-full h-full opacity-[0.06] pointer-events-none"
+          viewBox="0 0 300 100"
+          preserveAspectRatio="none"
+        >
+          <polyline
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            points="0,70 30,65 60,55 90,60 120,40 150,45 180,30 210,35 240,20 270,25 300,15"
+          />
+        </svg>
+
+        <LineChart className="w-8 h-8 text-brand-500 opacity-80" />
+
+        <div>
+          <p className="text-sm font-semibold text-text-primary">
+            Monitorando preços...
+          </p>
+          <p className="text-xs text-text-muted mt-1 max-w-[260px] mx-auto">
+            Estamos coletando dados para construir o histórico deste produto. Geralmente leva 3–7 dias.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("ps:open-alert"))}
+          className="text-xs font-medium text-brand-500 hover:text-brand-600 hover:underline transition-colors cursor-pointer"
+        >
+          Crie um alerta e avisamos quando o preço baixar
+        </button>
       </div>
     );
   }
