@@ -11,7 +11,7 @@ export interface SmartLink {
   href: string
   label: string
   relevance: number // 0-100
-  type: 'category' | 'brand' | 'guide' | 'comparison' | 'offer' | 'article'
+  type: 'category' | 'brand' | 'guide' | 'comparison' | 'offer' | 'article' | 'discovery'
 }
 
 interface SmartLinkContext {
@@ -173,6 +173,17 @@ export async function getSmartLinks(context: SmartLinkContext): Promise<SmartLin
   } catch {
     // fallback
   }
+
+  // 7. Discovery pages — high-value SEO cross-links (always include 2)
+  const discoveryPages: SmartLink[] = [
+    { href: '/queda-de-preco', label: 'Queda de Preço Hoje', relevance: 50, type: 'discovery' },
+    { href: '/mais-buscados', label: 'Mais Buscados', relevance: 45, type: 'discovery' },
+    { href: '/mais-vendidos', label: 'Mais Vendidos', relevance: 45, type: 'discovery' },
+    { href: '/menor-preco', label: 'Menor Preço Histórico', relevance: 40, type: 'discovery' },
+  ]
+  // Rotate 2 random discovery pages
+  const shuffled = [...discoveryPages].sort(() => Math.random() - 0.5)
+  links.push(...shuffled.slice(0, 2))
 
   // Deduplicate by href and sort by relevance
   const seen = new Set<string>()

@@ -116,6 +116,35 @@ export default async function MarcaPage({
         }}
       />
 
+      {/* CollectionPage + AggregateOffer schema */}
+      {products.length > 0 && (() => {
+        const prices = products.map(p => p.bestOffer.price);
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br";
+        return (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "CollectionPage",
+                name: `Produtos ${name}`,
+                description: `${total} produtos de ${name} com preços comparados nas melhores lojas do Brasil.`,
+                url: `${baseUrl}/marca/${slug}`,
+                numberOfItems: total,
+                brand: { "@type": "Brand", name },
+                offers: {
+                  "@type": "AggregateOffer",
+                  lowPrice: Math.min(...prices),
+                  highPrice: Math.max(...prices),
+                  priceCurrency: "BRL",
+                  offerCount: products.reduce((acc, p) => acc + p.offersCount, 0),
+                },
+              }),
+            }}
+          />
+        );
+      })()}
+
       <Breadcrumb
         items={[
           { label: "Home", href: "/" },
