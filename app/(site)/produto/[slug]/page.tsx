@@ -35,7 +35,7 @@ import OpportunityScore from "@/components/product/OpportunityScore";
 import BetterAlternativeHint from "@/components/product/BetterAlternativeHint";
 import QuickCompare from "@/components/product/QuickCompare";
 import ContinueExploring from "@/components/product/ContinueExploring";
-import AmazonAlternative from "@/components/product/AmazonAlternative";
+// AmazonAlternative removed — low conversion
 import RelatedContent from "@/components/seo/RelatedContent";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import CrossClusterLinks from "@/components/seo/CrossClusterLinks";
@@ -1147,15 +1147,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         </section>
       )}
 
-      {/* Amazon alternative — show when best offer is not from Amazon */}
-      {product.name && (!bestOffer || !bestOffer.sourceSlug.includes("amazon")) && (
-        <section className="mt-8">
-          <AmazonAlternative
-            productName={product.name}
-            category={product.category?.name}
-          />
-        </section>
-      )}
+      {/* Amazon alternative removed — low conversion, cluttered UX */}
 
       {/* Continue Exploring */}
       <ContinueExploring

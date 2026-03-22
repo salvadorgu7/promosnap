@@ -75,6 +75,27 @@ function mapGoogleCategory(category: string, productName: string): string {
   return ""
 }
 
+/** Validate image URL format — Google Merchant accepts JPEG, PNG, GIF, BMP, TIFF, WebP */
+const ACCEPTED_IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|bmp|tiff?|webp)(\?|$)/i
+
+function isAcceptedImageUrl(url: string | null): boolean {
+  if (!url || url.trim() === '') return false
+  // Reject data URIs and SVGs
+  if (url.startsWith('data:') || url.endsWith('.svg')) return false
+  // Reject placeholder / broken URLs
+  if (url.includes('placeholder') || url.includes('no-image') || url.length < 20) return false
+  // Must have an accepted extension or be from a known CDN
+  if (ACCEPTED_IMAGE_EXTENSIONS.test(url)) return true
+  // Known CDNs that serve images without extensions (Amazon, ML, etc.)
+  const trustedCDNs = ['images-na.ssl-images-amazon.com', 'm.media-amazon.com', 'http2.mlstatic.com', 'cf.shopee.com.br']
+  try {
+    const hostname = new URL(url).hostname
+    return trustedCDNs.some(cdn => hostname.includes(cdn))
+  } catch {
+    return false
+  }
+}
+
 const APP_URL = getBaseUrl()
 const MAX_PRODUCTS = 2000
 const MIN_PRICE = 5
@@ -132,7 +153,7 @@ export async function GET() {
         .flatMap(l => l.offers)
         .sort((a, b) => a.currentPrice - b.currentPrice)[0]
 
-      if (!bestOffer || !p.imageUrl) continue
+      if (!bestOffer || !isAcceptedImageUrl(p.imageUrl)) continue
 
       const currentPrice = bestOffer.currentPrice
       const originalPrice = bestOffer.originalPrice

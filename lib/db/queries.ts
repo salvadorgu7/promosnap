@@ -682,15 +682,18 @@ export async function getSimilarProducts(categorySlug: string | undefined, exclu
   const products = await prisma.product.findMany({
     where: {
       status: 'ACTIVE',
+      imageUrl: { not: null },
       category: { slug: categorySlug },
       slug: { not: excludeSlug },
       listings: { some: { offers: { some: { isActive: true } } } },
     },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
-    take: limit,
+    take: limit * 2,
     orderBy: { popularityScore: 'desc' },
   })
-  return products.map(buildProductCard).filter(Boolean) as ProductCard[]
+  return (products.map(buildProductCard).filter(Boolean) as ProductCard[])
+    .filter(c => c.imageUrl)
+    .slice(0, limit)
 }
 
 export async function getAlternatives(categorySlug: string | undefined, price: number, excludeId: string, limit = 6): Promise<ProductCard[]> {
@@ -700,6 +703,7 @@ export async function getAlternatives(categorySlug: string | undefined, price: n
   const products = await prisma.product.findMany({
     where: {
       status: 'ACTIVE',
+      imageUrl: { not: null },
       id: { not: excludeId },
       category: { slug: categorySlug },
       listings: {
@@ -714,11 +718,13 @@ export async function getAlternatives(categorySlug: string | undefined, price: n
       },
     },
     select: { ...PRODUCT_SELECT_FOR_CARD, ...PRODUCT_INCLUDE },
-    take: limit * 2,
+    take: limit * 3,
     orderBy: { popularityScore: 'desc' },
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
-  return rankCards(cards, 'deal').slice(0, limit)
+  return rankCards(cards, 'deal')
+    .filter(c => c.imageUrl)
+    .slice(0, limit)
 }
 
 export async function getPriceHistory(offerId: string, days = 90) {
