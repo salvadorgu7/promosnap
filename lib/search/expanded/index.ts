@@ -399,9 +399,23 @@ export async function expandedSearch(params: ExpandedSearchParams): Promise<Expa
     return externalToUnified(qa, connector)
   })
 
-  // Dedup against internal
+  // Dedup against internal — skip when forceExpand is active because the page
+  // uses a simpler search (searchListings) that may find far fewer results than
+  // our engine (searchProducts). Deduplicating against engine results would hide
+  // external matches that the page user never actually sees.
   const beforeDedup = expandedUnified.length
-  expandedUnified = deduplicateAgainstInternal(expandedUnified, internalUnified)
+  if (!params.forceExpand) {
+    expandedUnified = deduplicateAgainstInternal(expandedUnified, internalUnified)
+  } else {
+    // Light dedup: only remove exact title matches (not fuzzy/substring)
+    const internalExact = new Set(
+      internalUnified.map(r => r.title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40))
+    )
+    expandedUnified = expandedUnified.filter(ext => {
+      const fp = ext.title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40)
+      return !internalExact.has(fp)
+    })
+  }
   stages.push({ stage: 'deduplication', durationMs: 0, itemsIn: beforeDedup, itemsOut: expandedUnified.length })
 
   // ── 9. Hybrid Ranking ────────────────────────────────────────────────
