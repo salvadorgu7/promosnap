@@ -179,36 +179,37 @@ export default async function HomePage() {
         activeOffers={stats.activeOffers || 0}
       />
 
-      {/* ===== 1. HERO — Premium, mobile-first ===== */}
+      {/* ===== 1. HERO — Compact mobile, expansive desktop ===== */}
       <section id="hero" className="hero-premium relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-brand-500/6 rounded-full blur-[80px] pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-4 pt-8 pb-6 md:pt-14 md:pb-10">
+        <div className="relative max-w-7xl mx-auto px-4 pt-5 pb-4 md:pt-14 md:pb-10">
           <div className="max-w-2xl mx-auto text-center">
-            <h1 className="font-display font-extrabold text-2xl md:text-4xl text-surface-900 tracking-tight leading-[1.15]">
+            <h1 className="font-display font-extrabold text-xl md:text-4xl text-surface-900 tracking-tight leading-[1.15]">
               Encontre o <span className="text-gradient">melhor preço</span> com IA
             </h1>
 
-            <p className="mt-2 text-surface-500 text-sm md:text-base max-w-md mx-auto">
-              Busque qualquer produto. Comparamos preços, analisamos histórico e te ajudamos a decidir.
+            <p className="mt-1.5 md:mt-2 text-surface-500 text-xs md:text-base max-w-md mx-auto">
+              Comparamos preços, analisamos histórico e te ajudamos a decidir.
             </p>
 
-            <div className="mt-5 max-w-xl mx-auto">
+            <div className="mt-3 md:mt-5 max-w-xl mx-auto">
               <SearchBar large />
             </div>
 
-            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+            {/* Quick tags — always visible, compact on mobile */}
+            <div className="mt-2 md:mt-3 flex flex-wrap justify-center gap-1 md:gap-1.5">
               {["iPhone 15", "Air Fryer", "PS5", "Notebook", "Fone Bluetooth"].map((tag, i) => (
                 <a key={tag} href={`/busca?q=${encodeURIComponent(tag)}`}
-                  className="px-2.5 py-1 rounded-full bg-white border border-surface-200 text-[11px] text-surface-500 hover:text-brand-600 hover:border-brand-500/30 hover:bg-brand-50 transition-all shadow-sm hover:scale-[1.03]">
+                  className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-white border border-surface-200 text-[10px] md:text-[11px] text-surface-500 hover:text-brand-600 hover:border-brand-500/30 hover:bg-brand-50 transition-all shadow-sm hover:scale-[1.03]">
                   {i === 0 && <span className="mr-0.5">🔥</span>}{tag}
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Econômetro card — stats integrados */}
-          <div className="mt-6">
+          {/* Econômetro — hidden on mobile hero, shown after first product rail */}
+          <div className="hidden md:block mt-6">
             <Econometro
               value={Math.round((stats.clickoutsWeek || 3495) * 47.5 + 125000)}
               offers={stats.activeOffers || undefined}
@@ -217,8 +218,8 @@ export default async function HomePage() {
             />
           </div>
 
-          {/* Trust bar inline */}
-          <div className="mt-4 flex flex-col items-center gap-1.5">
+          {/* Trust bar — hidden on mobile hero, shown below */}
+          <div className="hidden md:flex mt-4 flex-col items-center gap-1.5">
             <div className="flex items-center justify-center gap-3 flex-wrap">
               {[
                 { name: "Amazon", color: "text-[#FF9900]" },
@@ -236,24 +237,34 @@ export default async function HomePage() {
             </div>
             <p className="text-[10px] text-text-muted">+ mais lojas sendo adicionadas</p>
           </div>
+
+          {/* Mobile-only: compact trust bar with store count */}
+          <div className="flex md:hidden items-center justify-center gap-1.5 mt-2 text-[10px] text-text-muted">
+            <svg className="w-3 h-3 text-accent-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Amazon, Mercado Livre, Shopee e mais
+          </div>
         </div>
       </section>
 
-      {/* ===== 2. TRENDING TAGS ===== */}
+      {/* ===== 2. TRENDING TAGS — hidden on mobile to show products faster ===== */}
       {trendingKeywords.length > 0 && (
-        <div id="trending">
+        <div id="trending" className="hidden md:block">
           <TrendingTags keywords={trendingKeywords.map((t: any) => ({ keyword: t.keyword, url: t.url }))} />
         </div>
       )}
 
-      {/* ===== 2b. RADAR BANNER ===== */}
-      <RadarBanner />
+      {/* ===== 2b. RADAR BANNER — hidden on mobile ===== */}
+      <div className="hidden md:block">
+        <RadarBanner />
+      </div>
 
       {/* ===== 2c. RETURN USER GREETING ===== */}
       <ReturnUserGreeting />
 
       {/* ===== 3. OFERTA DO DIA — dynamic, fetches top scores from API ===== */}
-      <section id="deal-of-the-day" className="py-4">
+      <section id="deal-of-the-day" className="py-3 md:py-4">
         <div className="max-w-7xl mx-auto px-4">
           <DealOfTheDay
             product={dedupedHotOffers.length > 0 ? {
@@ -332,7 +343,7 @@ export default async function HomePage() {
 
       {/* ===== 6. OFERTAS QUENTES (primary monetization rail) ===== */}
       {dedupedHotOffers.length > 0 && (
-        <div id="hot-offers" className="section-alt py-4">
+        <div id="hot-offers" className="section-alt py-3 md:py-4">
           <RailSection title="Ofertas Quentes" subtitle="Maior score de oferta real agora" href="/ofertas" icon={Flame} iconColor="text-accent-red" liveBadge>
             {dedupedHotOffers.map((p, i) => (
               <div key={p.id} className="rail-card">
@@ -343,8 +354,28 @@ export default async function HomePage() {
         </div>
       )}
 
+      {/* ===== MOBILE-ONLY: Econometro + Trending after first product rail ===== */}
+      <div className="md:hidden py-3 px-4">
+        <Econometro
+          value={Math.round((stats.clickoutsWeek || 3495) * 47.5 + 125000)}
+          offers={stats.activeOffers || undefined}
+          products={stats.listings || undefined}
+          stores={stats.sources || undefined}
+        />
+      </div>
+      {trendingKeywords.length > 0 && (
+        <div className="md:hidden">
+          <TrendingTags keywords={trendingKeywords.map((t: any) => ({ keyword: t.keyword, url: t.url }))} />
+        </div>
+      )}
+
       {/* ===== 7b. CAIU AGORA — price drops in last 24h ===== */}
       <PriceDropRail />
+
+      {/* ===== MOBILE-ONLY: Radar banner (repositioned from hero area) ===== */}
+      <div className="md:hidden">
+        <RadarBanner />
+      </div>
 
       {/* ===== 8. OPORTUNIDADES DO DIA ===== */}
       <DailyOpportunities />
