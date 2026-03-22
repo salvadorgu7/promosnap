@@ -10,19 +10,10 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const host = req.headers.get("host") || "";
 
-  // ── www redirect: force canonical domain (SEO) ──────────────
-  // Google treats www and non-www as different sites.
-  // Redirect non-www to www in production to avoid duplicate content.
-  if (
-    host === "promosnap.com.br" &&
-    (process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production")
-  ) {
-    const url = req.nextUrl.clone();
-    url.host = "www.promosnap.com.br";
-    return NextResponse.redirect(url, 301);
-  }
+  // NOTE: www ↔ non-www redirect is handled by Vercel domain settings.
+  // Do NOT add middleware redirects here — they conflict with Vercel's
+  // edge-level redirects and cause ERR_TOO_MANY_REDIRECTS loops.
 
   // Block crawlers from API routes via X-Robots-Tag header
   if (pathname.startsWith("/api/")) {
@@ -31,8 +22,8 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  // ── Admin auth: only for /admin routes ─────────────────────
-  if (pathname.startsWith("/admin")) {
+  // ── Admin auth: only for /admin routes (not /admin-login) ──
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin-login")) {
     const cookie = req.cookies.get("admin-auth")?.value;
     const secret = process.env.ADMIN_SECRET;
 
