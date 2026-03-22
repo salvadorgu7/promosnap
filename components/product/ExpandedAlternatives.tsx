@@ -96,8 +96,35 @@ export default function ExpandedAlternatives({
     return () => controller.abort()
   }, [productName, productSlug, categorySlug])
 
-  // Don't render anything during loading or if no results
-  if (loading || results.length === 0) return null
+  // Don't render if no results after loading
+  if (!loading && results.length === 0) return null
+
+  // Loading shimmer — inspires intelligence, not slowness (MP-03 B3 #44)
+  if (loading) {
+    return (
+      <section className="mt-8 animate-pulse">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-7 h-7 rounded-lg bg-surface-200" />
+          <div className="h-4 w-48 rounded bg-surface-200" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="card overflow-hidden">
+              <div className="aspect-square bg-surface-100 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-surface-200/60 to-transparent shimmer-sweep" />
+              </div>
+              <div className="p-2 space-y-2">
+                <div className="h-2.5 w-16 rounded bg-surface-200" />
+                <div className="h-3 w-full rounded bg-surface-200" />
+                <div className="h-3 w-3/4 rounded bg-surface-200" />
+                <div className="h-4 w-20 rounded bg-surface-200 mt-1" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="mt-8">

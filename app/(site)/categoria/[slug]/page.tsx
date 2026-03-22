@@ -6,8 +6,10 @@ import OfferCard from "@/components/cards/OfferCard";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import EmptyState from "@/components/ui/EmptyState";
 import RelatedSearches from "@/components/ui/RelatedSearches";
+import ExpandedResults from "@/components/search/ExpandedResults";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo/metadata";
 import { getProductsByCategory, getCategoryBySlug } from "@/lib/db/queries";
+import { getFlag } from "@/lib/config/feature-flags";
 import { BEST_PAGES } from "@/lib/seo/best-pages";
 import { COMPARISON_LIST } from "@/lib/seo/comparisons";
 import { OFFER_PAGES } from "@/lib/seo/offer-pages";
@@ -135,6 +137,30 @@ export default async function CategoriaPage({
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
   const name = category.name;
+
+  // ── Busca Ampliada complement for thin categories ──────────
+  let expandedData: { results: any[]; framing?: string; coverageScore: number } | null = null;
+  if (getFlag('expandedSearch') && page === 1 && products.length < 12) {
+    try {
+      const { expandedSearch } = await import('@/lib/search/expanded')
+      const expanded = await expandedSearch({
+        query: name,
+        page: 1,
+        limit: 8,
+        category: slug,
+        sortBy: 'relevance',
+      })
+      if (expanded.expandedResults.length > 0) {
+        expandedData = {
+          results: expanded.expandedResults,
+          framing: `Mais opções de ${name} em lojas parceiras`,
+          coverageScore: expanded.coverage.coverageScore,
+        }
+      }
+    } catch {
+      // Non-critical — category page works without expanded
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -304,6 +330,20 @@ export default async function CategoriaPage({
               <OfferCard key={p.id} product={p} railSource="category" page="category" />
             ))}
           </div>
+
+          {/* Expanded results — complement thin categories */}
+          {expandedData && (
+            <div data-expanded-results>
+              <ExpandedResults
+                results={expandedData.results}
+                framing={expandedData.framing}
+                coverageScore={expandedData.coverageScore}
+                query={name}
+                mode="complement"
+                layout="rail"
+              />
+            </div>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (

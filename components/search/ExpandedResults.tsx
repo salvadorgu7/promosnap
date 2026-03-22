@@ -45,6 +45,8 @@ interface ExpandedResultsProps {
   query?: string
   /** "complement" = after internal results, "rescue" = zero internal results */
   mode?: "complement" | "rescue"
+  /** "grid" = responsive grid, "rail" = horizontal scroll on mobile */
+  layout?: "grid" | "rail"
 }
 
 // ── Store Branding ──────────────────────────────────────────────────────────
@@ -110,6 +112,7 @@ export default function ExpandedResults({
   coverageScore,
   query = "",
   mode = "complement",
+  layout = "grid",
 }: ExpandedResultsProps) {
   const [showAll, setShowAll] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -205,42 +208,62 @@ export default function ExpandedResults({
         </div>
       </div>
 
-      {/* ── Results grid ─────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-3">
-        {visible.map((result, i) => (
-          <ExpandedCard
-            key={result.id}
-            result={result}
-            allResults={expanded}
-            position={i}
-            mode={mode}
-            onClick={() => handleCardClick(result, i)}
-          />
-        ))}
-      </div>
+      {/* ── Results — grid or horizontal rail ────────────────── */}
+      {layout === "rail" ? (
+        /* Horizontal scroll rail — great for mobile, compact discovery */
+        <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
+          {expanded.map((result, i) => (
+            <div key={result.id} className="flex-shrink-0 w-[160px] sm:w-[180px] snap-start">
+              <ExpandedCard
+                result={result}
+                allResults={expanded}
+                position={i}
+                mode={mode}
+                onClick={() => handleCardClick(result, i)}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* Standard responsive grid */
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-3">
+            {visible.map((result, i) => (
+              <ExpandedCard
+                key={result.id}
+                result={result}
+                allResults={expanded}
+                position={i}
+                mode={mode}
+                onClick={() => handleCardClick(result, i)}
+              />
+            ))}
+          </div>
 
-      {/* ── Show more / less ─────────────────────────────────── */}
-      {hasMore && (
-        <button
-          onClick={handleShowMore}
-          className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl
-                     border border-surface-200 bg-white hover:bg-surface-50
-                     text-xs font-medium text-text-secondary
-                     transition-all duration-200 hover:border-brand-500/20 hover:text-brand-600
-                     active:scale-[0.98]"
-        >
-          {showAll ? (
-            <>
-              <ChevronUp className="w-3.5 h-3.5" />
-              Mostrar menos
-            </>
-          ) : (
-            <>
-              <ChevronDown className="w-3.5 h-3.5" />
-              Ver mais {expanded.length - 4} opções
-            </>
+          {/* Show more / less — only in grid mode */}
+          {hasMore && (
+            <button
+              onClick={handleShowMore}
+              className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl
+                         border border-surface-200 bg-white hover:bg-surface-50
+                         text-xs font-medium text-text-secondary
+                         transition-all duration-200 hover:border-brand-500/20 hover:text-brand-600
+                         active:scale-[0.98]"
+            >
+              {showAll ? (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5" />
+                  Mostrar menos
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  Ver mais {expanded.length - 4} opções
+                </>
+              )}
+            </button>
           )}
-        </button>
+        </>
       )}
     </div>
   )

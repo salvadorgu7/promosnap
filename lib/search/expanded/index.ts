@@ -29,6 +29,7 @@ import { evaluateCoverage } from './coverage-evaluator'
 import { decideExpansion, executeExpansion, type ConnectorResult } from './expansion-orchestrator'
 import { applyQualityGates } from './quality-gates'
 import { rankHybrid } from './hybrid-ranker'
+import { getCategoryProfile, getCategoryFraming } from './category-personalization'
 
 import type {
   ExpandedSearchParams,
@@ -247,6 +248,29 @@ function getExpandedFraming(expandedCount: number, internalCount: number, hasMon
   return pool[idx](ctx)
 }
 
+/**
+ * Category-aware framing: uses category-specific copy when available,
+ * falls back to the generic framing library.
+ */
+function getCategoryAwareFraming(
+  expandedCount: number,
+  internalCount: number,
+  categorySlug?: string,
+): string {
+  // If we have a category match, use the category-specific framing
+  if (categorySlug) {
+    const mode = internalCount === 0 ? 'rescue' : internalCount <= 4 ? 'weak' : 'complement'
+    const categoryFraming = getCategoryFraming(categorySlug, mode)
+    // Only use category framing if it's different from generic (= we have a real match)
+    const genericFraming = getCategoryFraming(undefined, mode)
+    if (categoryFraming !== genericFraming) {
+      return categoryFraming
+    }
+  }
+  // Fallback to generic framing library
+  return getExpandedFraming(expandedCount, internalCount)
+}
+
 // ── Main Pipeline ────────────────────────────────────────────────────────────
 
 export async function expandedSearch(params: ExpandedSearchParams): Promise<ExpandedSearchResponse> {
@@ -420,7 +444,7 @@ export async function expandedSearch(params: ExpandedSearchParams): Promise<Expa
     understanding,
     searchLogId: internalResult.searchLogId,
     expandedFraming: expandedUnified.length > 0
-      ? getExpandedFraming(expandedUnified.length, internalUnified.length)
+      ? getCategoryAwareFraming(expandedUnified.length, internalUnified.length, params.category)
       : undefined,
     ...(trace ? { trace } : {}),
   }
