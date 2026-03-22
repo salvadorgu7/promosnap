@@ -1,47 +1,75 @@
 // ============================================
 // WhatsApp Broadcast — Send Queue / Delivery Orchestrator
 // Handles actual message delivery to WhatsApp groups
+// Supports: Evolution API v2 (primary) + WhatsApp Business API (fallback)
 // ============================================
 
 import { logger } from "@/lib/logger"
 import type { ComposedMessage, WaSendResult } from "./types"
+import { isEvolutionConfigured, sendText as evolutionSendText } from "@/lib/whatsapp/evolution-api"
 
 const log = logger.child({ module: "wa-broadcast.send-queue" })
 
 // ============================================
-// Provider: WhatsApp Business API (group send)
-// Supports any provider that accepts POST with text body
+// Provider detection: Evolution API > WA Business API
 // ============================================
 
+type ProviderType = "evolution" | "whatsapp-business" | "none"
+
 interface ProviderConfig {
+  type: ProviderType
   apiUrl: string
   apiToken: string
   phoneId: string | null
 }
 
+function detectProvider(): ProviderType {
+  if (isEvolutionConfigured()) return "evolution"
+  if (process.env.WHATSAPP_API_URL && process.env.WHATSAPP_API_TOKEN) return "whatsapp-business"
+  return "none"
+}
+
 function getProviderConfig(): ProviderConfig | null {
-  const apiUrl = process.env.WHATSAPP_API_URL
-  const apiToken = process.env.WHATSAPP_API_TOKEN
+  const provider = detectProvider()
 
-  if (!apiUrl || !apiToken) return null
-
-  return {
-    apiUrl,
-    apiToken,
-    phoneId: process.env.WHATSAPP_PHONE_ID || null,
+  if (provider === "evolution") {
+    return {
+      type: "evolution",
+      apiUrl: process.env.EVOLUTION_API_URL || "",
+      apiToken: process.env.EVOLUTION_API_KEY || "",
+      phoneId: null,
+    }
   }
+
+  if (provider === "whatsapp-business") {
+    return {
+      type: "whatsapp-business",
+      apiUrl: process.env.WHATSAPP_API_URL!,
+      apiToken: process.env.WHATSAPP_API_TOKEN!,
+      phoneId: process.env.WHATSAPP_PHONE_ID || null,
+    }
+  }
+
+  return null
 }
 
 /**
  * Check if WhatsApp broadcast API is configured and ready.
  */
 export function isBroadcastReady(): boolean {
-  return getProviderConfig() !== null
+  return detectProvider() !== "none"
+}
+
+/**
+ * Returns which provider is active.
+ */
+export function getActiveProviderName(): ProviderType {
+  return detectProvider()
 }
 
 /**
  * Send a composed message to a WhatsApp group.
- * Uses the configured provider (generic REST API).
+ * Automatically uses Evolution API if configured, otherwise falls back to WA Business API.
  */
 export async function sendToGroup(
   destinationId: string,
@@ -52,7 +80,7 @@ export async function sendToGroup(
   if (!config) {
     return {
       success: false,
-      error: "WhatsApp API nao configurado. Configure WHATSAPP_API_URL + WHATSAPP_API_TOKEN.",
+      error: "WhatsApp não configurado. Configure EVOLUTION_API_URL + EVOLUTION_API_KEY ou WHATSAPP_API_URL + WHATSAPP_API_TOKEN.",
     }
   }
 
@@ -63,8 +91,25 @@ export async function sendToGroup(
       campaignId: message.campaignId,
       offersCount: message.offers.length,
       structure: message.structure,
+      provider: config.type,
     })
 
+    // ── Evolution API v2 ──
+    if (config.type === "evolution") {
+      const result = await evolutionSendText(destinationId, message.text)
+      if (!result.success) {
+        log.error("send-queue.evolution-error", { error: result.error, destinationId })
+        return { success: false, error: result.error || "Falha Evolution API" }
+      }
+      log.info("send-queue.sent", { destinationId, messageId: result.messageId, provider: "evolution" })
+      return {
+        success: true,
+        messageId: result.messageId || `evo_${Date.now()}`,
+        providerResponse: { provider: "evolution" },
+      }
+    }
+
+    // ── WhatsApp Business API (fallback) ──
     const res = await fetch(config.apiUrl, {
       method: "POST",
       headers: {
@@ -72,7 +117,6 @@ export async function sendToGroup(
         Authorization: `Bearer ${config.apiToken}`,
       },
       body: JSON.stringify({
-        // Standard WhatsApp Business API format
         messaging_product: "whatsapp",
         recipient_type: "group",
         to: destinationId,
@@ -80,10 +124,9 @@ export async function sendToGroup(
         text: {
           body: message.text,
         },
-        // Additional metadata
         ...(config.phoneId ? { phone_number_id: config.phoneId } : {}),
       }),
-      signal: AbortSignal.timeout(30000), // 30s timeout
+      signal: AbortSignal.timeout(30000),
     })
 
     if (!res.ok) {
@@ -105,6 +148,7 @@ export async function sendToGroup(
     log.info("send-queue.sent", {
       destinationId,
       messageId: data.messages?.[0]?.id,
+      provider: "whatsapp-business",
     })
 
     return {
@@ -124,13 +168,29 @@ export async function sendToGroup(
 
 /**
  * Send a test message to verify configuration.
+ * Uses Evolution API if configured.
  */
 export async function sendTestMessage(destinationId: string): Promise<WaSendResult> {
-  const config = getProviderConfig()
-  if (!config) {
-    return { success: false, error: "WhatsApp API nao configurado" }
+  const provider = detectProvider()
+
+  if (provider === "none") {
+    return { success: false, error: "WhatsApp não configurado" }
   }
 
+  const testText = "✅ PromoSnap Broadcast — integração funcionando!"
+
+  // ── Evolution API ──
+  if (provider === "evolution") {
+    const result = await evolutionSendText(destinationId, testText)
+    return {
+      success: result.success,
+      messageId: result.messageId || "test_ok",
+      error: result.error,
+    }
+  }
+
+  // ── WA Business API fallback ──
+  const config = getProviderConfig()!
   try {
     const res = await fetch(config.apiUrl, {
       method: "POST",
@@ -143,9 +203,7 @@ export async function sendTestMessage(destinationId: string): Promise<WaSendResu
         recipient_type: "group",
         to: destinationId,
         type: "text",
-        text: {
-          body: "PromoSnap test — integracao WhatsApp Broadcast funcionando!",
-        },
+        text: { body: testText },
       }),
       signal: AbortSignal.timeout(15000),
     })

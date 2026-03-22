@@ -1,15 +1,20 @@
 // ============================================
 // DISTRIBUTION — WhatsApp channel
+// Supports: Evolution API v2 (primary) + WA Business API (fallback)
 // ============================================
 
 import type { DistributableOffer } from "./types";
+import {
+  isEvolutionConfigured,
+  sendText as evolutionSendText,
+} from "@/lib/whatsapp/evolution-api";
 
 // ============================================
 // Configuration
 // ============================================
 
 export function isWhatsAppConfigured(): boolean {
-  return !!process.env.WHATSAPP_API_TOKEN;
+  return isEvolutionConfigured() || !!process.env.WHATSAPP_API_TOKEN;
 }
 
 // ============================================
@@ -105,6 +110,15 @@ export interface WhatsAppReadinessStatus {
 }
 
 export function getReadinessStatus(): WhatsAppReadinessStatus {
+  // Evolution API v2 tem prioridade
+  if (isEvolutionConfigured()) {
+    return {
+      mode: 'api',
+      configured: true,
+      provider: 'evolution-api',
+    }
+  }
+
   const hasApiUrl = !!process.env.WHATSAPP_API_URL
   const hasApiToken = !!process.env.WHATSAPP_API_TOKEN
 
@@ -180,11 +194,21 @@ export const apiProvider: WhatsAppProvider = {
   name: 'api',
 
   async send(message: string, recipient: string) {
+    // Evolution API v2 tem prioridade
+    if (isEvolutionConfigured()) {
+      const result = await evolutionSendText(recipient, message)
+      return {
+        success: result.success,
+        error: result.error,
+      }
+    }
+
+    // Fallback: WA Business API genérica
     const apiUrl = process.env.WHATSAPP_API_URL
     const apiToken = process.env.WHATSAPP_API_TOKEN
 
     if (!apiUrl || !apiToken) {
-      return { success: false, error: 'WHATSAPP_API_URL ou WHATSAPP_API_TOKEN nao configurado' }
+      return { success: false, error: 'Nenhum provider WhatsApp configurado' }
     }
 
     try {
@@ -210,17 +234,24 @@ export const apiProvider: WhatsAppProvider = {
   },
 
   isConfigured() {
-    return !!(process.env.WHATSAPP_API_URL && process.env.WHATSAPP_API_TOKEN)
+    return isEvolutionConfigured() || !!(process.env.WHATSAPP_API_URL && process.env.WHATSAPP_API_TOKEN)
   },
 
   getStatus() {
-    const configured = this.isConfigured()
+    if (isEvolutionConfigured()) {
+      return {
+        configured: true,
+        provider: 'evolution-api',
+        message: 'Evolution API v2 configurada — envio via QR code',
+      }
+    }
+    const configured = !!(process.env.WHATSAPP_API_URL && process.env.WHATSAPP_API_TOKEN)
     return {
       configured,
-      provider: 'api',
+      provider: configured ? 'api' : 'preview',
       message: configured
         ? 'WhatsApp API configurado e pronto para envio'
-        : 'Configure WHATSAPP_API_URL e WHATSAPP_API_TOKEN para ativar',
+        : 'Configure EVOLUTION_API_URL + EVOLUTION_API_KEY ou WHATSAPP_API_URL + WHATSAPP_API_TOKEN',
     }
   },
 }

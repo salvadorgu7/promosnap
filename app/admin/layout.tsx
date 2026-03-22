@@ -48,6 +48,7 @@ import {
   Megaphone,
   Cpu,
   Rss,
+  Phone,
 } from "lucide-react";
 import LogoIcon from "@/components/ui/LogoIcon";
 
@@ -106,6 +107,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/expanded-search", label: "Busca Ampliada", icon: Search },
       { href: "/admin/tendencias", label: "Tendências", icon: TrendingUp },
       { href: "/admin/email", label: "Email", icon: Mail },
+      { href: "/admin/whatsapp", label: "WhatsApp", icon: Phone },
       { href: "/admin/alertas", label: "Alertas", icon: Bell },
       { href: "/admin/distribution", label: "Distribuição", icon: Radio },
     ],

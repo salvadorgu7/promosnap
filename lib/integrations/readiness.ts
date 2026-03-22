@@ -291,6 +291,40 @@ export function checkDiscordReadiness(): IntegrationReadiness {
 }
 
 export function checkWhatsAppReadiness(): IntegrationReadiness {
+  // Evolution API v2 (prioridade)
+  const hasEvoUrl = envPresent('EVOLUTION_API_URL')
+  const hasEvoKey = envPresent('EVOLUTION_API_KEY')
+
+  if (hasEvoUrl && hasEvoKey) {
+    return {
+      key: 'whatsapp',
+      name: 'WhatsApp (Evolution API)',
+      status: 'READY_PRODUCTION',
+      summary: 'Evolution API v2 configurada — conecte via QR code em Admin → WhatsApp',
+      missingRequirements: [],
+      warnings: [],
+      nextSteps: ['Abrir Admin → WhatsApp para conectar via QR code'],
+      testable: true,
+    }
+  }
+
+  if (hasEvoUrl || hasEvoKey) {
+    const missing = []
+    if (!hasEvoUrl) missing.push('EVOLUTION_API_URL')
+    if (!hasEvoKey) missing.push('EVOLUTION_API_KEY')
+    return {
+      key: 'whatsapp',
+      name: 'WhatsApp (Evolution API)',
+      status: 'CONFIG_PARTIAL',
+      summary: 'Evolution API parcialmente configurada',
+      missingRequirements: missing,
+      warnings: [],
+      nextSteps: missing.map(v => `Definir ${v} nas variáveis de ambiente`),
+      testable: false,
+    }
+  }
+
+  // WA Business API (fallback)
   const hasUrl = envPresent('WHATSAPP_API_URL')
   const hasToken = envPresent('WHATSAPP_API_TOKEN')
 
@@ -301,7 +335,7 @@ export function checkWhatsAppReadiness(): IntegrationReadiness {
       status: 'READY_PRODUCTION',
       summary: 'API configurada com URL e token',
       missingRequirements: [],
-      warnings: [],
+      warnings: ['Considere migrar para Evolution API v2 (QR code, sem provider externo)'],
       nextSteps: [],
       testable: true,
     }
@@ -320,17 +354,17 @@ export function checkWhatsAppReadiness(): IntegrationReadiness {
     }
   }
 
-  // Preview mode
+  // Não configurado
   return {
     key: 'whatsapp',
     name: 'WhatsApp',
     status: 'NOT_CONFIGURED',
-    summary: 'Modo preview — mensagens so podem ser copiadas manualmente',
-    missingRequirements: ['WHATSAPP_API_TOKEN'],
+    summary: 'Nenhum provider configurado — configure Evolution API ou WA Business API',
+    missingRequirements: ['EVOLUTION_API_URL + EVOLUTION_API_KEY (recomendado)'],
     warnings: [],
     nextSteps: [
-      'Configurar provider WhatsApp (Twilio, MessageBird, etc.)',
-      'Definir WHATSAPP_API_URL e WHATSAPP_API_TOKEN',
+      'Configurar Evolution API v2 (EVOLUTION_API_URL + EVOLUTION_API_KEY)',
+      'Ou configurar WA Business API (WHATSAPP_API_URL + WHATSAPP_API_TOKEN)',
     ],
     testable: false,
   }
