@@ -6,9 +6,11 @@ import SearchAnalytics from "@/components/analytics/SearchAnalytics";
 import RelatedSearches from "@/components/ui/RelatedSearches";
 import ZeroResultActions from "@/components/search/ZeroResultActions";
 import SpellSuggestion from "@/components/search/SpellSuggestion";
+import ExpandedResults from "@/components/search/ExpandedResults";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getBaseUrl } from "@/lib/seo/url";
 import { searchListings } from "@/lib/db/queries";
+import { getFlag } from "@/lib/config/feature-flags";
 
 const APP_URL = getBaseUrl();
 import { formatPrice } from "@/lib/utils";
@@ -155,6 +157,36 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
     : { products: [], total: 0 };
 
   const totalPages = Math.ceil(total / limit);
+
+  // ── Busca Ampliada (expanded search) — only when FF enabled ──────────
+  let expandedData: { results: any[]; framing?: string; coverageScore: number } | null = null;
+  if (query && getFlag('expandedSearch') && page === 1) {
+    try {
+      const { expandedSearch } = await import('@/lib/search/expanded')
+      const expanded = await expandedSearch({
+        query,
+        page: 1,
+        limit,
+        category,
+        brand: undefined,
+        source,
+        minPrice,
+        maxPrice,
+        sortBy: (sort as any) || 'relevance',
+      })
+      // Only show expanded results if there are actual external results
+      if (expanded.expandedResults.length > 0) {
+        expandedData = {
+          results: expanded.expandedResults,
+          framing: expanded.expandedFraming,
+          coverageScore: expanded.coverage.coverageScore,
+        }
+      }
+    } catch (err) {
+      // Expanded search failure is non-critical — internal results still show
+      console.error('[busca] expanded search failed:', err)
+    }
+  }
 
   // Active filters
   const activeFilters: { label: string; clearUrl: string }[] = [];
@@ -485,6 +517,15 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                 ))}
               </div>
 
+              {/* Expanded results — external marketplace results */}
+              {expandedData && (
+                <ExpandedResults
+                  results={expandedData.results}
+                  framing={expandedData.framing}
+                  coverageScore={expandedData.coverageScore}
+                />
+              )}
+
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-8">
@@ -536,13 +577,27 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             </>
           ) : query ? (
             <>
-              <EmptyState
-                icon={Search}
-                title="Nenhum resultado encontrado"
-                description={`Não encontramos ofertas para "${query}". Tente buscar com termos diferentes, verificar a ortografia ou remover filtros aplicados.`}
-                ctaLabel="Limpar filtros"
-                ctaHref={`/busca?q=${encodeURIComponent(query)}`}
-              />
+              {/* Even with zero internal results, expanded search may have found matches */}
+              {expandedData ? (
+                <div>
+                  <p className="text-sm text-text-muted mb-2">
+                    Não encontramos no catálogo, mas encontramos opções em lojas parceiras:
+                  </p>
+                  <ExpandedResults
+                    results={expandedData.results}
+                    framing={expandedData.framing}
+                    coverageScore={expandedData.coverageScore}
+                  />
+                </div>
+              ) : (
+                <EmptyState
+                  icon={Search}
+                  title="Nenhum resultado encontrado"
+                  description={`Não encontramos ofertas para "${query}". Tente buscar com termos diferentes, verificar a ortografia ou remover filtros aplicados.`}
+                  ctaLabel="Limpar filtros"
+                  ctaHref={`/busca?q=${encodeURIComponent(query)}`}
+                />
+              )}
               <SpellSuggestion query={query} />
               <ZeroResultActions query={query} />
             </>

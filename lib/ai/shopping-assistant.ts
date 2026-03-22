@@ -16,6 +16,7 @@
 
 import { logger } from '@/lib/logger'
 import { buildAffiliateUrl } from '@/lib/affiliate'
+import { getFlag } from '@/lib/config/feature-flags'
 import { classifyIntent, getIntentTone } from './intent-classifier'
 import { buildIntentPromptSection } from './response-composer'
 import { trackAssistantInteraction } from './assistant-metrics'
@@ -269,13 +270,14 @@ export async function processShoppingQuery(
     })
 
     // ── Pre-fetch results BEFORE calling AI (saves 1 round trip) ──────────
-    const [localResults, shoppingResults, marketplaceResults] = await Promise.all([
+    const [localResults, shoppingResults, marketplaceResults, expandedResults] = await Promise.all([
       executeLocalSearch(userMessage, intent.categories?.[0], intent.budget?.max, Math.max(intentTone.maxItems, 8)).catch(() => []),
       executeGoogleShoppingSearch(userMessage, intent.budget?.max, 10).catch(() => []),
       executeMarketplaceSearch(userMessage, intent.budget?.max, 8).catch(() => []),
+      executeExpandedSearch(userMessage, intent.budget?.max, intent.categories?.[0]).catch(() => []),
     ])
 
-    const merged = deduplicateProducts([...localResults, ...shoppingResults, ...marketplaceResults])
+    const merged = deduplicateProducts([...localResults, ...shoppingResults, ...marketplaceResults, ...expandedResults])
     // Enforce budget: remove products above maxPrice (API filters may fail)
     const budgetFiltered = intent.budget?.max
       ? merged.filter(p => !p.price || p.price <= intent.budget!.max!)
@@ -707,6 +709,61 @@ async function executeMarketplaceSearch(
     return resolved.slice(0, limit).map(candidateToAssistantProduct)
   } catch (err) {
     log.error('marketplace-search.failed', { query, error: err })
+    return []
+  }
+}
+
+// ── Expanded Search (Busca Ampliada) ────────────────────────────────────
+
+/**
+ * Uses the expanded search pipeline to find external results when FF_EXPANDED_SEARCH is enabled.
+ * Returns results as AssistantProduct[] for seamless integration with existing flow.
+ * If the feature flag is off or the pipeline fails, returns empty array (non-blocking).
+ */
+async function executeExpandedSearch(
+  query: string,
+  maxPrice?: number,
+  category?: string,
+): Promise<AssistantProduct[]> {
+  // Gate on feature flag — returns [] if not enabled
+  if (!getFlag('expandedSearch')) return []
+
+  try {
+    const { expandedSearch } = await import('@/lib/search/expanded')
+
+    const result = await expandedSearch({
+      query,
+      page: 1,
+      limit: 12,
+      category,
+      maxPrice,
+      sortBy: 'relevance',
+    })
+
+    // Only take external results (internal are already covered by executeLocalSearch)
+    if (result.expandedResults.length === 0) return []
+
+    log.info('expanded-search.assistant', {
+      query,
+      expanded: result.expandedResults.length,
+      coverage: result.coverage.coverageScore,
+    })
+
+    return result.expandedResults.map(r => ({
+      name: r.title,
+      price: r.price,
+      originalPrice: r.originalPrice,
+      discount: r.discount,
+      source: r.storeName,
+      url: r.href,
+      affiliateUrl: r.affiliateUrl,
+      imageUrl: r.imageUrl,
+      isFromCatalog: false,
+      confidence: r.affiliateStatus === 'verified' ? 'resolved' as const : 'raw' as const,
+      monetization: r.affiliateStatus as MonetizationStatus,
+    }))
+  } catch (err) {
+    log.error('expanded-search.assistant.failed', { query, error: err })
     return []
   }
 }
