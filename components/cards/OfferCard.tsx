@@ -5,6 +5,7 @@ import { ExternalLink, Star, ShieldCheck, Store, Truck, Flame as FireIcon, Thumb
 import { formatPrice } from "@/lib/utils";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import FavoriteButton from "@/components/ui/FavoriteButton";
+import ShareOfferButton from "@/components/ui/ShareOfferButton";
 import ShippingBadge from "@/components/product/ShippingBadge";
 import { analytics } from "@/lib/analytics/events";
 import type { ProductCard, Badge } from "@/types";
@@ -109,6 +110,16 @@ export default function OfferCard({ product, railSource, page, position }: { pro
             height={300}
           />
           <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+            <ShareOfferButton
+              productName={product.name}
+              productSlug={product.slug}
+              productId={product.id}
+              price={bestOffer.price}
+              originalPrice={bestOffer.originalPrice}
+              discount={discount}
+              sourceName={bestOffer.sourceName}
+              size="sm"
+            />
             <FavoriteButton productId={product.id} size="sm" />
             <ScorePill score={bestOffer.offerScore} />
           </div>

@@ -188,8 +188,8 @@ export interface MetricAlert {
  * Compute all KPIs from delivery log data.
  * Uses estimation when real click data isn't available.
  */
-export function computeKPIs(): BroadcastKPIs {
-  const history = getDeliveryHistory(200)
+export async function computeKPIs(): Promise<BroadcastKPIs> {
+  const history = await getDeliveryHistory(200)
   const sentEntries = history.filter(h => h.status === "sent" && !h.dryRun)
   const failedEntries = history.filter(h => h.status === "failed")
 
@@ -555,8 +555,8 @@ function generateAlerts(
 /**
  * Get complete metrics dashboard data.
  */
-export function getMetricsDashboard() {
-  const kpis = computeKPIs()
+export async function getMetricsDashboard() {
+  const kpis = await computeKPIs()
   return {
     kpis,
     summary: {

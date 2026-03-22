@@ -2,6 +2,8 @@
 
 import { ExternalLink, Heart, Share2, ShieldCheck, Zap, Bell } from "lucide-react";
 import { useState, useEffect } from "react";
+import { formatPrice } from "@/lib/utils";
+import { analytics } from "@/lib/analytics/events";
 import { logger } from "@/lib/logger"
 
 interface MobileProductActionsProps {
@@ -12,6 +14,7 @@ interface MobileProductActionsProps {
   productName: string;
   discount?: number;
   offerScore?: number;
+  originalPrice?: number;
 }
 
 export default function MobileProductActions({
@@ -22,6 +25,7 @@ export default function MobileProductActions({
   productName,
   discount,
   offerScore = 0,
+  originalPrice,
 }: MobileProductActionsProps) {
   const [isFavorited, setIsFavorited] = useState(false);
 
@@ -48,17 +52,41 @@ export default function MobileProductActions({
   };
 
   const handleShare = async () => {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br";
+    const productUrl = `${appUrl}/produto/${productSlug}?utm_source=share&utm_medium=whatsapp`;
+
+    const shareText = [
+      `🔥 ${productName}`,
+      `💰 ${formatPrice(price)}${discount && discount > 0 ? ` (-${discount}%)` : ""}`,
+      originalPrice && originalPrice > price ? `De: ${formatPrice(originalPrice)}` : null,
+      `📦 ${sourceName}`,
+      ``,
+      `👉 ${productUrl}`,
+    ].filter(Boolean).join("\n");
+
+    analytics.shareClick({
+      contentType: "product",
+      contentId: productSlug,
+      method: "whatsapp_mobile",
+    });
+
+    // Em mobile, tentar Web Share API primeiro (abre sheet nativo do sistema)
     try {
       if (navigator.share) {
         await navigator.share({
           title: productName,
-          text: `${productName} por R$ ${price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} no ${sourceName}`,
-          url: window.location.href,
+          text: `${productName} por ${formatPrice(price)}${discount ? ` (-${discount}%)` : ""} no ${sourceName}`,
+          url: productUrl,
         });
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
+        return;
       }
-    } catch (err) { logger.debug("mobile-actions.failed", { error: err }) }
+    } catch {
+      // Cancelado — fallback para WhatsApp direto
+    }
+
+    // Fallback: abrir WhatsApp diretamente
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   const clickoutUrl = `/api/clickout/${offerId}?page=product&product=${productSlug}&origin=mobile_bar`;
@@ -108,9 +136,11 @@ export default function MobileProductActions({
           <Heart className={`w-4 h-4 ${isFavorited ? "fill-current" : ""}`} />
         </button>
 
+        {/* Share — WhatsApp branding para dar relevancia */}
         <button
           onClick={handleShare}
-          className="p-2 rounded-lg border border-surface-200 bg-surface-50 text-text-muted"
+          className="p-2 rounded-lg border border-[#25D366]/30 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+          aria-label="Compartilhar no WhatsApp"
         >
           <Share2 className="w-4 h-4" />
         </button>

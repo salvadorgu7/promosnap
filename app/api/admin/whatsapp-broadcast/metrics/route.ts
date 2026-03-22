@@ -24,27 +24,27 @@ export async function GET(req: NextRequest) {
     const view = req.nextUrl.searchParams.get("view")
 
     if (view === "kpis") {
-      const kpis = computeKPIs()
+      const kpis = await computeKPIs()
       return NextResponse.json({ kpis })
     }
 
     if (view === "alerts") {
-      const kpis = computeKPIs()
+      const kpis = await computeKPIs()
       return NextResponse.json({ alerts: kpis.alerts })
     }
 
     if (view === "campaigns") {
-      const kpis = computeKPIs()
+      const kpis = await computeKPIs()
       return NextResponse.json({ campaigns: kpis.campaignScoreboards })
     }
 
     if (view === "templates") {
-      const kpis = computeKPIs()
+      const kpis = await computeKPIs()
       return NextResponse.json({ templates: kpis.templateScoreboards })
     }
 
     // Default: full dashboard
-    return NextResponse.json(getMetricsDashboard())
+    return NextResponse.json(await getMetricsDashboard())
   } catch (error) {
     logger.error("wa-broadcast.metrics.get-failed", { error })
     return NextResponse.json({ error: "Falha ao carregar metricas" }, { status: 500 })

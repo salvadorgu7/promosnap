@@ -3,7 +3,6 @@ import { validateAdmin } from "@/lib/auth/admin"
 import { logger } from "@/lib/logger"
 import {
   getAllChannels,
-  getChannel,
   createChannel,
   updateChannel,
   deleteChannel,
@@ -21,11 +20,13 @@ export async function GET(req: NextRequest) {
   if (denied) return denied
 
   try {
-    const channels = getAllChannels()
-    const data = channels.map(ch => ({
-      ...ch,
-      campaigns: getCampaignsForChannel(ch.id),
-    }))
+    const channels = await getAllChannels()
+    const data = await Promise.all(
+      channels.map(async ch => ({
+        ...ch,
+        campaigns: await getCampaignsForChannel(ch.id),
+      }))
+    )
 
     return NextResponse.json({ channels: data })
   } catch (error) {
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     // Update existing
     if (body.id) {
-      const updated = updateChannel(body.id, body)
+      const updated = await updateChannel(body.id, body)
       if (!updated) {
         return NextResponse.json({ error: "Canal nao encontrado" }, { status: 404 })
       }
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const channel = createChannel({
+    const channel = await createChannel({
       name: body.name,
       destinationId: body.destinationId,
       isActive: body.isActive ?? true,
@@ -101,7 +102,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "id obrigatorio" }, { status: 400 })
   }
 
-  const deleted = deleteChannel(id)
+  const deleted = await deleteChannel(id)
   if (!deleted) {
     return NextResponse.json({ error: "Canal nao encontrado" }, { status: 404 })
   }

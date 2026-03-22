@@ -4,10 +4,31 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 // WhatsApp Broadcast Engine — Unit Tests
 // ============================================
 
-// Mock Prisma
+// Mock Prisma (DB calls fall back to in-memory)
 vi.mock("@/lib/db/prisma", () => ({
   default: {
     offer: { findMany: vi.fn().mockResolvedValue([]) },
+    waChannel: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findUnique: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockRejectedValue(new Error("mock")),
+      update: vi.fn().mockRejectedValue(new Error("mock")),
+      delete: vi.fn().mockRejectedValue(new Error("mock")),
+      updateMany: vi.fn().mockRejectedValue(new Error("mock")),
+    },
+    waCampaign: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findUnique: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockRejectedValue(new Error("mock")),
+      update: vi.fn().mockRejectedValue(new Error("mock")),
+      delete: vi.fn().mockRejectedValue(new Error("mock")),
+    },
+    waDeliveryLog: {
+      create: vi.fn().mockRejectedValue(new Error("mock")),
+      findMany: vi.fn().mockRejectedValue(new Error("mock")),
+      findFirst: vi.fn().mockRejectedValue(new Error("mock")),
+      count: vi.fn().mockRejectedValue(new Error("mock")),
+    },
   },
 }))
 
@@ -307,7 +328,6 @@ describe("Composer", () => {
 
 describe("Fatigue Guard", () => {
   beforeEach(async () => {
-    // Reset module state
     vi.resetModules()
   })
 
@@ -315,8 +335,6 @@ describe("Fatigue Guard", () => {
     const { isQuietHours } = await import("@/lib/whatsapp-broadcast/fatigue-guard")
 
     // 22-07 range: quiet from 22 to 7
-    // We can't easily test this without mocking Date,
-    // but we can test the logic with known inputs
     expect(typeof isQuietHours).toBe("function")
   })
 
@@ -328,12 +346,12 @@ describe("Fatigue Guard", () => {
       { offerId: "off2", channelId: "ch1", sentAt: new Date(), productName: "Test2", category: null, marketplace: "shopee" },
     ])
 
-    const recent = getRecentOfferIds("ch1", 1)
+    const recent = await getRecentOfferIds("ch1", 1)
     expect(recent).toContain("off1")
     expect(recent).toContain("off2")
 
     // Different channel should not see these
-    const otherRecent = getRecentOfferIds("ch2", 1)
+    const otherRecent = await getRecentOfferIds("ch2", 1)
     expect(otherRecent).toHaveLength(0)
   })
 
@@ -341,7 +359,7 @@ describe("Fatigue Guard", () => {
     const { checkFatigue } = await import("@/lib/whatsapp-broadcast/fatigue-guard")
 
     // Fresh channel — should be allowed
-    const result = checkFatigue("ch_new", 3, null, null, "America/Sao_Paulo", 120)
+    const result = await checkFatigue("ch_new", 3, null, null, "America/Sao_Paulo", 120)
     expect(result.allowed).toBe(true)
     expect(result.reasons).toHaveLength(0)
   })
@@ -404,19 +422,19 @@ describe("Delivery Log", () => {
       templateKey: "test_key",
     }
 
-    recordDelivery({
+    await recordDelivery({
       channelId: "ch1",
       channelName: "Test Channel",
       status: "sent",
       message: mockMessage,
     })
 
-    const history = getDeliveryHistory(10)
+    const history = await getDeliveryHistory(10)
     expect(history.length).toBeGreaterThan(0)
     expect(history[0].channelName).toBe("Test Channel")
     expect(history[0].status).toBe("sent")
 
-    const stats = getDeliveryStats()
+    const stats = await getDeliveryStats()
     expect(stats.sent).toBeGreaterThan(0)
   })
 })
@@ -425,7 +443,7 @@ describe("Channel Registry", () => {
   it("provides default channel", async () => {
     const { getAllChannels } = await import("@/lib/whatsapp-broadcast/channel-registry")
 
-    const channels = getAllChannels()
+    const channels = await getAllChannels()
     expect(channels.length).toBeGreaterThan(0)
     expect(channels[0].name).toBe("PromoSnap Ofertas")
     expect(channels[0].isActive).toBe(true)
@@ -434,7 +452,7 @@ describe("Channel Registry", () => {
   it("provides default campaigns", async () => {
     const { getAllCampaigns } = await import("@/lib/whatsapp-broadcast/channel-registry")
 
-    const campaigns = getAllCampaigns()
+    const campaigns = await getAllCampaigns()
     expect(campaigns.length).toBe(3)
 
     const names = campaigns.map(c => c.name)
@@ -446,7 +464,7 @@ describe("Channel Registry", () => {
   it("creates and retrieves custom channel", async () => {
     const { createChannel, getChannel } = await import("@/lib/whatsapp-broadcast/channel-registry")
 
-    const channel = createChannel({
+    const channel = await createChannel({
       name: "Tech Deals",
       destinationId: "999@g.us",
       isActive: true,
@@ -469,7 +487,7 @@ describe("Channel Registry", () => {
     expect(channel.id).toBeTruthy()
     expect(channel.name).toBe("Tech Deals")
 
-    const retrieved = getChannel(channel.id)
+    const retrieved = await getChannel(channel.id)
     expect(retrieved).not.toBeNull()
     expect(retrieved!.name).toBe("Tech Deals")
   })

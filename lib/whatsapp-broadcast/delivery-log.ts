@@ -1,9 +1,10 @@
 // ============================================
 // WhatsApp Broadcast — Delivery Log & Audit Trail
-// Tracks all sends, previews, and dry-runs
+// DB-backed (Prisma) with in-memory fallback
 // ============================================
 
 import { logger } from "@/lib/logger"
+import prisma from "@/lib/db/prisma"
 import type {
   DeliveryLogEntry,
   DeliveryStatus,
@@ -14,17 +15,38 @@ import type {
 const log = logger.child({ module: "wa-broadcast.delivery-log" })
 
 // ============================================
-// In-memory log (persistent via DB in future)
+// In-memory fallback (when DB unavailable)
 // ============================================
 
-const deliveryLogs: DeliveryLogEntry[] = []
-let logCounter = 0
-const MAX_LOGS = 200
+const fallbackLogs: DeliveryLogEntry[] = []
+const MAX_FALLBACK_LOGS = 200
+
+function dbToLogEntry(row: any): DeliveryLogEntry {
+  return {
+    id: row.id,
+    channelId: row.channelId,
+    channelName: row.channelName,
+    campaignId: row.campaignId,
+    campaignName: row.campaignName,
+    status: row.status as DeliveryStatus,
+    messageText: row.messageText,
+    offerIds: row.offerIds || [],
+    offerCount: row.offerCount,
+    templateUsed: row.templateUsed || "",
+    openingUsed: row.openingUsed || "",
+    ctaUsed: row.ctaUsed || "",
+    providerResponse: row.providerResponse as Record<string, unknown> | null,
+    errorMessage: row.errorMessage,
+    dryRun: row.dryRun,
+    sentAt: row.sentAt,
+    createdAt: row.createdAt,
+  }
+}
 
 /**
  * Record a delivery attempt.
  */
-export function recordDelivery(params: {
+export async function recordDelivery(params: {
   channelId: string
   channelName: string
   campaignId?: string | null
@@ -33,9 +55,8 @@ export function recordDelivery(params: {
   message: ComposedMessage
   sendResult?: WaSendResult | null
   dryRun?: boolean
-}): DeliveryLogEntry {
-  const entry: DeliveryLogEntry = {
-    id: `wa_log_${++logCounter}_${Date.now()}`,
+}): Promise<DeliveryLogEntry> {
+  const entryData = {
     channelId: params.channelId,
     channelName: params.channelName,
     campaignId: params.campaignId || null,
@@ -47,53 +68,85 @@ export function recordDelivery(params: {
     templateUsed: params.message.templateKey,
     openingUsed: params.message.opening,
     ctaUsed: params.message.cta,
-    providerResponse: params.sendResult?.providerResponse || null,
+    providerResponse: (params.sendResult?.providerResponse as any) || null,
     errorMessage: params.sendResult?.error || null,
     dryRun: params.dryRun || false,
     sentAt: params.status === "sent" ? new Date() : null,
-    createdAt: new Date(),
   }
 
-  deliveryLogs.unshift(entry)
-  if (deliveryLogs.length > MAX_LOGS) {
-    deliveryLogs.length = MAX_LOGS
+  try {
+    const row = await prisma.waDeliveryLog.create({ data: entryData })
+
+    log.info("delivery-log.recorded", {
+      id: row.id,
+      channelId: row.channelId,
+      status: row.status,
+      offerCount: row.offerCount,
+      dryRun: row.dryRun,
+    })
+
+    return dbToLogEntry(row)
+  } catch (err) {
+    log.warn("delivery-log.db-fallback", { error: (err as Error).message })
+
+    // Fallback to in-memory
+    const entry: DeliveryLogEntry = {
+      id: `wa_log_fb_${Date.now()}`,
+      ...entryData,
+      createdAt: new Date(),
+    }
+
+    fallbackLogs.unshift(entry)
+    if (fallbackLogs.length > MAX_FALLBACK_LOGS) {
+      fallbackLogs.length = MAX_FALLBACK_LOGS
+    }
+
+    return entry
   }
-
-  log.info("delivery-log.recorded", {
-    id: entry.id,
-    channelId: entry.channelId,
-    status: entry.status,
-    offerCount: entry.offerCount,
-    dryRun: entry.dryRun,
-  })
-
-  return entry
 }
 
 /**
  * Get delivery history.
  */
-export function getDeliveryHistory(
+export async function getDeliveryHistory(
   limit: number = 50,
   channelId?: string,
   status?: DeliveryStatus,
-): DeliveryLogEntry[] {
-  let filtered = deliveryLogs
+): Promise<DeliveryLogEntry[]> {
+  try {
+    const where: any = {}
+    if (channelId) where.channelId = channelId
+    if (status) where.status = status
 
-  if (channelId) {
-    filtered = filtered.filter(l => l.channelId === channelId)
-  }
-  if (status) {
-    filtered = filtered.filter(l => l.status === status)
-  }
+    const rows = await prisma.waDeliveryLog.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    })
 
-  return filtered.slice(0, limit)
+    // Merge with any fallback logs
+    const dbEntries = rows.map(dbToLogEntry)
+    const fallbackEntries = fallbackLogs
+      .filter(l => (!channelId || l.channelId === channelId) && (!status || l.status === status))
+      .slice(0, limit)
+
+    // Combine and sort by date, take limit
+    return [...dbEntries, ...fallbackEntries]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit)
+  } catch {
+    // Pure fallback
+    let filtered = fallbackLogs
+    if (channelId) filtered = filtered.filter(l => l.channelId === channelId)
+    if (status) filtered = filtered.filter(l => l.status === status)
+    return filtered.slice(0, limit)
+  }
 }
 
 /**
  * Get delivery stats.
  */
-export function getDeliveryStats(): {
+export async function getDeliveryStats(): Promise<{
   total: number
   sent: number
   failed: number
@@ -102,54 +155,121 @@ export function getDeliveryStats(): {
   todayFailed: number
   byChannel: Record<string, { sent: number; failed: number }>
   byCampaign: Record<string, { sent: number; failed: number }>
-} {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+}> {
+  try {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-  const stats = {
-    total: deliveryLogs.length,
-    sent: 0,
-    failed: 0,
-    dryRun: 0,
-    todaySent: 0,
-    todayFailed: 0,
-    byChannel: {} as Record<string, { sent: number; failed: number }>,
-    byCampaign: {} as Record<string, { sent: number; failed: number }>,
-  }
+    const [allLogs, todayLogs] = await Promise.all([
+      prisma.waDeliveryLog.findMany({
+        select: {
+          status: true,
+          dryRun: true,
+          channelName: true,
+          channelId: true,
+          campaignName: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 1000,
+      }),
+      prisma.waDeliveryLog.findMany({
+        where: { createdAt: { gte: today } },
+        select: { status: true },
+      }),
+    ])
 
-  for (const entry of deliveryLogs) {
-    if (entry.status === "sent") stats.sent++
-    if (entry.status === "failed") stats.failed++
-    if (entry.dryRun) stats.dryRun++
+    const stats = {
+      total: allLogs.length,
+      sent: 0,
+      failed: 0,
+      dryRun: 0,
+      todaySent: 0,
+      todayFailed: 0,
+      byChannel: {} as Record<string, { sent: number; failed: number }>,
+      byCampaign: {} as Record<string, { sent: number; failed: number }>,
+    }
 
-    if (entry.createdAt >= today) {
+    for (const entry of allLogs) {
+      if (entry.status === "sent") stats.sent++
+      if (entry.status === "failed") stats.failed++
+      if (entry.dryRun) stats.dryRun++
+
+      const chKey = entry.channelName || entry.channelId
+      if (!stats.byChannel[chKey]) stats.byChannel[chKey] = { sent: 0, failed: 0 }
+      if (entry.status === "sent") stats.byChannel[chKey].sent++
+      if (entry.status === "failed") stats.byChannel[chKey].failed++
+
+      if (entry.campaignName) {
+        if (!stats.byCampaign[entry.campaignName]) stats.byCampaign[entry.campaignName] = { sent: 0, failed: 0 }
+        if (entry.status === "sent") stats.byCampaign[entry.campaignName].sent++
+        if (entry.status === "failed") stats.byCampaign[entry.campaignName].failed++
+      }
+    }
+
+    for (const entry of todayLogs) {
       if (entry.status === "sent") stats.todaySent++
       if (entry.status === "failed") stats.todayFailed++
     }
 
-    // By channel
-    const chKey = entry.channelName || entry.channelId
-    if (!stats.byChannel[chKey]) stats.byChannel[chKey] = { sent: 0, failed: 0 }
-    if (entry.status === "sent") stats.byChannel[chKey].sent++
-    if (entry.status === "failed") stats.byChannel[chKey].failed++
+    return stats
+  } catch {
+    // Fallback to in-memory
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-    // By campaign
-    if (entry.campaignName) {
-      if (!stats.byCampaign[entry.campaignName]) stats.byCampaign[entry.campaignName] = { sent: 0, failed: 0 }
-      if (entry.status === "sent") stats.byCampaign[entry.campaignName].sent++
-      if (entry.status === "failed") stats.byCampaign[entry.campaignName].failed++
+    const stats = {
+      total: fallbackLogs.length,
+      sent: 0,
+      failed: 0,
+      dryRun: 0,
+      todaySent: 0,
+      todayFailed: 0,
+      byChannel: {} as Record<string, { sent: number; failed: number }>,
+      byCampaign: {} as Record<string, { sent: number; failed: number }>,
     }
-  }
 
-  return stats
+    for (const entry of fallbackLogs) {
+      if (entry.status === "sent") stats.sent++
+      if (entry.status === "failed") stats.failed++
+      if (entry.dryRun) stats.dryRun++
+
+      if (entry.createdAt >= today) {
+        if (entry.status === "sent") stats.todaySent++
+        if (entry.status === "failed") stats.todayFailed++
+      }
+
+      const chKey = entry.channelName || entry.channelId
+      if (!stats.byChannel[chKey]) stats.byChannel[chKey] = { sent: 0, failed: 0 }
+      if (entry.status === "sent") stats.byChannel[chKey].sent++
+      if (entry.status === "failed") stats.byChannel[chKey].failed++
+
+      if (entry.campaignName) {
+        if (!stats.byCampaign[entry.campaignName]) stats.byCampaign[entry.campaignName] = { sent: 0, failed: 0 }
+        if (entry.status === "sent") stats.byCampaign[entry.campaignName].sent++
+        if (entry.status === "failed") stats.byCampaign[entry.campaignName].failed++
+      }
+    }
+
+    return stats
+  }
 }
 
 /**
  * Get the last send time for a channel.
  */
-export function getLastSendTime(channelId: string): Date | null {
-  const last = deliveryLogs.find(
-    l => l.channelId === channelId && l.status === "sent" && !l.dryRun
-  )
-  return last?.sentAt || null
+export async function getLastSendTime(channelId: string): Promise<Date | null> {
+  try {
+    const row = await prisma.waDeliveryLog.findFirst({
+      where: { channelId, status: "sent", dryRun: false },
+      orderBy: { sentAt: "desc" },
+      select: { sentAt: true },
+    })
+    return row?.sentAt || null
+  } catch {
+    const last = fallbackLogs.find(
+      l => l.channelId === channelId && l.status === "sent" && !l.dryRun
+    )
+    return last?.sentAt || null
+  }
 }

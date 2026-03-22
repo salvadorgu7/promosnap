@@ -935,6 +935,102 @@ enum ReviewStatus {
 }
 
 // ============================================
+// WHATSAPP BROADCAST
+// ============================================
+
+model WaChannel {
+  id                  String   @id @default(cuid())
+  name                String
+  destinationId       String
+  isActive            Boolean  @default(true)
+  timezone            String   @default("America/Sao_Paulo")
+  quietHoursStart     Int?
+  quietHoursEnd       Int?
+  dailyLimit          Int      @default(3)
+  windowLimit         Int      @default(1)
+  defaultOfferCount   Int      @default(5)
+  groupType           String   @default("geral")
+  tags                String[] @default([])
+  categoriesInclude   String[] @default([])
+  categoriesExclude   String[] @default([])
+  marketplacesInclude String[] @default([])
+  marketplacesExclude String[] @default([])
+  templateMode        String   @default("radar")
+  tonality            String   @default("curadoria")
+  sentToday           Int      @default(0)
+  lastSentAt          DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  campaigns    WaCampaign[]
+  deliveryLogs WaDeliveryLog[]
+
+  @@index([isActive])
+  @@map("wa_channels")
+}
+
+model WaCampaign {
+  id                    String   @id @default(cuid())
+  channelId             String
+  name                  String
+  campaignType          String   @default("scheduled")
+  schedule              String?
+  isActive              Boolean  @default(true)
+  offerCount            Int      @default(5)
+  minScore              Int      @default(50)
+  minDiscount           Int?
+  maxTicket             Float?
+  minTicket             Float?
+  categorySlugs         String[] @default([])
+  marketplaces          String[] @default([])
+  requireImage          Boolean  @default(true)
+  requireAffiliate      Boolean  @default(true)
+  prioritizeTopSellers  Boolean  @default(true)
+  structureType         String   @default("radar")
+  lastRunAt             DateTime?
+  totalSent             Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  channel      WaChannel       @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  deliveryLogs WaDeliveryLog[]
+
+  @@index([channelId])
+  @@index([isActive])
+  @@map("wa_campaigns")
+}
+
+model WaDeliveryLog {
+  id               String   @id @default(cuid())
+  channelId        String
+  channelName      String
+  campaignId       String?
+  campaignName     String?
+  status           String   @default("queued")
+  messageText      String
+  offerIds         String[] @default([])
+  offerCount       Int      @default(0)
+  templateUsed     String?
+  openingUsed      String?
+  ctaUsed          String?
+  providerResponse Json?
+  errorMessage     String?
+  dryRun           Boolean  @default(false)
+  sentAt           DateTime?
+  createdAt        DateTime @default(now())
+
+  channel  WaChannel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  campaign WaCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([channelId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([campaignId])
+  @@index([sentAt(sort: Desc)])
+  @@index([dryRun, status])
+  @@map("wa_delivery_logs")
+}
+
+// ============================================
 // PRICE INDEX — monthly market reports
 // ============================================
 

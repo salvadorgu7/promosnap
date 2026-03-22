@@ -1,31 +1,26 @@
 // ============================================
 // WhatsApp Broadcast — Channel Registry
-// In-memory channel management (DB-backed in future via SystemSetting)
+// DB-backed (Prisma) with in-memory fallback
 // ============================================
 
 import { logger } from "@/lib/logger"
+import prisma from "@/lib/db/prisma"
 import type { BroadcastChannel, BroadcastCampaign, GroupType, MessageStructure, MessageTonality } from "./types"
 
 const log = logger.child({ module: "wa-broadcast.channel-registry" })
 
 // ============================================
-// In-memory store (will be persisted via SystemSetting)
+// In-memory fallback (used when DB unavailable)
 // ============================================
 
-const channels = new Map<string, BroadcastChannel>()
-const campaigns = new Map<string, BroadcastCampaign>()
-
-let channelCounter = 0
-let campaignCounter = 0
-
-// ============================================
-// Default channel — PromoSnap main group
-// ============================================
+const fallbackChannels = new Map<string, BroadcastChannel>()
+const fallbackCampaigns = new Map<string, BroadcastCampaign>()
+let fallbackMode = false
 
 const DEFAULT_GROUP_ID = process.env.WHATSAPP_GROUP_ID || "120363424471768330@g.us"
 
-function ensureDefaultChannel(): void {
-  if (channels.size > 0) return
+function ensureFallbackDefaults(): void {
+  if (fallbackChannels.size > 0) return
 
   const defaultChannel: BroadcastChannel = {
     id: "ch_default",
@@ -51,235 +46,370 @@ function ensureDefaultChannel(): void {
     createdAt: new Date(),
   }
 
-  channels.set(defaultChannel.id, defaultChannel)
+  fallbackChannels.set(defaultChannel.id, defaultChannel)
 
-  // Default campaigns
-  const defaultCampaigns: Omit<BroadcastCampaign, "id" | "createdAt">[] = [
-    {
-      channelId: defaultChannel.id,
-      name: "Radar da Manha",
-      campaignType: "scheduled",
-      schedule: "08:30",
-      isActive: true,
-      offerCount: 5,
-      minScore: 50,
-      minDiscount: null,
-      maxTicket: null,
-      minTicket: null,
-      categorySlugs: [],
-      marketplaces: [],
-      requireImage: true,
-      requireAffiliate: true,
-      prioritizeTopSellers: true,
-      structureType: "radar",
-      lastRunAt: null,
-      totalSent: 0,
-    },
-    {
-      channelId: defaultChannel.id,
-      name: "Achados do Almoco",
-      campaignType: "scheduled",
-      schedule: "12:00",
-      isActive: true,
-      offerCount: 4,
-      minScore: 50,
-      minDiscount: 10,
-      maxTicket: null,
-      minTicket: null,
-      categorySlugs: [],
-      marketplaces: [],
-      requireImage: true,
-      requireAffiliate: true,
-      prioritizeTopSellers: true,
-      structureType: "shortlist",
-      lastRunAt: null,
-      totalSent: 0,
-    },
-    {
-      channelId: defaultChannel.id,
-      name: "Fechamento do Dia",
-      campaignType: "scheduled",
-      schedule: "19:00",
-      isActive: true,
-      offerCount: 3,
-      minScore: 60,
-      minDiscount: 15,
-      maxTicket: null,
-      minTicket: null,
-      categorySlugs: [],
-      marketplaces: [],
-      requireImage: true,
-      requireAffiliate: true,
-      prioritizeTopSellers: true,
-      structureType: "hero",
-      lastRunAt: null,
-      totalSent: 0,
-    },
+  const defaults: Omit<BroadcastCampaign, "id" | "createdAt">[] = [
+    { channelId: "ch_default", name: "Radar da Manha", campaignType: "scheduled", schedule: "08:30", isActive: true, offerCount: 5, minScore: 50, minDiscount: null, maxTicket: null, minTicket: null, categorySlugs: [], marketplaces: [], requireImage: true, requireAffiliate: true, prioritizeTopSellers: true, structureType: "radar", lastRunAt: null, totalSent: 0 },
+    { channelId: "ch_default", name: "Achados do Almoco", campaignType: "scheduled", schedule: "12:00", isActive: true, offerCount: 4, minScore: 50, minDiscount: 10, maxTicket: null, minTicket: null, categorySlugs: [], marketplaces: [], requireImage: true, requireAffiliate: true, prioritizeTopSellers: true, structureType: "shortlist", lastRunAt: null, totalSent: 0 },
+    { channelId: "ch_default", name: "Fechamento do Dia", campaignType: "scheduled", schedule: "19:00", isActive: true, offerCount: 3, minScore: 60, minDiscount: 15, maxTicket: null, minTicket: null, categorySlugs: [], marketplaces: [], requireImage: true, requireAffiliate: true, prioritizeTopSellers: true, structureType: "hero", lastRunAt: null, totalSent: 0 },
   ]
 
-  for (const c of defaultCampaigns) {
-    const id = `camp_${++campaignCounter}`
-    campaigns.set(id, { ...c, id, createdAt: new Date() })
+  let counter = 0
+  for (const c of defaults) {
+    const id = `camp_${++counter}`
+    fallbackCampaigns.set(id, { ...c, id, createdAt: new Date() })
   }
+}
 
-  log.info("channel-registry.defaults-created", {
-    channels: channels.size,
-    campaigns: campaigns.size,
-  })
+// ============================================
+// Prisma → BroadcastChannel mapper
+// ============================================
+
+function dbToChannel(row: any): BroadcastChannel {
+  return {
+    id: row.id,
+    name: row.name,
+    destinationId: row.destinationId,
+    isActive: row.isActive,
+    timezone: row.timezone,
+    quietHoursStart: row.quietHoursStart,
+    quietHoursEnd: row.quietHoursEnd,
+    dailyLimit: row.dailyLimit,
+    windowLimit: row.windowLimit,
+    defaultOfferCount: row.defaultOfferCount,
+    groupType: row.groupType as GroupType,
+    tags: row.tags || [],
+    categoriesInclude: row.categoriesInclude || [],
+    categoriesExclude: row.categoriesExclude || [],
+    marketplacesInclude: row.marketplacesInclude || [],
+    marketplacesExclude: row.marketplacesExclude || [],
+    templateMode: row.templateMode as MessageStructure,
+    tonality: row.tonality as MessageTonality,
+    sentToday: row.sentToday,
+    lastSentAt: row.lastSentAt,
+    createdAt: row.createdAt,
+  }
+}
+
+function dbToCampaign(row: any): BroadcastCampaign {
+  return {
+    id: row.id,
+    channelId: row.channelId,
+    name: row.name,
+    campaignType: row.campaignType as any,
+    schedule: row.schedule,
+    isActive: row.isActive,
+    offerCount: row.offerCount,
+    minScore: row.minScore,
+    minDiscount: row.minDiscount,
+    maxTicket: row.maxTicket,
+    minTicket: row.minTicket,
+    categorySlugs: row.categorySlugs || [],
+    marketplaces: row.marketplaces || [],
+    requireImage: row.requireImage,
+    requireAffiliate: row.requireAffiliate,
+    prioritizeTopSellers: row.prioritizeTopSellers,
+    structureType: row.structureType as MessageStructure,
+    lastRunAt: row.lastRunAt,
+    totalSent: row.totalSent,
+    createdAt: row.createdAt,
+  }
 }
 
 // ============================================
 // Channel CRUD
 // ============================================
 
-export function getAllChannels(): BroadcastChannel[] {
-  ensureDefaultChannel()
-  return Array.from(channels.values())
-}
-
-export function getChannel(id: string): BroadcastChannel | null {
-  ensureDefaultChannel()
-  return channels.get(id) || null
-}
-
-export function getActiveChannels(): BroadcastChannel[] {
-  ensureDefaultChannel()
-  return Array.from(channels.values()).filter(c => c.isActive)
-}
-
-export function createChannel(data: Omit<BroadcastChannel, "id" | "createdAt" | "sentToday" | "lastSentAt">): BroadcastChannel {
-  ensureDefaultChannel()
-  const id = `ch_${++channelCounter}_${Date.now()}`
-  const channel: BroadcastChannel = {
-    ...data,
-    id,
-    sentToday: 0,
-    lastSentAt: null,
-    createdAt: new Date(),
-  }
-  channels.set(id, channel)
-  log.info("channel-registry.channel-created", { id, name: data.name })
-  return channel
-}
-
-export function updateChannel(id: string, updates: Partial<BroadcastChannel>): BroadcastChannel | null {
-  ensureDefaultChannel()
-  const channel = channels.get(id)
-  if (!channel) return null
-
-  const updated = { ...channel, ...updates, id } // Prevent ID override
-  channels.set(id, updated)
-  log.info("channel-registry.channel-updated", { id })
-  return updated
-}
-
-export function deleteChannel(id: string): boolean {
-  const existed = channels.delete(id)
-  if (existed) {
-    // Remove associated campaigns
-    for (const [campId, camp] of campaigns) {
-      if (camp.channelId === id) campaigns.delete(campId)
+export async function getAllChannels(): Promise<BroadcastChannel[]> {
+  try {
+    const rows = await prisma.waChannel.findMany({ orderBy: { createdAt: "asc" } })
+    if (rows.length === 0) {
+      // DB is empty — may need seed (handled by SQL file)
+      ensureFallbackDefaults()
+      return Array.from(fallbackChannels.values())
     }
-    log.info("channel-registry.channel-deleted", { id })
+    return rows.map(dbToChannel)
+  } catch (err) {
+    log.warn("channel-registry.db-fallback", { error: (err as Error).message })
+    fallbackMode = true
+    ensureFallbackDefaults()
+    return Array.from(fallbackChannels.values())
   }
-  return existed
+}
+
+export async function getChannel(id: string): Promise<BroadcastChannel | null> {
+  try {
+    const row = await prisma.waChannel.findUnique({ where: { id } })
+    if (row) return dbToChannel(row)
+    // Fallback check
+    ensureFallbackDefaults()
+    return fallbackChannels.get(id) || null
+  } catch {
+    ensureFallbackDefaults()
+    return fallbackChannels.get(id) || null
+  }
+}
+
+export async function getActiveChannels(): Promise<BroadcastChannel[]> {
+  try {
+    const rows = await prisma.waChannel.findMany({ where: { isActive: true } })
+    if (rows.length === 0) {
+      ensureFallbackDefaults()
+      return Array.from(fallbackChannels.values()).filter(c => c.isActive)
+    }
+    return rows.map(dbToChannel)
+  } catch {
+    ensureFallbackDefaults()
+    return Array.from(fallbackChannels.values()).filter(c => c.isActive)
+  }
+}
+
+export async function createChannel(data: Omit<BroadcastChannel, "id" | "createdAt" | "sentToday" | "lastSentAt">): Promise<BroadcastChannel> {
+  try {
+    const row = await prisma.waChannel.create({
+      data: {
+        name: data.name,
+        destinationId: data.destinationId,
+        isActive: data.isActive,
+        timezone: data.timezone,
+        quietHoursStart: data.quietHoursStart,
+        quietHoursEnd: data.quietHoursEnd,
+        dailyLimit: data.dailyLimit,
+        windowLimit: data.windowLimit,
+        defaultOfferCount: data.defaultOfferCount,
+        groupType: data.groupType,
+        tags: data.tags,
+        categoriesInclude: data.categoriesInclude,
+        categoriesExclude: data.categoriesExclude,
+        marketplacesInclude: data.marketplacesInclude,
+        marketplacesExclude: data.marketplacesExclude,
+        templateMode: data.templateMode,
+        tonality: data.tonality,
+      },
+    })
+    log.info("channel-registry.channel-created", { id: row.id, name: data.name })
+    return dbToChannel(row)
+  } catch (err) {
+    log.error("channel-registry.create-failed", { error: (err as Error).message })
+    // Fallback
+    ensureFallbackDefaults()
+    const id = `ch_fb_${Date.now()}`
+    const channel: BroadcastChannel = { ...data, id, sentToday: 0, lastSentAt: null, createdAt: new Date() }
+    fallbackChannels.set(id, channel)
+    return channel
+  }
+}
+
+export async function updateChannel(id: string, updates: Partial<BroadcastChannel>): Promise<BroadcastChannel | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, createdAt: _ca, ...data } = updates as any
+    const row = await prisma.waChannel.update({ where: { id }, data })
+    log.info("channel-registry.channel-updated", { id })
+    return dbToChannel(row)
+  } catch {
+    ensureFallbackDefaults()
+    const channel = fallbackChannels.get(id)
+    if (!channel) return null
+    const updated = { ...channel, ...updates, id }
+    fallbackChannels.set(id, updated)
+    return updated
+  }
+}
+
+export async function deleteChannel(id: string): Promise<boolean> {
+  try {
+    await prisma.waChannel.delete({ where: { id } })
+    log.info("channel-registry.channel-deleted", { id })
+    return true
+  } catch {
+    const existed = fallbackChannels.delete(id)
+    if (existed) {
+      for (const [campId, camp] of fallbackCampaigns) {
+        if (camp.channelId === id) fallbackCampaigns.delete(campId)
+      }
+    }
+    return existed
+  }
 }
 
 // ============================================
 // Campaign CRUD
 // ============================================
 
-export function getAllCampaigns(): BroadcastCampaign[] {
-  ensureDefaultChannel()
-  return Array.from(campaigns.values())
-}
-
-export function getCampaign(id: string): BroadcastCampaign | null {
-  ensureDefaultChannel()
-  return campaigns.get(id) || null
-}
-
-export function getCampaignsForChannel(channelId: string): BroadcastCampaign[] {
-  ensureDefaultChannel()
-  return Array.from(campaigns.values()).filter(c => c.channelId === channelId)
-}
-
-export function getActiveCampaigns(): BroadcastCampaign[] {
-  ensureDefaultChannel()
-  return Array.from(campaigns.values()).filter(c => c.isActive)
-}
-
-export function createCampaign(data: Omit<BroadcastCampaign, "id" | "createdAt" | "lastRunAt" | "totalSent">): BroadcastCampaign {
-  ensureDefaultChannel()
-  const id = `camp_${++campaignCounter}_${Date.now()}`
-  const campaign: BroadcastCampaign = {
-    ...data,
-    id,
-    lastRunAt: null,
-    totalSent: 0,
-    createdAt: new Date(),
+export async function getAllCampaigns(): Promise<BroadcastCampaign[]> {
+  try {
+    const rows = await prisma.waCampaign.findMany({ orderBy: { createdAt: "asc" } })
+    if (rows.length === 0) {
+      ensureFallbackDefaults()
+      return Array.from(fallbackCampaigns.values())
+    }
+    return rows.map(dbToCampaign)
+  } catch {
+    ensureFallbackDefaults()
+    return Array.from(fallbackCampaigns.values())
   }
-  campaigns.set(id, campaign)
-  log.info("channel-registry.campaign-created", { id, name: data.name, channelId: data.channelId })
-  return campaign
 }
 
-export function updateCampaign(id: string, updates: Partial<BroadcastCampaign>): BroadcastCampaign | null {
-  ensureDefaultChannel()
-  const campaign = campaigns.get(id)
-  if (!campaign) return null
-
-  const updated = { ...campaign, ...updates, id }
-  campaigns.set(id, updated)
-  log.info("channel-registry.campaign-updated", { id })
-  return updated
+export async function getCampaign(id: string): Promise<BroadcastCampaign | null> {
+  try {
+    const row = await prisma.waCampaign.findUnique({ where: { id } })
+    if (row) return dbToCampaign(row)
+    ensureFallbackDefaults()
+    return fallbackCampaigns.get(id) || null
+  } catch {
+    ensureFallbackDefaults()
+    return fallbackCampaigns.get(id) || null
+  }
 }
 
-export function deleteCampaign(id: string): boolean {
-  const existed = campaigns.delete(id)
-  if (existed) log.info("channel-registry.campaign-deleted", { id })
-  return existed
+export async function getCampaignsForChannel(channelId: string): Promise<BroadcastCampaign[]> {
+  try {
+    const rows = await prisma.waCampaign.findMany({ where: { channelId }, orderBy: { createdAt: "asc" } })
+    return rows.map(dbToCampaign)
+  } catch {
+    ensureFallbackDefaults()
+    return Array.from(fallbackCampaigns.values()).filter(c => c.channelId === channelId)
+  }
+}
+
+export async function getActiveCampaigns(): Promise<BroadcastCampaign[]> {
+  try {
+    const rows = await prisma.waCampaign.findMany({ where: { isActive: true } })
+    return rows.map(dbToCampaign)
+  } catch {
+    ensureFallbackDefaults()
+    return Array.from(fallbackCampaigns.values()).filter(c => c.isActive)
+  }
+}
+
+export async function createCampaign(data: Omit<BroadcastCampaign, "id" | "createdAt" | "lastRunAt" | "totalSent">): Promise<BroadcastCampaign> {
+  try {
+    const row = await prisma.waCampaign.create({
+      data: {
+        channelId: data.channelId,
+        name: data.name,
+        campaignType: data.campaignType,
+        schedule: data.schedule,
+        isActive: data.isActive,
+        offerCount: data.offerCount,
+        minScore: data.minScore,
+        minDiscount: data.minDiscount,
+        maxTicket: data.maxTicket,
+        minTicket: data.minTicket,
+        categorySlugs: data.categorySlugs,
+        marketplaces: data.marketplaces,
+        requireImage: data.requireImage,
+        requireAffiliate: data.requireAffiliate,
+        prioritizeTopSellers: data.prioritizeTopSellers,
+        structureType: data.structureType,
+      },
+    })
+    log.info("channel-registry.campaign-created", { id: row.id, name: data.name })
+    return dbToCampaign(row)
+  } catch (err) {
+    log.error("channel-registry.campaign-create-failed", { error: (err as Error).message })
+    ensureFallbackDefaults()
+    const id = `camp_fb_${Date.now()}`
+    const campaign: BroadcastCampaign = { ...data, id, lastRunAt: null, totalSent: 0, createdAt: new Date() }
+    fallbackCampaigns.set(id, campaign)
+    return campaign
+  }
+}
+
+export async function updateCampaign(id: string, updates: Partial<BroadcastCampaign>): Promise<BroadcastCampaign | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, createdAt: _ca, ...data } = updates as any
+    const row = await prisma.waCampaign.update({ where: { id }, data })
+    log.info("channel-registry.campaign-updated", { id })
+    return dbToCampaign(row)
+  } catch {
+    ensureFallbackDefaults()
+    const campaign = fallbackCampaigns.get(id)
+    if (!campaign) return null
+    const updated = { ...campaign, ...updates, id }
+    fallbackCampaigns.set(id, updated)
+    return updated
+  }
+}
+
+export async function deleteCampaign(id: string): Promise<boolean> {
+  try {
+    await prisma.waCampaign.delete({ where: { id } })
+    log.info("channel-registry.campaign-deleted", { id })
+    return true
+  } catch {
+    return fallbackCampaigns.delete(id)
+  }
 }
 
 /**
  * Record that a campaign was executed.
  */
-export function recordCampaignRun(campaignId: string): void {
-  const campaign = campaigns.get(campaignId)
-  if (campaign) {
-    campaign.lastRunAt = new Date()
-    campaign.totalSent++
+export async function recordCampaignRun(campaignId: string): Promise<void> {
+  try {
+    await prisma.waCampaign.update({
+      where: { id: campaignId },
+      data: {
+        lastRunAt: new Date(),
+        totalSent: { increment: 1 },
+      },
+    })
+  } catch {
+    const campaign = fallbackCampaigns.get(campaignId)
+    if (campaign) {
+      campaign.lastRunAt = new Date()
+      campaign.totalSent++
+    }
   }
 }
 
 /**
  * Record that a channel sent a message.
  */
-export function recordChannelSend(channelId: string): void {
-  const channel = channels.get(channelId)
-  if (channel) {
-    channel.sentToday++
-    channel.lastSentAt = new Date()
+export async function recordChannelSend(channelId: string): Promise<void> {
+  try {
+    await prisma.waChannel.update({
+      where: { id: channelId },
+      data: {
+        sentToday: { increment: 1 },
+        lastSentAt: new Date(),
+      },
+    })
+  } catch {
+    const channel = fallbackChannels.get(channelId)
+    if (channel) {
+      channel.sentToday++
+      channel.lastSentAt = new Date()
+    }
   }
 }
 
 /**
  * Reset daily counters (call at midnight or start of cron).
  */
-export function resetDailyCounters(): void {
-  for (const channel of channels.values()) {
-    channel.sentToday = 0
+export async function resetDailyCounters(): Promise<void> {
+  try {
+    await prisma.waChannel.updateMany({
+      data: { sentToday: 0 },
+    })
+  } catch {
+    for (const channel of fallbackChannels.values()) {
+      channel.sentToday = 0
+    }
   }
 }
 
 /**
  * Get campaigns due for execution based on current time.
  */
-export function getDueCampaigns(): Array<{ campaign: BroadcastCampaign; channel: BroadcastChannel }> {
-  ensureDefaultChannel()
+export async function getDueCampaigns(): Promise<Array<{ campaign: BroadcastCampaign; channel: BroadcastChannel }>> {
+  const allCampaigns = await getActiveCampaigns()
+  const allChannels = await getAllChannels()
+  const channelMap = new Map(allChannels.map(c => [c.id, c]))
 
   const now = new Date()
-  // Get current BRT hour
   let currentHour: number
   let currentMinute: number
   try {
@@ -297,16 +427,14 @@ export function getDueCampaigns(): Array<{ campaign: BroadcastCampaign; channel:
     currentMinute = now.getMinutes()
   }
 
-  const currentTime = `${String(currentHour).padStart(2, "0")}:${String(currentMinute).padStart(2, "0")}`
   const due: Array<{ campaign: BroadcastCampaign; channel: BroadcastChannel }> = []
 
-  for (const campaign of campaigns.values()) {
-    if (!campaign.isActive || campaign.campaignType !== "scheduled" || !campaign.schedule) continue
+  for (const campaign of allCampaigns) {
+    if (campaign.campaignType !== "scheduled" || !campaign.schedule) continue
 
-    const channel = channels.get(campaign.channelId)
+    const channel = channelMap.get(campaign.channelId)
     if (!channel || !channel.isActive) continue
 
-    // Check if current time matches schedule (with 30-min window)
     const scheduleTimes = campaign.schedule.split(",").map(t => t.trim())
     for (const schedTime of scheduleTimes) {
       const [schedH, schedM] = schedTime.split(":").map(Number)
@@ -314,14 +442,11 @@ export function getDueCampaigns(): Array<{ campaign: BroadcastCampaign; channel:
       const currentMinutes = currentHour * 60 + currentMinute
       const diff = Math.abs(currentMinutes - schedMinutes)
 
-      // Within 30 minutes of scheduled time
       if (diff <= 30) {
-        // Check if already ran recently (2h cooldown)
         if (campaign.lastRunAt) {
           const elapsed = Date.now() - campaign.lastRunAt.getTime()
-          if (elapsed < 2 * 60 * 60 * 1000) continue // Ran less than 2h ago
+          if (elapsed < 2 * 60 * 60 * 1000) continue
         }
-
         due.push({ campaign, channel })
         break
       }

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "channelId obrigatorio para teste" }, { status: 400 })
       }
 
-      const channel = getChannel(channelId)
+      const channel = await getChannel(channelId)
       if (!channel) {
         return NextResponse.json({ error: "Canal nao encontrado" }, { status: 404 })
       }

@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     // Stats view
     if (view === "stats") {
-      const stats = getDeliveryStats()
+      const stats = await getDeliveryStats()
       return NextResponse.json({ stats, broadcastReady: isBroadcastReady() })
     }
 
@@ -41,8 +41,10 @@ export async function GET(req: NextRequest) {
     const channelId = req.nextUrl.searchParams.get("channelId") || undefined
     const status = req.nextUrl.searchParams.get("status") as DeliveryStatus | undefined
 
-    const history = getDeliveryHistory(limit, channelId, status)
-    const stats = getDeliveryStats()
+    const [history, stats] = await Promise.all([
+      getDeliveryHistory(limit, channelId, status),
+      getDeliveryStats(),
+    ])
 
     return NextResponse.json({
       history,

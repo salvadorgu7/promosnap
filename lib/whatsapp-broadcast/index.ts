@@ -77,7 +77,7 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
   const { channelId, campaignId, dryRun = false } = options
 
   // 1. Resolve channel
-  const channel = getChannel(channelId)
+  const channel = await getChannel(channelId)
   if (!channel) {
     return {
       success: false,
@@ -94,12 +94,12 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
   }
 
   // 2. Resolve campaign (optional)
-  const campaign = campaignId ? getCampaign(campaignId) : null
+  const campaign = campaignId ? await getCampaign(campaignId) : null
 
   // 3. Check fatigue (skip for dry-run)
   const fatigueCheck = dryRun
-    ? { allowed: true, reasons: [] }
-    : checkFatigue(
+    ? { allowed: true, reasons: [] as string[] }
+    : await checkFatigue(
         channel.id,
         channel.dailyLimit,
         channel.quietHoursStart,
@@ -127,7 +127,7 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
   }
 
   // 4. Select offers
-  const excludeOfferIds = getRecentOfferIds(channel.id, 24)
+  const excludeOfferIds = await getRecentOfferIds(channel.id, 24)
   const offers = await selectOffers({
     channel,
     campaign,
@@ -204,13 +204,13 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
       })))
 
       // Update channel/campaign counters
-      recordChannelSend(channel.id)
-      if (campaign) recordCampaignRun(campaign.id)
+      await recordChannelSend(channel.id)
+      if (campaign) await recordCampaignRun(campaign.id)
     }
   }
 
   // 7. Record delivery log
-  const deliveryLog = recordDelivery({
+  const deliveryLog = await recordDelivery({
     channelId: channel.id,
     channelName: channel.name,
     campaignId: campaign?.id,
@@ -249,9 +249,9 @@ export async function runScheduledBroadcasts(): Promise<{
   failed: number
   results: Array<{ campaign: string; channel: string; success: boolean; error?: string }>
 }> {
-  resetDailyCounters()
+  await resetDailyCounters()
 
-  const due = getDueCampaigns()
+  const due = await getDueCampaigns()
   log.info("broadcast.scheduled.start", { dueCampaigns: due.length })
 
   if (due.length === 0) {

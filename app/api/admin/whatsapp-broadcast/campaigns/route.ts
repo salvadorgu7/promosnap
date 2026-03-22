@@ -3,7 +3,6 @@ import { validateAdmin } from "@/lib/auth/admin"
 import { logger } from "@/lib/logger"
 import {
   getAllCampaigns,
-  getCampaign,
   createCampaign,
   updateCampaign,
   deleteCampaign,
@@ -20,7 +19,7 @@ export async function GET(req: NextRequest) {
   if (denied) return denied
 
   try {
-    const campaigns = getAllCampaigns()
+    const campaigns = await getAllCampaigns()
     return NextResponse.json({ campaigns })
   } catch (error) {
     logger.error("wa-broadcast.campaigns.get-failed", { error })
@@ -41,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     // Update
     if (body.id) {
-      const updated = updateCampaign(body.id, body)
+      const updated = await updateCampaign(body.id, body)
       if (!updated) {
         return NextResponse.json({ error: "Campanha nao encontrada" }, { status: 404 })
       }
@@ -56,7 +55,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const campaign = createCampaign({
+    const campaign = await createCampaign({
       channelId: body.channelId,
       name: body.name,
       campaignType: body.campaignType || "manual",
@@ -94,7 +93,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "id obrigatorio" }, { status: 400 })
   }
 
-  const deleted = deleteCampaign(id)
+  const deleted = await deleteCampaign(id)
   if (!deleted) {
     return NextResponse.json({ error: "Campanha nao encontrada" }, { status: 404 })
   }
