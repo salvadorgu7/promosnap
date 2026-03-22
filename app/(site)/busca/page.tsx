@@ -172,6 +172,10 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
         score: 'score',
         discount: 'score', // "discount" sort → use score as proxy (no direct equivalent)
       }
+      // Force expansion when the page-level search found few/no results.
+      // The expanded pipeline uses a different search engine (searchProducts vs searchListings)
+      // which may find more internal results and incorrectly evaluate coverage as "sufficient".
+      const pageHasWeakResults = products.length <= 4
       const expanded = await expandedSearch({
         query,
         page: 1,
@@ -182,6 +186,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
         minPrice,
         maxPrice,
         sortBy: sortMap[sort] || 'relevance',
+        forceExpand: pageHasWeakResults,
       })
       // Only show expanded results if there are actual external results
       if (expanded.expandedResults.length > 0) {
