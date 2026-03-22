@@ -10,6 +10,19 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const host = req.headers.get("host") || "";
+
+  // ── www redirect: force canonical domain (SEO) ──────────────
+  // Google treats www and non-www as different sites.
+  // Redirect non-www to www in production to avoid duplicate content.
+  if (
+    host === "promosnap.com.br" &&
+    (process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production")
+  ) {
+    const url = req.nextUrl.clone();
+    url.host = "www.promosnap.com.br";
+    return NextResponse.redirect(url, 301);
+  }
 
   // Block crawlers from API routes via X-Robots-Tag header
   if (pathname.startsWith("/api/")) {
@@ -18,40 +31,45 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  // Check for admin auth cookie
-  const cookie = req.cookies.get("admin-auth")?.value;
-  const secret = process.env.ADMIN_SECRET;
+  // ── Admin auth: only for /admin routes ─────────────────────
+  if (pathname.startsWith("/admin")) {
+    const cookie = req.cookies.get("admin-auth")?.value;
+    const secret = process.env.ADMIN_SECRET;
 
-  if (!secret) {
-    // In production/preview: block admin without secret (fail-closed)
-    const env = process.env.VERCEL_ENV || process.env.NODE_ENV;
-    if (env === 'production' || env === 'preview') {
-      const loginUrl = req.nextUrl.clone();
-      loginUrl.pathname = "/admin-login";
-      return NextResponse.redirect(loginUrl);
+    if (!secret) {
+      const env = process.env.VERCEL_ENV || process.env.NODE_ENV;
+      if (env === 'production' || env === 'preview') {
+        const loginUrl = req.nextUrl.clone();
+        loginUrl.pathname = "/admin-login";
+        return NextResponse.redirect(loginUrl);
+      }
+      return NextResponse.next();
     }
-    // Dev mode: allow access without secret
-    return NextResponse.next();
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(secret);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const expectedHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
+    if (cookie === expectedHash) {
+      return NextResponse.next();
+    }
+
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = "/admin-login";
+    loginUrl.searchParams.set("from", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Cookie value = sha256(ADMIN_SECRET), computed via Web Crypto API (Edge-compatible)
-  const encoder = new TextEncoder();
-  const data = encoder.encode(secret);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const expectedHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-
-  if (cookie === expectedHash) {
-    return NextResponse.next();
-  }
-
-  // Not authenticated — redirect to login page
-  const loginUrl = req.nextUrl.clone();
-  loginUrl.pathname = "/admin-login";
-  loginUrl.searchParams.set("from", pathname);
-  return NextResponse.redirect(loginUrl);
+  // All other routes pass through
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/:path*"],
+  matcher: [
+    // www redirect + admin auth + API noindex
+    // Excludes static files and Next.js internals
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap|og-image|logo|manifest).*)",
+  ],
 };

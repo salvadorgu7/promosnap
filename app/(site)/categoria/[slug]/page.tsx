@@ -154,26 +154,54 @@ export default async function CategoriaPage({
         }}
       />
 
-      {/* ItemList JSON-LD for Google rich results */}
-      {products.length > 0 && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "ItemList",
-              name: `Melhores Ofertas de ${name}`,
-              numberOfItems: total,
-              itemListElement: products.slice(0, 10).map((p, i) => ({
-                "@type": "ListItem",
-                position: i + 1,
-                name: p.name,
-                url: `${process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br"}/produto/${p.slug}`,
-              })),
-            }),
-          }}
-        />
-      )}
+      {/* ItemList + CollectionPage JSON-LD for Google rich results */}
+      {products.length > 0 && (() => {
+        const prices = products.map(p => p.bestOffer.price);
+        const lowPrice = Math.min(...prices);
+        const highPrice = Math.max(...prices);
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br";
+        return (
+          <>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "CollectionPage",
+                  name: `Melhores Ofertas de ${name}`,
+                  description: `Compare preços de ${name} — ${total} produtos com preços atualizados.`,
+                  url: `${baseUrl}/categoria/${slug}`,
+                  numberOfItems: total,
+                  offers: {
+                    "@type": "AggregateOffer",
+                    lowPrice,
+                    highPrice,
+                    priceCurrency: "BRL",
+                    offerCount: products.reduce((acc, p) => acc + p.offersCount, 0),
+                  },
+                }),
+              }}
+            />
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "ItemList",
+                  name: `Melhores Ofertas de ${name}`,
+                  numberOfItems: total,
+                  itemListElement: products.slice(0, 10).map((p, i) => ({
+                    "@type": "ListItem",
+                    position: i + 1,
+                    name: p.name,
+                    url: `${baseUrl}/produto/${p.slug}`,
+                  })),
+                }),
+              }}
+            />
+          </>
+        );
+      })()}
 
       <Breadcrumb
         items={[

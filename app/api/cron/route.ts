@@ -135,6 +135,10 @@ export async function GET(req: NextRequest) {
     ['ai-content', () => import('@/lib/jobs/ai-content-enrichment').then(m => m.runAIContentEnrichment())],
     // catalog-amplifier: VALUE — discovers and imports new products based on user demand + trends + coverage gaps
     ['catalog-amplifier', () => import('@/lib/jobs/catalog-amplifier').then(m => m.amplifyCatalog())],
+    // orphan-linker: VALUE — auto-links orphan listings to existing canonical products via matching engine
+    ['orphan-linker', () => import('@/lib/jobs/orphan-linker').then(m => m.linkOrphanListings())],
+    // specs-enrich: HYGIENE — auto-extracts specs (storage, RAM, screen, etc.) from product titles
+    ['specs-enrich', () => import('@/lib/jobs/specs-enrich').then(m => m.specsEnrich())],
   ]
 
   // Filter to requested subset if ?jobs= is provided

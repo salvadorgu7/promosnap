@@ -14,6 +14,9 @@ export default function robots(): MetadataRoute.Robots {
           "/api/",
           "/minha-conta",
           "/favoritos",
+          "/radar",
+          "/alertas",
+          "/indicar",
         ],
       },
       {

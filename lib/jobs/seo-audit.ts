@@ -12,6 +12,7 @@
  */
 
 import prisma from '@/lib/db/prisma'
+import { Prisma } from '@prisma/client'
 import { runJob, type JobResult } from '@/lib/jobs/runner'
 import { BEST_PAGE_SLUGS } from '@/lib/seo/best-pages'
 import { OFFER_PAGE_SLUGS } from '@/lib/seo/offer-pages'
@@ -43,6 +44,13 @@ interface SEOHealthSnapshot {
     withImage: number
     withAffiliate: number
     withValidPrice: number
+  }
+  catalogHealth: {
+    orphanListings: number
+    uncategorizedProducts: number
+    unbrandedProducts: number
+    productsWithSpecs: number
+    productsWithoutSpecs: number
   }
   issues: string[]
   score: number
@@ -168,6 +176,22 @@ export async function seoAudit(): Promise<JobResult> {
       withValidPrice: activeOffers,
     }
 
+    // ── Catalog health ──────────────────────────────────
+    const [orphanListings, uncategorizedProducts, unbrandedProducts, productsWithSpecs] = await Promise.all([
+      prisma.listing.count({ where: { productId: null, status: { in: ['ACTIVE', 'UNMATCHED'] } } }),
+      prisma.product.count({ where: { status: 'ACTIVE', categoryId: null } }),
+      prisma.product.count({ where: { status: 'ACTIVE', brandId: null } }),
+      prisma.product.count({ where: { status: 'ACTIVE', specsJson: { not: Prisma.JsonNull } } }),
+    ])
+    const productsWithoutSpecs = activeProducts - productsWithSpecs
+    ctx.log(`Catalog: ${orphanListings} orphan listings, ${uncategorizedProducts} uncategorized, ${unbrandedProducts} unbranded, ${productsWithSpecs} with specs`)
+
+    if (orphanListings > 50) issues.push(`WARNING: ${orphanListings} orphan listings without product match`)
+    if (uncategorizedProducts > activeProducts * 0.4) issues.push(`WARNING: ${uncategorizedProducts} products without category (${Math.round(uncategorizedProducts / activeProducts * 100)}%)`)
+    if (unbrandedProducts > activeProducts * 0.5) issues.push(`WARNING: ${unbrandedProducts} products without brand (${Math.round(unbrandedProducts / activeProducts * 100)}%)`)
+
+    const catalogHealth = { orphanListings, uncategorizedProducts, unbrandedProducts, productsWithSpecs, productsWithoutSpecs }
+
     // ── Calculate overall score ─────────────────────────
     let score = 100
     for (const issue of issues) {
@@ -189,6 +213,7 @@ export async function seoAudit(): Promise<JobResult> {
       programmaticPages,
       searchHealth,
       feedHealth,
+      catalogHealth,
       issues,
       score,
     }
