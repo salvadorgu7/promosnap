@@ -1,8 +1,8 @@
 // ============================================
 // DISTRIBUTION ENGINE — core logic
+// DELEGATES quality gates + retrieval to Unified Commerce Engine.
 // ============================================
 
-import prisma from "@/lib/db/prisma";
 import type {
   ChannelConfig,
   DistributableOffer,
@@ -12,6 +12,7 @@ import type {
 } from "./types";
 import { isTelegramConfigured } from "./telegram";
 import { isWhatsAppConfigured } from "./whatsapp";
+import { retrieveOffers } from "@/lib/commerce/retrieval";
 
 // ============================================
 // In-memory distribution history
@@ -141,136 +142,47 @@ export function getChannelStatus(): ChannelConfig[] {
 }
 
 // ============================================
-// Distribution quality gates
-// — applied to EVERY channel (WhatsApp, Telegram, Email, Homepage)
+// Ready offers — DELEGATES to Unified Commerce Engine
 // ============================================
 
 /**
- * Maximum sane discount for distribution.
- * Anything above this is almost certainly a data error
- * (e.g. Amazon returning a warehouse price as current price).
+ * Get top offers ready for distribution.
+ * Quality gates, dedup, and affiliate URL building are handled by the
+ * Unified Commerce Engine (lib/commerce/retrieval.ts).
  */
-const DIST_MAX_DISCOUNT = 85
-
-/**
- * Minimum offer price for distribution.
- * R$5 floor eliminates near-zero parse errors.
- */
-const DIST_MIN_PRICE = 5
-
-/**
- * Minimum listing rating to distribute.
- * Listings without a rating (null) are kept — missing data ≠ bad product.
- */
-const DIST_MIN_RATING = 2
-
-/**
- * Apply distribution quality gates to a raw offer row.
- * Returns true if the offer should be EXCLUDED (filtered out).
- */
-function failsQualityGate(o: {
-  currentPrice: any;
-  originalPrice: any;
-  listing: { rating: any; product: any; source: any };
-}): boolean {
-  const current = Number(o.currentPrice)
-  const original = o.originalPrice ? Number(o.originalPrice) : null
-
-  // Price floor
-  if (current < DIST_MIN_PRICE) return true
-
-  // Discount sanity — skip if original price exists and discount is absurd
-  if (original && original > current) {
-    const discount = Math.round(((original - current) / original) * 100)
-    if (discount >= DIST_MAX_DISCOUNT) return true
-  }
-
-  // Rating gate — skip if we know the rating is bad (≤ DIST_MIN_RATING)
-  const rating = o.listing.rating
-  if (rating !== null && rating !== undefined && Number(rating) <= DIST_MIN_RATING) return true
-
-  // Must have image for WhatsApp/Telegram (visual channels)
-  if (!o.listing.product?.imageUrl) return true
-
-  return false
-}
-
-// ============================================
-// Ready offers — top offers for distribution
-// ============================================
-
 export async function getReadyOffers(
   limit = 10
 ): Promise<DistributableOffer[]> {
   const APP_URL =
     process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br";
 
-  // Fetch extra to account for quality gate filtering
-  const offers = await prisma.offer.findMany({
-    where: {
-      isActive: true,
-      offerScore: { gte: 40 },         // raised from 30 — low score = low quality
-      currentPrice: { gte: DIST_MIN_PRICE },
-      listing: {
-        status: "ACTIVE",
-        // Exclude known bad ratings at the DB level (fast path)
-        OR: [
-          { rating: null },
-          { rating: { gt: DIST_MIN_RATING } },
-        ],
-        product: {
-          status: "ACTIVE",
-          hidden: false,
-          imageUrl: { not: null },       // require image
-        },
-      },
-    },
-    orderBy: [{ offerScore: "desc" }, { currentPrice: "asc" }],
-    take: limit * 3,  // fetch 3× so quality gate has room to filter
-    include: {
-      listing: {
-        include: {
-          product: true,
-          source: true,
-        },
-      },
-    },
+  // Delegate to unified retrieval — uses commerce quality gates
+  const retrieved = await retrieveOffers({
+    channel: "site", // distribution is multi-channel; "site" = default gates
+    limit,
+    minScore: 40,
+    requireImage: true,
+    maxPerMarketplace: 0, // no marketplace limit for general distribution
   });
 
-  return offers
-    .filter((o) => o.listing.product !== null && o.listing.source !== null)
-    .filter((o) => !failsQualityGate(o))
-    .slice(0, limit)
-    .map((o) => {
-      const product = o.listing.product!;
-      const source = o.listing.source;
-      const originalPrice = o.originalPrice ?? null;
-      const discount =
-        originalPrice && originalPrice > o.currentPrice
-          ? Math.round(
-              ((originalPrice - o.currentPrice) / originalPrice) * 100
-            )
-          : 0;
-
-      return {
-        offerId: o.id,
-        productName: product.name,
-        productSlug: product.slug,
-        currentPrice: o.currentPrice,
-        originalPrice,
-        discount,
-        offerScore: o.offerScore,
-        sourceSlug: source.slug,
-        sourceName: source.name,
-        affiliateUrl: o.affiliateUrl,
-        productUrl: `${APP_URL}/produto/${product.slug}`,
-        imageUrl: product.imageUrl,
-        isFreeShipping: o.isFreeShipping,
-        rating: o.listing.rating,
-        reviewsCount: o.listing.reviewsCount,
-        couponText: o.couponText,
-      };
-    });
+  return retrieved.map((o) => ({
+    offerId: o.offerId,
+    productName: o.productName,
+    productSlug: o.productSlug,
+    currentPrice: o.currentPrice,
+    originalPrice: o.originalPrice,
+    discount: o.discount,
+    offerScore: o.offerScore,
+    sourceSlug: o.sourceSlug,
+    sourceName: o.sourceName,
+    affiliateUrl: o.affiliateUrl,
+    productUrl: `${APP_URL}/produto/${o.productSlug}`,
+    imageUrl: o.imageUrl,
+    isFreeShipping: o.isFreeShipping,
+    rating: o.rating,
+    reviewsCount: o.reviewsCount,
+    couponText: o.couponText,
+  }));
 }
 
 // ============================================
@@ -345,7 +257,7 @@ const SEGMENT_LABELS: Record<DistributionSegment, string> = {
 export { SEGMENT_LABELS };
 
 // ============================================
-// Ready offers by segment
+// Ready offers by segment — DELEGATES to commerce engine
 // ============================================
 
 export async function getReadyOffersBySegment(
@@ -362,81 +274,42 @@ export async function getReadyOffersBySegment(
 
   const categorySlugs = SEGMENT_CATEGORY_MAP[segment];
 
-  // Build where clause
-  const where: any = {
-    isActive: true,
-    offerScore: { gte: segment === "ofertas-quentes" ? 70 : 40 },
-    currentPrice: { gte: DIST_MIN_PRICE },
-    listing: {
-      status: "ACTIVE",
-      OR: [
-        { rating: null },
-        { rating: { gt: DIST_MIN_RATING } },
-      ],
-      product: {
-        status: "ACTIVE",
-        hidden: false,
-        imageUrl: { not: null },
-        ...(categorySlugs.length > 0
-          ? { category: { slug: { in: categorySlugs } } }
-          : {}),
-      },
-    },
-  };
-
-  // Cupons segment: require coupon text
-  if (segment === "cupons") {
-    where.couponText = { not: null };
-  }
-
-  const offers = await prisma.offer.findMany({
-    where,
-    orderBy: [{ offerScore: "desc" }, { currentPrice: "asc" }],
-    take: limit * 3,
-    include: {
-      listing: {
-        include: {
-          product: { include: { category: true } },
-          source: true,
-        },
-      },
-    },
+  // Delegate to unified retrieval with segment-specific filters
+  const retrieved = await retrieveOffers({
+    channel: "site",
+    limit,
+    minScore: segment === "ofertas-quentes" ? 70 : 40,
+    categories: categorySlugs.length > 0 ? categorySlugs : undefined,
+    requireImage: true,
+    maxPerMarketplace: 0,
   });
 
-  return offers
-    .filter((o) => o.listing.product !== null && o.listing.source !== null)
-    .filter((o) => !failsQualityGate(o))
-    .slice(0, limit)
-    .map((o) => {
-      const product = o.listing.product!;
-      const source = o.listing.source;
-      const originalPrice = o.originalPrice ?? null;
-      const discount =
-        originalPrice && originalPrice > o.currentPrice
-          ? Math.round(
-              ((originalPrice - o.currentPrice) / originalPrice) * 100
-            )
-          : 0;
+  // NOTE: "cupons" segment filtering is not handled by retrieveOffers
+  // because it needs couponText filter which is a special case.
+  // For now, we filter post-retrieval for cupons.
+  let results = retrieved;
+  if (segment === "cupons") {
+    results = retrieved.filter(o => !!o.couponText);
+  }
 
-      return {
-        offerId: o.id,
-        productName: product.name,
-        productSlug: product.slug,
-        currentPrice: o.currentPrice,
-        originalPrice,
-        discount,
-        offerScore: o.offerScore,
-        sourceSlug: source.slug,
-        sourceName: source.name,
-        affiliateUrl: o.affiliateUrl,
-        productUrl: `${APP_URL}/produto/${product.slug}`,
-        imageUrl: product.imageUrl,
-        isFreeShipping: o.isFreeShipping,
-        rating: o.listing.rating,
-        reviewsCount: o.listing.reviewsCount,
-        couponText: o.couponText,
-      };
-    });
+  return results.map((o) => ({
+    offerId: o.offerId,
+    productName: o.productName,
+    productSlug: o.productSlug,
+    currentPrice: o.currentPrice,
+    originalPrice: o.originalPrice,
+    discount: o.discount,
+    offerScore: o.offerScore,
+    sourceSlug: o.sourceSlug,
+    sourceName: o.sourceName,
+    affiliateUrl: o.affiliateUrl,
+    productUrl: `${APP_URL}/produto/${o.productSlug}`,
+    imageUrl: o.imageUrl,
+    isFreeShipping: o.isFreeShipping,
+    rating: o.rating,
+    reviewsCount: o.reviewsCount,
+    couponText: o.couponText,
+  }));
 }
 
 // ============================================
