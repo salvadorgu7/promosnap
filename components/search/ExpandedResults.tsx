@@ -127,6 +127,7 @@ export default function ExpandedResults({
   const [showAll, setShowAll] = useState(false)
   const [mounted, setMounted] = useState(false)
   const trackedRef = useRef(false)
+  const lastTrackedQuery = useRef("")
 
   // Only expanded (external) results
   const expanded = results.filter(r => r.sourceType === "expanded")
@@ -162,8 +163,12 @@ export default function ExpandedResults({
     return () => clearTimeout(timer)
   }, [])
 
-  // Track impression once on mount (includes experiment assignments)
+  // Track impression once per query (resets when query changes)
   useEffect(() => {
+    if (query !== lastTrackedQuery.current) {
+      trackedRef.current = false
+      lastTrackedQuery.current = query
+    }
     if (expanded.length > 0 && !trackedRef.current) {
       trackedRef.current = true
       analytics.expandedResultImpression({

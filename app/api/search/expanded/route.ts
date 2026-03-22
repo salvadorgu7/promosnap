@@ -43,12 +43,20 @@ export async function GET(req: NextRequest) {
   const adminSecret = req.headers.get('x-admin-secret')
   const isAdmin = !!(ADMIN_SECRET && adminSecret === ADMIN_SECRET)
 
-  // Parse params
-  const page = parseInt(sp.get('page') || '1', 10)
-  const limit = Math.min(parseInt(sp.get('limit') || '24', 10), 48)
+  // Parse params with validation
+  const rawPage = parseInt(sp.get('page') || '1', 10)
+  const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage
+  const rawLimit = parseInt(sp.get('limit') || '24', 10)
+  const limit = isNaN(rawLimit) ? 24 : Math.min(Math.max(1, rawLimit), 48)
   const minPrice = sp.get('minPrice') ? parseFloat(sp.get('minPrice')!) : undefined
   const maxPrice = sp.get('maxPrice') ? parseFloat(sp.get('maxPrice')!) : undefined
+  const freeShipping = sp.get('freeShipping') === 'true'
   const forceExpand = isAdmin && sp.get('expand') === 'true'
+
+  // Validate sort value
+  const VALID_SORTS = ['relevance', 'price_asc', 'price_desc', 'popularity', 'score'] as const
+  const rawSort = sp.get('sort') || 'relevance'
+  const sortBy = VALID_SORTS.includes(rawSort as any) ? rawSort as typeof VALID_SORTS[number] : 'relevance'
 
   try {
     const result = await expandedSearch({
@@ -58,9 +66,10 @@ export async function GET(req: NextRequest) {
       category: sp.get('category') || undefined,
       brand: sp.get('brand') || undefined,
       source: sp.get('source') || undefined,
-      minPrice: minPrice && !isNaN(minPrice) ? minPrice : undefined,
-      maxPrice: maxPrice && !isNaN(maxPrice) ? maxPrice : undefined,
-      sortBy: (sp.get('sort') as any) || 'relevance',
+      minPrice: minPrice && !isNaN(minPrice) && minPrice >= 0 ? minPrice : undefined,
+      maxPrice: maxPrice && !isNaN(maxPrice) && maxPrice >= 0 ? maxPrice : undefined,
+      freeShipping: freeShipping || undefined,
+      sortBy,
       forceExpand,
       isAdmin,
     })
@@ -103,8 +112,10 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(response)
   } catch (error) {
+    // Don't leak internal error details in production
+    const isDev = process.env.NODE_ENV !== 'production'
     return NextResponse.json(
-      { error: 'Search failed', detail: String(error) },
+      { error: 'Search failed', ...(isDev ? { detail: String(error) } : {}) },
       { status: 500 }
     )
   }

@@ -195,7 +195,7 @@ export function applyQualityGates(
 /** Check if a result is fit for a prominent mobile position */
 export function isHighPositionWorthy(assessment: QualityAssessment): boolean {
   return assessment.qualityScore >= MIN_HIGH_POSITION_SCORE
-    && assessment.candidate.imageUrl !== undefined
+    && !!assessment.candidate.imageUrl // truthy: not undefined, null, or empty string
     && assessment.candidate.price !== undefined
     && assessment.candidate.price > 0
 }

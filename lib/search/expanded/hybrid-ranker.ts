@@ -162,14 +162,17 @@ export function rankHybrid(
 ): RankingResult {
   const policy = determinePolicy(coverage)
 
-  // Calculate final scores
-  const allResults = [...internalResults, ...expandedResults].map(r => ({
-    ...r,
-    relevanceScore: computeFinalScore(r, policy),
+  // Calculate final ranking scores (stored separately to preserve original relevanceScore)
+  const scored = [...internalResults, ...expandedResults].map(r => ({
+    result: r,
+    finalScore: computeFinalScore(r, policy),
   }))
 
   // Sort by final score
-  allResults.sort((a, b) => b.relevanceScore - a.relevanceScore)
+  scored.sort((a, b) => b.finalScore - a.finalScore)
+
+  // Restore original relevanceScore (don't overwrite upstream value)
+  const allResults = scored.map(s => s.result)
 
   // Apply guardrails
   const guarded = applyPositionGuardrails(allResults)

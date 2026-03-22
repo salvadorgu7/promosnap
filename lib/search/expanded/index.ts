@@ -21,9 +21,7 @@ import { understandQuery } from '@/lib/query'
 import { resolveCandidates, type ExternalCandidate } from '@/lib/ai/candidate-resolver'
 import { buildAffiliateUrl, hasAffiliateTag } from '@/lib/affiliate'
 import { buildClickoutUrl } from '@/lib/clickout/build-url'
-import { cacheGet, cacheSet } from '@/lib/db/redis'
 import { logger } from '@/lib/logger'
-import { normalizeText } from '@/lib/utils'
 
 import { evaluateCoverage } from './coverage-evaluator'
 import { decideExpansion, executeExpansion, type ConnectorResult } from './expansion-orchestrator'
@@ -385,15 +383,16 @@ export async function expandedSearch(params: ExpandedSearchParams): Promise<Expa
   stages.push({ stage: 'quality_gates', durationMs: Date.now() - qStart, itemsIn: resolvedCandidates.length, itemsOut: qualityAssessed.length })
 
   // ── 8. Convert to Unified + Dedup ────────────────────────────────────
+  // Key by externalUrl (stable across ExternalCandidate → ResolvedCandidate)
   const connectorMap = new Map<string, string>()
   for (const cr of connectorResults) {
     for (const c of cr.candidates) {
-      connectorMap.set(c.rawTitle, cr.connector)
+      connectorMap.set(c.externalUrl, cr.connector)
     }
   }
 
   let expandedUnified = qualityAssessed.map(qa => {
-    const connector = connectorMap.get(qa.candidate.normalizedTitle) || 'unknown'
+    const connector = connectorMap.get(qa.candidate.externalUrl) || 'unknown'
     return externalToUnified(qa, connector)
   })
 
