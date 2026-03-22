@@ -11,10 +11,10 @@ import Logo from "@/components/ui/Logo";
 
 const NAV_ITEMS = [
   { href: "/ofertas", label: "Ofertas", icon: Flame, color: "text-accent-red" },
-  { href: "/menor-preco", label: "Menor Preço", icon: TrendingDown, color: "text-accent-blue" },
+  { href: "/queda-de-preco", label: "Queda de Preço", icon: TrendingDown, color: "text-accent-green" },
   { href: "/mais-vendidos", label: "Top Vendidos", icon: Trophy, color: "text-accent-orange" },
-  { href: "/categoria/eletronicos", label: "Eletrônicos", icon: Zap, color: "text-brand-500" },
-  { href: "/categoria/casa", label: "Casa", icon: Tag, color: "text-accent-purple" },
+  { href: "/mais-buscados", label: "Em Alta", icon: Zap, color: "text-brand-500" },
+  { href: "/menor-preco", label: "Menor Preço", icon: Tag, color: "text-accent-blue" },
 ];
 
 export default function Header() {

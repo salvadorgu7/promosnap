@@ -9,8 +9,16 @@ import { VALE_A_PENA_PAGES } from "./vale-a-pena";
 export interface InternalLink {
   href: string;
   label: string;
-  type: "best" | "offer" | "comparison" | "vale-a-pena" | "category" | "brand" | "search";
+  type: "best" | "offer" | "comparison" | "vale-a-pena" | "category" | "brand" | "search" | "discovery";
 }
+
+/** High-value discovery pages for cross-linking */
+const DISCOVERY_PAGES: InternalLink[] = [
+  { href: "/queda-de-preco", label: "Queda de Preço Hoje", type: "discovery" },
+  { href: "/mais-buscados", label: "Mais Buscados", type: "discovery" },
+  { href: "/mais-vendidos", label: "Mais Vendidos", type: "discovery" },
+  { href: "/menor-preco", label: "Menor Preço Histórico", type: "discovery" },
+];
 
 /**
  * Get related internal links for a product based on its category, brand, and name.
@@ -140,6 +148,17 @@ export function getRelatedLinks(opts: {
     });
   }
 
+  // Add discovery pages for cross-linking (rotate 2 random ones)
+  if (links.length < limit) {
+    const shuffled = [...DISCOVERY_PAGES].sort(() => Math.random() - 0.5);
+    for (const dp of shuffled.slice(0, 2)) {
+      if (links.length >= limit) break;
+      if (!links.some(l => l.href === dp.href)) {
+        links.push(dp);
+      }
+    }
+  }
+
   return links.slice(0, limit);
 }
 
@@ -170,6 +189,12 @@ export function getCategoryRelatedContent(categorySlug: string): InternalLink[] 
         type: "comparison",
       });
     }
+  }
+
+  // Add discovery pages for SEO cross-linking
+  for (const dp of DISCOVERY_PAGES.slice(0, 2)) {
+    if (links.length >= 8) break;
+    links.push(dp);
   }
 
   return links.slice(0, 8);

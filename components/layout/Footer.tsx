@@ -7,12 +7,13 @@ import Newsletter from "@/components/home/Newsletter";
 const LINKS = {
   "Ofertas": [
     { href: "/ofertas", label: "Ofertas Quentes" },
+    { href: "/queda-de-preco", label: "Queda de Preço" },
     { href: "/menor-preco", label: "Menor Preço Histórico" },
     { href: "/mais-vendidos", label: "Mais Vendidos" },
+    { href: "/mais-buscados", label: "Mais Buscados" },
     { href: "/cupons", label: "Cupons de Desconto" },
     { href: "/categorias", label: "Todas as Categorias" },
     { href: "/marcas", label: "Marcas" },
-    { href: "/trending", label: "Tendências" },
   ],
   "Lojas": [
     { href: "/busca?source=amazon-br", label: "Amazon Brasil" },

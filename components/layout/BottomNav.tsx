@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Flame, Heart, Grid3X3, X, Smartphone, Laptop, Footprints, Tag, Trophy, TrendingDown, Bell, ChevronRight } from "lucide-react";
+import { Home, Flame, Heart, Grid3X3, X, Smartphone, Laptop, Footprints, Tag, Trophy, TrendingDown, Bell, ChevronRight, Search } from "lucide-react";
 import { useState } from "react";
 
 const tabs = [
@@ -19,7 +19,9 @@ const categoryLinks = [
 
 const menuLinks = [
   { href: "/categorias", label: "Todas as Categorias", icon: Grid3X3, color: "text-brand-500" },
+  { href: "/queda-de-preco", label: "Queda de Preço", icon: TrendingDown, color: "text-accent-green" },
   { href: "/mais-vendidos", label: "Mais Vendidos", icon: Trophy, color: "text-accent-orange" },
+  { href: "/mais-buscados", label: "Mais Buscados", icon: Search, color: "text-brand-500" },
   { href: "/menor-preco", label: "Menor Preço", icon: TrendingDown, color: "text-accent-blue" },
   { href: "/cupons", label: "Cupons", icon: Tag, color: "text-accent-orange" },
   { href: "/radar", label: "Meu Radar", icon: Bell, color: "text-accent-purple" },

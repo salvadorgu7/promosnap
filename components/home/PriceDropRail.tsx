@@ -45,7 +45,7 @@ export default function PriceDropRail() {
             </div>
             <p className="text-xs text-text-muted">Quedas de preco detectadas nas ultimas horas</p>
           </div>
-          <Link href="/vale-esperar" className="ml-auto text-xs text-brand-500 hover:text-brand-600 font-medium">
+          <Link href="/queda-de-preco" className="ml-auto text-xs text-brand-500 hover:text-brand-600 font-medium">
             Ver todas →
           </Link>
         </div>
