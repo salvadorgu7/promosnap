@@ -162,6 +162,8 @@ export function expandedSearchTriggered(params: {
   internalCount: number
   expandedCount: number
   coverageScore: number
+  /** Where the event fires: "search" | "pdp" | "assistant" */
+  sourceLocation?: string
   /** A/B experiment assignments (e.g., expanded_feature_name: "mais_opcoes") */
   experiments?: Record<string, string>
 }) {
@@ -170,6 +172,7 @@ export function expandedSearchTriggered(params: {
     internal_count: params.internalCount,
     expanded_count: params.expandedCount,
     coverage_score: params.coverageScore,
+    source_location: params.sourceLocation || "search",
     ...(params.experiments || {}),
   })
 }
@@ -181,6 +184,8 @@ export function expandedResultClick(params: {
   price: number
   position: number
   affiliateStatus: string
+  /** Where the click happens: "search" | "pdp" | "assistant" */
+  sourceLocation?: string
   /** A/B experiment assignments */
   experiments?: Record<string, string>
 }) {
@@ -191,6 +196,7 @@ export function expandedResultClick(params: {
     price: params.price,
     position: params.position,
     affiliate_status: params.affiliateStatus,
+    source_location: params.sourceLocation || "search",
     ...(params.experiments || {}),
   })
 }
@@ -200,6 +206,8 @@ export function expandedResultImpression(params: {
   resultCount: number
   visibleCount: number
   coverageScore: number
+  /** Where the impression fires: "search" | "pdp" | "assistant" */
+  sourceLocation?: string
   /** A/B experiment assignments */
   experiments?: Record<string, string>
 }) {
@@ -208,6 +216,7 @@ export function expandedResultImpression(params: {
     result_count: params.resultCount,
     visible_count: params.visibleCount,
     coverage_score: params.coverageScore,
+    source_location: params.sourceLocation || "search",
     ...(params.experiments || {}),
   })
 }
@@ -215,10 +224,13 @@ export function expandedResultImpression(params: {
 export function expandedShowMore(params: {
   query: string
   totalResults: number
+  /** Where: "search" | "pdp" | "assistant" */
+  sourceLocation?: string
 }) {
   trackEvent("expanded_show_more", {
     search_term: params.query,
     total_results: params.totalResults,
+    source_location: params.sourceLocation || "search",
   })
 }
 
@@ -229,6 +241,18 @@ export function weakResultsExpand(params: {
   trackEvent("weak_results_expand", {
     search_term: params.query,
     internal_count: params.internalCount,
+  })
+}
+
+export function weakResultsCtaClick(params: {
+  query: string
+  internalCount: number
+  expandedCount: number
+}) {
+  trackEvent("weak_results_cta_click", {
+    search_term: params.query,
+    internal_count: params.internalCount,
+    expanded_count: params.expandedCount,
   })
 }
 
@@ -255,4 +279,5 @@ export const analytics = {
   expandedResultImpression,
   expandedShowMore,
   weakResultsExpand,
+  weakResultsCtaClick,
 }

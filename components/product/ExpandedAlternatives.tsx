@@ -152,6 +152,7 @@ export default function ExpandedAlternatives({
                 price: result.price,
                 position: i,
                 affiliateStatus: result.affiliateStatus,
+                sourceLocation: "pdp",
               })
             }}
             className="card group hover:shadow-card-hover transition-all duration-200 overflow-hidden flex flex-col

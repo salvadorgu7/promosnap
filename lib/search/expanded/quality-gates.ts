@@ -198,4 +198,5 @@ export function isHighPositionWorthy(assessment: QualityAssessment): boolean {
     && !!assessment.candidate.imageUrl // truthy: not undefined, null, or empty string
     && assessment.candidate.price !== undefined
     && assessment.candidate.price > 0
+    && assessment.candidate.monetization !== 'none' // non-monetizable results excluded from premium positions
 }

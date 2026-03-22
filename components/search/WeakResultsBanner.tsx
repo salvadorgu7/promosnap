@@ -31,6 +31,7 @@ export default function WeakResultsBanner({
   }, [query, internalCount])
 
   const scrollToExpanded = () => {
+    analytics.weakResultsCtaClick({ query, internalCount, expandedCount })
     const el = document.querySelector("[data-expanded-results]")
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" })
