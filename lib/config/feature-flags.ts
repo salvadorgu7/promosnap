@@ -18,6 +18,8 @@ export interface FeatureFlags {
   shopeeApiReady: boolean
   /** Enable Mercado Livre search in discovery engine */
   mlSearchEnabled: boolean
+  /** Enable Busca Ampliada — expanded search with external connectors */
+  expandedSearch: boolean
 }
 
 function envBool(key: string): boolean {
@@ -35,6 +37,7 @@ export function getAllFlags(): FeatureFlags {
     shopeeEnabled: envBool('SHOPEE_ENABLED') || !!process.env.SHOPEE_AFFILIATE_ID,
     shopeeApiReady: !!process.env.SHOPEE_APP_ID && !!process.env.SHOPEE_APP_SECRET,
     mlSearchEnabled: envBool('FF_ML_SEARCH_ENABLED'),
+    expandedSearch: envBool('FF_EXPANDED_SEARCH'),
   }
 }
 
