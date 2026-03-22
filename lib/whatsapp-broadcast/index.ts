@@ -345,3 +345,20 @@ export {
 }
 
 export { getAllTemplateData } from "./templates"
+
+// Campaign Calendar (Mega Prompt 03)
+export {
+  getPromoCalendar,
+  getUpcomingEvents,
+  getActiveEvents,
+  getEventPhase,
+  getCampaignTemplates,
+  getCampaignTemplate,
+  getCalendarData,
+} from "./campaign-calendar"
+
+// Metrics & Revenue Analytics (Mega Prompt 04)
+export {
+  computeKPIs,
+  getMetricsDashboard,
+} from "./metrics"

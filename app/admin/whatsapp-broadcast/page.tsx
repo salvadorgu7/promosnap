@@ -19,6 +19,14 @@ import {
   FileText,
   Radio,
   Hash,
+  Calendar,
+  TrendingUp,
+  DollarSign,
+  Target,
+  Shield,
+  Activity,
+  Award,
+  Flame,
 } from "lucide-react"
 
 // ============================================
@@ -82,7 +90,7 @@ interface Stats {
 // ============================================
 
 export default function WhatsAppBroadcastPage() {
-  const [tab, setTab] = useState<"overview" | "channels" | "campaigns" | "preview" | "history" | "templates">("overview")
+  const [tab, setTab] = useState<"overview" | "channels" | "campaigns" | "preview" | "history" | "templates" | "calendar" | "metrics">("overview")
   const [channels, setChannels] = useState<Channel[]>([])
   const [history, setHistory] = useState<DeliveryLog[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
@@ -261,6 +269,8 @@ export default function WhatsAppBroadcastPage() {
           { key: "preview", label: "Preview", icon: <Eye className="w-3.5 h-3.5" /> },
           { key: "history", label: "Historico", icon: <Clock className="w-3.5 h-3.5" /> },
           { key: "templates", label: "Templates", icon: <FileText className="w-3.5 h-3.5" /> },
+          { key: "calendar", label: "Calendario", icon: <Calendar className="w-3.5 h-3.5" /> },
+          { key: "metrics", label: "Metricas", icon: <TrendingUp className="w-3.5 h-3.5" /> },
         ].map(t => (
           <button
             key={t.key}
@@ -320,6 +330,14 @@ export default function WhatsAppBroadcastPage() {
           {tab === "templates" && (
             <TemplatesTab />
           )}
+
+          {tab === "calendar" && (
+            <CalendarTab />
+          )}
+
+          {tab === "metrics" && (
+            <MetricsTab />
+          )}
         </>
       )}
     </div>
@@ -332,7 +350,7 @@ export default function WhatsAppBroadcastPage() {
 
 function StatCard({ label, value, icon, color }: {
   label: string
-  value: number
+  value: number | string
   icon: React.ReactNode
   color: string
 }) {
@@ -787,6 +805,473 @@ function TemplatesTab() {
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ============================================
+// Calendar Tab — Promotional Calendar (Mega Prompt 03)
+// ============================================
+
+function CalendarTab() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/admin/whatsapp-broadcast/calendar", {
+      headers: { "x-admin-secret": getAdminSecret() },
+    })
+      .then(r => r.json())
+      .then(d => setData(d))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <LoadingSkeleton />
+  if (!data) return <div className="card p-8 text-center text-sm text-text-secondary">Falha ao carregar calendario</div>
+
+  const phaseColors: Record<string, string> = {
+    draft: "bg-surface-100 text-text-secondary",
+    scheduled: "bg-blue-100 text-blue-700",
+    warmup: "bg-amber-100 text-amber-700",
+    active: "bg-green-100 text-green-700",
+    reinforcement: "bg-purple-100 text-purple-700",
+    winding_down: "bg-orange-100 text-orange-700",
+    ended: "bg-surface-100 text-text-secondary",
+    recyclable: "bg-cyan-100 text-cyan-700",
+  }
+
+  const phaseLabels: Record<string, string> = {
+    draft: "Rascunho",
+    scheduled: "Agendado",
+    warmup: "Aquecimento",
+    active: "Ativo",
+    reinforcement: "Reforco",
+    winding_down: "Encerrando",
+    ended: "Encerrado",
+    recyclable: "Reciclavel",
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Active Events */}
+      {data.activeEvents?.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="font-semibold text-sm flex items-center gap-2">
+            <Flame className="w-4 h-4 text-orange-500" />
+            Eventos Ativos Agora
+          </h2>
+          {data.activeEvents.map((evt: any) => (
+            <div key={evt.id} className="card p-4 border-l-4 border-green-500">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-sm">{evt.name}</h3>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${phaseColors[evt.phase] || phaseColors.draft}`}>
+                  {phaseLabels[evt.phase] || evt.phase}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-3 text-[11px] text-text-secondary">
+                <span>Periodo: {evt.startDate} a {evt.endDate}</span>
+                <span>Prioridade: {evt.priority}/10</span>
+                <span>Ofertas: {evt.defaultOfferCount}</span>
+                <span>Freq: {evt.defaultFrequency}x/dia</span>
+                <span>Estrutura: {evt.defaultStructure}</span>
+                <span>Tom: {evt.defaultTonality}</span>
+              </div>
+              {evt.categories?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {evt.categories.map((c: string) => (
+                    <span key={c} className="text-[10px] px-1.5 py-0.5 rounded bg-surface-100 text-text-secondary">{c}</span>
+                  ))}
+                </div>
+              )}
+              {evt.marketplaces?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {evt.marketplaces.map((m: string) => (
+                    <span key={m} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">{m}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Upcoming Events */}
+      {data.upcomingEvents?.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="font-semibold text-sm flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-blue-500" />
+            Proximos Eventos (60 dias)
+          </h2>
+          {data.upcomingEvents.map((evt: any) => (
+            <div key={evt.id} className="card p-3">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-xs">{evt.name}</h3>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${phaseColors[evt.phase] || phaseColors.draft}`}>
+                    {phaseLabels[evt.phase] || evt.phase}
+                  </span>
+                </div>
+                <span className="text-[10px] text-text-secondary">P{evt.priority}</span>
+              </div>
+              <div className="flex flex-wrap gap-2 text-[10px] text-text-secondary">
+                <span>{evt.startDate} → {evt.endDate}</span>
+                <span>Aquec: {evt.warmupDays}d</span>
+                <span>Reforco: {evt.reinforcementDays}d</span>
+                <span>{evt.defaultOfferCount} ofertas</span>
+                <span>{evt.defaultFrequency}x/dia</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Full Calendar */}
+      <div className="space-y-3">
+        <h2 className="font-semibold text-sm flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-text-secondary" />
+          Calendario Completo ({data.currentMonth})
+        </h2>
+        <div className="grid gap-2">
+          {(data.calendar || []).map((evt: any) => (
+            <div key={evt.id} className="card p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${evt.isActive ? "bg-green-500" : "bg-surface-300"}`} />
+                <span className="text-xs font-medium">{evt.name}</span>
+                <span className="text-[10px] text-text-secondary">{evt.startDate} → {evt.endDate}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${phaseColors[evt.phase] || phaseColors.draft}`}>
+                  {phaseLabels[evt.phase] || evt.phase}
+                </span>
+                <span className="text-[10px] text-text-secondary">P{evt.priority}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Campaign Templates */}
+      <div className="space-y-3">
+        <h2 className="font-semibold text-sm flex items-center gap-2">
+          <FileText className="w-4 h-4 text-purple-500" />
+          Templates de Campanha ({(data.templates || []).length})
+        </h2>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(data.templates || []).map((tpl: any) => (
+            <div key={tpl.id} className="card p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold">{tpl.name}</h3>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-100 text-text-secondary">{tpl.structure}</span>
+              </div>
+              <p className="text-[10px] text-text-secondary">{tpl.description}</p>
+              <div className="flex flex-wrap gap-2 text-[10px] text-text-secondary">
+                <span>Score min: {tpl.minScore}</span>
+                <span>Ofertas: {tpl.offerCount}</span>
+                <span>Tom: {tpl.tonality}</span>
+                <span>Horarios: {tpl.preferredHours?.join(", ")}</span>
+                {tpl.maxTicket && <span>Max: R${tpl.maxTicket}</span>}
+                {tpl.minTicket && <span>Min: R${tpl.minTicket}</span>}
+                {tpl.minDiscount && <span>Desc min: {tpl.minDiscount}%</span>}
+              </div>
+              {tpl.categorySlugs?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {tpl.categorySlugs.map((c: string) => (
+                    <span key={c} className="text-[9px] px-1 py-0.5 rounded bg-purple-50 text-purple-700">{c}</span>
+                  ))}
+                </div>
+              )}
+              {tpl.marketplaces?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {tpl.marketplaces.map((m: string) => (
+                    <span key={m} className="text-[9px] px-1 py-0.5 rounded bg-blue-50 text-blue-700">{m}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// Metrics Tab — Revenue Analytics (Mega Prompt 04)
+// ============================================
+
+function MetricsTab() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/admin/whatsapp-broadcast/metrics", {
+      headers: { "x-admin-secret": getAdminSecret() },
+    })
+      .then(r => r.json())
+      .then(d => setData(d))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <LoadingSkeleton />
+  if (!data) return <div className="card p-8 text-center text-sm text-text-secondary">Falha ao carregar metricas</div>
+
+  const { summary, kpis } = data
+
+  const tierColors: Record<string, string> = {
+    hero: "bg-green-100 text-green-800",
+    good: "bg-blue-100 text-blue-700",
+    promising: "bg-cyan-100 text-cyan-700",
+    stable: "bg-surface-100 text-text-secondary",
+    tired: "bg-amber-100 text-amber-700",
+    weak: "bg-orange-100 text-orange-700",
+    pause: "bg-red-100 text-red-700",
+    kill: "bg-red-200 text-red-800",
+    consistent: "bg-blue-100 text-blue-700",
+  }
+
+  const tierLabels: Record<string, string> = {
+    hero: "Hero",
+    good: "Boa",
+    promising: "Promissora",
+    stable: "Estavel",
+    tired: "Cansada",
+    weak: "Fraca",
+    pause: "Pausar",
+    kill: "Encerrar",
+    consistent: "Consistente",
+  }
+
+  const severityColors: Record<string, string> = {
+    critical: "bg-red-50 border-red-200 text-red-700",
+    warning: "bg-amber-50 border-amber-200 text-amber-700",
+    info: "bg-blue-50 border-blue-200 text-blue-700",
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Summary */}
+      {summary && (
+        <div className="space-y-3">
+          <h2 className="font-semibold text-sm flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-brand-500" />
+            Dashboard Executivo
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard
+              label="Receita Assistida"
+              value={`R$ ${(summary.estimatedRevenue || 0).toFixed(2)}`}
+              icon={<DollarSign className="w-4 h-4" />}
+              color="green"
+            />
+            <StatCard
+              label="Receita/Msg"
+              value={`R$ ${(summary.revenuePerMessage || 0).toFixed(2)}`}
+              icon={<TrendingUp className="w-4 h-4" />}
+              color="blue"
+            />
+            <StatCard
+              label="Fadiga"
+              value={`${summary.fatigueScore || 0}%`}
+              icon={<Activity className="w-4 h-4" />}
+              color={summary.fatigueScore > 60 ? "red" : "green"}
+            />
+            <StatCard
+              label="Trust Score"
+              value={`${summary.trustScore || 100}%`}
+              icon={<Shield className="w-4 h-4" />}
+              color={summary.trustScore < 80 ? "red" : "green"}
+            />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard
+              label="Enviados"
+              value={summary.totalSent || 0}
+              icon={<Send className="w-4 h-4" />}
+              color="blue"
+            />
+            <StatCard
+              label="Falhas"
+              value={summary.totalFailed || 0}
+              icon={<XCircle className="w-4 h-4" />}
+              color="red"
+            />
+            <StatCard
+              label="Provider Health"
+              value={`${summary.providerHealth || 100}%`}
+              icon={<CheckCircle2 className="w-4 h-4" />}
+              color={summary.providerHealth < 90 ? "red" : "green"}
+            />
+            <StatCard
+              label="Alertas"
+              value={summary.alertCount || 0}
+              icon={<AlertTriangle className="w-4 h-4" />}
+              color={summary.criticalAlerts > 0 ? "red" : "purple"}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Alerts */}
+      {kpis?.alerts?.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="font-semibold text-sm flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            Alertas ({kpis.alerts.length})
+          </h2>
+          {kpis.alerts.map((alert: any) => (
+            <div key={alert.id} className={`card p-3 border ${severityColors[alert.severity] || severityColors.info}`}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium">{alert.message}</span>
+                <span className="text-[10px] font-semibold uppercase">{alert.severity}</span>
+              </div>
+              <div className="flex gap-3 text-[10px] mt-1 opacity-75">
+                <span>Tipo: {alert.type}</span>
+                <span>Valor: {alert.value}</span>
+                <span>Limiar: {alert.threshold}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Campaign Scorecards */}
+      {kpis?.campaignScoreboards?.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="font-semibold text-sm flex items-center gap-2">
+            <Award className="w-4 h-4 text-purple-500" />
+            Ranking de Campanhas
+          </h2>
+          {kpis.campaignScoreboards.map((card: any) => (
+            <div key={card.campaignId} className="card p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-sm">{card.campaignName}</h3>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${tierColors[card.tier] || tierColors.stable}`}>
+                    {tierLabels[card.tier] || card.tier}
+                  </span>
+                </div>
+                <span className="text-sm font-bold text-brand-500">{card.overallScore}pts</span>
+              </div>
+
+              {/* Score bars */}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                <ScoreBar label="CTR" value={card.ctrScore} />
+                <ScoreBar label="Clickout" value={card.clickoutScore} />
+                <ScoreBar label="Revenue" value={card.revenueScore} />
+                <ScoreBar label="Trust" value={card.trustScore} />
+                <ScoreBar label="Fadiga" value={card.fatigueScore} invert />
+                <ScoreBar label="Eficiencia" value={card.efficiencyScore} />
+              </div>
+
+              {/* Stats */}
+              <div className="flex flex-wrap gap-3 text-[10px] text-text-secondary">
+                <span>Envios: {card.totalSent}</span>
+                <span>Clickouts est.: {card.estimatedClickouts}</span>
+                <span>Receita est.: R$ {card.estimatedRevenue.toFixed(2)}</span>
+                <span>Ofertas/msg: {card.avgOfferCount.toFixed(1)}</span>
+              </div>
+
+              {/* Recommendation */}
+              <div className="bg-surface-50 rounded-md px-3 py-2">
+                <p className="text-[11px] text-text-secondary">
+                  <Target className="w-3 h-3 inline mr-1" />
+                  {card.recommendation}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Template Scorecards */}
+      {kpis?.templateScoreboards?.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="font-semibold text-sm flex items-center gap-2">
+            <FileText className="w-4 h-4 text-blue-500" />
+            Ranking de Templates
+          </h2>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {kpis.templateScoreboards.map((tpl: any) => (
+              <div key={tpl.templateKey} className="card p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium">{tpl.templateKey}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${tierColors[tpl.tier] || tierColors.stable}`}>
+                    {tierLabels[tpl.tier] || tpl.tier}
+                  </span>
+                </div>
+                <div className="flex gap-3 text-[10px] text-text-secondary">
+                  <span>CTR: {tpl.ctrAvg.toFixed(1)}%</span>
+                  <span>Usos: {tpl.totalUsed}</span>
+                  <span>Clicks est.: {tpl.clickEstimate}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Performance by Hour */}
+      {kpis?.byHour && Object.keys(kpis.byHour).length > 0 && (
+        <div className="space-y-3">
+          <h2 className="font-semibold text-sm flex items-center gap-2">
+            <Clock className="w-4 h-4 text-text-secondary" />
+            Performance por Horario
+          </h2>
+          <div className="card p-3">
+            <div className="grid grid-cols-6 sm:grid-cols-12 gap-1">
+              {Array.from({ length: 24 }, (_, h) => {
+                const hourData = kpis.byHour[h]
+                const sent = hourData?.sent || 0
+                const maxSent = Math.max(...Object.values(kpis.byHour).map((d: any) => d.sent || 0), 1)
+                const height = sent > 0 ? Math.max(8, Math.round((sent / maxSent) * 40)) : 4
+                return (
+                  <div key={h} className="flex flex-col items-center gap-0.5">
+                    <div
+                      className={`w-full rounded-sm transition-all ${sent > 0 ? "bg-brand-400" : "bg-surface-200"}`}
+                      style={{ height: `${height}px` }}
+                      title={`${h}h: ${sent} envios`}
+                    />
+                    <span className="text-[8px] text-text-secondary">{h}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* No data state */}
+      {(!kpis || kpis.totalSent === 0) && (
+        <div className="card p-8 text-center">
+          <BarChart3 className="w-8 h-8 text-surface-300 mx-auto mb-2" />
+          <p className="text-sm text-text-secondary">Nenhum dado de envio para calcular metricas</p>
+          <p className="text-xs text-text-secondary mt-1">Envie ofertas para comecar a ver analytics</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// Score bar mini component
+// ============================================
+
+function ScoreBar({ label, value, invert }: { label: string; value: number; invert?: boolean }) {
+  const color = invert
+    ? value > 60 ? "bg-red-400" : value > 30 ? "bg-amber-400" : "bg-green-400"
+    : value > 60 ? "bg-green-400" : value > 30 ? "bg-amber-400" : "bg-red-400"
+
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[9px] text-text-secondary">{label}</span>
+        <span className="text-[9px] font-bold">{value}</span>
+      </div>
+      <div className="h-1 rounded-full bg-surface-200 overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(100, value)}%` }} />
+      </div>
     </div>
   )
 }
