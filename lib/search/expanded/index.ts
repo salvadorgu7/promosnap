@@ -42,10 +42,13 @@ import type { ProductCard } from '@/types'
 const log = logger.child({ module: 'expanded-search' })
 
 // ── Feature Flag ─────────────────────────────────────────────────────────────
+// Uses getFlag() which supports percentage-based rollout via envRollout()
+// e.g. FF_EXPANDED_SEARCH=50 → enabled 50% of the time
+
+import { getFlag } from '@/lib/config/feature-flags'
 
 function isExpandedSearchEnabled(): boolean {
-  const flag = process.env.FF_EXPANDED_SEARCH
-  return flag === 'true' || flag === '1'
+  return getFlag('expandedSearch')
 }
 
 // ── Internal → UnifiedResult Converter ───────────────────────────────────────
