@@ -139,6 +139,47 @@ export async function GET(req: NextRequest) {
     ['orphan-linker', () => import('@/lib/jobs/orphan-linker').then(m => m.linkOrphanListings())],
     // specs-enrich: HYGIENE — auto-extracts specs (storage, RAM, screen, etc.) from product titles
     ['specs-enrich', () => import('@/lib/jobs/specs-enrich').then(m => m.specsEnrich())],
+    // lifecycle-scoring: CRM — computes lifecycle stage, churn risk, and next-best-actions for subscribers
+    ['lifecycle-scoring', () => import('@/lib/crm/lifecycle-score').then(m => m.batchComputeLifecycles(200))],
+    // smart-categorize: HYGIENE — enhanced multi-signal product categorization (title + brand + price + specs)
+    ['smart-categorize', async () => {
+      const { batchCategorize } = await import('@/lib/ai/smart-categorizer')
+      const pMod = await import('@/lib/db/prisma')
+      const db = pMod.default
+
+      const uncategorized = await db.product.findMany({
+        where: { status: 'ACTIVE', categoryId: null },
+        select: { id: true, name: true, brand: { select: { name: true } } },
+        take: 300,
+      })
+
+      if (uncategorized.length === 0) return { itemsTotal: 0, itemsDone: 0 }
+
+      const results = batchCategorize(uncategorized.map(p => ({
+        id: p.id,
+        title: p.name,
+        brand: p.brand?.name || undefined,
+      })))
+
+      let categorized = 0
+      for (const p of uncategorized) {
+        const result = results.get(p.id)
+        if (!result || result.primary.confidence < 0.3) continue
+
+        const cat = await db.category.upsert({
+          where: { slug: result.primary.slug },
+          create: { name: result.primary.label, slug: result.primary.slug },
+          update: {},
+        })
+        await db.product.update({
+          where: { id: p.id },
+          data: { categoryId: cat.id },
+        })
+        categorized++
+      }
+
+      return { itemsTotal: uncategorized.length, itemsDone: categorized, metadata: { method: 'smart-categorizer' } }
+    }],
   ]
 
   // Filter to requested subset if ?jobs= is provided

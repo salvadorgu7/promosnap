@@ -13,11 +13,19 @@ interface StructuredBlock {
   [key: string]: any;
 }
 
+interface SmartSuggestionItem {
+  text: string;
+  query: string;
+  icon: string;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
   products?: any[];
   blocks?: StructuredBlock[];
+  smartSuggestions?: SmartSuggestionItem[];
+  purchasePhase?: string;
 }
 
 // ── Suggestions ────────────────────────────────────────────────────────────
@@ -69,6 +77,8 @@ export default function AssistentePage() {
         content: data.message || "Sem resposta.",
         products: data.products,
         blocks: data.blocks,
+        smartSuggestions: data.smartSuggestions,
+        purchasePhase: data.purchaseIntent?.phase,
       };
       setMessages(prev => [...prev, assistantMsg]);
     } catch {
@@ -126,7 +136,24 @@ export default function AssistentePage() {
               }`}
             >
               {msg.role === "assistant" && msg.blocks ? (
-                <AssistantBlocks blocks={msg.blocks} onFollowUp={sendMessage} />
+                <>
+                  <AssistantBlocks blocks={msg.blocks} onFollowUp={sendMessage} />
+                  {/* Smart suggestions from AI context */}
+                  {msg.smartSuggestions && msg.smartSuggestions.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {msg.smartSuggestions.map((s, j) => (
+                        <button
+                          key={j}
+                          onClick={() => sendMessage(s.query)}
+                          className="text-[11px] px-2.5 py-1.5 rounded-lg border border-surface-200 bg-surface-50 hover:border-brand-500/30 hover:bg-brand-50/50 transition-colors text-text-secondary hover:text-brand-600"
+                        >
+                          <span className="mr-1">{s.icon}</span>
+                          {s.text}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               ) : (
                 <>
                   {/* Text content */}

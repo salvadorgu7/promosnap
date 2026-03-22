@@ -21,7 +21,7 @@
       "schedule": "0 */3 * * *"
     },
     {
-      "path": "/api/cron?jobs=cleanup,backfill-images,category-fill,brand-fill,variant-fill,orphan-linker,specs-enrich",
+      "path": "/api/cron?jobs=cleanup,backfill-images,category-fill,brand-fill,variant-fill,orphan-linker,specs-enrich,smart-categorize",
       "schedule": "0 */6 * * *"
     },
     {
@@ -45,7 +45,7 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron?jobs=crm-engine,growth-daily",
+      "path": "/api/cron?jobs=crm-engine,growth-daily,lifecycle-scoring",
       "schedule": "0 10 * * *"
     },
     {

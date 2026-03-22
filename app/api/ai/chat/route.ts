@@ -16,6 +16,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, rateLimitResponse, withRateLimitHeaders } from '@/lib/security/rate-limit'
 import { processShoppingQuery, isAIConfigured } from '@/lib/ai/shopping-assistant'
 import { loadConversation, appendToConversation } from '@/lib/ai/session-memory'
+import { classifyIntent } from '@/lib/ai/intent-classifier'
+import { scorePurchaseIntent } from '@/lib/ai/purchase-intent'
+import { analyzeConversation } from '@/lib/ai/conversation-intelligence'
+import { generateSmartSuggestions } from '@/lib/ai/smart-suggestions'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -61,6 +65,32 @@ export async function POST(req: NextRequest) {
 
     const result = await processShoppingQuery(message, history)
 
+    // ── Purchase intent + conversation intelligence (non-blocking) ──
+    const intent = classifyIntent(message)
+    const purchaseIntent = scorePurchaseIntent({
+      query: message,
+      conversationHistory: history,
+      classifiedIntent: intent,
+    })
+
+    // Generate smart follow-up suggestions based on context
+    const smartSuggestions = generateSmartSuggestions({
+      conversationHistory: [...history, { role: 'user', content: message }],
+      purchasePhase: purchaseIntent.phase,
+      lastProducts: result.products?.slice(0, 3).map(p => ({
+        name: p.name,
+        price: p.price || 0,
+        category: intent.categories?.[0],
+      })),
+    })
+
+    // Conversation intelligence (fire-and-forget analytics)
+    analyzeConversation(
+      [...history, { role: 'user', content: message }, { role: 'assistant', content: result.message }],
+      intent,
+      result.products?.length || 0
+    ) // just compute, no await needed — pure function for now
+
     // Persist conversation (fire-and-forget)
     if (sessionId) {
       appendToConversation(sessionId, message, result.message).catch(() => {})
@@ -70,11 +100,28 @@ export async function POST(req: NextRequest) {
       queryLength: message.length,
       hasProducts: !!result.products?.length,
       productCount: result.products?.length || 0,
+      purchasePhase: purchaseIntent.phase,
+      purchaseIntentScore: purchaseIntent.score,
       sessionId: sessionId ? sessionId.slice(0, 8) + '...' : null,
       historySource: clientHistory.length > 0 ? 'client' : persistedHistory.length > 0 ? 'persisted' : 'none',
     })
 
-    return withRateLimitHeaders(NextResponse.json(result), rl)
+    // Enrich response with smart suggestions + purchase context
+    const enrichedResult = {
+      ...result,
+      purchaseIntent: {
+        score: purchaseIntent.score,
+        phase: purchaseIntent.phase,
+        recommendedAction: purchaseIntent.recommendedAction,
+      },
+      smartSuggestions: smartSuggestions.slice(0, 4).map(s => ({
+        text: s.text,
+        query: s.query,
+        icon: s.icon,
+      })),
+    }
+
+    return withRateLimitHeaders(NextResponse.json(enrichedResult), rl)
   } catch (error) {
     logger.error('ai.chat.failed', { error })
     return withRateLimitHeaders(
