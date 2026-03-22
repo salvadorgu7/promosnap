@@ -536,7 +536,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
 
               {/* Expanded results — external marketplace results */}
               {expandedData && (
-                <div data-expanded-results>
+                <aside data-expanded-results data-nosnippet aria-label="Mais opções em lojas parceiras">
                   <ExpandedResults
                     results={expandedData.results}
                     framing={expandedData.framing}
@@ -544,7 +544,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                     query={query}
                     mode="complement"
                   />
-                </div>
+                </aside>
               )}
 
               {/* Pagination */}
@@ -600,7 +600,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
             <>
               {/* Even with zero internal results, expanded search may have found matches */}
               {expandedData ? (
-                <div data-expanded-results>
+                <aside data-expanded-results data-nosnippet aria-label="Resultados de lojas parceiras">
                   <ExpandedResults
                     results={expandedData.results}
                     framing={expandedData.framing}
@@ -608,7 +608,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
                     query={query}
                     mode="rescue"
                   />
-                </div>
+                </aside>
               ) : (
                 <EmptyState
                   icon={Search}

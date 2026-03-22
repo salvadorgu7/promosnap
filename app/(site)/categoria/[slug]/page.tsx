@@ -332,8 +332,9 @@ export default async function CategoriaPage({
           </div>
 
           {/* Expanded results — complement thin categories */}
+          {/* data-nosnippet prevents Google from using expanded content in search snippets */}
           {expandedData && (
-            <div data-expanded-results>
+            <aside data-expanded-results data-nosnippet aria-label="Mais opções em lojas parceiras">
               <ExpandedResults
                 results={expandedData.results}
                 framing={expandedData.framing}
@@ -342,7 +343,7 @@ export default async function CategoriaPage({
                 mode="complement"
                 layout="rail"
               />
-            </div>
+            </aside>
           )}
 
           {/* Pagination */}
