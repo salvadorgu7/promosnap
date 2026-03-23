@@ -59,6 +59,10 @@
     {
       "path": "/api/cron?jobs=auto-blog,price-index",
       "schedule": "0 5 1 * *"
+    },
+    {
+      "path": "/api/cron?jobs=whatsapp-broadcast",
+      "schedule": "0 9,13,18 * * *"
     }
   ]
 }
