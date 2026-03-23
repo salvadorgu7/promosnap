@@ -107,12 +107,15 @@ export interface ProductCard {
     affiliateUrl: string
     isFreeShipping: boolean
     offerScore: number
+    hasCoupon?: boolean
   }
   offersCount: number
   storesCount: number
   minPrice30d?: number
   popularityScore: number
   originType?: string
+  /** Estimativa de vendas do listing principal (para ranking de bestsellers) */
+  salesCountEstimate?: number
   badges: Badge[]
 }
 

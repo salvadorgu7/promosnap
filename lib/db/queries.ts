@@ -40,8 +40,9 @@ export function buildProductCard(p: any): ProductCard | null {
   // ── Price sanity gates — LAST LINE OF DEFENSE before user sees it ──────
   // Gate 1: absolute floor
   if (best.currentPrice < 5) return null
-  // Gate 2: absurd discount
-  if (discount && discount >= 85) return null
+  // Gate 2: desconto absurdo — 98%+ e sempre erro de parse
+  // Descontos 85-97% sao validados pelo quality gate inteligente no commerce engine
+  if (discount && discount >= 98) return null
   // Gate 3: high-value products at implausible prices (mirrors cleanup Rule 3)
   const productName = (p.name || '').toLowerCase()
   const HIGH_VALUE_DISPLAY_RULES: [RegExp, number][] = [
@@ -69,10 +70,10 @@ export function buildProductCard(p: any): ProductCard | null {
   // Gate 4: discount > 80% AND price under R$100 → almost certainly parse error
   if (discount && discount >= 80 && best.currentPrice < 100) return null
 
-  // Affiliate URL sanity: '#' is a sentinel for "no valid affiliate URL stored".
-  // Products without a real affiliate URL should not appear in commercial surfaces
-  // (homepage, deal pages) since they can't be monetized. They may still appear in search.
-  const rawAffiliateUrl = best.affiliateUrl || '#'
+  // Affiliate URL: se nao tem URL de afiliado, usa pagina do produto como fallback.
+  // A pagina do produto tem CTAs de afiliado embutidos — ainda monetizavel.
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.promosnap.com.br'
+  const rawAffiliateUrl = best.affiliateUrl || `${APP_URL}/produto/${p.slug}`
 
   const badges: Badge[] = []
   if (best.offerScore >= 80) badges.push({ type: 'hot_deal', label: 'Oferta Quente', color: 'red' })
@@ -101,11 +102,13 @@ export function buildProductCard(p: any): ProductCard | null {
       affiliateUrl: rawAffiliateUrl,
       isFreeShipping: best.isFreeShipping,
       offerScore: best.offerScore,
+      hasCoupon: !!best.couponText,
     },
     offersCount: allOffers.length,
     storesCount: countDistinctStores(allOffers.map((o: any) => o.sourceSlug)),
     popularityScore: p.popularityScore,
     originType: p.originType || undefined,
+    salesCountEstimate: p.listings?.[0]?.salesCountEstimate ?? undefined,
     badges,
   }
 }
@@ -170,7 +173,9 @@ function cardToSignals(card: ProductCard): CommercialSignals {
     offerScore: card.bestOffer.offerScore,
     isFreeShipping: card.bestOffer.isFreeShipping,
     hasImage: !!card.imageUrl,
-    hasAffiliate: card.bestOffer.affiliateUrl !== '#',
+    hasAffiliate: !card.bestOffer.affiliateUrl.includes('/produto/'), // fallback URLs nao contam
+    hasCoupon: card.bestOffer.hasCoupon,
+    soldQuantity: card.salesCountEstimate,
   }
 }
 
@@ -217,8 +222,6 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
   const result = rankCards(cards, 'deal')
     .filter(c => c.imageUrl) // Homepage: must have image
-    .filter(c => (c.bestOffer.discount ?? 0) < 85) // Skip suspicious discounts
-    .filter(c => c.bestOffer.affiliateUrl !== '#')  // Require valid affiliate URL
     .slice(0, limit)
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
   return result
@@ -252,7 +255,6 @@ export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
   const result = rankCards(cards, 'trending')
     .filter(c => c.imageUrl) // Homepage: must have image
-    .filter(c => c.bestOffer.affiliateUrl !== '#')
     .slice(0, limit)
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
   return result
@@ -312,9 +314,8 @@ export async function getPriceDrops(limit = 16): Promise<ProductCard[]> {
 
   const result = products.map(buildProductCard).filter(Boolean)
     .filter(p => p!.imageUrl)
-    .filter(p => p!.bestOffer.discount && p!.bestOffer.discount >= 15 && p!.bestOffer.discount < 85)
+    .filter(p => p!.bestOffer.discount && p!.bestOffer.discount >= 15)
     .filter(p => p!.bestOffer.price > 10)
-    .filter(p => p!.bestOffer.affiliateUrl !== '#')
     .sort((a, b) => (b!.bestOffer.discount || 0) - (a!.bestOffer.discount || 0))
     .slice(0, limit) as ProductCard[]
 
@@ -373,8 +374,7 @@ export async function getMostSearchedProducts(limit = 16): Promise<ProductCard[]
 
     const result = products.map(buildProductCard).filter(Boolean)
       .filter(p => p!.imageUrl)
-      .filter(p => p!.bestOffer.affiliateUrl !== '#')
-      .slice(0, limit) as ProductCard[]
+            .slice(0, limit) as ProductCard[]
 
     memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
     return result
