@@ -51,8 +51,9 @@ export async function selectOffers(options: SelectionOptions): Promise<SelectedO
  * Enhanced selection that also returns exceptional offers and demand signals.
  */
 export async function selectOffersEnhanced(options: SelectionOptions): Promise<SelectionResult> {
-  const { channel, campaign, excludeOfferIds = [], resentableOfferIds = [] } = options
-  const limit = campaign?.offerCount || channel.defaultOfferCount || 5
+  const { channel, campaign, limit: requestedLimit, excludeOfferIds = [], resentableOfferIds = [] } = options
+  // Use explicit limit from caller (e.g. UI offerCount), fallback to campaign/channel/default
+  const limit = requestedLimit || campaign?.offerCount || channel.defaultOfferCount || 5
   const minScore = campaign?.minScore || 40
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br"
 

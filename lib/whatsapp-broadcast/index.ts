@@ -47,6 +47,25 @@ import { detectTimeWindow } from "./templates"
 const log = logger.child({ module: "wa-broadcast" })
 
 // ============================================
+// Broadcast lock — prevents concurrent sends on same channel
+// ============================================
+const activeBroadcasts = new Map<string, number>()
+const BROADCAST_LOCK_TTL = 60_000 // 60s max lock
+
+function acquireLock(channelId: string): boolean {
+  const existing = activeBroadcasts.get(channelId)
+  if (existing && Date.now() - existing < BROADCAST_LOCK_TTL) {
+    return false // another broadcast is in progress
+  }
+  activeBroadcasts.set(channelId, Date.now())
+  return true
+}
+
+function releaseLock(channelId: string): void {
+  activeBroadcasts.delete(channelId)
+}
+
+// ============================================
 // Core broadcast execution
 // ============================================
 
@@ -76,8 +95,36 @@ export interface BroadcastResult {
 /**
  * Execute a broadcast: select offers → compose → send (or dry-run).
  * This is the main entry point for the engine.
+ * Includes concurrency lock to prevent double-sends from rapid clicks.
  */
 export async function executeBroadcast(options: BroadcastOptions): Promise<BroadcastResult> {
+  const { channelId, campaignId, dryRun = false } = options
+
+  // 0. Concurrency lock — prevent double-sends on same channel
+  if (!dryRun && !acquireLock(channelId)) {
+    log.warn("broadcast.concurrent-blocked", { channelId })
+    return {
+      success: false,
+      dryRun,
+      channel: null as any,
+      campaign: null,
+      message: null,
+      sendResult: null,
+      deliveryLog: null,
+      fatigueCheck: { allowed: false, reasons: ["Envio em andamento neste canal"] },
+      offerCount: 0,
+      error: "Envio ja em andamento neste canal. Aguarde alguns segundos.",
+    }
+  }
+
+  try {
+    return await _executeBroadcastInner(options)
+  } finally {
+    if (!dryRun) releaseLock(channelId)
+  }
+}
+
+async function _executeBroadcastInner(options: BroadcastOptions): Promise<BroadcastResult> {
   const { channelId, campaignId, dryRun = false } = options
 
   // 1. Resolve channel
