@@ -407,14 +407,14 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
       <div className="lg:hidden mb-4 space-y-3">
         <div className="flex gap-3">
           {/* Compact image */}
-          <div className="w-24 h-24 flex-shrink-0 rounded-xl bg-white border border-surface-200 overflow-hidden relative shadow-sm">
+          <div className="w-[104px] h-[104px] flex-shrink-0 rounded-xl bg-white border border-surface-200 overflow-hidden relative shadow-sm">
             {product.imageUrl ? (
               <Image
                 src={product.imageUrl}
                 alt={product.name}
                 fill
-                className="object-contain p-1.5"
-                sizes="96px"
+                className="object-contain p-2"
+                sizes="104px"
                 priority
               />
             ) : (
@@ -642,25 +642,25 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
-          {/* Use case recommendation — "Melhor para: fotografia, bateria" */}
-          <UseCaseRecommendation
-            productName={product.name}
-            productTitle={product.listings[0]?.rawTitle || product.name}
-            categorySlug={product.category?.slug}
-            specsJson={specs}
-          />
-
-          {/* Product caveat — honest single warning */}
-          <ProductCaveat
-            buySignal={buySignal}
-            trend={priceStats?.trend}
-            cheaperAlternative={
-              alternatives.length > 0 && alternatives[0].bestOffer?.price < bestPrice * 0.85
-                ? { name: alternatives[0].name, price: alternatives[0].bestOffer.price, slug: alternatives[0].slug }
-                : null
-            }
-            reviewConfidence={consolidatedRating?.confidence ?? null}
-          />
+          {/* Use case + caveat — hidden on mobile to keep flow lean */}
+          <div className="hidden lg:block space-y-6">
+            <UseCaseRecommendation
+              productName={product.name}
+              productTitle={product.listings[0]?.rawTitle || product.name}
+              categorySlug={product.category?.slug}
+              specsJson={specs}
+            />
+            <ProductCaveat
+              buySignal={buySignal}
+              trend={priceStats?.trend}
+              cheaperAlternative={
+                alternatives.length > 0 && alternatives[0].bestOffer?.price < bestPrice * 0.85
+                  ? { name: alternatives[0].name, price: alternatives[0].bestOffer.price, slug: alternatives[0].slug }
+                  : null
+              }
+              reviewConfidence={consolidatedRating?.confidence ?? null}
+            />
+          </div>
 
           {/* Price drop alert — returning visitor notification */}
           {bestOffer && (
@@ -671,15 +671,19 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
-          {/* Category insights badges */}
-          {categoryInsight && categoryInsight.badges.length > 0 && (
-            <CategoryInsightsComponent insight={categoryInsight} />
-          )}
+          {/* Category insights badges — desktop only */}
+          <div className="hidden lg:block">
+            {categoryInsight && categoryInsight.badges.length > 0 && (
+              <CategoryInsightsComponent insight={categoryInsight} />
+            )}
+          </div>
 
-          {/* Price trend indicator */}
-          {priceStats && (
-            <PriceTrend trend={priceStats.trend} currentPrice={priceStats.current} avgPrice={priceStats.avg30d} />
-          )}
+          {/* Price trend indicator — desktop only (hero has price context) */}
+          <div className="hidden lg:block">
+            {priceStats && (
+              <PriceTrend trend={priceStats.trend} currentPrice={priceStats.current} avgPrice={priceStats.avg30d} />
+            )}
+          </div>
 
           {/* Mobile compact decision — replaces 4 blocks on mobile */}
           {bestOffer && (
@@ -783,77 +787,78 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
-          {/* Best price highlight card */}
-          {bestOffer && (
-            <div className="card p-4 lg:p-5 border-brand-500/25 bg-brand-50">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                <div>
-                  <p className="text-xs text-text-muted mb-1">Melhor preco encontrado</p>
-                  <div className="flex items-end gap-2">
-                    {bestOffer.originalPrice && bestOffer.originalPrice > bestOffer.price && (
-                      <span className="price-old text-base">{formatPrice(bestOffer.originalPrice)}</span>
+          {/* Best price highlight card — hidden on mobile (hero already shows price + CTA) */}
+          <div className="hidden lg:block">
+            {bestOffer && (
+              <div className="card p-5 border-brand-500/25 bg-brand-50">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <p className="text-xs text-text-muted mb-1">Melhor preco encontrado</p>
+                    <div className="flex items-end gap-2">
+                      {bestOffer.originalPrice && bestOffer.originalPrice > bestOffer.price && (
+                        <span className="price-old text-base">{formatPrice(bestOffer.originalPrice)}</span>
+                      )}
+                      {discount && <span className="discount-tag">-{discount}%</span>}
+                    </div>
+                    <p className="text-3xl font-bold text-brand-600 font-display mt-1">
+                      {formatPrice(bestPrice)}
+                    </p>
+                    {priceBelowAvg30d && priceBelowAvg30d >= 3 && (
+                      <p className="text-xs font-medium text-accent-green mt-1">
+                        {priceBelowAvg30d}% abaixo da media dos ultimos 30 dias
+                      </p>
                     )}
-                    {discount && <span className="discount-tag">-{discount}%</span>}
+                    {isNearAllTimeLow && (
+                      <p className="text-xs font-medium text-accent-green mt-0.5">
+                        Proximo do menor preco historico!
+                      </p>
+                    )}
+                    {showInstallment && (
+                      <p className="text-sm text-text-muted mt-1">
+                        ou {installmentCount}x de {formatPrice(installmentValue)}
+                      </p>
+                    )}
+                    <p className="text-xs text-text-muted mt-1">em {bestOffer.sourceName}</p>
                   </div>
-                  <p className="text-2xl sm:text-3xl font-bold text-brand-600 font-display mt-1">
-                    {formatPrice(bestPrice)}
-                  </p>
-                  {/* Price context badges */}
-                  {priceBelowAvg30d && priceBelowAvg30d >= 3 && (
-                    <p className="text-xs font-medium text-accent-green mt-1">
-                      {priceBelowAvg30d}% abaixo da media dos ultimos 30 dias
+                  <div className="flex flex-col items-center gap-1.5">
+                    <a
+                      href={`/api/clickout/${bestOffer.id}?page=product`}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow sponsored"
+                      className="btn-primary flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold w-full"
+                    >
+                      <ExternalLink className="h-5 w-5" /> Garantir Desconto na {bestOffer.sourceName}
+                    </a>
+                    {discount && discount > 20 && (
+                      <p className="text-[10px] text-accent-orange font-medium text-center">
+                        Preco pode mudar a qualquer momento
+                      </p>
+                    )}
+                    <p className="text-[10px] text-text-muted text-center flex items-center gap-1">
+                      <Shield className="h-3 w-3" /> Compra segura via {bestOffer.sourceName}
                     </p>
-                  )}
-                  {isNearAllTimeLow && (
-                    <p className="text-xs font-medium text-accent-green mt-0.5">
-                      Proximo do menor preco historico!
-                    </p>
-                  )}
-                  {showInstallment && (
-                    <p className="text-sm text-text-muted mt-1">
-                      ou {installmentCount}x de {formatPrice(installmentValue)}
-                    </p>
-                  )}
-                  <p className="text-xs text-text-muted mt-1">em {bestOffer.sourceName}</p>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <a
-                    href={`/api/clickout/${bestOffer.id}?page=product`}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow sponsored"
-                    className="btn-primary flex items-center justify-center gap-2 px-5 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-bold w-full"
-                  >
-                    <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    <span className="truncate">Garantir Desconto na {bestOffer.sourceName}</span>
-                  </a>
-                  {discount && discount > 20 && (
-                    <p className="text-[10px] text-accent-orange font-medium text-center">
-                      Preco pode mudar a qualquer momento
-                    </p>
-                  )}
-                  <p className="text-[10px] text-text-muted text-center flex items-center gap-1">
-                    <Shield className="h-3 w-3" /> Compra segura via {bestOffer.sourceName}
-                  </p>
-                </div>
+                <UrgencySignals
+                  priceDropPercent={discount ?? undefined}
+                  isAllTimeLow={priceStats ? bestPrice <= priceStats.allTimeMin : undefined}
+                  offerScore={bestOffer.offerScore}
+                  daysAtCurrentPrice={undefined}
+                />
               </div>
-              {/* Urgency signals */}
-              <UrgencySignals
-                priceDropPercent={discount ?? undefined}
-                isAllTimeLow={priceStats ? bestPrice <= priceStats.allTimeMin : undefined}
-                offerScore={bestOffer.offerScore}
-                daysAtCurrentPrice={undefined}
-              />
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Inline alert prompt — "Quer pagar menos?" */}
-          {product.listings[0] && (
-            <InlineAlertPrompt
-              listingId={product.listings[0].id}
-              currentPrice={bestPrice}
-              productName={product.name}
-            />
-          )}
+          {/* Inline alert prompt — hidden on mobile (bell in sticky bar) */}
+          <div className="hidden lg:block">
+            {product.listings[0] && (
+              <InlineAlertPrompt
+                listingId={product.listings[0].id}
+                currentPrice={bestPrice}
+                productName={product.name}
+              />
+            )}
+          </div>
 
           {/* Commercial CTA — hidden on mobile (hero + sticky bar cover CTA) */}
           <div className="hidden lg:block">
@@ -883,24 +888,24 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             </div>
           )}
 
-          {/* WhatsApp group CTA — inline after price alert */}
-          <WhatsAppCTA variant="inline" />
-
-          {/* Trust signals strip */}
-          {priceStats && bestOffer && (
-            <TrustSignals
-              priceStats={priceStats}
-              sourceName={bestOffer.sourceName}
-              sourceSlug={bestOffer.sourceSlug}
-              offerScore={bestOffer.offerScore}
-              isFreeShipping={bestOffer.isFreeShipping}
-              offersCount={allOffers.length}
-              hasHistory={priceHistory.length >= 3}
-            />
-          )}
-
-          {/* Why highlighted — transparency block (desktop only, saves mobile space) */}
+          {/* WhatsApp group CTA — hidden on mobile to reduce clutter */}
           <div className="hidden lg:block">
+            <WhatsAppCTA variant="inline" />
+          </div>
+
+          {/* Trust signals + Why highlighted — hidden on mobile */}
+          <div className="hidden lg:block space-y-6">
+            {priceStats && bestOffer && (
+              <TrustSignals
+                priceStats={priceStats}
+                sourceName={bestOffer.sourceName}
+                sourceSlug={bestOffer.sourceSlug}
+                offerScore={bestOffer.offerScore}
+                isFreeShipping={bestOffer.isFreeShipping}
+                offersCount={allOffers.length}
+                hasHistory={priceHistory.length >= 3}
+              />
+            )}
             {bestOffer && (
               <WhyHighlighted
                 offerScore={bestOffer.offerScore}
