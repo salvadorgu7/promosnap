@@ -265,13 +265,24 @@ export default function WhatsAppAdminPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
-          <Phone className="h-6 w-6" /> WhatsApp — Evolution API
-        </h1>
-        <p className="text-sm text-text-muted mt-1">
-          Conecte o WhatsApp via QR code para enviar ofertas aos grupos
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold font-display text-text-primary flex items-center gap-2">
+            <Phone className="h-6 w-6" /> WhatsApp — Evolution API
+          </h1>
+          <p className="text-sm text-text-muted mt-1">
+            Conecte o WhatsApp via QR code para enviar ofertas aos grupos
+          </p>
+        </div>
+        {isConnected && (
+          <a
+            href="/admin/whatsapp/broadcast"
+            className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition-colors shadow-md"
+          >
+            <Send className="h-4 w-4" />
+            Gerenciar Broadcast
+          </a>
+        )}
       </div>
 
       {/* Erro global */}

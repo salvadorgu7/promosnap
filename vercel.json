@@ -62,7 +62,7 @@
     },
     {
       "path": "/api/cron?jobs=whatsapp-broadcast",
-      "schedule": "0 9,13,18 * * *"
+      "schedule": "0 */2 * * *"
     }
   ]
 }
