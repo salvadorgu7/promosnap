@@ -266,16 +266,30 @@ function SendTab({
   channels: BroadcastChannel[]
   onSent: () => void
 }) {
-  const [channelId, setChannelId] = useState(channels[0]?.id || "")
-  const [structure, setStructure] = useState("radar")
-  const [tonality, setTonality] = useState("curadoria")
-  const [offerCount, setOfferCount] = useState(5)
+  const first = channels[0]
+  const [channelId, setChannelId] = useState(first?.id || "")
+  const [structure, setStructure] = useState(first?.templateMode || "radar")
+  const [tonality, setTonality] = useState(first?.tonality || "curadoria")
+  const [offerCount, setOfferCount] = useState(first?.defaultOfferCount || 5)
   const [preview, setPreview] = useState<PreviewResult | null>(null)
   const [loading, setLoading] = useState<"preview" | "send" | null>(null)
   const [sendResult, setSendResult] = useState<{
     success: boolean
     message: string
   } | null>(null)
+
+  // Sync controls when channel changes
+  const handleChannelChange = (newId: string) => {
+    setChannelId(newId)
+    const ch = channels.find(c => c.id === newId)
+    if (ch) {
+      setStructure(ch.templateMode || "radar")
+      setTonality(ch.tonality || "curadoria")
+      setOfferCount(ch.defaultOfferCount || 5)
+    }
+    setPreview(null)
+    setSendResult(null)
+  }
 
   const handlePreview = async () => {
     setLoading("preview")
@@ -340,7 +354,7 @@ function SendTab({
             <label className="text-xs font-medium text-text-muted block mb-1">Canal</label>
             <select
               value={channelId}
-              onChange={(e) => setChannelId(e.target.value)}
+              onChange={(e) => handleChannelChange(e.target.value)}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
             >
               {channels.length === 0 && (
@@ -521,6 +535,17 @@ function ChannelTab({
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null)
   const [showNew, setShowNew] = useState(false)
+
+  // Sync editing state when channels prop updates (after save → refetch)
+  useEffect(() => {
+    if (!editing) {
+      if (channels[0]) setEditing(channels[0])
+      return
+    }
+    const updated = channels.find(c => c.id === editing.id)
+    if (updated) setEditing(updated)
+    else if (channels[0]) setEditing(channels[0])
+  }, [channels]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // New channel form
   const [newName, setNewName] = useState("")
