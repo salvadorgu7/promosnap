@@ -6,6 +6,7 @@
 import { logger } from "@/lib/logger"
 import prisma from "@/lib/db/prisma"
 import type { BroadcastChannel, BroadcastCampaign, GroupType, MessageStructure, MessageTonality } from "./types"
+import { ensureWaBroadcastTables } from "./db-init"
 
 const log = logger.child({ module: "wa-broadcast.channel-registry" })
 
@@ -130,7 +131,22 @@ export async function getAllChannels(): Promise<BroadcastChannel[]> {
     }
     return rows.map(dbToChannel)
   } catch (err) {
-    log.warn("channel-registry.db-fallback", { error: (err as Error).message })
+    log.warn("channel-registry.db-failed", { error: (err as Error).message })
+
+    // Auto-init: try to create tables and retry
+    const created = await ensureWaBroadcastTables()
+    if (created) {
+      try {
+        const rows = await prisma.waChannel.findMany({ orderBy: { createdAt: "asc" } })
+        if (rows.length > 0) {
+          log.info("channel-registry.auto-init-success", { channels: rows.length })
+          return rows.map(dbToChannel)
+        }
+      } catch {
+        // Still failing — fall through to in-memory
+      }
+    }
+
     fallbackMode = true
     ensureFallbackDefaults()
     return Array.from(fallbackChannels.values())

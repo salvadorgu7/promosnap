@@ -5,6 +5,7 @@
 
 import { logger } from "@/lib/logger"
 import prisma from "@/lib/db/prisma"
+import { ensureWaBroadcastTables } from "./db-init"
 
 const log = logger.child({ module: "wa-broadcast.fatigue-guard" })
 
@@ -176,11 +177,24 @@ export async function getRecentOfferIds(
       .filter(r => r.channelId === channelId && r.sentAt >= cutoff)
       .map(r => r.offerId)
 
-    return [...new Set([...dbOfferIds, ...memOfferIds])]
-  } catch {
-    return recentSends
+    const all = [...new Set([...dbOfferIds, ...memOfferIds])]
+    log.info("fatigue-guard.recent-offer-ids", {
+      channelId,
+      dbCount: dbOfferIds.length,
+      memCount: memOfferIds.length,
+      totalExcluded: all.length,
+    })
+    return all
+  } catch (err) {
+    log.warn("fatigue-guard.recent-ids-db-failed", { error: String(err) })
+    // Try auto-init
+    await ensureWaBroadcastTables()
+    // Even if init succeeded, use in-memory for this request
+    const memIds = recentSends
       .filter(r => r.channelId === channelId && r.sentAt >= cutoff)
       .map(r => r.offerId)
+    log.info("fatigue-guard.recent-offer-ids-fallback", { memCount: memIds.length })
+    return memIds
   }
 }
 

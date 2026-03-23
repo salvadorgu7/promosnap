@@ -11,6 +11,7 @@ import type {
   ComposedMessage,
   WaSendResult,
 } from "./types"
+import { ensureWaBroadcastTables } from "./db-init"
 
 const log = logger.child({ module: "wa-broadcast.delivery-log" })
 
@@ -82,12 +83,25 @@ export async function recordDelivery(params: {
       channelId: row.channelId,
       status: row.status,
       offerCount: row.offerCount,
+      offerIds: entryData.offerIds.length,
       dryRun: row.dryRun,
     })
 
     return dbToLogEntry(row)
   } catch (err) {
-    log.warn("delivery-log.db-fallback", { error: (err as Error).message })
+    log.warn("delivery-log.db-failed", { error: (err as Error).message })
+
+    // Auto-init and retry once
+    const created = await ensureWaBroadcastTables()
+    if (created) {
+      try {
+        const row = await prisma.waDeliveryLog.create({ data: entryData })
+        log.info("delivery-log.recorded-after-init", { id: row.id })
+        return dbToLogEntry(row)
+      } catch {
+        // Still failing — fall through to in-memory
+      }
+    }
 
     // Fallback to in-memory
     const entry: DeliveryLogEntry = {
