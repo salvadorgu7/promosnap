@@ -19,7 +19,7 @@ const log = logger.child({ module: 'commerce.quality-gates' })
 export const DEFAULT_QUALITY_GATES: QualityGatesConfig = {
   /** Preco minimo R$5 — elimina erros de parse com valores proximos de zero */
   minPrice: 5,
-  /** Desconto maximo 85% — acima disso quase certamente e erro de dados */
+  /** Desconto maximo — acima disso ativa validacao inteligente por confianca */
   maxDiscount: 85,
   /** Nota minima 2.0 — listings sem nota (null) sao mantidos */
   minRating: 2,
@@ -98,6 +98,84 @@ export interface QualityGateInput {
   imageUrl?: string | null
   affiliateUrl?: string | null
   sourceSlug?: string
+  // Campos opcionais para validacao inteligente de desconto alto
+  reviewsCount?: number | null
+  couponText?: string | null
+  salesCount?: number | null
+}
+
+// ── Confianca de desconto alto ──────────────────────────────────────────
+
+/**
+ * Fontes confiaveis (marketplaces grandes com dados consistentes).
+ * Descontos altos vindos dessas fontes tem mais chance de ser reais.
+ */
+const TRUSTED_SOURCES = new Set(['amazon', 'amazon-br', 'mercadolivre', 'shopee', 'shein'])
+
+/**
+ * Calcula confianca (0-100) de que um desconto alto (>85%) e real.
+ *
+ * Sinais positivos (somam confianca):
+ *   +25 — fonte confiavel (Amazon, ML, Shopee, Shein)
+ *   +20 — muitas avaliacoes (>50)
+ *   +10 — algumas avaliacoes (>10)
+ *   +15 — nota boa (≥4.0)
+ *   +10 — nota razoavel (≥3.0)
+ *   +15 — vendas altas (>100)
+ *   +10 — vendas medias (>10)
+ *   +10 — tem cupom (desconto via cupom e intencional)
+ *   +10 — preco final > R$20 (menos provavel ser parse error)
+ *   +5  — tem imagem (produto real, nao stub)
+ *
+ * Sinais negativos (reduzem confianca):
+ *   -15 — desconto > 95% (quase certamente erro)
+ *   -10 — preco final < R$10 (suspeito em descontos altos)
+ *
+ * Threshold: confianca >= 35 → aceita. Abaixo → rejeita.
+ * Na pratica, uma oferta da Amazon com 10+ reviews e preco > R$20 passa facil (25+10+10 = 45).
+ * Uma oferta sem reviews, sem fonte conhecida e preco < R$10 seria rejeitada (0-10 = -10).
+ */
+function computeHighDiscountConfidence(
+  offer: QualityGateInput,
+  currentPrice: number,
+  discount: number,
+): number {
+  let confidence = 0
+
+  // Fonte confiavel
+  if (offer.sourceSlug && TRUSTED_SOURCES.has(offer.sourceSlug)) {
+    confidence += 25
+  }
+
+  // Avaliacoes
+  const reviews = offer.reviewsCount != null ? Number(offer.reviewsCount) : 0
+  if (reviews > 50) confidence += 20
+  else if (reviews > 10) confidence += 10
+
+  // Rating
+  const rating = offer.rating != null ? Number(offer.rating) : 0
+  if (rating >= 4.0) confidence += 15
+  else if (rating >= 3.0) confidence += 10
+
+  // Vendas
+  const sales = offer.salesCount != null ? Number(offer.salesCount) : 0
+  if (sales > 100) confidence += 15
+  else if (sales > 10) confidence += 10
+
+  // Cupom (desconto intencional)
+  if (offer.couponText) confidence += 10
+
+  // Preco final razoavel
+  if (currentPrice > 20) confidence += 10
+
+  // Imagem
+  if (offer.imageUrl) confidence += 5
+
+  // Penalidades
+  if (discount > 95) confidence -= 15
+  if (currentPrice < 10) confidence -= 10
+
+  return Math.max(0, Math.min(100, confidence))
 }
 
 // ── Validacao de oferta individual ────────────────────────────────────────
@@ -123,14 +201,39 @@ export function failsQualityGate(
     }
   }
 
-  // Gate 2: desconto maximo (sanidade)
+  // Gate 2: desconto alto — validacao inteligente em camadas
+  // Em vez de corte duro em 85%, usa sinais de confianca para decidir.
+  // So rejeita se desconto > maxDiscount E confianca baixa.
   if (original != null && original > current) {
     const discount = Math.round(((original - current) / original) * 100)
+
     if (discount >= config.maxDiscount) {
-      return {
-        passes: false,
-        reason: `Desconto (${discount}%) acima do maximo (${config.maxDiscount}%) — provavel erro de dados`,
+      // Camada 1: >98% e quase certamente erro de parse — rejeita sempre
+      if (discount >= 98) {
+        return {
+          passes: false,
+          reason: `Desconto (${discount}%) acima de 98% — erro de parse`,
+        }
       }
+
+      // Camada 2: 85-97% — calcular confianca baseada em sinais
+      const confidence = computeHighDiscountConfidence(offer, current, discount)
+
+      // Camada 3: so rejeita se confianca < 35 (de 100)
+      if (confidence < 35) {
+        return {
+          passes: false,
+          reason: `Desconto (${discount}%) com confianca baixa (${confidence}/100) — provavel erro de dados`,
+        }
+      }
+
+      // Desconto alto mas com sinais de confianca suficientes — aceita
+      log.debug('quality-gate.desconto-alto-aceito', {
+        discount,
+        confidence,
+        price: current,
+        source: offer.sourceSlug,
+      })
     }
   }
 

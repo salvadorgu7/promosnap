@@ -171,10 +171,55 @@ describe("Quality Gates", () => {
     expect(result.reason).toContain("minimo")
   })
 
-  it("rejeita desconto acima de 85%", () => {
+  it("rejeita desconto acima de 85% sem sinais de confianca", () => {
     const result = failsQualityGate({ currentPrice: 10, originalPrice: 100 })
     expect(result.passes).toBe(false)
-    expect(result.reason).toContain("maximo")
+    expect(result.reason).toContain("confianca baixa")
+  })
+
+  it("rejeita desconto >= 98% sempre (parse error)", () => {
+    // Mesmo com sinais de confianca, 98%+ e sempre rejeitado
+    const result = failsQualityGate({
+      currentPrice: 2,
+      originalPrice: 100,
+      sourceSlug: "amazon",
+      reviewsCount: 500,
+      rating: 4.8,
+    })
+    // currentPrice 2 < minPrice 5 vai pegar antes, mas testemos 98% direto
+    const result2 = failsQualityGate({
+      currentPrice: 5,
+      originalPrice: 300, // 98.3%
+      sourceSlug: "amazon",
+      reviewsCount: 500,
+      rating: 4.8,
+    })
+    expect(result2.passes).toBe(false)
+    expect(result2.reason).toContain("98%")
+  })
+
+  it("aceita desconto 90% com sinais de confianca altos", () => {
+    // Amazon + reviews + rating + preco > R$20 = confianca alta
+    const result = failsQualityGate({
+      currentPrice: 50,
+      originalPrice: 500, // 90%
+      sourceSlug: "amazon",
+      reviewsCount: 200,
+      rating: 4.5,
+      imageUrl: "https://img.example.com/prod.jpg",
+    })
+    expect(result.passes).toBe(true)
+  })
+
+  it("aceita desconto 87% com cupom e fonte confiavel", () => {
+    const result = failsQualityGate({
+      currentPrice: 130,
+      originalPrice: 1000, // 87%
+      sourceSlug: "mercadolivre",
+      couponText: "PROMO10",
+      reviewsCount: 15,
+    })
+    expect(result.passes).toBe(true) // 25 (source) + 10 (reviews) + 10 (coupon) + 10 (price>20) = 55
   })
 
   it("rejeita nota baixa", () => {

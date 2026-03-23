@@ -88,6 +88,7 @@ interface RawOfferRow {
   listing: {
     rating: number | null
     reviewsCount: number | null
+    salesCountEstimate: number | null
     imageUrl: string | null
     rawDescription: string | null
     product: {
@@ -211,6 +212,7 @@ export async function retrieveOffers(options: RetrievalOptions): Promise<Retriev
   const gatesConfig = resolveQualityGates(channel, options.qualityGates)
 
   // Converter para QualityGateInput para o applyQualityGates generico
+  // Inclui campos extras para validacao inteligente de desconto alto
   const gateInputs: (QualityGateInput & { _raw: RawOfferRow })[] = filtered.map(o => ({
     currentPrice: o.currentPrice,
     originalPrice: o.originalPrice,
@@ -218,6 +220,9 @@ export async function retrieveOffers(options: RetrievalOptions): Promise<Retriev
     imageUrl: o.listing.product?.imageUrl ?? null,
     affiliateUrl: o.affiliateUrl,
     sourceSlug: o.listing.source.slug,
+    reviewsCount: o.listing.reviewsCount,
+    couponText: o.couponText,
+    salesCount: o.listing.salesCountEstimate,
     _raw: o,
   }))
 
