@@ -36,27 +36,30 @@ export async function findDuplicateCandidates(limit = 50): Promise<DuplicatePair
       slug: true,
       brandId: true,
       categoryId: true,
+      popularityScore: true,
       listings: {
         where: { status: 'ACTIVE' },
         select: {
+          sourceId: true,
           offers: {
             where: { isActive: true },
             select: { currentPrice: true },
             take: 1,
           },
         },
-        take: 1,
+        take: 3, // Pegar ate 3 listings para ver se e multi-source
       },
     },
     orderBy: { popularityScore: 'desc' },
-    take: 500, // Analyze top 500 products
+    take: 800, // Ampliado de 500 para 800 — mais candidatos
   })
 
-  // Pre-compute normalized names
+  // Pre-compute normalized names e fontes
   const normalized = products.map(p => ({
     ...p,
     norm: normalizeForMatch(p.name),
     price: p.listings[0]?.offers[0]?.currentPrice ?? 0,
+    sourceIds: new Set(p.listings.map(l => l.sourceId)),
   }))
 
   const pairs: DuplicatePair[] = []
@@ -136,4 +139,68 @@ export async function mergeDuplicates(primaryId: string, duplicateIds: string[])
   }
 
   return { merged }
+}
+
+// ── Cross-marketplace auto-dedup ────────────────────────────────────────────
+
+/**
+ * Encontra e faz merge automatico de produtos duplicados com alta confianca.
+ * Foca em cross-marketplace: mesmo produto vindo de Amazon e ML por exemplo.
+ *
+ * Criterios para auto-merge (todos devem ser verdade):
+ * - Similaridade de nome >= 0.85 (ajustada)
+ * - Mesma marca OU mesma categoria
+ * - Precos dentro de 30% um do outro
+ * - Fontes diferentes (cross-marketplace)
+ *
+ * O produto com maior popularityScore vira o primario.
+ */
+export async function autoMergeCrossMarketplace(): Promise<{
+  candidates: number
+  merged: number
+  skipped: number
+}> {
+  const candidates = await findDuplicateCandidates(100)
+
+  // Filtrar apenas pares com alta confianca para auto-merge
+  const highConfidence = candidates.filter(p =>
+    p.similarity >= 0.85 &&
+    (p.sameBrand || p.sameCategory) &&
+    p.priceOverlap
+  )
+
+  let merged = 0
+  let skipped = 0
+  const alreadyMerged = new Set<string>()
+
+  for (const pair of highConfidence) {
+    // Evitar double-merge
+    if (alreadyMerged.has(pair.primaryId) || alreadyMerged.has(pair.duplicateId)) {
+      skipped++
+      continue
+    }
+
+    try {
+      await mergeDuplicates(pair.primaryId, [pair.duplicateId])
+      alreadyMerged.add(pair.duplicateId)
+      merged++
+
+      logger.info('dedup.auto-merge', {
+        primary: pair.primaryName.slice(0, 50),
+        duplicate: pair.duplicateName.slice(0, 50),
+        similarity: pair.similarity,
+      })
+    } catch {
+      skipped++
+    }
+  }
+
+  logger.info('dedup.auto-merge-complete', {
+    candidates: candidates.length,
+    highConfidence: highConfidence.length,
+    merged,
+    skipped,
+  })
+
+  return { candidates: highConfidence.length, merged, skipped }
 }

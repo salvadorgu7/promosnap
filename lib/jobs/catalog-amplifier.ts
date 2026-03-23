@@ -28,10 +28,12 @@ const log = logger.child({ job: 'catalog-amplifier' })
 const MAX_NEW_PRODUCTS = 500
 const MIN_PRICE = 10
 
-// Category slugs that we want to cover
+// Category slugs that we want to cover — ampliado para maximizar catalogo
 const TARGET_CATEGORIES = [
   'celulares', 'notebooks', 'audio', 'smart-tvs', 'gamer',
   'wearables', 'informatica', 'casa', 'beleza', 'tenis', 'moda', 'infantil',
+  'tablets', 'cameras', 'eletrodomesticos', 'ferramentas', 'automotivo',
+  'pets', 'esporte', 'livros', 'brinquedos', 'saude',
 ]
 
 export async function amplifyCatalog() {
@@ -61,9 +63,9 @@ export async function amplifyCatalog() {
   // ── Source 3: Categories with low product count ──────────────────────
   const categoryCoverage = await getCategoryGaps()
   const gapQueries = categoryCoverage
-    .filter(c => c.count < 10)
+    .filter(c => c.count < 20) // ampliado de 10 para 20 — categorias com poucos produtos
     .flatMap(c => c.queries)
-  log.info('amplifier.gaps', { categories: categoryCoverage.filter(c => c.count < 10).length })
+  log.info('amplifier.gaps', { categories: categoryCoverage.filter(c => c.count < 20).length })
 
   // ── Combine all queries, deduplicate ─────────────────────────────────
   const allQueries = [...new Set([
@@ -184,16 +186,27 @@ async function getCategoryGaps(): Promise<{ slug: string; count: number; queries
   const results: { slug: string; count: number; queries: string[] }[] = []
 
   const CATEGORY_QUERIES: Record<string, string[]> = {
-    celulares: ['celular samsung', 'celular xiaomi', 'iphone'],
-    notebooks: ['notebook lenovo', 'notebook dell', 'macbook'],
-    audio: ['fone jbl', 'fone bluetooth', 'airpods'],
-    'smart-tvs': ['smart tv 50', 'smart tv samsung', 'tv 4k'],
-    gamer: ['console ps5', 'xbox series', 'nintendo switch'],
-    wearables: ['smartwatch', 'apple watch', 'galaxy watch'],
-    informatica: ['mouse gamer', 'teclado mecanico', 'monitor 144hz'],
-    casa: ['airfryer', 'aspirador robo', 'cafeteira'],
-    beleza: ['perfume importado', 'chapinha', 'secador'],
-    tenis: ['tenis nike', 'tenis adidas', 'tenis corrida'],
+    celulares: ['celular samsung', 'celular xiaomi', 'iphone', 'celular motorola'],
+    notebooks: ['notebook lenovo', 'notebook dell', 'macbook', 'notebook gamer'],
+    audio: ['fone jbl', 'fone bluetooth', 'airpods', 'caixa de som bluetooth'],
+    'smart-tvs': ['smart tv 50', 'smart tv samsung', 'tv 4k', 'smart tv lg'],
+    gamer: ['console ps5', 'xbox series', 'nintendo switch', 'controle ps5'],
+    wearables: ['smartwatch', 'apple watch', 'galaxy watch', 'mi band'],
+    informatica: ['mouse gamer', 'teclado mecanico', 'monitor 144hz', 'webcam', 'ssd 1tb'],
+    casa: ['airfryer', 'aspirador robo', 'cafeteira', 'panela eletrica', 'ventilador'],
+    beleza: ['perfume importado', 'chapinha', 'secador', 'protetor solar'],
+    tenis: ['tenis nike', 'tenis adidas', 'tenis corrida', 'chinelo'],
+    moda: ['bolsa feminina', 'relogio masculino', 'oculos sol', 'mochila'],
+    infantil: ['carrinho bebe', 'brinquedo educativo', 'mamadeira'],
+    tablets: ['ipad', 'tablet samsung', 'tablet infantil'],
+    cameras: ['gopro', 'camera canon', 'drone dji'],
+    eletrodomesticos: ['geladeira', 'lava e seca', 'microondas', 'fogao'],
+    ferramentas: ['furadeira', 'parafusadeira', 'kit ferramentas'],
+    automotivo: ['camera re', 'suporte celular carro', 'aspirador carro'],
+    pets: ['racao cachorro', 'racao gato', 'cama pet'],
+    esporte: ['bicicleta', 'esteira', 'haltere', 'colchonete'],
+    brinquedos: ['lego', 'boneca', 'carrinho controle remoto'],
+    saude: ['termometro', 'oximetro', 'massageador'],
   }
 
   for (const slug of TARGET_CATEGORIES) {
@@ -213,14 +226,23 @@ async function getCategoryGaps(): Promise<{ slug: string; count: number; queries
 function inferCategoryFromTitle(title: string): string | undefined {
   const t = title.toLowerCase()
   if (/celular|smartphone|iphone|galaxy\s*[as]/i.test(t)) return 'celulares'
-  if (/notebook|laptop|macbook/i.test(t)) return 'notebooks'
-  if (/fone|headphone|earphone|airpods|caixa.?de.?som/i.test(t)) return 'audio'
+  if (/notebook|laptop|macbook|chromebook/i.test(t)) return 'notebooks'
+  if (/fone|headphone|earphone|airpods|caixa.?de.?som|soundbar/i.test(t)) return 'audio'
   if (/smart\s*tv|televisor|televisao/i.test(t)) return 'smart-tvs'
-  if (/playstation|ps5|xbox|nintendo|console/i.test(t)) return 'gamer'
-  if (/smartwatch|relogio.?inteligente/i.test(t)) return 'wearables'
-  if (/mouse|teclado|monitor|ssd|placa.?de.?video|processador/i.test(t)) return 'informatica'
-  if (/airfryer|fritadeira|cafeteira|aspirador|geladeira/i.test(t)) return 'casa'
-  if (/perfume|maquiagem|skincare|chapinha|secador/i.test(t)) return 'beleza'
-  if (/tenis|sneaker/i.test(t)) return 'tenis'
+  if (/playstation|ps5|xbox|nintendo|console|controle.?gamer/i.test(t)) return 'gamer'
+  if (/smartwatch|relogio.?inteligente|mi.?band|galaxy.?fit/i.test(t)) return 'wearables'
+  if (/mouse|teclado|monitor|ssd|placa.?de.?video|processador|webcam|roteador/i.test(t)) return 'informatica'
+  if (/airfryer|fritadeira|cafeteira|aspirador|ventilador|panela.?eletrica/i.test(t)) return 'casa'
+  if (/perfume|maquiagem|skincare|chapinha|secador|protetor.?solar/i.test(t)) return 'beleza'
+  if (/tenis|sneaker|chinelo/i.test(t)) return 'tenis'
+  if (/ipad|tablet/i.test(t)) return 'tablets'
+  if (/gopro|camera|filmadora|drone/i.test(t)) return 'cameras'
+  if (/geladeira|lava.?seca|microondas|fogao|refrigerador/i.test(t)) return 'eletrodomesticos'
+  if (/furadeira|parafusadeira|serra|esmerilhadeira/i.test(t)) return 'ferramentas'
+  if (/racao|pet|cachorro|gato|aquario/i.test(t)) return 'pets'
+  if (/bicicleta|esteira|haltere|colchonete|patins/i.test(t)) return 'esporte'
+  if (/lego|boneca|brinquedo|carrinho/i.test(t)) return 'brinquedos'
+  if (/bolsa|mochila|oculos|relogio|cinto/i.test(t)) return 'moda'
+  if (/carrinho.?bebe|mamadeira|fraldas|berco/i.test(t)) return 'infantil'
   return undefined
 }

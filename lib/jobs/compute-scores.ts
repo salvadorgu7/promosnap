@@ -151,10 +151,12 @@ export async function computeScores(): Promise<JobResult> {
       for (const offer of batch) {
         let score = computeOfferScore(offer);
 
-        // Boost clickout engagement signal: up to +5 points for popular offers
+        // Boost clickout engagement: up to +15 points for popular offers
+        // Ofertas com clicks reais sao sinais fortes de demanda/monetizacao
         const clicks = clickoutsByOffer.get(offer.id) || 0;
         if (clicks > 0) {
-          const clickBoost = Math.min(clicks / 10, 1) * 5;
+          // Escala logaritmica: 1 click=+3, 5 clicks=+8, 20 clicks=+13, 50+=+15
+          const clickBoost = Math.min(Math.log10(clicks + 1) * 8, 15);
           score = Math.round((score + clickBoost) * 100) / 100;
         }
 

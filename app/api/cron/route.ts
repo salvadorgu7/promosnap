@@ -143,6 +143,8 @@ export async function GET(req: NextRequest) {
     ['specs-enrich', () => import('@/lib/jobs/specs-enrich').then(m => m.specsEnrich())],
     // lifecycle-scoring: CRM — computes lifecycle stage, churn risk, and next-best-actions for subscribers
     ['lifecycle-scoring', () => import('@/lib/crm/lifecycle-score').then(m => m.batchComputeLifecycles(200))],
+    // auto-dedup: HYGIENE — auto-merge cross-marketplace duplicate products (high confidence only)
+    ['auto-dedup', () => import('@/lib/catalog/dedup').then(m => m.autoMergeCrossMarketplace())],
     // smart-categorize: HYGIENE — enhanced multi-signal product categorization (title + brand + price + specs)
     ['smart-categorize', async () => {
       const { batchCategorize } = await import('@/lib/ai/smart-categorizer')

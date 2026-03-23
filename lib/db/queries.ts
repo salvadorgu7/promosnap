@@ -166,7 +166,42 @@ const PRODUCT_SELECT_FOR_CARD = {
 // COMMERCIAL RANKING HELPER
 // ============================================
 
-function cardToSignals(card: ProductCard): CommercialSignals {
+// Cache de clickouts por produto — atualizado a cada 5min junto com as queries
+let _clickoutsCache: Map<string, number> | null = null
+let _clickoutsCacheTs = 0
+
+/**
+ * Busca contagem de clickouts por productId nos ultimos 7 dias.
+ * Usa raw SQL para eficiencia (GROUP BY productId em clickouts).
+ * Resultado cacheado por 5min (alinhado com HOMEPAGE_CACHE_TTL_MS).
+ */
+async function getProductClickouts7d(): Promise<Map<string, number>> {
+  const now = Date.now()
+  if (_clickoutsCache && (now - _clickoutsCacheTs) < HOMEPAGE_CACHE_TTL_MS) {
+    return _clickoutsCache
+  }
+  try {
+    const rows = await prisma.$queryRaw<Array<{ productId: string; clicks: bigint }>>`
+      SELECT "productId", COUNT(*) as clicks
+      FROM "clickouts"
+      WHERE "clickedAt" > NOW() - INTERVAL '7 days' AND "productId" IS NOT NULL
+      GROUP BY "productId"
+      ORDER BY clicks DESC
+      LIMIT 500
+    `
+    const map = new Map<string, number>()
+    for (const r of rows) {
+      map.set(r.productId, Number(r.clicks))
+    }
+    _clickoutsCache = map
+    _clickoutsCacheTs = now
+    return map
+  } catch {
+    return _clickoutsCache || new Map()
+  }
+}
+
+function cardToSignals(card: ProductCard, clickouts7d?: number): CommercialSignals {
   return {
     currentPrice: card.bestOffer.price,
     originalPrice: card.bestOffer.originalPrice,
@@ -176,14 +211,21 @@ function cardToSignals(card: ProductCard): CommercialSignals {
     hasAffiliate: !card.bestOffer.affiliateUrl.includes('/produto/'), // fallback URLs nao contam
     hasCoupon: card.bestOffer.hasCoupon,
     soldQuantity: card.salesCountEstimate,
+    clickouts7d,
   }
 }
 
-function rankCards(cards: ProductCard[], preset: string): ProductCard[] {
+async function rankCards(cards: ProductCard[], preset: string): Promise<ProductCard[]> {
+  // Enriquecer com clickouts reais — sinal de demanda forte
+  const clickoutsMap = await getProductClickouts7d()
+
   return cards
     .map(card => ({
       card,
-      score: calculateCommercialScore(cardToSignals(card), preset),
+      score: calculateCommercialScore(
+        cardToSignals(card, clickoutsMap.get(card.id)),
+        preset,
+      ),
     }))
     .sort((a, b) => b.score.total - a.score.total)
     .map(s => s.card)
@@ -220,7 +262,8 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
     take: limit * 2,
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
-  const result = rankCards(cards, 'deal')
+  const ranked = await rankCards(cards, 'deal')
+  const result = ranked
     .filter(c => c.imageUrl) // Homepage: must have image
     .slice(0, limit)
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
@@ -253,7 +296,8 @@ export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
     take: limit * 2,
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
-  const result = rankCards(cards, 'trending')
+  const ranked = await rankCards(cards, 'trending')
+  const result = ranked
     .filter(c => c.imageUrl) // Homepage: must have image
     .slice(0, limit)
   memoryCache.set(cacheKey, result, HOMEPAGE_CACHE_TTL_MS)
@@ -597,7 +641,7 @@ export async function getProductsByCategory(slug: string, options: {
   if (sort === 'price_asc') cards.sort((a, b) => a.bestOffer.price - b.bestOffer.price)
   else if (sort === 'price_desc') cards.sort((a, b) => b.bestOffer.price - a.bestOffer.price)
   else if (sort === 'discount') cards.sort((a, b) => (b.bestOffer.discount || 0) - (a.bestOffer.discount || 0))
-  else cards = rankCards(cards, 'category')
+  else cards = await rankCards(cards, 'category')
 
   return { products: cards, total }
 }
@@ -628,7 +672,7 @@ export async function getProductsByBrand(slug: string, options: {
   let cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
   if (sort === 'price_asc') cards.sort((a, b) => a.bestOffer.price - b.bestOffer.price)
   else if (sort === 'price_desc') cards.sort((a, b) => b.bestOffer.price - a.bestOffer.price)
-  else cards = rankCards(cards, 'brand')
+  else cards = await rankCards(cards, 'brand')
 
   return { products: cards, total }
 }
@@ -720,7 +764,8 @@ export async function getAlternatives(categorySlug: string | undefined, price: n
     orderBy: { popularityScore: 'desc' },
   })
   const cards = products.map(buildProductCard).filter(Boolean) as ProductCard[]
-  return rankCards(cards, 'deal')
+  const ranked = await rankCards(cards, 'deal')
+  return ranked
     .filter(c => c.imageUrl)
     .slice(0, limit)
 }
