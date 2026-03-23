@@ -63,6 +63,7 @@ import ComparisonContext from "@/components/product/ComparisonContext";
 import AskAIBlock from "@/components/product/AskAIBlock";
 import AISummaryBlock from "@/components/product/AISummaryBlock";
 import ViewTracker from "@/components/product/ViewTracker";
+import WhatsAppCTA from "@/components/home/WhatsAppCTA";
 import { analyzeCrossSource, buildCrossSourceOffer } from "@/lib/source/cross-source";
 import { countDistinctStores } from "@/lib/source/normalize";
 import { getCanonicalComparison, getBestChoice } from "@/lib/catalog/smart-comparison";
@@ -769,6 +770,9 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               />
             </div>
           )}
+
+          {/* WhatsApp group CTA — inline after price alert */}
+          <WhatsAppCTA variant="inline" />
 
           {/* Trust signals strip */}
           {priceStats && bestOffer && (

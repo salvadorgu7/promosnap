@@ -20,6 +20,8 @@ import EmailCapture from "@/components/engagement/EmailCapture";
 import StoreTrustBar from "@/components/home/StoreTrustBar";
 import WhyPromoSnap from "@/components/home/WhyPromoSnap";
 
+const WhatsAppCTA = nextDynamic(() => import("@/components/home/WhatsAppCTA"));
+
 // Lazy-load below-fold client components for faster initial load
 const PersonalizedRails = nextDynamic(() => import("@/components/home/PersonalizedRails"));
 const SinceLastVisit = nextDynamic(() => import("@/components/home/SinceLastVisit"));
@@ -572,6 +574,9 @@ export default async function HomePage() {
       <div id="newsletter" className="section-deep">
         <Newsletter />
       </div>
+
+      {/* ===== 20a. WHATSAPP GROUP CTA ===== */}
+      <WhatsAppCTA />
 
       {/* ===== 20b. WHY PROMOSNAP ===== */}
       <WhyPromoSnap />

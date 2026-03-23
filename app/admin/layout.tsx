@@ -108,6 +108,7 @@ const navGroups: NavGroup[] = [
       { href: "/admin/tendencias", label: "Tendências", icon: TrendingUp },
       { href: "/admin/email", label: "Email", icon: Mail },
       { href: "/admin/whatsapp", label: "WhatsApp", icon: Phone },
+      { href: "/admin/whatsapp/broadcast", label: "Broadcast", icon: Megaphone },
       { href: "/admin/alertas", label: "Alertas", icon: Bell },
       { href: "/admin/distribution", label: "Distribuição", icon: Radio },
     ],

@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Radio,
+  MessageCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -54,6 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Comunidade",
     items: [
       { href: "/canais", label: "Canais", icon: Radio },
+      { href: "/canais#whatsapp", label: "WhatsApp", icon: MessageCircle },
       { href: "/guias", label: "Guias", icon: BookOpen },
     ],
   },
