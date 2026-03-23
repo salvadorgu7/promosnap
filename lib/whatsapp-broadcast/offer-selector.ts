@@ -90,8 +90,8 @@ export async function selectOffersEnhanced(options: SelectionOptions): Promise<S
   try {
     // ── 3. Delegate to Unified Commerce Engine ──────────────────────
     // Fetch extra (limit * 3) to have room after quality gates + dedup + exceptional detection
-    // maxPerMarketplace scales with limit to avoid capping too early
-    const maxPerMp = Math.max(Math.ceil(limit / 2), 4)
+    // maxPerMarketplace scales with limit — needs headroom so we don't cap too early
+    const maxPerMp = Math.max(limit, 4)
     const retrieved = await retrieveOffers({
       channel: "whatsapp",
       limit: Math.max(limit * 3, 15),
@@ -101,10 +101,21 @@ export async function selectOffersEnhanced(options: SelectionOptions): Promise<S
       budget,
       minScore,
       minDiscount: campaign?.minDiscount ?? undefined,
-      requireAffiliate: campaign?.requireAffiliate !== false,
+      requireAffiliate: campaign?.requireAffiliate === true, // only enforce if explicitly true
       requireImage: true,
       maxPerMarketplace: maxPerMp,
     })
+
+    if (retrieved.length < limit) {
+      log.warn("offer-selector.insufficient-offers", {
+        requested: limit,
+        retrieved: retrieved.length,
+        excludedByDedup: effectiveExclude.length,
+        minScore,
+        maxPerMp,
+        categories: categories.slice(0, 3),
+      })
+    }
 
     // ── 4. Map to SelectedOffer with broadcast-specific tracking ────
     const allOffers = retrieved.map((o, i) => {

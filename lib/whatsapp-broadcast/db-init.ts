@@ -1,6 +1,7 @@
 // ============================================
 // WhatsApp Broadcast — Database Auto-Init
 // Creates tables if they don't exist (self-healing)
+// Detects snake_case column mismatch and recreates
 // ============================================
 
 import prisma from "@/lib/db/prisma"
@@ -12,9 +13,9 @@ let initAttempted = false
 let tablesReady = false
 
 /**
- * Ensure WhatsApp broadcast tables exist.
- * Called lazily on first DB access failure.
- * Safe to call multiple times (idempotent).
+ * Ensure WhatsApp broadcast tables exist with correct camelCase columns.
+ * Detects both missing tables AND wrong column names (snake_case from old SQL).
+ * Safe to call multiple times per instance (idempotent).
  */
 export async function ensureWaBroadcastTables(): Promise<boolean> {
   if (tablesReady) return true
@@ -23,19 +24,26 @@ export async function ensureWaBroadcastTables(): Promise<boolean> {
   initAttempted = true
 
   try {
-    // Quick check: try a simple query
-    await prisma.waChannel.count()
+    // Must use findFirst (not count!) to force Prisma to SELECT actual columns.
+    // count() only does SELECT COUNT(*) which works even with wrong column names.
+    await prisma.waChannel.findFirst({ select: { id: true, destinationId: true } })
     tablesReady = true
     return true
-  } catch {
-    // Table doesn't exist or column mismatch — create it
-    log.info("db-init.creating-wa-tables")
+  } catch (err) {
+    log.info("db-init.tables-need-fix", { error: (err as Error).message })
   }
 
   try {
+    // Drop old tables with wrong column names (snake_case) and recreate with camelCase
+    await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS "wa_delivery_logs" CASCADE`)
+    await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS "wa_campaigns" CASCADE`)
+    await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS "wa_channels" CASCADE`)
+
+    log.info("db-init.dropped-old-tables")
+
     // Create tables with camelCase columns matching Prisma schema
     await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "wa_channels" (
+      CREATE TABLE "wa_channels" (
         "id"                    TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
         "name"                  TEXT NOT NULL,
         "destinationId"         TEXT NOT NULL,
@@ -62,7 +70,7 @@ export async function ensureWaBroadcastTables(): Promise<boolean> {
     `)
 
     await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "wa_campaigns" (
+      CREATE TABLE "wa_campaigns" (
         "id"                      TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
         "channelId"               TEXT NOT NULL REFERENCES "wa_channels"("id") ON DELETE CASCADE,
         "name"                    TEXT NOT NULL,
@@ -88,7 +96,7 @@ export async function ensureWaBroadcastTables(): Promise<boolean> {
     `)
 
     await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "wa_delivery_logs" (
+      CREATE TABLE "wa_delivery_logs" (
         "id"                TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
         "channelId"         TEXT NOT NULL REFERENCES "wa_channels"("id") ON DELETE CASCADE,
         "channelName"       TEXT NOT NULL,
@@ -121,29 +129,32 @@ export async function ensureWaBroadcastTables(): Promise<boolean> {
     await prisma.$executeRawUnsafe(`
       INSERT INTO "wa_channels" ("id", "name", "destinationId", "groupType", "dailyLimit", "defaultOfferCount", "quietHoursStart", "quietHoursEnd", "templateMode", "tonality", "tags")
       VALUES ('ch_default', 'PromoSnap Ofertas', '120363424471768330@g.us', 'geral', 10, 5, 22, 7, 'radar', 'curadoria', ARRAY['geral', 'ofertas'])
-      ON CONFLICT ("id") DO NOTHING
     `)
 
     // Seed default campaigns
     await prisma.$executeRawUnsafe(`
       INSERT INTO "wa_campaigns" ("id", "channelId", "name", "campaignType", "schedule", "offerCount", "minScore", "structureType")
       VALUES ('camp_radar_manha', 'ch_default', 'Radar da Manha', 'scheduled', '08:30', 5, 50, 'radar')
-      ON CONFLICT ("id") DO NOTHING
     `)
     await prisma.$executeRawUnsafe(`
       INSERT INTO "wa_campaigns" ("id", "channelId", "name", "campaignType", "schedule", "offerCount", "minScore", "minDiscount", "structureType")
       VALUES ('camp_achados_almoco', 'ch_default', 'Achados do Almoco', 'scheduled', '12:00', 4, 50, 10, 'shortlist')
-      ON CONFLICT ("id") DO NOTHING
     `)
     await prisma.$executeRawUnsafe(`
       INSERT INTO "wa_campaigns" ("id", "channelId", "name", "campaignType", "schedule", "offerCount", "minScore", "minDiscount", "structureType")
       VALUES ('camp_fechamento_dia', 'ch_default', 'Fechamento do Dia', 'scheduled', '19:00', 3, 60, 15, 'hero')
-      ON CONFLICT ("id") DO NOTHING
     `)
 
-    log.info("db-init.wa-tables-created")
-    tablesReady = true
-    return true
+    // Verify
+    const verify = await prisma.waChannel.findFirst({ select: { id: true, destinationId: true } })
+    if (verify) {
+      log.info("db-init.success", { channelId: verify.id })
+      tablesReady = true
+      return true
+    }
+
+    log.error("db-init.verify-failed")
+    return false
   } catch (err) {
     log.error("db-init.failed", { error: (err as Error).message })
     return false
