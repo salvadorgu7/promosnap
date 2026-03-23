@@ -54,7 +54,8 @@ export async function selectOffersEnhanced(options: SelectionOptions): Promise<S
   const { channel, campaign, limit: requestedLimit, excludeOfferIds = [], resentableOfferIds = [] } = options
   // Use explicit limit from caller (e.g. UI offerCount), fallback to campaign/channel/default
   const limit = requestedLimit || campaign?.offerCount || channel.defaultOfferCount || 5
-  const minScore = campaign?.minScore || 40
+  // minScore baixo por padrao — broadcast prioriza variedade e monetizacao, nao so score
+  const minScore = campaign?.minScore || 15
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.promosnap.com.br"
 
   // ── 1. Query click demand signals ─────────────────────────────────
@@ -106,19 +107,36 @@ export async function selectOffersEnhanced(options: SelectionOptions): Promise<S
       maxPerMarketplace: maxPerMp,
     })
 
+    // ── 3b. If not enough offers, do a second fetch with lower minScore ──
+    let combinedRetrieved = retrieved
     if (retrieved.length < limit) {
-      log.warn("offer-selector.insufficient-offers", {
-        requested: limit,
-        retrieved: retrieved.length,
-        excludedByDedup: effectiveExclude.length,
-        minScore,
-        maxPerMp,
-        categories: categories.slice(0, 3),
+      log.info("offer-selector.backfill-attempt", {
+        have: retrieved.length,
+        need: limit,
+        tryingMinScore: 5,
       })
+      const existingIds = new Set([...effectiveExclude, ...retrieved.map(o => o.offerId)])
+      const backfill = await retrieveOffers({
+        channel: "whatsapp",
+        limit: (limit - retrieved.length) * 3,
+        excludeOfferIds: [...existingIds],
+        categories: undefined, // broaden: no category filter
+        marketplaces: marketplaces.length > 0 ? marketplaces : undefined,
+        budget,
+        minScore: 5,
+        requireAffiliate: false,
+        requireImage: true,
+        maxPerMarketplace: maxPerMp,
+      }).catch(() => [])
+
+      if (backfill.length > 0) {
+        log.info("offer-selector.backfill-found", { count: backfill.length })
+        combinedRetrieved = [...retrieved, ...backfill]
+      }
     }
 
     // ── 4. Map to SelectedOffer with broadcast-specific tracking ────
-    const allOffers = retrieved.map((o, i) => {
+    const allOffers = combinedRetrieved.map((o, i) => {
       const baseUrl = o.affiliateUrl || `${APP_URL}/produto/${o.productSlug}`
       const campaignTrackingUrl = buildBroadcastAffiliateUrl(baseUrl, {
         channelId: channel.id,
