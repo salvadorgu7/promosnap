@@ -15,9 +15,12 @@ import type {
   TimeWindow,
 } from "./types"
 import { selectOffers } from "./offer-selector"
-import { composeMessage } from "./composer"
+import { composeMessage, composeSingleOffer } from "./composer"
+import type { SingleOfferMessage } from "./composer"
 import { checkFatigue, getRecentOfferIds, recordSend } from "./fatigue-guard"
 import { sendWithRetry, isBroadcastReady, sendTestMessage } from "./send-queue"
+import { sendBroadcastMessage as evolutionSendBroadcast } from "@/lib/whatsapp/evolution-api"
+import { isEvolutionConfigured } from "@/lib/whatsapp/evolution-api"
 import { recordDelivery, getDeliveryHistory, getDeliveryStats } from "./delivery-log"
 import {
   getAllChannels,
@@ -151,46 +154,108 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
     }
   }
 
-  // 5. Compose message
-  const message = composeMessage({
-    offers,
-    channel,
-    campaign,
-    structure: options.structure,
-    tonality: options.tonality,
-    timeWindow: options.timeWindow || detectTimeWindow(),
-  })
+  // 5. Determine mode: individual (1 msg per product) vs composed (1 msg with all)
+  const useIndividualMode = isEvolutionConfigured()
+  const structure = options.structure || campaign?.structureType || channel.templateMode || "radar"
+  const tonality = options.tonality || channel.tonality || "curadoria"
+  const timeWindow = options.timeWindow || detectTimeWindow()
 
   // 6. Send or dry-run
   let sendResult: WaSendResult | null = null
   let status: "sent" | "failed" | "dry_run"
+  let message: ComposedMessage | null = null
 
   if (dryRun) {
+    // For preview, compose in the selected mode
+    if (useIndividualMode) {
+      const singleMessages = offers.map(o => composeSingleOffer(o, channel, campaign, tonality))
+      // Join all for preview display
+      message = {
+        text: singleMessages.map((m, i) => `--- Msg ${i + 1}/${singleMessages.length} ---\n${m.text}`).join("\n\n"),
+        offers,
+        structure: "individual" as MessageStructure,
+        opening: "",
+        cta: "",
+        transition: null,
+        channelId: channel.id,
+        campaignId: campaign?.id || null,
+        templateKey: `individual_${tonality}`,
+      }
+    } else {
+      message = composeMessage({ offers, channel, campaign, structure, tonality, timeWindow })
+    }
     status = "dry_run"
-    log.info("broadcast.dry-run", {
-      channelId,
-      offerCount: offers.length,
-      textLength: message.text.length,
-    })
+    log.info("broadcast.dry-run", { channelId, offerCount: offers.length, mode: useIndividualMode ? "individual" : "composed" })
   } else {
     // Check provider is ready
     if (!isBroadcastReady()) {
       return {
-        success: false,
-        dryRun,
-        channel,
-        campaign,
-        message,
-        sendResult: null,
-        deliveryLog: null,
-        fatigueCheck,
-        offerCount: offers.length,
-        error: "WhatsApp API nao configurado",
+        success: false, dryRun, channel, campaign, message: null,
+        sendResult: null, deliveryLog: null, fatigueCheck,
+        offerCount: offers.length, error: "WhatsApp API não configurado",
       }
     }
 
-    sendResult = await sendWithRetry(channel.destinationId, message)
-    status = sendResult.success ? "sent" : "failed"
+    if (useIndividualMode) {
+      // ── Modo individual: 1 mensagem por produto com imagem ──
+      const singleMessages = offers.map(o => composeSingleOffer(o, channel, campaign, tonality))
+      let sentCount = 0
+      let lastMessageId: string | undefined
+      const errors: string[] = []
+
+      for (let i = 0; i < singleMessages.length; i++) {
+        const msg = singleMessages[i]
+        try {
+          const result = await evolutionSendBroadcast(
+            channel.destinationId,
+            msg.text,
+            msg.imageUrl,
+          )
+          if (result.success) {
+            sentCount++
+            lastMessageId = result.messageId
+          } else {
+            errors.push(`Offer ${i + 1}: ${result.error}`)
+          }
+        } catch (err) {
+          errors.push(`Offer ${i + 1}: ${err instanceof Error ? err.message : "erro"}`)
+        }
+
+        // Delay entre mensagens (2s) para não flodar
+        if (i < singleMessages.length - 1) {
+          await new Promise(r => setTimeout(r, 2000))
+        }
+      }
+
+      sendResult = {
+        success: sentCount > 0,
+        messageId: lastMessageId || `batch_${Date.now()}`,
+        error: errors.length > 0 ? errors.join("; ") : undefined,
+      }
+      status = sentCount > 0 ? "sent" : "failed"
+
+      // Build composed message for the delivery log
+      message = {
+        text: singleMessages.map(m => m.text).join("\n\n---\n\n"),
+        offers,
+        structure: "individual" as MessageStructure,
+        opening: "",
+        cta: "",
+        transition: null,
+        channelId: channel.id,
+        campaignId: campaign?.id || null,
+        templateKey: `individual_${tonality}`,
+      }
+
+      log.info("broadcast.individual-sent", {
+        channelId, total: singleMessages.length, sent: sentCount, failed: errors.length,
+      })
+    } else {
+      // ── Modo composto: 1 mensagem com tudo ──
+      message = composeMessage({ offers, channel, campaign, structure, tonality, timeWindow })
+      sendResult = await sendWithRetry(channel.destinationId, message)
+      status = sendResult.success ? "sent" : "failed"
+    }
 
     if (sendResult.success) {
       // Record fatigue tracking
@@ -216,7 +281,7 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
     campaignId: campaign?.id,
     campaignName: campaign?.name,
     status,
-    message,
+    message: message!,
     sendResult,
     dryRun,
   })

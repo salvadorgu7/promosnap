@@ -7,6 +7,7 @@
  * Each structure has a specific use case and format.
  */
 export type MessageStructure =
+  | "individual"    // 1 mensagem por produto (com imagem)
   | "shortlist"     // Estrutura A — 3-5 items diretos
   | "radar"         // Estrutura B — Radar com contexto
   | "hero"          // Estrutura C — Hero + apoio

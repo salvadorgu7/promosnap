@@ -412,3 +412,97 @@ export function composeMessage(options: ComposeOptions): ComposedMessage {
     templateKey: `${structure}_${tonality}_${timeWindow}`,
   }
 }
+
+// ============================================
+// Single product message (1 msg = 1 produto + imagem)
+// ============================================
+
+export interface SingleOfferMessage {
+  text: string
+  imageUrl: string | null
+  offer: SelectedOffer
+  channelId: string
+  campaignId: string | null
+}
+
+/**
+ * URL curta para o produto via PromoSnap (em vez de URL longa da loja).
+ */
+function shortProductUrl(offer: SelectedOffer): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://promosnap.com.br"
+  return `${appUrl}/produto/${offer.productSlug}`
+}
+
+/**
+ * Compõe mensagem individual para 1 produto.
+ * Formato otimizado para WhatsApp: caption da imagem.
+ * Visual, com emojis, preço destaque e link curto.
+ */
+export function composeSingleOffer(
+  offer: SelectedOffer,
+  channel: BroadcastChannel,
+  campaign?: BroadcastCampaign | null,
+  tonality?: MessageTonality,
+): SingleOfferMessage {
+  const lines: string[] = []
+
+  // ── Discount badge (headline) ──
+  if (offer.discount >= 40) {
+    lines.push(`🚨🔥 *${offer.discount}% OFF — BAIXOU MUITO*`)
+  } else if (offer.discount >= 25) {
+    lines.push(`🔥 *${offer.discount}% OFF*`)
+  } else if (offer.discount >= 10) {
+    lines.push(`⚡ *${offer.discount}% OFF*`)
+  } else if (offer.discount > 0) {
+    lines.push(`💰 *${offer.discount}% OFF*`)
+  } else {
+    lines.push(`💎 *Preço destaque*`)
+  }
+
+  lines.push("")
+
+  // ── Product name (bold, truncated for mobile) ──
+  const name = offer.productName.length > 90
+    ? offer.productName.slice(0, 87) + "..."
+    : offer.productName
+  lines.push(`*${name}*`)
+  lines.push("")
+
+  // ── Price block ──
+  if (offer.originalPrice && offer.discount > 0) {
+    const economia = formatBRL(offer.originalPrice - offer.currentPrice)
+    lines.push(`~~${formatBRL(offer.originalPrice)}~~ ➜ *${formatBRL(offer.currentPrice)}*`)
+    lines.push(`💸 Você economiza *${economia}*`)
+  } else {
+    lines.push(`💲 *${formatBRL(offer.currentPrice)}*`)
+  }
+
+  // ── Extras (frete, cupom, nota) ──
+  const extras: string[] = []
+  if (offer.isFreeShipping) extras.push("📦 Frete grátis")
+  if (offer.couponText) extras.push(`🎟️ Cupom: *${offer.couponText}*`)
+  if (offer.rating && offer.rating >= 4.0) extras.push(`⭐ ${offer.rating.toFixed(1)}/5`)
+  if (extras.length > 0) {
+    lines.push(extras.join("  "))
+  }
+
+  lines.push("")
+
+  // ── Store ──
+  lines.push(`🏪 ${offer.sourceName}`)
+  lines.push("")
+
+  // ── Links (curto do PromoSnap + direto da loja) ──
+  lines.push(`👉 ${shortProductUrl(offer)}`)
+
+  lines.push("")
+  lines.push(`_PromoSnap — Comparação de preços inteligente_`)
+
+  return {
+    text: lines.join("\n"),
+    imageUrl: offer.imageUrl,
+    offer,
+    channelId: channel.id,
+    campaignId: campaign?.id || null,
+  }
+}
