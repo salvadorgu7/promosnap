@@ -95,7 +95,7 @@ export default function MobileProductActions({
   const ctaLabel = offerScore >= 80 ? "Aproveitar Agora" : discount && discount >= 30 ? "Garantir Oferta" : "Comprar";
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-surface-200 safe-bottom shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white border-t border-surface-200 safe-bottom shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
       {/* Urgency strip for great deals */}
       {isGreatDeal && (
         <div className="bg-gradient-to-r from-accent-green/10 to-green-50 px-4 py-1 flex items-center justify-center gap-1.5">

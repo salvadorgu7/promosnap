@@ -13,6 +13,7 @@ import {
   Share2,
   Tag,
   Users,
+  Zap,
 } from "lucide-react";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import PriceChart from "@/components/charts/PriceChartLazy";
@@ -308,7 +309,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     : undefined;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 pb-20 lg:pb-6">
+    <div className="max-w-7xl mx-auto px-4 py-4 lg:py-6 pb-24 lg:pb-6 overflow-x-hidden">
       {/* View tracker — stores recently viewed + CRM event */}
       <ViewTracker slug={product.slug} productId={product.id} />
 
@@ -401,30 +402,136 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
       />
       <DecisionTracker productId={product.id} productSlug={slug} productName={product.name} />
 
-      {/* Mobile contextual nav */}
-      <div className="lg:hidden mb-4">
-        <ContextualNav
-          slug={slug}
-          categoryName={product.category?.name}
-          categorySlug={product.category?.slug}
-          brandName={product.brand?.name}
-          brandSlug={brandSlug}
-          hasPriceAlert={!!bestOffer}
-        />
+      {/* ═══ Mobile Product Hero ═══ */}
+      {/* Compact hero visible only on mobile — price + CTA above the fold */}
+      <div className="lg:hidden mb-4 space-y-3">
+        <div className="flex gap-3">
+          {/* Compact image */}
+          <div className="w-24 h-24 flex-shrink-0 rounded-xl bg-white border border-surface-200 overflow-hidden relative shadow-sm">
+            {product.imageUrl ? (
+              <Image
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                className="object-contain p-1.5"
+                sizes="96px"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <ShoppingCart className="h-8 w-8 text-surface-300" />
+              </div>
+            )}
+          </div>
+
+          {/* Name + meta */}
+          <div className="flex-1 min-w-0">
+            {product.brand && (
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                {product.brand.name}
+              </span>
+            )}
+            <h1 className="text-base font-bold font-display text-text-primary leading-tight line-clamp-2">
+              {product.name}
+            </h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {lastSeenLabel && (
+                <span className="flex items-center gap-1 text-[10px] text-text-muted">
+                  <Clock className="h-2.5 w-2.5" /> {lastSeenLabel}
+                </span>
+              )}
+              {discount && discount >= 20 && (
+                <span className="badge-lowest text-[10px]">Preco em queda</span>
+              )}
+            </div>
+            <LiveViewers popularityScore={product.popularityScore} />
+          </div>
+        </div>
+
+        {/* Price + CTA card — immediate conversion area */}
+        {bestOffer && (
+          <div className="rounded-xl border border-accent-green/25 bg-gradient-to-r from-green-50/60 to-white p-3 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                {bestOffer.originalPrice && bestOffer.originalPrice > bestOffer.price && (
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-xs text-text-muted line-through">
+                      {formatPrice(bestOffer.originalPrice)}
+                    </span>
+                    {discount && (
+                      <span className="text-[10px] font-bold text-white bg-accent-red px-1.5 py-0.5 rounded">
+                        -{discount}%
+                      </span>
+                    )}
+                  </div>
+                )}
+                <p className="text-2xl font-bold font-display text-text-primary">
+                  {formatPrice(bestPrice)}
+                </p>
+                {showInstallment && (
+                  <p className="text-[10px] text-text-muted">
+                    ou {installmentCount}x de {formatPrice(installmentValue)}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <span className="text-[10px] text-text-muted">em {bestOffer.sourceName}</span>
+                  {bestOffer.isFreeShipping && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-accent-green">
+                      <Package className="w-2.5 h-2.5" /> Frete gratis
+                    </span>
+                  )}
+                </div>
+                {/* Price context badges */}
+                <div className="flex items-center gap-1 mt-1 flex-wrap">
+                  {isNearAllTimeLow && (
+                    <span className="text-[9px] font-semibold text-accent-green bg-accent-green/10 px-1.5 py-0.5 rounded-full">
+                      Menor preco historico
+                    </span>
+                  )}
+                  {priceBelowAvg30d && priceBelowAvg30d >= 3 && (
+                    <span className="text-[9px] font-semibold text-accent-blue bg-accent-blue/10 px-1.5 py-0.5 rounded-full">
+                      {priceBelowAvg30d}% abaixo da media
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <a
+                href={`/api/clickout/${bestOffer.id}?page=product&product=${slug}&origin=mobile_hero`}
+                target="_blank"
+                rel="noopener noreferrer nofollow sponsored"
+                className={`flex-shrink-0 flex items-center gap-1.5 px-5 py-3 rounded-xl text-white text-sm font-bold transition-all shadow-lg ${
+                  bestOffer.offerScore >= 80 || (discount && discount >= 30)
+                    ? "bg-gradient-to-r from-accent-green to-green-600 shadow-green-200"
+                    : "bg-accent-green hover:bg-green-600"
+                }`}
+              >
+                {(bestOffer.offerScore >= 80 || (discount && discount >= 30)) && <Zap className="w-4 h-4" />}
+                Comprar
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <p className="text-[10px] text-text-muted text-center mt-2 flex items-center justify-center gap-1">
+              <Shield className="w-2.5 h-2.5 text-accent-green" />
+              Compra segura via {bestOffer.sourceName}
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left column: Image + contextual nav */}
-        <div className="lg:col-span-1 space-y-4">
-          {/* Product image */}
-          <div className="card aspect-square relative flex items-center justify-center p-8 overflow-hidden image-container">
+      <div className="grid lg:grid-cols-3 gap-4 lg:gap-6">
+        {/* Left column: Image + contextual nav — pushed below right column on mobile */}
+        <div className="lg:col-span-1 space-y-4 order-2 lg:order-none">
+          {/* Product image — hidden on mobile (shown in mobile hero) */}
+          <div className="hidden lg:flex card aspect-square relative items-center justify-center p-8 overflow-hidden image-container">
             {product.imageUrl ? (
               <Image
                 src={product.imageUrl}
                 alt={product.name}
                 fill
                 className="object-contain drop-shadow-sm p-4"
-                sizes="(max-width: 1024px) 100vw, 33vw"
+                sizes="33vw"
                 priority
               />
             ) : (
@@ -432,7 +539,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             )}
           </div>
 
-          {/* Contextual navigation (desktop) */}
+          {/* Contextual navigation */}
           <ContextualNav
             slug={slug}
             categoryName={product.category?.name}
@@ -478,16 +585,18 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           )}
         </div>
 
-        {/* Right column: Info + Offers + Chart */}
-        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-          {/* Breadcrumbs */}
-          <Breadcrumbs items={[
-            ...(product.category ? [{ label: product.category.name, href: `/categoria/${product.category.slug}` }] : []),
-            { label: product.name },
-          ]} />
+        {/* Right column: Info + Offers + Chart — shows first on mobile */}
+        <div className="lg:col-span-2 space-y-3 lg:space-y-6 order-1 lg:order-none">
+          {/* Breadcrumbs — hidden on mobile (top breadcrumb already visible) */}
+          <div className="hidden lg:block">
+            <Breadcrumbs items={[
+              ...(product.category ? [{ label: product.category.name, href: `/categoria/${product.category.slug}` }] : []),
+              { label: product.name },
+            ]} />
+          </div>
 
-          {/* Product header */}
-          <div>
+          {/* Product header — hidden on mobile (shown in mobile hero) */}
+          <div className="hidden lg:block">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               {product.brand && (
                 <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
@@ -676,8 +785,8 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
 
           {/* Best price highlight card */}
           {bestOffer && (
-            <div className="card p-5 border-brand-500/25 bg-brand-50">
-              <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="card p-4 lg:p-5 border-brand-500/25 bg-brand-50">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                 <div>
                   <p className="text-xs text-text-muted mb-1">Melhor preco encontrado</p>
                   <div className="flex items-end gap-2">
@@ -686,7 +795,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                     )}
                     {discount && <span className="discount-tag">-{discount}%</span>}
                   </div>
-                  <p className="text-3xl font-bold text-brand-600 font-display mt-1">
+                  <p className="text-2xl sm:text-3xl font-bold text-brand-600 font-display mt-1">
                     {formatPrice(bestPrice)}
                   </p>
                   {/* Price context badges */}
@@ -712,9 +821,10 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                     href={`/api/clickout/${bestOffer.id}?page=product`}
                     target="_blank"
                     rel="noopener noreferrer nofollow sponsored"
-                    className="btn-primary flex items-center justify-center gap-2 px-8 py-3.5 text-base font-bold w-full"
+                    className="btn-primary flex items-center justify-center gap-2 px-5 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-bold w-full"
                   >
-                    <ExternalLink className="h-5 w-5" /> Garantir Desconto na {bestOffer.sourceName}
+                    <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <span className="truncate">Garantir Desconto na {bestOffer.sourceName}</span>
                   </a>
                   {discount && discount > 20 && (
                     <p className="text-[10px] text-accent-orange font-medium text-center">
@@ -745,20 +855,22 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
-          {/* Commercial CTA — enhanced secondary CTA */}
-          {bestOffer && (
-            <CommercialCTA
-              affiliateUrl={bestOffer.affiliateUrl}
-              offerId={bestOffer.id}
-              price={bestPrice}
-              originalPrice={bestOffer.originalPrice ?? undefined}
-              sourceName={bestOffer.sourceName}
-              sourceSlug={bestOffer.sourceSlug}
-              freeShipping={bestOffer.isFreeShipping}
-              installments={showInstallment ? `${installmentCount}x de ${formatPrice(installmentValue)}` : undefined}
-              productSlug={slug}
-            />
-          )}
+          {/* Commercial CTA — hidden on mobile (hero + sticky bar cover CTA) */}
+          <div className="hidden lg:block">
+            {bestOffer && (
+              <CommercialCTA
+                affiliateUrl={bestOffer.affiliateUrl}
+                offerId={bestOffer.id}
+                price={bestPrice}
+                originalPrice={bestOffer.originalPrice ?? undefined}
+                sourceName={bestOffer.sourceName}
+                sourceSlug={bestOffer.sourceSlug}
+                freeShipping={bestOffer.isFreeShipping}
+                installments={showInstallment ? `${installmentCount}x de ${formatPrice(installmentValue)}` : undefined}
+                productSlug={slug}
+              />
+            )}
+          </div>
 
           {/* Price Alert — moved up near purchase decision area */}
           {bestOffer && product.listings[0] && (
@@ -787,16 +899,18 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
-          {/* Why highlighted — transparency block */}
-          {bestOffer && (
-            <WhyHighlighted
-              offerScore={bestOffer.offerScore}
-              price={bestOffer.price}
-              avgPrice={priceStats?.avg30d}
-              rating={bestOffer.rating}
-              isFreeShipping={bestOffer.isFreeShipping}
-            />
-          )}
+          {/* Why highlighted — transparency block (desktop only, saves mobile space) */}
+          <div className="hidden lg:block">
+            {bestOffer && (
+              <WhyHighlighted
+                offerScore={bestOffer.offerScore}
+                price={bestOffer.price}
+                avgPrice={priceStats?.avg30d}
+                rating={bestOffer.rating}
+                isFreeShipping={bestOffer.isFreeShipping}
+              />
+            )}
+          </div>
 
           {/* Canonical View — all sources for this product */}
           {product.listings.length > 1 && (
@@ -930,29 +1044,55 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                   return (
                     <div
                       key={offer.id}
-                      className={`card flex items-center gap-4 p-4 ${
+                      className={`card p-3 lg:p-4 ${
                         i === 0 ? "border-accent-blue/30 bg-accent-blue/5" : ""
                       }`}
                     >
-                      {/* Rank */}
-                      <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold flex-shrink-0 ${
-                          i === 0
-                            ? "bg-accent-blue text-white"
-                            : "bg-surface-100 text-text-muted"
-                        }`}
-                      >
-                        {i + 1}
+                      {/* Top row: Rank + Source + Price */}
+                      <div className="flex items-center gap-3">
+                        {/* Rank */}
+                        <div
+                          className={`flex h-7 w-7 lg:h-8 lg:w-8 items-center justify-center rounded-full text-xs lg:text-sm font-bold flex-shrink-0 ${
+                            i === 0
+                              ? "bg-accent-blue text-white"
+                              : "bg-surface-100 text-text-muted"
+                          }`}
+                        >
+                          {i + 1}
+                        </div>
+
+                        {/* Source + seller info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-text-primary">{offer.sourceName}</p>
+                          <p className="text-xs text-text-muted truncate">{offer.seller}</p>
+                        </div>
+
+                        {/* Price */}
+                        <div className="text-right flex-shrink-0">
+                          {offer.originalPrice && offer.originalPrice > offer.price && (
+                            <p className="text-[10px] lg:text-xs text-text-muted line-through">
+                              {formatPrice(offer.originalPrice)}
+                            </p>
+                          )}
+                          <p
+                            className={`text-base lg:text-lg font-bold font-display ${
+                              i === 0 ? "text-accent-blue" : "text-text-primary"
+                            }`}
+                          >
+                            {formatPrice(offer.price)}
+                          </p>
+                          {offerDiscount && (
+                            <p className="text-[10px] text-accent-green font-medium">-{offerDiscount}%</p>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Source + seller info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-text-primary">{offer.sourceName}</p>
-                        <p className="text-xs text-text-muted truncate">{offer.seller}</p>
-                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      {/* Bottom row: badges + CTA */}
+                      <div className="flex items-center justify-between mt-2 gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                           {offer.rating != null && (
-                            <span className="flex items-center gap-0.5 text-xs text-accent-orange">
-                              <Star className="h-3 w-3 fill-current" /> {offer.rating.toFixed(1)}
+                            <span className="flex items-center gap-0.5 text-[10px] text-accent-orange">
+                              <Star className="h-2.5 w-2.5 fill-current" /> {offer.rating.toFixed(1)}
                               {offer.reviewsCount != null && (
                                 <span className="text-text-muted">({offer.reviewsCount})</span>
                               )}
@@ -970,44 +1110,24 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
                               {offer.couponText}
                             </span>
                           )}
+                          {offer.price > 100 && (
+                            <span className="text-[10px] text-text-muted">
+                              12x {formatPrice(offer.price / 12)}
+                            </span>
+                          )}
                         </div>
-                      </div>
-
-                      {/* Price */}
-                      <div className="text-right flex-shrink-0">
-                        {offer.originalPrice && offer.originalPrice > offer.price && (
-                          <p className="text-xs text-text-muted line-through">
-                            {formatPrice(offer.originalPrice)}
-                          </p>
-                        )}
-                        <p
-                          className={`text-lg font-bold font-display ${
-                            i === 0 ? "text-accent-blue" : "text-text-primary"
+                        {/* CTA */}
+                        <a
+                          href={`/api/clickout/${offer.id}?page=product`}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow sponsored"
+                          className={`flex-shrink-0 flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
+                            i === 0 ? "btn-primary" : "btn-secondary"
                           }`}
                         >
-                          {formatPrice(offer.price)}
-                        </p>
-                        {offerDiscount && (
-                          <p className="text-xs text-accent-green font-medium">-{offerDiscount}%</p>
-                        )}
-                        {offer.price > 100 && (
-                          <p className="text-[10px] text-text-muted">
-                            12x {formatPrice(offer.price / 12)}
-                          </p>
-                        )}
+                          <ExternalLink className="h-3.5 w-3.5" /> Ver
+                        </a>
                       </div>
-
-                      {/* CTA */}
-                      <a
-                        href={`/api/clickout/${offer.id}?page=product`}
-                        target="_blank"
-                        rel="noopener noreferrer nofollow sponsored"
-                        className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                          i === 0 ? "btn-primary" : "btn-secondary"
-                        }`}
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" /> Ver
-                      </a>
                     </div>
                   );
                 })}
@@ -1055,8 +1175,8 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             />
           )}
 
-          {/* Share section */}
-          <div className="card p-4">
+          {/* Share section — hidden on mobile (sticky bar has share) */}
+          <div className="hidden sm:block card p-4">
             <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
               <Share2 className="h-4 w-4 text-text-muted" /> Compartilhar
             </h3>

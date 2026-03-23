@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 @layer base {
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
   body {
     @apply bg-surface-50 text-surface-800 font-body antialiased;
     background-color: #F6F7FB;
@@ -13,6 +13,7 @@
       radial-gradient(ellipse 80% 50% at 50% -20%, rgba(168,85,247,0.05), transparent),
       radial-gradient(ellipse 60% 40% at 80% 100%, rgba(147,51,234,0.04), transparent);
     background-attachment: fixed;
+    overflow-x: hidden;
   }
   ::selection {
     @apply bg-accent-blue/20 text-primary-900;
@@ -1691,4 +1692,21 @@
 .touch-target {
   min-width: 44px;
   min-height: 44px;
+}
+
+/* ============================================
+   PWA / MOBILE — safe areas + overflow
+   ============================================ */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Prevent horizontal overflow on mobile */
+@media (max-width: 1023px) {
+  .max-w-7xl {
+    overflow-x: hidden;
+  }
 }

@@ -79,51 +79,49 @@ export default function HeroVerdict({
   const Icon = config.icon
 
   return (
-    <div className={`rounded-xl border ${config.border} ${config.bg} p-4`}>
-      <div className="flex items-center gap-4 flex-wrap">
-        {/* Left: icon + verdict */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className={`flex-shrink-0 w-10 h-10 rounded-full ${config.bg} flex items-center justify-center`}>
-            <Icon className={`w-5 h-5 ${config.iconColor}`} />
-          </div>
-          <div className="min-w-0">
-            <p className={`text-sm font-bold ${config.text}`}>{config.label}</p>
-            <p className="text-xs text-text-muted line-clamp-1">{buySignal.detail}</p>
-            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              {isNearAllTimeLow && (
-                <span className="text-[10px] font-semibold text-accent-green bg-accent-green/10 px-1.5 py-0.5 rounded-full">
-                  Menor preco historico
-                </span>
-              )}
-              {priceBelowAvg30d && priceBelowAvg30d >= 3 && (
-                <span className="text-[10px] font-semibold text-accent-blue bg-accent-blue/10 px-1.5 py-0.5 rounded-full">
-                  {priceBelowAvg30d}% abaixo da media
-                </span>
-              )}
-              {discount && discount >= 15 && (
-                <span className="text-[10px] font-semibold text-accent-purple bg-accent-purple/10 px-1.5 py-0.5 rounded-full">
-                  -{discount}% OFF
-                </span>
-              )}
-            </div>
+    <div className={`rounded-xl border ${config.border} ${config.bg} p-3 lg:p-4`}>
+      {/* Top row: icon + verdict + badges */}
+      <div className="flex items-start gap-3">
+        <div className={`flex-shrink-0 w-8 h-8 lg:w-10 lg:h-10 rounded-full ${config.bg} flex items-center justify-center`}>
+          <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${config.iconColor}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-bold ${config.text}`}>{config.label}</p>
+          <p className="text-xs text-text-muted line-clamp-1">{buySignal.detail}</p>
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            {isNearAllTimeLow && (
+              <span className="text-[9px] lg:text-[10px] font-semibold text-accent-green bg-accent-green/10 px-1.5 py-0.5 rounded-full">
+                Menor preco historico
+              </span>
+            )}
+            {priceBelowAvg30d && priceBelowAvg30d >= 3 && (
+              <span className="text-[9px] lg:text-[10px] font-semibold text-accent-blue bg-accent-blue/10 px-1.5 py-0.5 rounded-full">
+                {priceBelowAvg30d}% abaixo da media
+              </span>
+            )}
+            {discount && discount >= 15 && (
+              <span className="text-[9px] lg:text-[10px] font-semibold text-accent-purple bg-accent-purple/10 px-1.5 py-0.5 rounded-full">
+                -{discount}% OFF
+              </span>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Right: price + CTA */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="text-right">
-            <p className="text-xl font-bold font-display text-text-primary">{formatPrice(price)}</p>
-            <p className="text-[10px] text-text-muted">em {sourceName}</p>
-          </div>
-          <a
-            href={`/api/clickout/${offerId}?page=product`}
-            target="_blank"
-            rel="noopener noreferrer nofollow sponsored"
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${config.btnClass}`}
-          >
-            <ExternalLink className="h-4 w-4" /> Ver oferta
-          </a>
+      {/* Bottom row: price + CTA — hidden on mobile (shown in mobile hero) */}
+      <div className="hidden lg:flex items-center justify-end gap-3 mt-3">
+        <div className="text-right">
+          <p className="text-xl font-bold font-display text-text-primary">{formatPrice(price)}</p>
+          <p className="text-[10px] text-text-muted">em {sourceName}</p>
         </div>
+        <a
+          href={`/api/clickout/${offerId}?page=product`}
+          target="_blank"
+          rel="noopener noreferrer nofollow sponsored"
+          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${config.btnClass}`}
+        >
+          <ExternalLink className="h-4 w-4" /> Ver oferta
+        </a>
       </div>
 
       {/* Wait Score — predictive timing */}
