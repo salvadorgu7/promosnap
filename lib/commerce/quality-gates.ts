@@ -41,17 +41,14 @@ export const DEFAULT_QUALITY_GATES: QualityGatesConfig = {
 const CHANNEL_OVERRIDES: Partial<Record<CommerceChannel, Partial<QualityGatesConfig>>> = {
   whatsapp: {
     requireImage: true,
-    requireAffiliate: true,
-    maxPerMarketplace: 2,
+    // requireAffiliate controlado pelo offer-selector (campaign config)
+    // maxPerMarketplace controlado pelo offer-selector (escala com limit)
   },
   telegram: {
     requireImage: true,
-    requireAffiliate: true,
-    maxPerMarketplace: 2,
   },
   email: {
     requireImage: true,
-    requireAffiliate: true,
   },
   site: {
     // Site aceita tudo que passar nos gates padrao
