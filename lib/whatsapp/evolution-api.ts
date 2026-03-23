@@ -236,6 +236,62 @@ export async function sendText(number: string, text: string): Promise<SendTextRe
 }
 
 /**
+ * Envia imagem com caption via Evolution API.
+ * @param number — número ou groupId
+ * @param imageUrl — URL pública da imagem
+ * @param caption — texto que acompanha a imagem (max 1024 chars)
+ */
+export async function sendMedia(
+  number: string,
+  imageUrl: string,
+  caption: string = "",
+): Promise<SendTextResult> {
+  const { instanceName } = getConfig()
+
+  const { ok, data } = await call<{
+    key?: { id: string; remoteJid: string }
+    error?: string
+    message?: string
+  }>("POST", `/message/sendMedia/${instanceName}`, {
+    number,
+    mediatype: "image",
+    media: imageUrl,
+    caption,
+  })
+
+  if (!ok) {
+    return {
+      success: false,
+      error: data?.error || data?.message || "Falha ao enviar imagem",
+    }
+  }
+
+  return {
+    success: true,
+    messageId: data?.key?.id,
+  }
+}
+
+/**
+ * Envia broadcast completo: imagem (se disponível) + texto.
+ * Se tem imagem, envia como imagem com caption.
+ * Se não tem imagem, envia só texto.
+ */
+export async function sendBroadcastMessage(
+  number: string,
+  text: string,
+  imageUrl?: string | null,
+): Promise<SendTextResult> {
+  if (imageUrl) {
+    // Envia imagem com o texto como caption
+    // WhatsApp caption tem limite de ~1024 chars, truncar se necessário
+    const caption = text.length > 1024 ? text.slice(0, 1021) + "..." : text
+    return sendMedia(number, imageUrl, caption)
+  }
+  return sendText(number, text)
+}
+
+/**
  * Envia mensagem de teste rápida.
  */
 export async function sendTestMessage(

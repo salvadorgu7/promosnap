@@ -6,7 +6,7 @@
 
 import { logger } from "@/lib/logger"
 import type { ComposedMessage, WaSendResult } from "./types"
-import { isEvolutionConfigured, sendText as evolutionSendText } from "@/lib/whatsapp/evolution-api"
+import { isEvolutionConfigured, sendBroadcastMessage as evolutionSendBroadcast } from "@/lib/whatsapp/evolution-api"
 
 const log = logger.child({ module: "wa-broadcast.send-queue" })
 
@@ -94,18 +94,25 @@ export async function sendToGroup(
       provider: config.type,
     })
 
-    // ── Evolution API v2 ──
+    // ── Evolution API v2 (com suporte a imagem) ──
     if (config.type === "evolution") {
-      const result = await evolutionSendText(destinationId, message.text)
+      // Pegar imagem do primeiro offer (hero) se disponível
+      const heroImage = message.offers?.[0]?.imageUrl || null
+      const result = await evolutionSendBroadcast(destinationId, message.text, heroImage)
       if (!result.success) {
         log.error("send-queue.evolution-error", { error: result.error, destinationId })
         return { success: false, error: result.error || "Falha Evolution API" }
       }
-      log.info("send-queue.sent", { destinationId, messageId: result.messageId, provider: "evolution" })
+      log.info("send-queue.sent", {
+        destinationId,
+        messageId: result.messageId,
+        provider: "evolution",
+        hasImage: !!heroImage,
+      })
       return {
         success: true,
         messageId: result.messageId || `evo_${Date.now()}`,
-        providerResponse: { provider: "evolution" },
+        providerResponse: { provider: "evolution", hasImage: !!heroImage },
       }
     }
 
@@ -181,7 +188,7 @@ export async function sendTestMessage(destinationId: string): Promise<WaSendResu
 
   // ── Evolution API ──
   if (provider === "evolution") {
-    const result = await evolutionSendText(destinationId, testText)
+    const result = await evolutionSendBroadcast(destinationId, testText)
     return {
       success: result.success,
       messageId: result.messageId || "test_ok",

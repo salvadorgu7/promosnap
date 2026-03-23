@@ -28,9 +28,9 @@ function ensureFallbackDefaults(): void {
     destinationId: DEFAULT_GROUP_ID,
     isActive: true,
     timezone: "America/Sao_Paulo",
-    quietHoursStart: 22,
-    quietHoursEnd: 7,
-    dailyLimit: 3,
+    quietHoursStart: null,
+    quietHoursEnd: null,
+    dailyLimit: 10,
     windowLimit: 1,
     defaultOfferCount: 5,
     groupType: "geral",
@@ -203,11 +203,37 @@ export async function createChannel(data: Omit<BroadcastChannel, "id" | "created
 export async function updateChannel(id: string, updates: Partial<BroadcastChannel>): Promise<BroadcastChannel | null> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _id, createdAt: _ca, ...data } = updates as any
-    const row = await prisma.waChannel.update({ where: { id }, data })
-    log.info("channel-registry.channel-updated", { id })
+    const { id: _id, createdAt: _ca, sentToday: _st, lastSentAt: _ls, campaigns: _camps, ...data } = updates as any
+
+    // Use upsert — fallback channels (e.g. "ch_default") may not exist in DB yet
+    const row = await prisma.waChannel.upsert({
+      where: { id },
+      update: data,
+      create: {
+        id,
+        name: data.name || "PromoSnap Ofertas",
+        destinationId: data.destinationId || "",
+        isActive: data.isActive ?? true,
+        timezone: data.timezone || "America/Sao_Paulo",
+        quietHoursStart: data.quietHoursStart ?? null,
+        quietHoursEnd: data.quietHoursEnd ?? null,
+        dailyLimit: data.dailyLimit ?? 10,
+        windowLimit: data.windowLimit ?? 1,
+        defaultOfferCount: data.defaultOfferCount ?? 5,
+        groupType: data.groupType || "geral",
+        tags: data.tags || [],
+        categoriesInclude: data.categoriesInclude || [],
+        categoriesExclude: data.categoriesExclude || [],
+        marketplacesInclude: data.marketplacesInclude || [],
+        marketplacesExclude: data.marketplacesExclude || [],
+        templateMode: data.templateMode || "radar",
+        tonality: data.tonality || "curadoria",
+      },
+    })
+    log.info("channel-registry.channel-upserted", { id })
     return dbToChannel(row)
-  } catch {
+  } catch (err) {
+    log.error("channel-registry.update-failed", { id, error: (err as Error).message })
     ensureFallbackDefaults()
     const channel = fallbackChannels.get(id)
     if (!channel) return null
@@ -320,11 +346,36 @@ export async function createCampaign(data: Omit<BroadcastCampaign, "id" | "creat
 export async function updateCampaign(id: string, updates: Partial<BroadcastCampaign>): Promise<BroadcastCampaign | null> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _id, createdAt: _ca, ...data } = updates as any
-    const row = await prisma.waCampaign.update({ where: { id }, data })
-    log.info("channel-registry.campaign-updated", { id })
+    const { id: _id, createdAt: _ca, channelName: _cn, ...data } = updates as any
+
+    // Use upsert — fallback campaigns may not exist in DB yet
+    const row = await prisma.waCampaign.upsert({
+      where: { id },
+      update: data,
+      create: {
+        id,
+        channelId: data.channelId || "",
+        name: data.name || "Campanha",
+        campaignType: data.campaignType || "scheduled",
+        schedule: data.schedule || null,
+        isActive: data.isActive ?? true,
+        offerCount: data.offerCount ?? 5,
+        minScore: data.minScore ?? 40,
+        minDiscount: data.minDiscount ?? null,
+        maxTicket: data.maxTicket ?? null,
+        minTicket: data.minTicket ?? null,
+        categorySlugs: data.categorySlugs || [],
+        marketplaces: data.marketplaces || [],
+        requireImage: data.requireImage ?? true,
+        requireAffiliate: data.requireAffiliate ?? true,
+        prioritizeTopSellers: data.prioritizeTopSellers ?? true,
+        structureType: data.structureType || "radar",
+      },
+    })
+    log.info("channel-registry.campaign-upserted", { id })
     return dbToCampaign(row)
-  } catch {
+  } catch (err) {
+    log.error("channel-registry.campaign-update-failed", { id, error: (err as Error).message })
     ensureFallbackDefaults()
     const campaign = fallbackCampaigns.get(id)
     if (!campaign) return null
