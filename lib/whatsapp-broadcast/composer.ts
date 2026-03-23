@@ -23,6 +23,7 @@ import {
   getRecommendedTonality,
   getRecommendedStructure,
 } from "./templates"
+import type { AiMiniCopy } from "./ai-copy"
 
 // ============================================
 // Price formatting (pt-BR)
@@ -436,13 +437,17 @@ function shortProductUrl(offer: SelectedOffer): string {
 /**
  * Compõe mensagem individual para 1 produto.
  * Formato otimizado para WhatsApp: caption da imagem.
- * Visual, com emojis, preço destaque e link curto.
+ * Visual, com emojis, preço destaque, link curto e minicopy IA.
+ *
+ * @param miniCopy — se fornecido, inclui hook + highlight gerados via IA.
+ *                   Se não, a mensagem fica sem minicopy (ainda funcional).
  */
 export function composeSingleOffer(
   offer: SelectedOffer,
   channel: BroadcastChannel,
   campaign?: BroadcastCampaign | null,
   tonality?: MessageTonality,
+  miniCopy?: AiMiniCopy | null,
 ): SingleOfferMessage {
   const lines: string[] = []
 
@@ -457,6 +462,11 @@ export function composeSingleOffer(
     lines.push(`💰 *${offer.discount}% OFF*`)
   } else {
     lines.push(`💎 *Preço destaque*`)
+  }
+
+  // ── AI Hook (minicopy) ──
+  if (miniCopy?.hook) {
+    lines.push(`✨ _${miniCopy.hook}_`)
   }
 
   lines.push("")
@@ -475,6 +485,11 @@ export function composeSingleOffer(
     lines.push(`💸 Você economiza *${economia}*`)
   } else {
     lines.push(`💲 *${formatBRL(offer.currentPrice)}*`)
+  }
+
+  // ── AI Highlight (contextual) ──
+  if (miniCopy?.highlight) {
+    lines.push(`📌 ${miniCopy.highlight}`)
   }
 
   // ── Extras (frete, cupom, nota) ──

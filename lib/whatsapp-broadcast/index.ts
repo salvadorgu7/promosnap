@@ -17,6 +17,7 @@ import type {
 import { selectOffers } from "./offer-selector"
 import { composeMessage, composeSingleOffer } from "./composer"
 import type { SingleOfferMessage } from "./composer"
+import { generateBatchMiniCopy } from "./ai-copy"
 import { checkFatigue, getRecentOfferIds, recordSend } from "./fatigue-guard"
 import { sendWithRetry, isBroadcastReady, sendTestMessage } from "./send-queue"
 import { sendBroadcastMessage as evolutionSendBroadcast } from "@/lib/whatsapp/evolution-api"
@@ -160,6 +161,14 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
   const tonality = options.tonality || channel.tonality || "curadoria"
   const timeWindow = options.timeWindow || detectTimeWindow()
 
+  // 5b. Generate AI mini copy for individual mode (batch call — 1 GPT request for all offers)
+  const miniCopyMap = useIndividualMode
+    ? await generateBatchMiniCopy(offers).catch((err) => {
+        log.warn("broadcast.ai-copy-failed", { error: String(err) })
+        return new Map()
+      })
+    : new Map()
+
   // 6. Send or dry-run
   let sendResult: WaSendResult | null = null
   let status: "sent" | "failed" | "dry_run"
@@ -168,7 +177,9 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
   if (dryRun) {
     // For preview, compose in the selected mode
     if (useIndividualMode) {
-      const singleMessages = offers.map(o => composeSingleOffer(o, channel, campaign, tonality))
+      const singleMessages = offers.map(o =>
+        composeSingleOffer(o, channel, campaign, tonality, miniCopyMap.get(o.offerId) || null)
+      )
       // Join all for preview display
       message = {
         text: singleMessages.map((m, i) => `--- Msg ${i + 1}/${singleMessages.length} ---\n${m.text}`).join("\n\n"),
@@ -185,7 +196,7 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
       message = composeMessage({ offers, channel, campaign, structure, tonality, timeWindow })
     }
     status = "dry_run"
-    log.info("broadcast.dry-run", { channelId, offerCount: offers.length, mode: useIndividualMode ? "individual" : "composed" })
+    log.info("broadcast.dry-run", { channelId, offerCount: offers.length, mode: useIndividualMode ? "individual" : "composed", aiCopy: miniCopyMap.size > 0 })
   } else {
     // Check provider is ready
     if (!isBroadcastReady()) {
@@ -197,8 +208,10 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
     }
 
     if (useIndividualMode) {
-      // ── Modo individual: 1 mensagem por produto com imagem ──
-      const singleMessages = offers.map(o => composeSingleOffer(o, channel, campaign, tonality))
+      // ── Modo individual: 1 mensagem por produto com imagem + AI minicopy ──
+      const singleMessages = offers.map(o =>
+        composeSingleOffer(o, channel, campaign, tonality, miniCopyMap.get(o.offerId) || null)
+      )
       let sentCount = 0
       let lastMessageId: string | undefined
       const errors: string[] = []
@@ -249,6 +262,7 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
 
       log.info("broadcast.individual-sent", {
         channelId, total: singleMessages.length, sent: sentCount, failed: errors.length,
+        aiCopy: miniCopyMap.size > 0,
       })
     } else {
       // ── Modo composto: 1 mensagem com tudo ──
