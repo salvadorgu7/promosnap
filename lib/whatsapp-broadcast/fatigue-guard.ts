@@ -150,12 +150,12 @@ export function isQuietHours(
 
 /**
  * Get offer IDs sent recently to a channel (for dedup in selection).
- * Returns offer IDs sent in the last N hours.
+ * Returns offer IDs sent in the last N hours (default 72h for better dedup).
  * Queries DB first, falls back to in-memory.
  */
 export async function getRecentOfferIds(
   channelId: string,
-  hoursBack: number = 24
+  hoursBack: number = 72
 ): Promise<string[]> {
   const cutoff = new Date(Date.now() - hoursBack * 60 * 60 * 1000)
 
@@ -181,6 +181,93 @@ export async function getRecentOfferIds(
     return recentSends
       .filter(r => r.channelId === channelId && r.sentAt >= cutoff)
       .map(r => r.offerId)
+  }
+}
+
+/**
+ * Get offer IDs that were sent recently BUT whose price has dropped since.
+ * These offers CAN be re-sent even if within the dedup window.
+ * Checks PriceSnapshot to detect price drops of 5%+.
+ */
+export async function getResentableOfferIds(
+  channelId: string,
+  hoursBack: number = 72
+): Promise<string[]> {
+  const cutoff = new Date(Date.now() - hoursBack * 60 * 60 * 1000)
+
+  try {
+    // Get recent delivery logs with their offer IDs and timestamps
+    const logs = await prisma.waDeliveryLog.findMany({
+      where: {
+        channelId,
+        status: "sent",
+        dryRun: false,
+        createdAt: { gte: cutoff },
+      },
+      select: { offerIds: true, sentAt: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    })
+
+    if (logs.length === 0) return []
+
+    // Collect all recently sent offer IDs with their send timestamp
+    const sentOffers = new Map<string, Date>()
+    for (const logEntry of logs) {
+      const sentAt = logEntry.sentAt || logEntry.createdAt
+      for (const oid of logEntry.offerIds) {
+        // Keep the most recent send date
+        const existing = sentOffers.get(oid)
+        if (!existing || sentAt > existing) {
+          sentOffers.set(oid, sentAt)
+        }
+      }
+    }
+
+    const offerIds = [...sentOffers.keys()]
+    if (offerIds.length === 0) return []
+
+    // Check current prices vs price at broadcast time
+    const resentable: string[] = []
+
+    // Batch query: get current price for all offers
+    const currentOffers = await prisma.offer.findMany({
+      where: { id: { in: offerIds }, isActive: true },
+      select: { id: true, currentPrice: true },
+    })
+
+    for (const offer of currentOffers) {
+      const lastSentAt = sentOffers.get(offer.id)
+      if (!lastSentAt) continue
+
+      // Get price snapshot closest to when we last sent this offer
+      const snapAtSend = await prisma.priceSnapshot.findFirst({
+        where: {
+          offerId: offer.id,
+          capturedAt: { lte: lastSentAt },
+        },
+        orderBy: { capturedAt: "desc" },
+        select: { price: true },
+      })
+
+      if (!snapAtSend) continue
+
+      // If price dropped 5%+ since last broadcast, allow re-send
+      const priceDrop = (snapAtSend.price - offer.currentPrice) / snapAtSend.price
+      if (priceDrop >= 0.05) {
+        resentable.push(offer.id)
+      }
+    }
+
+    log.info("fatigue-guard.resentable-offers", {
+      channelId,
+      checked: offerIds.length,
+      resentable: resentable.length,
+    })
+
+    return resentable
+  } catch (err) {
+    log.warn("fatigue-guard.resentable-check-failed", { error: String(err) })
+    return []
   }
 }
 

@@ -23,7 +23,7 @@ import {
   getRecommendedTonality,
   getRecommendedStructure,
 } from "./templates"
-import type { AiMiniCopy } from "./ai-copy"
+import type { AiMiniCopy, ExceptionalCopy } from "./ai-copy"
 
 // ============================================
 // Price formatting (pt-BR)
@@ -512,6 +512,87 @@ export function composeSingleOffer(
 
   lines.push("")
   lines.push(`_PromoSnap — Comparação de preços inteligente_`)
+
+  return {
+    text: lines.join("\n"),
+    imageUrl: offer.imageUrl,
+    offer,
+    channelId: channel.id,
+    campaignId: campaign?.id || null,
+  }
+}
+
+// ============================================
+// Exceptional offer message (score 90+ — solo, aggressive)
+// ============================================
+
+/**
+ * Compõe mensagem para oferta EXCEPCIONAL (score 90+).
+ * Vai sozinha no grupo, com copy agressiva gerada por IA.
+ * Layout maior, mais emojis, urgência real.
+ */
+export function composeExceptionalOffer(
+  offer: SelectedOffer,
+  channel: BroadcastChannel,
+  campaign?: BroadcastCampaign | null,
+  exceptionalCopy?: ExceptionalCopy | null,
+): SingleOfferMessage {
+  const lines: string[] = []
+
+  // ── HEADLINE — máximo impacto ──
+  const headline = exceptionalCopy?.headline || "🚨 ALERTA DE PREÇO — OFERTA EXCEPCIONAL"
+  lines.push(`🚨🚨🚨 *${headline}* 🚨🚨🚨`)
+  lines.push("")
+
+  // ── Hook — urgência ──
+  const hook = exceptionalCopy?.hook || `${offer.discount}% OFF — preço que não volta!`
+  lines.push(`⚡ _${hook}_`)
+  lines.push("")
+
+  // ── Product name (bold, full name for exceptional) ──
+  const name = offer.productName.length > 100
+    ? offer.productName.slice(0, 97) + "..."
+    : offer.productName
+  lines.push(`*${name}*`)
+  lines.push("")
+
+  // ── Price block (expanded for exceptional) ──
+  if (offer.originalPrice && offer.discount > 0) {
+    const economia = formatBRL(offer.originalPrice - offer.currentPrice)
+    lines.push(`De: ~~${formatBRL(offer.originalPrice)}~~`)
+    lines.push(`Por: 💥 *${formatBRL(offer.currentPrice)}* 💥`)
+    lines.push(`💸 Economia de *${economia}* (${offer.discount}% OFF)`)
+  } else {
+    lines.push(`💥 *${formatBRL(offer.currentPrice)}* 💥`)
+  }
+
+  lines.push("")
+
+  // ── Why buy — motivos para comprar AGORA ──
+  if (exceptionalCopy?.whyBuy) {
+    lines.push(`✅ ${exceptionalCopy.whyBuy}`)
+  } else {
+    const reasons: string[] = []
+    if (offer.isFreeShipping) reasons.push("Frete grátis")
+    if (offer.couponText) reasons.push(`Cupom: ${offer.couponText}`)
+    if (offer.rating && offer.rating >= 4.0) reasons.push(`Nota ${offer.rating.toFixed(1)}/5`)
+    reasons.push(`Score ${offer.offerScore}/100`)
+    lines.push(`✅ ${reasons.join(" • ")}`)
+  }
+
+  lines.push("")
+
+  // ── Store ──
+  lines.push(`🏪 ${offer.sourceName}`)
+  lines.push("")
+
+  // ── CTA forte ──
+  lines.push(`👉 *APROVEITAR AGORA:* ${shortProductUrl(offer)}`)
+
+  lines.push("")
+  lines.push(`⏰ _Preço pode subir a qualquer momento_`)
+  lines.push("")
+  lines.push(`_PromoSnap — Score ${offer.offerScore}/100 🏆_`)
 
   return {
     text: lines.join("\n"),

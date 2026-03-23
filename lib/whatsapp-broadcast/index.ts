@@ -14,11 +14,11 @@ import type {
   MessageTonality,
   TimeWindow,
 } from "./types"
-import { selectOffers } from "./offer-selector"
-import { composeMessage, composeSingleOffer } from "./composer"
+import { selectOffers, selectOffersEnhanced } from "./offer-selector"
+import { composeMessage, composeSingleOffer, composeExceptionalOffer } from "./composer"
 import type { SingleOfferMessage } from "./composer"
-import { generateBatchMiniCopy } from "./ai-copy"
-import { checkFatigue, getRecentOfferIds, recordSend } from "./fatigue-guard"
+import { generateBatchMiniCopy, generateExceptionalCopy } from "./ai-copy"
+import { checkFatigue, getRecentOfferIds, getResentableOfferIds, recordSend } from "./fatigue-guard"
 import { sendWithRetry, isBroadcastReady, sendTestMessage } from "./send-queue"
 import { sendBroadcastMessage as evolutionSendBroadcast } from "@/lib/whatsapp/evolution-api"
 import { isEvolutionConfigured } from "@/lib/whatsapp/evolution-api"
@@ -130,13 +130,18 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
     }
   }
 
-  // 4. Select offers
-  const excludeOfferIds = await getRecentOfferIds(channel.id, 24)
-  const offers = await selectOffers({
+  // 4. Select offers (72h dedup + price-drop re-send + click demand signals)
+  const [excludeOfferIds, resentableOfferIds] = await Promise.all([
+    getRecentOfferIds(channel.id, 72),
+    getResentableOfferIds(channel.id, 72),
+  ])
+
+  let { offers, exceptionalOffers, demandCategories } = await selectOffersEnhanced({
     channel,
     campaign,
     limit: options.offerCount || campaign?.offerCount || channel.defaultOfferCount,
     excludeOfferIds,
+    resentableOfferIds,
   })
 
   if (offers.length === 0) {
@@ -161,8 +166,45 @@ export async function executeBroadcast(options: BroadcastOptions): Promise<Broad
   const tonality = options.tonality || channel.tonality || "curadoria"
   const timeWindow = options.timeWindow || detectTimeWindow()
 
+  // 5a. Check for exceptional offers (score 90+) — send FIRST as solo urgent message
+  if (exceptionalOffers.length > 0 && useIndividualMode && !dryRun && isBroadcastReady()) {
+    const topExceptional = exceptionalOffers[0] // Best exceptional offer
+    log.info("broadcast.exceptional-offer-detected", {
+      channelId,
+      offerId: topExceptional.offerId,
+      score: topExceptional.offerScore,
+      productName: topExceptional.productName.slice(0, 50),
+    })
+
+    // Generate aggressive AI copy for this exceptional offer
+    const exceptionalCopyResult = await generateExceptionalCopy(topExceptional).catch(() => null)
+    const exceptionalMsg = composeExceptionalOffer(topExceptional, channel, campaign, exceptionalCopyResult)
+
+    // Send the exceptional offer FIRST (solo, with image)
+    try {
+      await evolutionSendBroadcast(
+        channel.destinationId,
+        exceptionalMsg.text,
+        exceptionalMsg.imageUrl,
+      )
+      log.info("broadcast.exceptional-sent", {
+        channelId,
+        offerId: topExceptional.offerId,
+        score: topExceptional.offerScore,
+      })
+      // Small delay before regular offers
+      await new Promise(r => setTimeout(r, 3000))
+    } catch (err) {
+      log.warn("broadcast.exceptional-send-failed", { error: String(err) })
+    }
+
+    // Remove exceptional from regular offers to avoid duplicate
+    const exceptionalIds = new Set(exceptionalOffers.map(o => o.offerId))
+    offers = offers.filter(o => !exceptionalIds.has(o.offerId))
+  }
+
   // 5b. Generate AI mini copy for individual mode (batch call — 1 GPT request for all offers)
-  const miniCopyMap = useIndividualMode
+  const miniCopyMap = useIndividualMode && offers.length > 0
     ? await generateBatchMiniCopy(offers).catch((err) => {
         log.warn("broadcast.ai-copy-failed", { error: String(err) })
         return new Map()

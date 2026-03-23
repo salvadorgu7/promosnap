@@ -265,3 +265,109 @@ export async function generateMiniCopy(offer: SelectedOffer): Promise<AiMiniCopy
  * Gera fallback sem IA (para quando OPENAI_API_KEY não está configurada).
  */
 export { generateFallbackCopy }
+
+// ============================================
+// Exceptional Offer Copy (score 90+)
+// Copy super agressiva e convertedora
+// ============================================
+
+export interface ExceptionalCopy {
+  headline: string   // Manchete de impacto (ex: "ALERTA DE PREÇO HISTÓRICO")
+  hook: string       // Frase de urgência (ex: "Esse preço dura poucas horas")
+  whyBuy: string     // Motivo para comprar agora (ex: "Menor preço em 6 meses + frete grátis")
+}
+
+/**
+ * Gera copy agressiva e de alta conversão para ofertas excepcionais (score 90+).
+ * Estas ofertas são enviadas SOZINHAS com destaque máximo.
+ */
+export async function generateExceptionalCopy(offer: SelectedOffer): Promise<ExceptionalCopy> {
+  const apiKey = getOpenAIKey()
+
+  // Fallback determinístico
+  const fallback: ExceptionalCopy = {
+    headline: "🚨 ALERTA DE PREÇO — OFERTA EXCEPCIONAL",
+    hook: offer.discount >= 40
+      ? `${offer.discount}% OFF — preço que não volta!`
+      : "Preço mais baixo que já rastreamos!",
+    whyBuy: [
+      offer.isFreeShipping ? "Frete grátis" : null,
+      offer.couponText ? `Cupom ${offer.couponText}` : null,
+      offer.rating && offer.rating >= 4.5 ? `Nota ${offer.rating.toFixed(1)}/5` : null,
+      `Score ${offer.offerScore}/100 no PromoSnap`,
+    ].filter(Boolean).join(" • "),
+  }
+
+  if (!apiKey) return fallback
+
+  const context = [
+    `Produto: "${offer.productName}"`,
+    `Preço: R$ ${offer.currentPrice.toFixed(2)}`,
+    offer.originalPrice ? `Preço original: R$ ${offer.originalPrice.toFixed(2)}` : null,
+    offer.discount > 0 ? `Desconto: ${offer.discount}%` : null,
+    `Loja: ${offer.sourceName}`,
+    `Score PromoSnap: ${offer.offerScore}/100 (EXCEPCIONAL)`,
+    offer.isFreeShipping ? "Frete grátis: SIM" : null,
+    offer.couponText ? `Cupom: ${offer.couponText}` : null,
+    offer.rating ? `Avaliação: ${offer.rating.toFixed(1)}/5` : null,
+  ].filter(Boolean).join("\n")
+
+  const prompt = `Você é um copywriter expert em conversão para WhatsApp. Esta oferta tem score ${offer.offerScore}/100 — é EXCEPCIONAL, top 1% das ofertas.
+
+Gere copy AGRESSIVA e URGENTE que CONVERTE. Esta mensagem vai sozinha no grupo, então precisa ser impactante.
+
+${context}
+
+Gere JSON com:
+- "headline": manchete de IMPACTO em CAPS (máx 50 chars). Ex: "ALERTA DE PREÇO — MENOR VALOR JÁ VISTO"
+- "hook": frase de URGÊNCIA que gera FOMO (máx 80 chars). Ex: "Esse preço não dura — última vez foi há 6 meses"
+- "whyBuy": motivos para comprar AGORA, separados por " • " (máx 120 chars). Ex: "Frete grátis • Nota 4.8/5 • 2.300 vendidos"
+
+REGRAS:
+- Português BR natural e persuasivo
+- NÃO invente dados — use APENAS o que foi fornecido
+- Transmita urgência REAL (preço pode subir, estoque limitado)
+- Seja magnético mas honesto
+
+Responda APENAS com JSON válido.`
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "Você é o melhor copywriter de ofertas do Brasil. Escreva copy que CONVERTE. Responda APENAS com JSON válido.",
+          },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 300,
+        response_format: { type: "json_object" },
+      }),
+      signal: AbortSignal.timeout(10000),
+    })
+
+    if (!res.ok) return fallback
+
+    const data = await res.json()
+    const content = data.choices?.[0]?.message?.content
+    if (!content) return fallback
+
+    const parsed = JSON.parse(content)
+    return {
+      headline: parsed.headline?.slice(0, 60) || fallback.headline,
+      hook: parsed.hook?.slice(0, 100) || fallback.hook,
+      whyBuy: parsed.whyBuy?.slice(0, 150) || fallback.whyBuy,
+    }
+  } catch (err) {
+    log.warn("ai-copy.exceptional-failed", { error: String(err) })
+    return fallback
+  }
+}
