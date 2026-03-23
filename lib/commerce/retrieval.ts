@@ -115,8 +115,8 @@ interface RawOfferRow {
 /** Multiplicador de fetch: busca N vezes o limite para dar margem a quality gates */
 const FETCH_MULTIPLIER = 4
 
-/** Score minimo padrao para ofertas */
-const DEFAULT_MIN_SCORE = 30
+/** Score minimo padrao para ofertas — 15 permite mais variedade mantendo qualidade basica */
+const DEFAULT_MIN_SCORE = 15
 
 // ── Funcao principal ─────────────────────────────────────────────────────────
 

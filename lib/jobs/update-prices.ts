@@ -5,10 +5,10 @@ import { logger } from '@/lib/logger';
 
 const log = logger.child({ module: 'update-prices' });
 
-const BATCH_SIZE = 50;
-const STALE_HOURS = 4;          // 4h — more aggressive freshness (cron runs every 2h)
-const DEACTIVATE_DAYS = 3;
-const REFRESH_BATCH_SIZE = 40;  // 40 items per run — balance between speed and rate limits
+const BATCH_SIZE = 100;
+const STALE_HOURS = 12;          // 12h — relaxed: keeps more offers "fresh"
+const DEACTIVATE_DAYS = 7;       // 7 days — keeps offers active longer before deactivating
+const REFRESH_BATCH_SIZE = 80;   // 80 items per run — doubles throughput
 
 export async function updatePrices(): Promise<JobResult> {
   return runJob('update-prices', async (ctx) => {

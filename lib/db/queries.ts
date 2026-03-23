@@ -204,8 +204,7 @@ export async function getHotOffers(limit = 16): Promise<ProductCard[]> {
             some: {
               isActive: true,
               currentPrice: { gt: 10 },
-              offerScore: { gte: 30 }, // Minimum quality threshold
-              affiliateUrl: { not: null }, // Must have affiliate URL to be featured
+              offerScore: { gte: 15 }, // Minimum quality threshold — lowered to show more offers
             },
           },
         },
@@ -240,8 +239,7 @@ export async function getBestSellers(limit = 16): Promise<ProductCard[]> {
           offers: {
             some: {
               isActive: true,
-              offerScore: { gte: 30 },
-              affiliateUrl: { not: null },
+              offerScore: { gte: 15 },
             },
           },
         },

@@ -160,7 +160,7 @@ export async function getReadyOffers(
   const retrieved = await retrieveOffers({
     channel: "site", // distribution is multi-channel; "site" = default gates
     limit,
-    minScore: 40,
+    minScore: 20,
     requireImage: true,
     maxPerMarketplace: 0, // no marketplace limit for general distribution
   });
@@ -278,7 +278,7 @@ export async function getReadyOffersBySegment(
   const retrieved = await retrieveOffers({
     channel: "site",
     limit,
-    minScore: segment === "ofertas-quentes" ? 70 : 40,
+    minScore: segment === "ofertas-quentes" ? 50 : 20,
     categories: categorySlugs.length > 0 ? categorySlugs : undefined,
     requireImage: true,
     maxPerMarketplace: 0,

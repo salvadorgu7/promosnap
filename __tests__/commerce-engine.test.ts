@@ -206,11 +206,12 @@ describe("Quality Gates", () => {
     expect(result.reason).toContain("afiliado")
   })
 
-  it("resolve gates para WhatsApp com requireImage e requireAffiliate", () => {
+  it("resolve gates para WhatsApp com requireImage", () => {
     const config = resolveQualityGates("whatsapp")
     expect(config.requireImage).toBe(true)
-    expect(config.requireAffiliate).toBe(true)
-    expect(config.maxPerMarketplace).toBe(2)
+    // requireAffiliate e maxPerMarketplace sao controlados pelo offer-selector, nao pelo quality gate
+    expect(config.requireAffiliate).toBe(false)
+    expect(config.maxPerMarketplace).toBe(0)
   })
 
   it("applyQualityGates filtra lista corretamente", () => {
